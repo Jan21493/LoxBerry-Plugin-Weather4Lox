@@ -502,11 +502,11 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 	$i = 1;
 	my $n = 0;
 	for my $results( @{$decoded_json->{hourly}} ){
-		# Skip first dataset (eq to current)
-		if ($n eq "0") {
-			$n++;
-			next;
-		}
+		# Skip first dataset (eq to current) - keep the first dataset (it's the forecast for the current hour and used as "now" in the Emulator)
+		#if ($n eq "0") {
+		#	$n++;
+		#	next;
+		#}
 		print F "$i|";
 		$i++;
 		print F $results->{dt}, "|";
@@ -857,12 +857,10 @@ if ($i < 168) {
 					if ($weather eq "804") { $code = "5";  $icon = "overcast" };
 					if (!$icon) { $icon = "clear" };
 					if (!$code) { $code = "1" };
-						$newline .= $icon;
-						$newline .= "|";
-						$newline .= $code;
-						$newline .= "|";
-						$newline .= $results->{weather}->[0]->{description};
-						$newline .= "|";
+					$newline .= "$code|";
+					$newline .= "$icon|";
+					$newline .= $results->{weather}->[0]->{description};
+					$newline .= "|";
 				}
 				$newline .= "-9999|";
 				$newline .= "-9999|";
