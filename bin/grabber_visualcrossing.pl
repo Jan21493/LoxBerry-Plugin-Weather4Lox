@@ -409,7 +409,7 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 	for my $resultsdays ( @{$decoded_json->{days}} ){
 		for my $results( @{$resultsdays->{hours}} ){
 			# Skip first datasets of current day
-			my $now = localtime;
+			my $now = localtime->add_hours(-1);
 			my $hfctime = localtime($results->{datetimeEpoch});
 			if ($now->epoch > $hfctime->epoch) {
 				next;
