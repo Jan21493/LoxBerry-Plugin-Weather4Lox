@@ -742,11 +742,11 @@ foreach (@hfcdata){
   &send;
 
   $name = "hfc$per\_we_code";
-  $value = @fields[27];
+  $value = @fields[28];
   &send;
 
   $name = "hfc$per\_we_icon";
-  $value = @fields[28];
+  $value = @fields[27];
   &send;
 
 
@@ -1504,8 +1504,8 @@ foreach (@hfcdata){
   ${hfc.$per._sky._des} = @fields[22];
   ${hfc.$per._uvi} = @fields[23];
   ${hfc.$per._pop} = @fields[26];
-  ${hfc.$per._we_code} = @fields[27];
-  ${hfc.$per._we_icon} = @fields[28];
+  ${hfc.$per._we_code} = @fields[28];
+  ${hfc.$per._we_icon} = @fields[27];
   ${hfc.$per._we_des} = @fields[29];
   ${hfc.$per._ozone} = @fields[30];
   ${hfc.$per._moon_p} = @fields[33];
