@@ -1556,6 +1556,91 @@ if (-e "$lbplogdir/webpage.hfc.html") {
 
 LOGOK "Webpages created successfully.";
 
+# Mapping of the documented Loxone Picto-Codes from https://www.loxone.com/dede/kb/weather-service/
+# to the codes used in the Weather Emulator
+my %lox_to_emu = (
+    1  => 1,   # Wolkenlos (day/night)
+    2  => 2,   # Heiter (day/night)
+    3  => 7,   # Wolkig (day/night)
+    4  => 19,  # Stark bewölkt (day/night)
+    5  => 22,  # Bedeckt
+    6  => 16,  # Nebel
+    7  => 22,  # Hochnebel -> Bedeckt
+    8  => 8,   # nicht verwendet
+    9  => 9,   # nicht verwendet
+    10 => 33,  # Leichter Regen
+    11 => 23,  # Regen
+    12 => 25,  # Starker Regen
+    13 => 33,  # Nieseln -> Leichter Regen
+    14 => 35,  # Leichter gefrierender Regen -> Schneeregen
+    15 => 35,  # Starker gefrierender Regen -> Schneeregen
+    16 => 31,  # Leichter Regenschauer
+    17 => 25,  # Kräftiger Regenschauer -> Starker Regen
+    18 => 28,  # Gewitter
+    19 => 27,  # Kräftiges Gewitter
+    20 => 24,  # Leichter Schneefall -> Schneefall
+    21 => 24,  # Schneefall
+    22 => 26,  # Starker Schneefall
+    23 => 32,  # Leichter Schneeschauer
+    24 => 29,  # Starker Schneeschauer (gleiches Symbol wie Starker Schneefall)
+    25 => 35,  # Leichter Schneeregen -> Schneeregen
+    26 => 35,  # Schneeregen
+    27 => 35,  # Starker Schneeregen -> Schneeregen
+    28 => 35,  # Leichter Schneeregenschauer -> Schneeregen
+    29 => 35,  # Kräftiger Schneeregenschauer -> Schneeregen
+);
+
+# Not mapped codes (because not supported by the Weather Emulator):
+#  7 = Hochnebel
+# 13 = Nieseln
+# 14 = leichter gefrierender Regen
+# 15 = starker gefrierender Regen
+# 17 = kräftiger Regenschauer
+# 20 = leichter Schneefall
+# 23 = leichter Schneeschauer
+# 24 = starker Schneeschauer
+# 25 = leichter Schneeregen
+# 27 = starker Schneeregen
+# 28 = leichter Schneeregenschauer
+# 29 = kräftiger Schneeregenschauer
+
+# Used weather symbols in Loxone Weather Emulator (by testing, not documented by Loxone): 
+#  1 - wolkenlos
+#  2 - heiter
+#  3 - heiter
+#  4 - heiter
+#  5 - heiter
+#  6 - heiter
+#  7 - wolkig
+#  8 - wolkig
+#  9 - wolkig
+# 10 - wolkig
+# 11 - wolkig
+# 12 - wolkig
+# 13 - wolkenlos
+# 14 - heiter
+# 15 - heiter
+# 16 - Nebel
+# 17 - Nebel
+# 18 - Nebel
+# 19 - stark bewölkt
+# 20 - stark bewölkt
+# 21 - stark bewölkt
+# 22 - bedeckt
+# 23 - Regen
+# 24 - Schneefall
+# 25 - starker Regen
+# 26 - starker Schneefall
+# 27 - kräftiges Gewitter
+# 28 - Gewitter
+# 29 - starker Schneeschauer
+# 30 - kräftiges Gewitter
+# 31 - leichter Regenschauer
+# 32 - leichter Schneeschauer
+# 33 - leichter Regen
+# 34 - leichter Schneeschauer
+# 35 - Schneeregen
+
 #
 # Create Cloud Weather Emu
 #
@@ -1633,92 +1718,9 @@ if ($emu) {
     print F ";\t";
     printf ( F "%1d", 0);
     print F ";\t";
-    # Convert WU Weathercode to Lox Weathercode
-    # WU: https://www.wunderground.com/weather/api/d/docs?d=resources/phrase-glossary
-    # Lox: https://www.loxone.com/dede/kb/weather-service/ seems not to be right (anymore),
-    # correct Loxone Weather Types are:
-    #  1 - wolkenlos
-    #  2 - heiter
-    #  3 - heiter
-    #  4 - heiter
-    #  5 - heiter
-    #  6 - heiter
-    #  7 - wolkig
-    #  8 - wolkig
-    #  9 - wolkig
-    # 10 - wolkig
-    # 11 - wolkig
-    # 12 - wolkig
-    # 13 - wolkenlos
-    # 14 - heiter
-    # 15 - heiter
-    # 16 - Nebel
-    # 17 - Nebel
-    # 18 - Nebel
-    # 19 - stark bewölkt
-    # 20 - stark bewölkt
-    # 21 - stark bewölkt
-    # 22 - bedeckt
-    # 23 - Regen
-    # 24 - Schneefall
-    # 25 - starker Regen
-    # 26 - starker Schneefall
-    # 27 - kräftiges Gewitter
-    # 28 - Gewitter
-    # 29 - starker Schneeschauer
-    # 30 - kräftiges Gewitter
-    # 31 - leichter Regenschauer
-    # 32 - leichter Schneeschauer
-    # 33 - leichter Regen
-    # 34 - leichter Schneeschauer
-    # 35 - Schneeregen
-    my $loxweathercode;
-    if (@fields[28] eq "2") {
-      $loxweathercode = "7";
-    } elsif (@fields[28] eq "3") {
-      $loxweathercode = "8";
-    } elsif (@fields[28] eq "4") {
-      $loxweathercode = "22";
-    } elsif (@fields[28] eq "5") {
-      $loxweathercode = "10";
-    } elsif (@fields[28] eq "6") {
-      $loxweathercode = "16";
-    } elsif (@fields[28] eq "7") {
-      $loxweathercode = "7";
-    } elsif (@fields[28] eq "8") {
-      $loxweathercode = "7";
-    } elsif (@fields[28] eq "9") {
-      $loxweathercode = "26";
-    } elsif (@fields[28] eq "10") {
-      $loxweathercode = "33";
-    } elsif (@fields[28] eq "11") {
-      $loxweathercode = "33";
-    } elsif (@fields[28] eq "12") {
-      $loxweathercode = "23";
-    } elsif (@fields[28] eq "13") {
-      $loxweathercode = "23";
-    } elsif (@fields[28] eq "14") {
-      $loxweathercode = "28";
-    } elsif (@fields[28] eq "15") {
-      $loxweathercode = "28";
-    } elsif (@fields[28] eq "16") {
-      $loxweathercode = "26";
-    } elsif (@fields[28] eq "18") {
-      $loxweathercode = "32";
-    } elsif (@fields[28] eq "19") {
-      $loxweathercode = "34";
-    } elsif (@fields[28] eq "20") {
-      $loxweathercode = "24";
-    } elsif (@fields[28] eq "21") {
-      $loxweathercode = "24";
-    } elsif (@fields[28] eq "22") {
-      $loxweathercode = "7";
-    } else {
-      $loxweathercode = @fields[28];
-    }
-    printf ( F "%1d", $loxweathercode);
+    printf ( F "%1d", $lox_to_emu{int($fields[28])} // int($fields[28]));
     print F ";\t";
-    printf ( F "%1.2f", @fields[22]);
+    printf ( F "%1.2f", $fields[22]);
     print F ";\n";
   flock(F,8);
   close(F);
@@ -1792,96 +1794,12 @@ if ($emu) {
       print F ";\t";
       printf ( F "%1d", 0);
       print F ";\t";
-      # Convert WU Weathercode to Lox Weathercode
-      # WU: https://www.wunderground.com/weather/api/d/docs?d=resources/phrase-glossary
-      # Lox: https://www.loxone.com/dede/kb/weather-service/ seems not to be right (anymore),
-      # correct Loxone Weather Types are:
-      #  1 - wolkenlos
-      #  2 - heiter
-      #  3 - heiter
-      #  4 - heiter
-      #  5 - heiter
-      #  6 - heiter
-      #  7 - wolkig
-      #  8 - wolkig
-      #  9 - wolkig
-      # 10 - wolkig
-      # 11 - wolkig
-      # 12 - wolkig
-      # 13 - wolkenlos
-      # 14 - heiter
-      # 15 - heiter
-      # 16 - Nebel
-      # 17 - Nebel
-      # 18 - Nebel
-      # 19 - stark bewölkt
-      # 20 - stark bewölkt
-      # 21 - stark bewölkt
-      # 22 - bedeckt
-      # 23 - Regen
-      # 24 - Schneefall
-      # 25 - starker Regen
-      # 26 - starker Schneefall
-      # 27 - kräftiges Gewitter
-      # 28 - Gewitter
-      # 29 - starker Schneeschauer
-      # 30 - kräftiges Gewitter
-      # 31 - leichter Regenschauer
-      # 32 - leichter Schneeschauer
-      # 33 - leichter Regen
-      # 34 - leichter Schneeschauer
-      # 35 - Schneeregen
-      my $loxweathercode;
-      if (@fields[27] eq "2") {
-        $loxweathercode = "7";
-      } elsif (@fields[27] eq "3") {
-        $loxweathercode = "8";
-      } elsif (@fields[27] eq "4") {
-        $loxweathercode = "22";
-      } elsif (@fields[27] eq "5") {
-        $loxweathercode = "10";
-      } elsif (@fields[27] eq "6") {
-        $loxweathercode = "16";
-      } elsif (@fields[27] eq "7") {
-        $loxweathercode = "7";
-      } elsif (@fields[27] eq "8") {
-        $loxweathercode = "7";
-      } elsif (@fields[27] eq "9") {
-        $loxweathercode = "26";
-      } elsif (@fields[27] eq "10") {
-        $loxweathercode = "33";
-      } elsif (@fields[27] eq "11") {
-        $loxweathercode = "33";
-      } elsif (@fields[27] eq "12") {
-        $loxweathercode = "23";
-      } elsif (@fields[27] eq "13") {
-        $loxweathercode = "23";
-      } elsif (@fields[27] eq "14") {
-        $loxweathercode = "28";
-      } elsif (@fields[27] eq "15") {
-        $loxweathercode = "28";
-      } elsif (@fields[27] eq "16") {
-        $loxweathercode = "26";
-      } elsif (@fields[27] eq "18") {
-        $loxweathercode = "32";
-      } elsif (@fields[27] eq "19") {
-        $loxweathercode = "33";
-      } elsif (@fields[27] eq "20") {
-        $loxweathercode = "24";
-      } elsif (@fields[27] eq "21") {
-        $loxweathercode = "24";
-      } elsif (@fields[27] eq "22") {
-        $loxweathercode = "7";
-      } else {
-        $loxweathercode = @fields[27];
-      }
-      printf ( F "%1d", $loxweathercode);
+      printf ( F "%1d", $lox_to_emu{int($fields[28])} // int($fields[28]));
       print F ";\t";
-      printf ( F "%1.2f", @fields[31]);
+      printf ( F "%1.2f", $fields[31]);
       print F ";\n";
 
       $i++;
-
     }
 
     print F "</station>\n";

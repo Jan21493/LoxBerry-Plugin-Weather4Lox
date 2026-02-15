@@ -79,6 +79,84 @@ if ($verbose) {
 LOGSTART "Weather4Lox GRABBER_OPENWEATHER process started";
 LOGDEB "This is $0 Version $version";
 
+# Mappingstabelle für die Umwandlung der OpenWeatherMap-Wetter-IDs in die Loxone-Wetter Picto-Codes und Kurzname für Symbol
+my %owm_to_loxone = (
+    # OWM => [Picto-Code, Symbol]   # Beschreibung
+    200 => [18, "tstorms"],     # thunderstorm with light rain -> Gewitter
+    201 => [19, "tstorms"],     # thunderstorm with rain -> kräftiges Gewitter
+    202 => [19, "tstorms"],     # thunderstorm with heavy rain -> kräftiges Gewitter
+    210 => [18, "tstorms"],     # light thunderstorm -> Gewitter
+    211 => [18, "tstorms"],     # thunderstorm -> Gewitter
+    212 => [19, "tstorms"],     # heavy thunderstorm -> kräftiges Gewitter
+    221 => [19, "tstorms"],     # ragged thunderstorm -> kräftiges Gewitter
+    230 => [18, "tstorms"],     # thunderstorm with light drizzle -> Gewitter
+    231 => [18, "tstorms"],     # thunderstorm with drizzle -> Gewitter
+    232 => [19, "tstorms"],     # thunderstorm with heavy drizzle -> kräftiges Gewitter
+    300 => [13, "chancerain"],  # light intensity drizzle -> Nieseln
+    301 => [13, "chancerain"],  # drizzle -> Nieseln
+    302 => [13, "chancerain"],  # heavy intensity drizzle -> Nieseln
+    310 => [10, "chancerain"],  # light intensity drizzle rain -> leichter Regen
+    311 => [11, "rain"],        # drizzle rain -> Regen
+    312 => [12, "rain"],        # heavy intensity drizzle rain -> starker Regen
+    313 => [16, "rain"],        # shower rain and drizzle -> leichter Regenschauer
+    314 => [17, "rain"],        # heavy shower rain and drizzle -> kräftiger Regenschauer
+    321 => [13, "rain"],        # shower drizzle -> Nieseln
+    500 => [10, "chancerain"],  # light rain -> leichter Regen
+    501 => [11, "rain"],        # moderate rain -> Regen
+    502 => [12, "rain"],        # heavy intensity rain -> starker Regen
+    503 => [12, "rain"],        # very heavy rain -> starker Regen
+    504 => [12, "rain"],        # extreme rain -> starker Regen
+    511 => [15, "sleet"],       # freezing rain -> starker gefrierender Regen
+    520 => [16, "rain"],        # light intensity shower rain -> leichter Regenschauer
+    521 => [17, "rain"],        # shower rain -> kräftiger Regenschauer
+    522 => [17, "rain"],        # heavy intensity shower rain -> kräftiger Regenschauer
+    531 => [17, "rain"],        # ragged shower rain -> kräftiger Regenschauer (heftig/unbeständig)
+    600 => [20, "snow"],        # light snow -> leichter Schneefall
+    601 => [21, "snow"],        # snow -> Schneefall
+    602 => [22, "snow"],        # heavy snow -> starker Schneefall
+    611 => [26, "sleet"],       # sleet -> Schneeregen
+    612 => [28, "sleet"],       # light shower sleet -> leichter Schneeregenschauer
+    613 => [29, "sleet"],       # shower sleet -> kräftiger Schneeregenschauer
+    615 => [25, "sleet"],       # light rain and snow -> leichter Schneeregen
+    616 => [27, "sleet"],       # rain and snow -> starker Schneeregen
+    620 => [23, "snow"],        # light shower snow -> leichter Schneeschauer
+    621 => [23, "snow"],        # shower snow -> leichter Schneeschauer
+    622 => [24, "snow"],        # heavy shower snow -> starker Schneeschauer
+    701 => [6,  "fog"],         # mist -> Nebel (leichte Form)
+    711 => [6,  "fog"],         # smoke -> Nebel (Sichteinschränkung ähnlich wie Nebel)
+    721 => [7,  "hazy"],        # haze -> Hochnebel (trübe Sicht ohne Bodenkontakt)
+    731 => [5,  "overcast"],    # sand/dust whirls -> bedeckt (Sichttrübung, meist unter Wolken)
+    741 => [6,  "fog"],         # fog -> Nebel (klassischer Bodennebel)
+    751 => [5,  "overcast"],    # sand -> bedeckt (starke Trübung der Atmosphäre)
+    761 => [5,  "overcast"],    # dust -> bedeckt (Sichtminderung)
+    762 => [5,  "overcast"],    # volcanic ash -> bedeckt (extreme Trübung/Verdunkelung)
+    771 => [12, "rain"],        # squalls -> starker Regen (meist mit schweren Böen/Niederschlag)
+    781 => [19, "tstorms"],     # tornado -> kräftiges Gewitter (höchste Warnstufe/Extremwetter)
+    800 => [1,  "clear"],       # clear sky -> wolkenlos
+    801 => [2,  "mostlysunny"], # few clouds: 11-25% -> heiter
+    802 => [3,  "mostlycloudy"],# scattered clouds: 25-50% -> wolkig
+    803 => [4,  "cloudy"],      # broken clouds: 51-84% -> stark bewölkt
+    804 => [5,  "overcast"],    # overcast clouds: 85-100% -> bedeckt
+);
+
+# Anmerkungen zur Mapping-Tabelle:
+# - Drizzle (3xx): Wurde primär als Nieseln (13) gemappt, außer es ist eine Kombination mit Regen (310-312), dann folgt es der Regen-Intensität.
+# - Thunderstorm (2xx): Alles mit "heavy" oder "rain" (außer "light rain") wurde als kräftiges Gewitter (19) eingestuft.
+# - Besonderheit 27: OWM hat keinen expliziten Code für "starken Schneeregen" (nur Schauer oder normal).
+# - Nebel vs. Hochnebel (6 & 7): Mist und Fog sind klassischer Nebel (6). Haze (Dunst) mappt am besten auf Hochnebel (7), da es eine diffuse Trübung beschreibt, die oft nicht direkt am Boden als "Nässe" wahrgenommen wird.
+# - Staub, Sand & Asche (711–762): Da diese in der Liste von Loxone nicht vorkommen, ist ID 5 (bedeckt) die sicherste Wahl, da die Lichtdurchlässigkeit massiv reduziert ist, ähnlich einer geschlossenen Wolkendecke.
+# - Extreme (771 & 781): Squalls treten fast immer mit massivem Regen auf (12), ein Tornado ist das extremste Wettereignis und passt daher am ehesten in die Kategorie des kräftigen Gewitters (19), da er meist aus solchen Zellen entsteht.
+
+
+sub owm_to_loxone {
+    my ($owm_id) = @_;
+    my $data = $owm_to_loxone{$owm_id} // [1, "clear"];
+    
+    if (!exists $owm_to_loxone{$owm_id}) {
+        LOGDEB "Unbekannte OpenWeatherMap-ID: $owm_id. Bitte prüfen! Setze 'sonnig'.";
+    }
+    return @$data; # Gibt (Code, Icon) zurück
+}
 
 # Get data from openweathermap.org (API request) for current conditions
 my $queryurlcr = "$url/3.0/onecall?appid=$apikey&$stationid&lang=$lang&units=metric";
@@ -108,7 +186,7 @@ if ($urlstatuscode ne "200") {
 my $decoded_json = decode_json( "$json" );
 
 my $t;
-my $weather;
+my $owmid;
 my $code;
 my $icon;
 my $wdir;
@@ -185,67 +263,9 @@ open(F,">$lbplogdir/current.dat.tmp") or $error = 1;
 		print F "0|";
 	}
 	# Convert Weather string into Weather Code and convert icon name
-  # Weather conditions: https://openweathermap.org/weather-conditions
-	$weather = $decoded_json->{current}->{weather}->[0]->{id};
-	$code = "";
-	$icon = "";
-	if ($weather eq "200") { $code = "18"; $icon = "tstorms" };
-	if ($weather eq "201") { $code = "18"; $icon = "tstorms" };
-	if ($weather eq "202") { $code = "19"; $icon = "tstorms" };
-	if ($weather eq "210") { $code = "18"; $icon = "tstorms" };
-	if ($weather eq "211") { $code = "18"; $icon = "tstorms" };
-	if ($weather eq "212") { $code = "19"; $icon = "tstorms" };
-	if ($weather eq "221") { $code = "19"; $icon = "tstorms" };
-	if ($weather eq "230") { $code = "18"; $icon = "tstorms" };
-	if ($weather eq "231") { $code = "18"; $icon = "tstorms" };
-	if ($weather eq "232") { $code = "19"; $icon = "tstorms" };
-	if ($weather eq "300") { $code = "13"; $icon = "chancerain" };
-	if ($weather eq "301") { $code = "13"; $icon = "chancerain" };
-	if ($weather eq "302") { $code = "13"; $icon = "chancerain" };
-	if ($weather eq "310") { $code = "10"; $icon = "chancerain" };
-	if ($weather eq "311") { $code = "11"; $icon = "rain" };
-	if ($weather eq "312") { $code = "12"; $icon = "rain" };
-	if ($weather eq "313") { $code = "12"; $icon = "rain" };
-	if ($weather eq "314") { $code = "12"; $icon = "rain" };
-	if ($weather eq "321") { $code = "12"; $icon = "rain" };
-	if ($weather eq "500") { $code = "10"; $icon = "chancerain" };
-	if ($weather eq "501") { $code = "11"; $icon = "rain" };
-	if ($weather eq "502") { $code = "12"; $icon = "rain" };
-	if ($weather eq "503") { $code = "12"; $icon = "rain" };
-	if ($weather eq "504") { $code = "12"; $icon = "rain" };
-	if ($weather eq "511") { $code = "14"; $icon = "sleet" };
-	if ($weather eq "520") { $code = "10"; $icon = "rain" };
-	if ($weather eq "521") { $code = "11"; $icon = "rain" };
-	if ($weather eq "522") { $code = "12"; $icon = "rain" };
-	if ($weather eq "531") { $code = "12"; $icon = "rain" };
-	if ($weather eq "600") { $code = "20"; $icon = "snow" };
-	if ($weather eq "601") { $code = "21"; $icon = "snow" };
-	if ($weather eq "602") { $code = "21"; $icon = "snow" };
-	if ($weather eq "611") { $code = "26"; $icon = "sleet" };
-	if ($weather eq "612") { $code = "28"; $icon = "sleet" };
-	if ($weather eq "613") { $code = "29"; $icon = "sleet" };
-	if ($weather eq "615") { $code = "23"; $icon = "sleet" };
-	if ($weather eq "616") { $code = "23"; $icon = "snow" };
-	if ($weather eq "620") { $code = "21"; $icon = "snow" };
-	if ($weather eq "621") { $code = "21"; $icon = "snow" };
-	if ($weather eq "622") { $code = "21"; $icon = "snow" };
-	if ($weather eq "701") { $code = "6";  $icon = "fog" };
-	if ($weather eq "711") { $code = "6";  $icon = "fog" };
-	if ($weather eq "721") { $code = "5";  $icon = "hazy" };
-	if ($weather eq "731") { $code = "6";  $icon = "fog" };
-	if ($weather eq "741") { $code = "6";  $icon = "fog" };
-	if ($weather eq "751") { $code = "6";  $icon = "fog" };
-	if ($weather eq "761") { $code = "6";  $icon = "fog" };
-	if ($weather eq "762") { $code = "6";  $icon = "fog" };
-	if ($weather eq "771") { $code = "19";  $icon = "tstorms" };
-	if ($weather eq "781") { $code = "19";  $icon = "tstorms" };
-	if ($weather eq "800") { $code = "1";  $icon = "clear" };
-	if ($weather eq "801") { $code = "2";  $icon = "mostlysunny" };
-	if ($weather eq "802") { $code = "3";  $icon = "mostlycloudy" };
-	if ($weather eq "803") { $code = "4";  $icon = "cloudy" };
-	if ($weather eq "804") { $code = "4";  $icon = "overcast" };
-	if (!$icon) { $icon = "clear" };
-	if (!$code) { $code = "1" };
+    # Weather conditions: https://openweathermap.org/weather-conditions
+	$owmid = $decoded_json->{current}->{weather}->[0]->{id};
+	($code, $icon) = owm_to_loxone($owmid);
 	print F "$icon|";
 	print F "$code|";
 	print F "$decoded_json->{current}->{weather}->[0]->{description}|";
@@ -381,66 +401,8 @@ open(F,">$lbplogdir/dailyforecast.dat.tmp") or $error = 1;
 		print F "-9999|";
 		print F "-9999|";
 		# Convert Weather string into Weather Code and convert icon name
-		$weather = $results->{weather}->[0]->{id};
-		$code = "";
-		$icon = "";
-		if ($weather eq "200") { $code = "18"; $icon = "tstorms" };
-		if ($weather eq "201") { $code = "18"; $icon = "tstorms" };
-		if ($weather eq "202") { $code = "19"; $icon = "tstorms" };
-		if ($weather eq "210") { $code = "18"; $icon = "tstorms" };
-		if ($weather eq "211") { $code = "18"; $icon = "tstorms" };
-		if ($weather eq "212") { $code = "19"; $icon = "tstorms" };
-		if ($weather eq "221") { $code = "19"; $icon = "tstorms" };
-		if ($weather eq "230") { $code = "18"; $icon = "tstorms" };
-		if ($weather eq "231") { $code = "18"; $icon = "tstorms" };
-		if ($weather eq "232") { $code = "19"; $icon = "tstorms" };
-		if ($weather eq "300") { $code = "13"; $icon = "chancerain" };
-		if ($weather eq "301") { $code = "13"; $icon = "chancerain" };
-		if ($weather eq "302") { $code = "13"; $icon = "chancerain" };
-		if ($weather eq "310") { $code = "10"; $icon = "chancerain" };
-		if ($weather eq "311") { $code = "11"; $icon = "rain" };
-		if ($weather eq "312") { $code = "12"; $icon = "rain" };
-		if ($weather eq "313") { $code = "12"; $icon = "rain" };
-		if ($weather eq "314") { $code = "12"; $icon = "rain" };
-		if ($weather eq "321") { $code = "12"; $icon = "rain" };
-		if ($weather eq "500") { $code = "10"; $icon = "chancerain" };
-		if ($weather eq "501") { $code = "11"; $icon = "rain" };
-		if ($weather eq "502") { $code = "12"; $icon = "rain" };
-		if ($weather eq "503") { $code = "12"; $icon = "rain" };
-		if ($weather eq "504") { $code = "12"; $icon = "rain" };
-		if ($weather eq "511") { $code = "14"; $icon = "sleet" };
-		if ($weather eq "520") { $code = "10"; $icon = "rain" };
-		if ($weather eq "521") { $code = "11"; $icon = "rain" };
-		if ($weather eq "522") { $code = "12"; $icon = "rain" };
-		if ($weather eq "531") { $code = "12"; $icon = "rain" };
-		if ($weather eq "600") { $code = "20"; $icon = "snow" };
-		if ($weather eq "601") { $code = "21"; $icon = "snow" };
-		if ($weather eq "602") { $code = "21"; $icon = "snow" };
-		if ($weather eq "611") { $code = "26"; $icon = "sleet" };
-		if ($weather eq "612") { $code = "28"; $icon = "sleet" };
-		if ($weather eq "613") { $code = "29"; $icon = "sleet" };
-		if ($weather eq "615") { $code = "23"; $icon = "sleet" };
-		if ($weather eq "616") { $code = "23"; $icon = "snow" };
-		if ($weather eq "620") { $code = "21"; $icon = "snow" };
-		if ($weather eq "621") { $code = "21"; $icon = "snow" };
-		if ($weather eq "622") { $code = "21"; $icon = "snow" };
-		if ($weather eq "701") { $code = "6";  $icon = "fog" };
-		if ($weather eq "711") { $code = "6";  $icon = "fog" };
-		if ($weather eq "721") { $code = "5";  $icon = "hazy" };
-		if ($weather eq "731") { $code = "6";  $icon = "fog" };
-		if ($weather eq "741") { $code = "6";  $icon = "fog" };
-		if ($weather eq "751") { $code = "6";  $icon = "fog" };
-		if ($weather eq "761") { $code = "6";  $icon = "fog" };
-		if ($weather eq "762") { $code = "6";  $icon = "fog" };
-		if ($weather eq "771") { $code = "19";  $icon = "tstorms" };
-		if ($weather eq "781") { $code = "19";  $icon = "tstorms" };
-		if ($weather eq "800") { $code = "1";  $icon = "clear" };
-		if ($weather eq "801") { $code = "2";  $icon = "mostlysunny" };
-		if ($weather eq "802") { $code = "3";  $icon = "mostlycloudy" };
-		if ($weather eq "803") { $code = "4";  $icon = "cloudy" };
-		if ($weather eq "804") { $code = "5";  $icon = "overcast" };
-		if (!$icon) { $icon = "clear" };
-		if (!$code) { $code = "1" };
+		$owmid = $results->{weather}->[0]->{id};
+		($code, $icon) = owm_to_loxone($owmid);	
 		print F "$icon|";
 		print F "$code|";
 		print F "$results->{weather}->[0]->{description}|";
@@ -567,68 +529,10 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
                         print F "0|";
                 }
 		# Convert Weather string into Weather Code and convert icon name
-		$weather = $results->{weather}->[0]->{id};
-		$code = "";
-		$icon = "";
-		if ($weather eq "200") { $code = "18"; $icon = "tstorms" };
-		if ($weather eq "201") { $code = "18"; $icon = "tstorms" };
-		if ($weather eq "202") { $code = "19"; $icon = "tstorms" };
-		if ($weather eq "210") { $code = "18"; $icon = "tstorms" };
-		if ($weather eq "211") { $code = "18"; $icon = "tstorms" };
-		if ($weather eq "212") { $code = "19"; $icon = "tstorms" };
-		if ($weather eq "221") { $code = "19"; $icon = "tstorms" };
-		if ($weather eq "230") { $code = "18"; $icon = "tstorms" };
-		if ($weather eq "231") { $code = "18"; $icon = "tstorms" };
-		if ($weather eq "232") { $code = "19"; $icon = "tstorms" };
-		if ($weather eq "300") { $code = "13"; $icon = "chancerain" };
-		if ($weather eq "301") { $code = "13"; $icon = "chancerain" };
-		if ($weather eq "302") { $code = "13"; $icon = "chancerain" };
-		if ($weather eq "310") { $code = "10"; $icon = "chancerain" };
-		if ($weather eq "311") { $code = "11"; $icon = "rain" };
-		if ($weather eq "312") { $code = "12"; $icon = "rain" };
-		if ($weather eq "313") { $code = "12"; $icon = "rain" };
-		if ($weather eq "314") { $code = "12"; $icon = "rain" };
-		if ($weather eq "321") { $code = "12"; $icon = "rain" };
-		if ($weather eq "500") { $code = "10"; $icon = "chancerain" };
-		if ($weather eq "501") { $code = "11"; $icon = "rain" };
-		if ($weather eq "502") { $code = "12"; $icon = "rain" };
-		if ($weather eq "503") { $code = "12"; $icon = "rain" };
-		if ($weather eq "504") { $code = "12"; $icon = "rain" };
-		if ($weather eq "511") { $code = "14"; $icon = "sleet" };
-		if ($weather eq "520") { $code = "10"; $icon = "rain" };
-		if ($weather eq "521") { $code = "11"; $icon = "rain" };
-		if ($weather eq "522") { $code = "12"; $icon = "rain" };
-		if ($weather eq "531") { $code = "12"; $icon = "rain" };
-		if ($weather eq "600") { $code = "20"; $icon = "snow" };
-		if ($weather eq "601") { $code = "21"; $icon = "snow" };
-		if ($weather eq "602") { $code = "21"; $icon = "snow" };
-		if ($weather eq "611") { $code = "26"; $icon = "sleet" };
-		if ($weather eq "612") { $code = "28"; $icon = "sleet" };
-		if ($weather eq "613") { $code = "29"; $icon = "sleet" };
-		if ($weather eq "615") { $code = "23"; $icon = "sleet" };
-		if ($weather eq "616") { $code = "23"; $icon = "snow" };
-		if ($weather eq "620") { $code = "21"; $icon = "snow" };
-		if ($weather eq "621") { $code = "21"; $icon = "snow" };
-		if ($weather eq "622") { $code = "21"; $icon = "snow" };
-		if ($weather eq "701") { $code = "6";  $icon = "fog" };
-		if ($weather eq "711") { $code = "6";  $icon = "fog" };
-		if ($weather eq "721") { $code = "5";  $icon = "hazy" };
-		if ($weather eq "731") { $code = "6";  $icon = "fog" };
-		if ($weather eq "741") { $code = "6";  $icon = "fog" };
-		if ($weather eq "751") { $code = "6";  $icon = "fog" };
-		if ($weather eq "761") { $code = "6";  $icon = "fog" };
-		if ($weather eq "762") { $code = "6";  $icon = "fog" };
-		if ($weather eq "771") { $code = "19";  $icon = "tstorms" };
-		if ($weather eq "781") { $code = "19";  $icon = "tstorms" };
-		if ($weather eq "800") { $code = "1";  $icon = "clear" };
-		if ($weather eq "801") { $code = "2";  $icon = "mostlysunny" };
-		if ($weather eq "802") { $code = "3";  $icon = "mostlycloudy" };
-		if ($weather eq "803") { $code = "4";  $icon = "cloudy" };
-		if ($weather eq "804") { $code = "5";  $icon = "overcast" };
-		if (!$icon) { $icon = "clear" };
-		if (!$code) { $code = "1" };
-		print F "$code|";
+		$owmid = $results->{weather}->[0]->{id};
+		($code, $icon) = owm_to_loxone($owmid);	
 		print F "$icon|";
+		print F "$code|";
 		print F "$results->{weather}->[0]->{description}|";
 		print F "-9999|";
 		print F "-9999|";
@@ -777,7 +681,7 @@ if ($i < 168) {
 				}
 				$newline .= "|";
 				if ($results->{snow}->{'3h'}) {
-					$newline .= sprintf( "%.2f", $oldfields[25] + ( $step * ( ($results->{main}->{snow} - $oldfields[25]) / $delta ) ) );
+					$newline .= sprintf( "%.2f", $oldfields[25] + ( $step * ( ($results->{snow}->{'3h'} - $oldfields[25]) / $delta ) ) );
 				} else {
 					$newline .= "0";
 				}
@@ -797,68 +701,10 @@ if ($i < 168) {
 					$newline .= "|";
 				} else {
 					# Convert Weather string into Weather Code and convert icon name
-					$weather = $results->{weather}->[0]->{id};
-					$code = "";
-					$icon = "";
-					if ($weather eq "200") { $code = "18"; $icon = "tstorms" };
-					if ($weather eq "201") { $code = "18"; $icon = "tstorms" };
-					if ($weather eq "202") { $code = "19"; $icon = "tstorms" };
-					if ($weather eq "210") { $code = "18"; $icon = "tstorms" };
-					if ($weather eq "211") { $code = "18"; $icon = "tstorms" };
-					if ($weather eq "212") { $code = "19"; $icon = "tstorms" };
-					if ($weather eq "221") { $code = "19"; $icon = "tstorms" };
-					if ($weather eq "230") { $code = "18"; $icon = "tstorms" };
-					if ($weather eq "231") { $code = "18"; $icon = "tstorms" };
-					if ($weather eq "232") { $code = "19"; $icon = "tstorms" };
-					if ($weather eq "300") { $code = "13"; $icon = "chancerain" };
-					if ($weather eq "301") { $code = "13"; $icon = "chancerain" };
-					if ($weather eq "302") { $code = "13"; $icon = "chancerain" };
-					if ($weather eq "310") { $code = "10"; $icon = "chancerain" };
-					if ($weather eq "311") { $code = "11"; $icon = "rain" };
-					if ($weather eq "312") { $code = "12"; $icon = "rain" };
-					if ($weather eq "313") { $code = "12"; $icon = "rain" };
-					if ($weather eq "314") { $code = "12"; $icon = "rain" };
-					if ($weather eq "321") { $code = "12"; $icon = "rain" };
-					if ($weather eq "500") { $code = "10"; $icon = "chancerain" };
-					if ($weather eq "501") { $code = "11"; $icon = "rain" };
-					if ($weather eq "502") { $code = "12"; $icon = "rain" };
-					if ($weather eq "503") { $code = "12"; $icon = "rain" };
-					if ($weather eq "504") { $code = "12"; $icon = "rain" };
-					if ($weather eq "511") { $code = "14"; $icon = "sleet" };
-					if ($weather eq "520") { $code = "10"; $icon = "rain" };
-					if ($weather eq "521") { $code = "11"; $icon = "rain" };
-					if ($weather eq "522") { $code = "12"; $icon = "rain" };
-					if ($weather eq "531") { $code = "12"; $icon = "rain" };
-					if ($weather eq "600") { $code = "20"; $icon = "snow" };
-					if ($weather eq "601") { $code = "21"; $icon = "snow" };
-					if ($weather eq "602") { $code = "21"; $icon = "snow" };
-					if ($weather eq "611") { $code = "26"; $icon = "sleet" };
-					if ($weather eq "612") { $code = "28"; $icon = "sleet" };
-					if ($weather eq "613") { $code = "29"; $icon = "sleet" };
-					if ($weather eq "615") { $code = "23"; $icon = "sleet" };
-					if ($weather eq "616") { $code = "23"; $icon = "snow" };
-					if ($weather eq "620") { $code = "21"; $icon = "snow" };
-					if ($weather eq "621") { $code = "21"; $icon = "snow" };
-					if ($weather eq "622") { $code = "21"; $icon = "snow" };
-					if ($weather eq "701") { $code = "6";  $icon = "fog" };
-					if ($weather eq "711") { $code = "6";  $icon = "fog" };
-					if ($weather eq "721") { $code = "5";  $icon = "hazy" };
-					if ($weather eq "731") { $code = "6";  $icon = "fog" };
-					if ($weather eq "741") { $code = "6";  $icon = "fog" };
-					if ($weather eq "751") { $code = "6";  $icon = "fog" };
-					if ($weather eq "761") { $code = "6";  $icon = "fog" };
-					if ($weather eq "762") { $code = "6";  $icon = "fog" };
-					if ($weather eq "771") { $code = "19";  $icon = "tstorms" };
-					if ($weather eq "781") { $code = "19";  $icon = "tstorms" };
-					if ($weather eq "800") { $code = "1";  $icon = "clear" };
-					if ($weather eq "801") { $code = "2";  $icon = "mostlysunny" };
-					if ($weather eq "802") { $code = "3";  $icon = "mostlycloudy" };
-					if ($weather eq "803") { $code = "4";  $icon = "cloudy" };
-					if ($weather eq "804") { $code = "5";  $icon = "overcast" };
-					if (!$icon) { $icon = "clear" };
-					if (!$code) { $code = "1" };
-					$newline .= "$code|";
+					$owmid = $results->{weather}->[0]->{id};
+					($code, $icon) = owm_to_loxone($owmid);	
 					$newline .= "$icon|";
+					$newline .= "$code|";
 					$newline .= $results->{weather}->[0]->{description};
 					$newline .= "|";
 				}
