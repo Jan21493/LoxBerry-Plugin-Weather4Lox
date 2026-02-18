@@ -31,6 +31,7 @@ use JSON qw( decode_json );
 use File::Copy;
 use Getopt::Long;
 use Time::Piece;
+use Time::Seconds;
 use Astro::MoonPhase;
 
 ##########################################################################
@@ -65,11 +66,14 @@ my $verbose = '';
 my $current = '';
 my $daily = '';
 my $hourly = '';
+my $dump = '';
 GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 },
             'current' => \$current,
             'daily' => \$daily,
-            'hourly' => \$hourly);
+            'hourly' => \$hourly,
+            'dump' => \$dump,
+			);
 
 if ($verbose) {
 	$log->stdout(1);
@@ -107,6 +111,27 @@ if ($urlstatuscode ne "200") {
 # Decode JSON response from server
 my $decoded_json = decode_json( "$json" );
 
+if ( $dump ) { # Start dump
+	# Dumping Content from Visual Crossing ...
+	LOGINF "Dumping current data from Visual Crossing for location $stationid to $lbplogdir/visualcrossing.dump";
+	open(F,">$lbplogdir/visualcrossing.dump") or $error = 1;
+	flock(F,2);
+	if ($error) {
+		LOGCRIT "Cannot open $lbpconfigdir/visualcrossing.dump";
+		exit 2;
+	}
+	binmode F, ':encoding(UTF-8)';
+
+	print F "Request URL: $queryurlcr\n";	
+	print F "Decoded JSON response:\n";
+
+	my $json_obj = JSON->new->pretty;
+	print F $json_obj->encode($decoded_json);
+	print F "\n";
+	flock(F,8);
+	close(F);
+}
+
 my $t;
 my $weather;
 my $code;
@@ -117,21 +142,61 @@ my @filecontent;
 my $i;
 my $currentepoche = 0;
 
+# Convert Visual Crossing weather icon string into Loxone picto-code and icon name
+# Weather icons: https://www.visualcrossing.com/resources/documentation/weather-api/defining-icon-set-in-the-weather-api/
+# Loxone weather codes: https://www.loxone.com/enen/kb/weather-service/
+# Weather4lox mapping: https://wiki.loxberry.de/plugins/weather4loxone/start#wetter-codes
+# Mapping: Visual Crossing Weather Icon Name => [Loxone Code, Normalized Icon Name]
+my %vc_to_lox = (
+    "clear"          => ["1",  "clear"],    # 1 = Clear / Wolkenlos
+    "snow"           => ["21", "snow"],     # 21 = Snow / Schneefall
+    "snowshowers"    => ["24", "sleet"],    # 24 = Strong Snow Showers / Starker Schneeschauer
+    "thunderrain"    => ["18", "tstorms"],  # 18 = Thunderstorms / Gewitter
+    "thundershowers" => ["18", "tstorms"],  # 18 = Thunderstorms / Gewitter
+    "rain"           => ["11", "rain"],     # 11 = Rain / Regen
+    "showers"        => ["17", "rain"],     # 17 = Heavy Rain Showers / Kräftiger Regenschauer
+    "fog"            => ["6",  "fog"],      # 6 = Fog / Nebel
+    "wind"           => ["5",  "wind"],     # 5 = Overcast / Bedeckt in Loxone, but there is no better match for "wind"
+    "cloudy"         => ["4",  "cloudy"],   # 4 = Very Cloudy / Stark Bewölkt
+    "partlycloudy"   => ["3",  "partlycloudy"], # 3 = Cloudy / Wolkig
+);
+
+sub vc_to_lox {
+    my ($weather_raw) = @_;
+    
+    # Normalize the name of the weather icon from Visual Crossing
+    my $weather = lc($weather_raw);        # Lowercase
+    $weather =~ s/-(?:night|day)//;        # Remove -night and -day
+    $weather =~ s/-//g;                    # Remove all hyphens
+    
+    # Lookup in the hash
+    my $result = $vc_to_lox{$weather};
+    
+    if ($result) {
+        return ($result->[0], $result->[1]);  # (code, icon)
+    } else {
+        # Fallback
+        LOGDEB "Unknown weather icon name from Visual Crossing: '$weather_raw' (normalized: '$weather'). Using fallback 'clear'.";
+        return ("1", "clear");
+    }
+}
+
 #
 # Fetch current data
 #
 
 if ( $current ) { # Start current
 
-# Write location data into database
-$currentepoche = $decoded_json->{currentConditions}->{datetimeEpoch}; # Needed during hourly forecast
-$t = localtime($decoded_json->{currentConditions}->{datetimeEpoch});
-LOGINF "Saving new Data for Timestamp $t to database.";
+	# Write location data into database
+	$currentepoche = $decoded_json->{currentConditions}->{datetimeEpoch}; # Needed during hourly forecast
+	$t = localtime($decoded_json->{currentConditions}->{datetimeEpoch});
 
-# Saving new current data...
-$error = 0;
-open(F,">$lbplogdir/current.dat.tmp") or $error = 1;
-  flock(F,2);
+	LOGINF "Saving new Data for Timestamp $t to database.";
+	# Saving new current data...
+	$error = 0;
+	open(F,">$lbplogdir/current.dat.tmp") or $error = 1;
+    flock(F,2);
+
 	if ($error) {
 		LOGCRIT "Cannot open $lbpconfigdir/current.dat.tmp";
 		exit 2;
@@ -190,27 +255,8 @@ open(F,">$lbplogdir/current.dat.tmp") or $error = 1;
 	} else {
 		print F "0|";
 	}
-	# Convert Weather string into Weather Code and convert icon name
-	# Weather conditions: https://openweathermap.org/weather-conditions
-	$weather = $decoded_json->{currentConditions}->{icon};
-	$weather =~ s/\-night|\-day//; # No -night and -day
-	$weather =~ s/\-//; # No -
-	$weather =~ tr/A-Z/a-z/; # All Lowercase
-	$code = "";
-	$icon = "";
-	if ($weather eq "clear") { $code = "1"; $icon = "clear" };
-	if ($weather eq "snow") { $code = "21"; $icon = "snow" };
-	if ($weather eq "snowshowers") { $code = "19"; $icon = "sleet" };
-	if ($weather eq "thunderrain") { $code = "15"; $icon = "tstorms" };
-	if ($weather eq "thundershowsers") { $code = "15"; $icon = "tstorms" };
-	if ($weather eq "rain") { $code = "13"; $icon = "rain" };
-	if ($weather eq "showsers") { $code = "11"; $icon = "rain" };
-	if ($weather eq "fog") { $code = "6"; $icon = "fog" };
-	if ($weather eq "wind") { $code = "22"; $icon = "wind" };
-	if ($weather eq "cloudy") { $code = "4"; $icon = "cloudy" };
-	if ($weather eq "partlycloudy") { $code = "2"; $icon = "partlycloudy" };
-	if (!$icon) { $icon = "clear" };
- 	if (!$code) { $code = "1" };
+	# Convert Visual Crossing weather icon string into normalized icon name and Loxone picto-code
+	($code, $icon) = vc_to_lox($decoded_json->{currentConditions}->{icon});
 	print F "$icon|";
 	print F "$code|";
 	print F  $decoded_json->{currentConditions}->{conditions} . "|";
@@ -270,10 +316,10 @@ close (F);
 
 if ( $daily ) { # Start daily
 
-# Saving new daily forecast data...
+	# Saving new daily forecast data...
 
-open(F,">$lbplogdir/dailyforecast.dat.tmp") or $error = 1;
-  flock(F,2);
+	open(F,">$lbplogdir/dailyforecast.dat.tmp") or $error = 1;
+	flock(F,2);
 	if ($error) {
 		LOGCRIT "Cannot open $lbplogdir/dailyforecast.dat.tmp";
 		exit 2;
@@ -326,26 +372,8 @@ open(F,">$lbplogdir/dailyforecast.dat.tmp") or $error = 1;
 		print F "$results->{humidity}|";
 		print F "-9999|";
 		print F "-9999|";
-		# Convert Weather string into Weather Code and convert icon name
-		$weather = $results->{icon};
-		$weather =~ s/\-night|\-day//; # No -night and -day
-		$weather =~ s/\-//; # No -
-		$weather =~ tr/A-Z/a-z/; # All Lowercase
-		$code = "";
-		$icon = "";
-		if ($weather eq "clear") { $code = "1"; $icon = "clear" };
-		if ($weather eq "snow") { $code = "21"; $icon = "snow" };
-		if ($weather eq "snowshowers") { $code = "19"; $icon = "sleet" };
-		if ($weather eq "thunderrain") { $code = "15"; $icon = "tstorms" };
-		if ($weather eq "thundershowsers") { $code = "15"; $icon = "tstorms" };
-		if ($weather eq "rain") { $code = "13"; $icon = "rain" };
-		if ($weather eq "showsers") { $code = "11"; $icon = "rain" };
-		if ($weather eq "fog") { $code = "6"; $icon = "fog" };
-		if ($weather eq "wind") { $code = "22"; $icon = "wind" };
-		if ($weather eq "cloudy") { $code = "4"; $icon = "cloudy" };
-		if ($weather eq "partlycloudy") { $code = "2"; $icon = "partlycloudy" };
-		if (!$icon) { $icon = "clear" };
- 	 	if (!$code) { $code = "1" };
+		# Convert Visual Crossing weather icon string into normalized icon name and Loxone picto-code
+		($code, $icon) = vc_to_lox($results->{icon});
 		print F "$icon|";
 		print F "$code|";
 		print F "$results->{description}|";
@@ -395,11 +423,11 @@ close (F);
 
 if ( $hourly ) { # Start hourly
 
-# Saving new hourly forecast data...
+	# Saving new hourly forecast data...
 
-$error = 0;
-open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
-  flock(F,2);
+	$error = 0;
+	open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
+	flock(F,2);
 	if ($error) {
 		LOGCRIT "Cannot open $lbplogdir/hourlyforecast.dat.tmp";
 		exit 2;
@@ -408,9 +436,10 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 	$i = 1;
 	for my $resultsdays ( @{$decoded_json->{days}} ){
 		for my $results( @{$resultsdays->{hours}} ){
-			# Skip first datasets of current day
-			my $now = localtime->add_hours(-1);
+			# subtract one hour from current time to get 'current' hour in hourly forecast
+			my $now = localtime - ONE_HOUR;
 			my $hfctime = localtime($results->{datetimeEpoch});
+			# Skip first datasets of first day (hourly forecast contains also data for current day, but we only want future data here)
 			if ($now->epoch > $hfctime->epoch) {
 				next;
 			}
@@ -461,28 +490,10 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 			print F sprintf("%.2f",$results->{precip}), "|";
 			print F sprintf("%.2f",$results->{snow}), "|";
 			print F sprintf("%.1f",$results->{precipprob}), "|";
-			# Convert Weather string into Weather Code and convert icon name
-			$weather = $results->{icon};
-			$weather =~ s/\-night|\-day//; # No -night and -day
-			$weather =~ s/\-//; # No -
-			$weather =~ tr/A-Z/a-z/; # All Lowercase
-			$code = "";
-			$icon = "";
-			if ($weather eq "clear") { $code = "1"; $icon = "clear" };
-			if ($weather eq "snow") { $code = "21"; $icon = "snow" };
-			if ($weather eq "snowshowers") { $code = "19"; $icon = "sleet" };
-			if ($weather eq "thunderrain") { $code = "15"; $icon = "tstorms" };
-			if ($weather eq "thundershowsers") { $code = "15"; $icon = "tstorms" };
-			if ($weather eq "rain") { $code = "13"; $icon = "rain" };
-			if ($weather eq "showsers") { $code = "11"; $icon = "rain" };
-			if ($weather eq "fog") { $code = "6"; $icon = "fog" };
-			if ($weather eq "wind") { $code = "22"; $icon = "wind" };
-			if ($weather eq "cloudy") { $code = "4"; $icon = "cloudy" };
-			if ($weather eq "partlycloudy") { $code = "2"; $icon = "partlycloudy" };
-			if (!$icon) { $icon = "clear" };
- 	 	 	if (!$code) { $code = "1" };
-			print F "$code|";
+			# Convert Visual Crossing weather icon string into normalized icon name and Loxone picto-code
+			($code, $icon) = vc_to_lox($results->{icon});
 			print F "$icon|";
+			print F "$code|";
 			print F "$results->{conditions}|";
 			print F "-9999|";
 			print F sprintf("%.1f",$results->{solarradiation}), "|";

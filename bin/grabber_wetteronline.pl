@@ -86,11 +86,14 @@ my $verbose = '';
 my $current = '';
 my $daily = '';
 my $hourly = '';
+my $dump = '';
 GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 },
             'current' => \$current,
             'daily' => \$daily,
-            'hourly' => \$hourly);
+            'hourly' => \$hourly,
+            'dump' => \$dump,
+			);
 
 if ($verbose) {
 	$log->stdout(1);
@@ -139,7 +142,7 @@ LOGINF "Fetching GEO data for location $city";
 my $urlGEO  = "$urlGEO_raw$city";
 my $body = getUrl($urlGEO, $useragent);
 my $geodataMatch;
-if ($body =~ /WO\.geo = (\{(?:[^{}]*|(?1))*\});/s) {
+if ($body =~ /WO\.geo = (\{(?:[^{}"]|"(?:[^"\\]|\\.)*"|(?1))*\});/s) {
 	$geodataMatch = $1;
 } else {
         LOGCRIT("Failed to fetch data for $city. No valid data found in the server response. Check Station name.");
@@ -162,6 +165,24 @@ my $decodedCurrent;
 $currentData = encode_utf8($currentData);
 $decodedCurrent = $json->decode($currentData);
 
+if ( $dump ) { # Start dump
+	# Dumping Content from Wetteronline ...
+	LOGINF "Dumping current data from Wetteronline for location $city to $lbplogdir/wetteronline-current.raw";
+	open(F,">$lbplogdir/wetteronline-current.raw") or $error = 1;
+	flock(F,2);
+	if ($error) {
+		LOGCRIT "Cannot open $lbpconfigdir/wetteronline-current.raw";
+		exit 2;
+	}
+	binmode F, ':encoding(UTF-8)';
+	print F "Request URL: $urlCurrent\n";	
+	print F "Decoded JSON response:\n";
+	print F $json->pretty->encode($decodedCurrent);
+	print F "\n";
+	flock(F,8);
+	close(F);
+}
+
 # Getting daily data and decoding to perl format
 LOGINF "Fetching daily data for location $city";
 my $urlDaily = "$urlDaily_raw$apikey&location_id=$gid&timezone=$timezone";
@@ -170,6 +191,24 @@ my $decodedDaily;
 $dailyData = encode_utf8($dailyData);
 $decodedDaily = $json->decode($dailyData);
 
+if ( $dump ) { # Start dump
+	# Dumping Content from Wetteronline ...
+	LOGINF "Dumping daily data from Wetteronline for location $city to $lbplogdir/wetteronline-daily.raw";
+	open(F,">$lbplogdir/wetteronline-daily.raw") or $error = 1;
+	flock(F,2);
+	if ($error) {
+		LOGCRIT "Cannot open $lbpconfigdir/wetteronline-daily.raw";
+		exit 2;
+	}
+	binmode F, ':encoding(UTF-8)';
+
+	print F "Request URL: $urlDaily\n";	
+	print F "Decoded JSON response:\n";
+	print F $json->pretty->encode($decodedDaily);
+	print F "\n";
+	flock(F,8);
+	close(F);
+}
 # Getting hourly data and decoding to perl format
 LOGINF "Fetching hourly data for location $city";
 my $urlHourly = "$urlHourly_raw$apikey&location_id=$gid&timezone=$timezone";
@@ -178,14 +217,253 @@ my $decodedHourly;
 $hourlyData = encode_utf8($hourlyData);
 $decodedHourly = $json->decode($hourlyData);
 
+if ( $dump ) { # Start dump
+	# Dumping Content from Wetteronline ...
+	LOGINF "Dumping hourly data from Wetteronline for location $city to $lbplogdir/wetteronline-hourly.raw";
+	open(F,">$lbplogdir/wetteronline-hourly.raw") or $error = 1;
+	flock(F,2);
+	if ($error) {
+		LOGCRIT "Cannot open $lbpconfigdir/wetteronline-hourly.raw";
+		exit 2;
+	}
+	binmode F, ':encoding(UTF-8)';
+
+	print F "Request URL: $urlHourly\n";	
+	print F "Decoded JSON response:\n";
+	print F $json->pretty->encode($decodedHourly);
+	print F "\n";
+	flock(F,8);
+	close(F);
+}
+
 my $t;
 my $weather;
 my $code;
 my $icon;
+my $description;
 my $wdir;
 my $wdirdes;
 my @filecontent;
 my $i;
+
+# Mapping: Wetteronline Symbol => [Loxone Code, Weather4Lox Icon, Description]
+# --> Using https://wiki.loxberry.de/plugins/weather4loxone/start#wetter-codes
+		
+
+# Position: 1 2 3 4 5 6
+# Beispiel: m d s n 1 _
+
+# Position 1-2: Tageszeit + Bewölkung
+
+# Code	Bedeutung
+# so	Sonne (Tag, wolkenlos)
+# mo	Mond (Nacht, wolkenlos)
+# wb	Wolke + Basis (Tag, leicht bewölkt)
+# mb	Mond + Basis (Nacht, leicht bewölkt)
+# mw	Mond + Wolke (Nacht, bewölkt)
+# bd	Bedeckt Day (Tag, stark bewölkt)
+# bw	Bewölkt + Wetter (mit Niederschlag)
+# wd	Wetter Day (Tag mit Niederschlag)
+# md	Mond + Dunkel (Nacht mit Niederschlag)
+# ns	Nebel/Schnee
+# nm	Nebel Mond (Nacht)
+# nb	Nebel
+
+# Position 3-4: Niederschlagsart
+
+# Code	Bedeutung
+# __	Kein Niederschlag
+# sn	Schnee
+# sr	Schneeregen
+# s1-s3	Schauer (Intensität 1-3)
+# r1-r3	Regen (Intensität 1-3)
+# g1-g3	Gewitter (Intensität 1-3)
+# gr	Gefrierender Regen
+# gs	Graupel/Schnee
+# hs	Hagel/Schnee
+# ek	Eiskörner
+# sg	Schneegestöber
+
+# Position 5-6: Intensität/Variante
+
+# Code	Bedeutung
+# __	Keine Angabe/Standard
+# 1_	Leicht/Schwach
+# 2_	Mittel/Mäßig
+# 3_	Stark/Kräftig
+# r1-r2	Regen-Variante
+# s1-s3	Schnee-Variante
+
+my %wetteronline_to_lox = (
+    # Gewitter
+    "wbg1__" => ["18", "tstorms", "Gewitter"],
+    "mbg1__" => ["18", "tstorms", "Gewitter"],
+    "bdg1__" => ["18", "tstorms", "Gewitter"],
+    "bwg1__" => ["18", "tstorms", "Gewitter"],
+    "wbg2__" => ["18", "tstorms", "Gewitter"],
+    "mbg2__" => ["18", "tstorms", "Gewitter"],
+    "bdg2__" => ["18", "tstorms", "Gewitter"],
+    "bwg2__" => ["18", "tstorms", "Gewitter"],
+    "bwg3__" => ["19", "tstorms", "Kräftiges Gewitter"],
+    
+    # Regen
+    "wbs1__" => ["10", "chancerain", "Leichter Regen"],
+    "mbs1__" => ["10", "chancerain", "Leichter Regen"],
+    "mws1__" => ["10", "chancerain", "Leichter Regen"],
+    "bwr1__" => ["10", "chancerain", "Leichter Regen"],
+    "wbs2__" => ["11", "rain", "Regen"],
+    "mbs2__" => ["11", "rain", "Regen"],
+    "mws2__" => ["11", "rain", "Regen"],
+    "bwr2__" => ["11", "rain", "Regen"],
+    "wbs3__" => ["12", "rain", "Starker Regen"],
+    "mbs3__" => ["12", "rain", "Starker Regen"],
+    "mws3__" => ["12", "rain", "Starker Regen"],
+    "bwr3__" => ["12", "rain", "Starker Regen"],
+    
+    # Gefrierender Regen
+    "bdgr1_" => ["14", "sleet", "Gefrierender Regen"],
+    "bdgr2_" => ["14", "sleet", "Gefrierender Regen"],
+    "bwgr1_" => ["14", "sleet", "Gefrierender Regen"],
+    "bwgr2_" => ["14", "sleet", "Gefrierender Regen"],
+    
+    # Regenschauer
+    "bdr1__" => ["16", "rain", "Leichter Regenschauer"],
+    "bws1__" => ["16", "rain", "Leichter Regenschauer"],
+    "bdr2__" => ["16", "rain", "Regenschauer"],
+    "bws2__" => ["16", "rain", "Regenschauer"],
+    "bdr3__" => ["17", "rain", "Starker Regenschauer"],
+    "bws3__" => ["17", "rain", "Starker Regenschauer"],
+
+    "wdr1__" => ["16", "rain", "Leichter Regenschauer"],
+    "mds1__" => ["16", "rain", "Leichter Regenschauer"],
+    "wdr2__" => ["16", "rain", "Regenschauer"],
+    "mds2__" => ["16", "rain", "Regenschauer"],
+    "wdr3__" => ["17", "rain", "Starker Regenschauer"],
+    "mds3__" => ["17", "rain", "Starker Regenschauer"],
+
+    # Schnee
+    "bdsn1_" => ["20", "snow", "Leichter Schneefall"],
+    "bwsn1_" => ["20", "snow", "Leichter Schneefall"],
+    "bdsn2_" => ["21", "snow", "Schneefall"],
+    "bwsn2_" => ["21", "snow", "Schneefall"],
+    "bdsn3_" => ["22", "snow", "Starker Schneefall"],
+    "bwsn3_" => ["22", "snow", "Starker Schneefall"],
+    "wdsn1_" => ["20", "snow", "Leichter Schneefall"],
+    "mdsn1_" => ["20", "snow", "Leichter Schneefall"],
+    "wdsn2_" => ["21", "snow", "Schneefall"],
+    "mdsn2_" => ["21", "snow", "Schneefall"],
+    "wdsn3_" => ["22", "snow", "Starker Schneefall"],
+    "mdsn3_" => ["22", "snow", "Starker Schneefall"],
+
+    # Schneeregen/Graupel
+    "bwgs2_" => ["26", "sleet", "Graupel"],
+    "bwhs2_" => ["26", "sleet", "Graupel"],
+    "bwsnr2" => ["26", "sleet", "Schneeregen"],
+    "bwek__" => ["26", "sleet", "Eiskörner"],
+    "bwgs1_" => ["28", "sleet", "Leichte Graupel"],
+    "bwhs1_" => ["28", "sleet", "Leichte Graupel"],
+    "bwsnr1" => ["28", "sleet", "Leichter Schneeregen"],
+    
+    # Schneeregen (gemischt)
+    "wbsrs1" => ["25", "sleet", "Leichter Schneeregen"],
+    "mbsrs1" => ["25", "sleet", "Leichter Schneeregen"],
+    "bdsr1_" => ["25", "sleet", "Leichter Schneeregen"],
+    "bwsrs1" => ["25", "sleet", "Leichter Schneeregen"],
+    "wbsrs2" => ["26", "snow", "Schneeregen"],
+    "mbsrs2" => ["26", "snow", "Schneeregen"],
+    "bdsr2_" => ["26", "snow", "Schneeregen"],
+    "bdsr3_" => ["27", "snow", "Starker Schneeregen"],
+    "bwsrs2" => ["27", "snow", "Starker Schneeregen"],
+    
+    # Schneeschauer
+    "wbsns1" => ["23", "snow", "Leichter Schneeschauer"],
+    "mbsns1" => ["23", "snow", "Leichter Schneeschauer"],
+    "bwsns1" => ["23", "snow", "Leichter Schneeschauer"],
+    "wbsns2" => ["23", "snow", "Schneeschauer"],
+    "mbsns2" => ["23", "snow", "Schneeschauer"],
+    "bwsns2" => ["23", "snow", "Schneeschauer"],
+    "wbsg__" => ["24", "snow", "Schneegestöber"],
+    "mbsg__" => ["24", "snow", "Schneegestöber"],
+    "bdsg__" => ["24", "snow", "Schneegestöber"],
+    "bwsns3" => ["24", "snow", "Starker Schneeschauer"],
+    
+    # Nebel/Dunst
+    "ns____" => ["5", "hazy", "Hochnebel"],
+    "nm____" => ["5", "hazy", "Hochnebel"],
+    "nb____" => ["6", "fog", "Nebel"],
+    
+    # Wolken
+    "so____" => ["1", "clear", "Sonnig"],
+    "mo____" => ["1", "clear", "Klar"],
+    "wb____" => ["2", "mostlysunny", "Heiter"],
+    "mb____" => ["2", "mostlysunny", "Heiter"],
+    "mw____" => ["3", "mostlycloudy", "Wolkig"],
+    "bd____" => ["4", "cloudy", "Stark Bewölkt"],
+);
+
+sub wetteronline_to_lox {
+    my ($weather_symbol) = @_;
+    
+    # Check for empty/undefined values
+    if (!defined $weather_symbol || $weather_symbol eq "") {
+        LOGWARN "Wetteronline symbol is empty/undefined!";
+        return ("1", "clear", "Wolkenlos");
+    }
+    
+    # Lookup in the hash
+    my $result = $wetteronline_to_lox{$weather_symbol};
+    
+    if ($result) {
+        return @$result;  # Returns (code, icon, description)
+    } else {
+        LOGWARN "Unknown weather symbol from Wetteronline: '$weather_symbol', using 'clear' as fallback.";
+        return ("1", "clear", "Wolkenlos");  # Default fallback
+    }
+}
+
+#my %translation_table = (
+#	'so____'   => 'sonnig bzw. klar',
+#	'mo____'   => 'sonnig bzw. klar',
+#	'ns____'   => 'teils neblig',
+#	'nm____'   => 'teils neblig',
+#	'nb____'   => 'neblig',
+#	'wb____'   => 'unterschiedlich bewölkt',
+#	'mb____'   => 'unterschiedlich bewölkt',
+#	'bd____'   => 'bedeckt',
+#	'wbs1__'  => 'unterschiedlich bewölkt und vereinzelt Schauer',
+#	'mbs1__'  => 'unterschiedlich bewölkt und vereinzelt Schauer',
+#	'wbs2__'  => 'unterschiedlich bewölkt und Schauer',
+#	'mbs2__'  => 'unterschiedlich bewölkt und Schauer',
+#	'bdr1__'  => 'bedeckt, etwas Regen oder vereinzelt Schauer',
+#	'bdr2__'  => 'bedeckt, Regen oder Schauer',
+#	'bdr3__'  => 'bedeckt und ergiebiger Regen',
+#	'wbsrs1'  => 'unterschiedlich bewölkt und vereinzelt Schneeregenschauer',
+#	'mbsrs1'  => 'unterschiedlich bewölkt und vereinzelt Schneeregenschauer',
+#	'wbsrs2'  => 'unterschiedlich bewölkt und Schneeregenschauer',
+#	'mbsrs2'  => 'unterschiedlich bewölkt und Schneeregenschauer',
+#	'bdsr1_'  => 'bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer',
+#	'bdsr2_'  => 'bedeckt, Schneeregen oder Schneeregenschauer',
+#	'bdsr3_'  => 'bedeckt und ergiebiger Schneeregen',
+#	'wbsns1'  => 'unterschiedlich bewölkt und vereinzelt Schneeschauer',
+#	'mbsns1'  => 'unterschiedlich bewölkt und vereinzelt Schneeschauer',
+#	'bdsn1_'  => 'bedeckt, leichter Schneefall oder vereinzelt Schneeschauer',
+#	'wbsns2'  => 'unterschiedlich bewölkt und Schneeschauer',
+#	'mbsns2'  => 'unterschiedlich bewölkt und Schneeschauer',
+#	'bdsn1_'  => 'bedeckt, leichter Schneefall oder Schneeschauer',
+#	'bdsn2_'  => 'bedeckt, Schneefall oder Schneeschauer',
+#	'bdsn3_'  => 'bedeckt und ergiebiger Schneefall',
+#	'wbsg__'  => 'unterschiedlich bewölkt und Schneegewitter',
+#	'mbsg__'  => 'unterschiedlich bewölkt und Schneegewitter',
+#	'bdsg__'  => 'bedeckt und Schneegewitter',
+#	'wbg1__'  => 'unterschiedlich bewölkt, vereinzelt Schauer und Gewitter',
+#	'mbg1__'  => 'unterschiedlich bewölkt, vereinzelt Schauer und Gewitter',
+#	'bdg1__'  => 'bedeckt, vereinzelt Schauer und Gewitter',
+#	'wbg2__'  => 'unterschiedlich bewölkt, Schauer und Gewitter',
+#	'mbg2__'  => 'unterschiedlich bewölkt, Schauer und Gewitter',
+#	'bdg2__'  => 'bedeckt, Schauer und Gewitter',
+#	'bdgr1_'  => 'bedeckt und gefrierender Sprühregen',
+#	'bdgr2_'  => 'bedeckt und gefrierender Regen',
+#);
 
 #
 # Fetch current data
@@ -352,135 +630,14 @@ open(F,">$lbplogdir/current.dat.tmp") or $error = 1;
 	}
 	print F sprintf("%.2f", $hourlyPrecipitationAmount), "|";
 
-	# cur_we_icon && cur_we_code
-	my %translation_table = (					# translating wetteronline weather-code to openweather weather-code
-		"200"  => ["wbg1__", "mbg1__", "bdg1__"],
-		"210"  => ["bwg1__"],
-		"211"  => ["wbg2__", "mbg2__", "bdg2__", "bwg2__"],
-		"212"  => ["bwg3__"],
-		"500"  => ["wbs1__", "mbs1__", "mws1__", "bwr1__"],
-		"501"  => ["wbs2__", "mbs2__", "mws2__", "bwr2__"],
-		"502"  => ["wbs3__", "mbs3__", "mws3__", "bwr3__"],
-		"511"  => ["bdgr1_", "bdgr2_", "bwgr1_", "bwgr2_"],
-		"520"  => ["bdr1__", "bws1__"],
-		"521"  => ["bdr2__", "bws2__"],
-		"522"  => ["bdr3__", "bws3__"],
-		"600"  => ["bdsn1_", "bwsn1_"],
-		"601"  => ["bdsn2_", "bwsn2_"],
-		"602"  => ["bdsn3_", "bwsn3_"],
-		"611"  => ["bwgs2_", "bwhs2_", "bwsnr2", "bwek__"],
-		"612"  => ["bwgs1_", "bwhs1_", "bwsnr1"],
-		"615"  => ["wbsrs1", "mbsrs1", "bdsr1_", "bwsrs1"],
-		"616"  => ["wbsrs2", "mbsrs2", "bdsr2_", "bdsr3_", "bwsrs2"],
-		"620"  => ["wbsns1", "mbsns1", "bwsns1"],
-		"621"  => ["wbsns2", "mbsns2", "bwsns2"],
-		"622"  => ["wbsg__", "mbsg__", "bdsg__", "bwsns3"],
-		"721"  => ["ns____", "nm____"],
-		"741"  => ["nb____"],
-		"800"  => ["so____", "mo____"],
-		"801"  => ["wb____", "mb____", "mw____"],
-		"802"  => ["bd____"],
-	);
-  	my $weather = $decodedCurrent->{current}->{symbol};
-
-	$code = "";
-	$icon = "";
-	
-	for my $translated_weather (keys %translation_table) {
-		if (grep { $_ eq $weather } @{$translation_table{$translated_weather}}) {
-			if ($translated_weather == 201) { $code = "18"; $icon = "tstorms" };
-			if ($translated_weather == 202) { $code = "19"; $icon = "tstorms" };
-			if ($translated_weather == 210) { $code = "18"; $icon = "tstorms" };
-			if ($translated_weather == 211) { $code = "18"; $icon = "tstorms" };
-			if ($translated_weather == 212) { $code = "19"; $icon = "tstorms" };
-			if ($translated_weather == 221) { $code = "19"; $icon = "tstorms" };
-			if ($translated_weather == 230) { $code = "18"; $icon = "tstorms" };
-			if ($translated_weather == 231) { $code = "18"; $icon = "tstorms" };
-			if ($translated_weather == 232) { $code = "19"; $icon = "tstorms" };
-			if ($translated_weather == 300) { $code = "13"; $icon = "chancerain" };
-			if ($translated_weather == 301) { $code = "13"; $icon = "chancerain" };
-			if ($translated_weather == 302) { $code = "13"; $icon = "chancerain" };
-			if ($translated_weather == 310) { $code = "10"; $icon = "chancerain" };
-			if ($translated_weather == 311) { $code = "11"; $icon = "rain" };
-			if ($translated_weather == 312) { $code = "12"; $icon = "rain" };
-			if ($translated_weather == 313) { $code = "12"; $icon = "rain" };
-			if ($translated_weather == 314) { $code = "12"; $icon = "rain" };
-			if ($translated_weather == 321) { $code = "12"; $icon = "rain" };
-			if ($translated_weather == 500) { $code = "10"; $icon = "chancerain" };
-			if ($translated_weather == 501) { $code = "11"; $icon = "rain" };
-			if ($translated_weather == 502) { $code = "12"; $icon = "rain" };
-			if ($translated_weather == 503) { $code = "12"; $icon = "rain" };
-			if ($translated_weather == 504) { $code = "12"; $icon = "rain" };
-			if ($translated_weather == 511) { $code = "14"; $icon = "sleet" };
-			if ($translated_weather == 520) { $code = "10"; $icon = "rain" };
-			if ($translated_weather == 521) { $code = "11"; $icon = "rain" };
-			if ($translated_weather == 522) { $code = "12"; $icon = "rain" };
-			if ($translated_weather == 531) { $code = "12"; $icon = "rain" };
-			if ($translated_weather == 600) { $code = "20"; $icon = "snow" };
-			if ($translated_weather == 601) { $code = "21"; $icon = "snow" };
-			if ($translated_weather == 602) { $code = "21"; $icon = "snow" };
-			if ($translated_weather == 611) { $code = "26"; $icon = "sleet" };
-			if ($translated_weather == 612) { $code = "28"; $icon = "sleet" };
-			if ($translated_weather == 613) { $code = "29"; $icon = "sleet" };
-			if ($translated_weather == 615) { $code = "23"; $icon = "sleet" };
-			if ($translated_weather == 616) { $code = "23"; $icon = "snow" };
-			if ($translated_weather == 620) { $code = "21"; $icon = "snow" };
-			if ($translated_weather == 621) { $code = "21"; $icon = "snow" };
-			if ($translated_weather == 622) { $code = "21"; $icon = "snow" };
-			if ($translated_weather == 701) { $code = "6";  $icon = "fog" };
-			if ($translated_weather == 711) { $code = "6";  $icon = "fog" };
-			if ($translated_weather == 721) { $code = "5";  $icon = "hazy" };
-			if ($translated_weather == 731) { $code = "6";  $icon = "fog" };
-			if ($translated_weather == 741) { $code = "6";  $icon = "fog" };
-			if ($translated_weather == 751) { $code = "6";  $icon = "fog" };
-			if ($translated_weather == 761) { $code = "6";  $icon = "fog" };
-			if ($translated_weather == 762) { $code = "6";  $icon = "fog" };
-			if ($translated_weather == 771) { $code = "19";  $icon = "tstorms" };
-			if ($translated_weather == 781) { $code = "19";  $icon = "tstorms" };
-			if ($translated_weather == 800) { $code = "1";  $icon = "clear" };
-			if ($translated_weather == 801) { $code = "2";  $icon = "mostlysunny" };
-			if ($translated_weather == 802) { $code = "3";  $icon = "mostlycloudy" };
-			if ($translated_weather == 803) { $code = "4";  $icon = "cloudy" };
-			if ($translated_weather == 804) { $code = "4";  $icon = "overcast" };
-		}
-	}
-	if (!$icon) { $icon = "clear" };
-	if (!$code) { $code = "1" };
+	# cur_icon, cur_code, cur_des
+	# Mapping: Wetteronline Symbol => [Loxone Code, Weather4Lox Icon, Description]
+	my ($code, $icon, $description) = wetteronline_to_lox($decodedCurrent->{current}->{symbol});
 	print F "$icon|";
 	print F "$code|";
-	
-	# cur_we_des
 	#my $description_current = $decodedCurrent->{current}->{weather_condition_image};
 	#print F "$description_current|";
-	my %translation_table = (
-		'1'   => 'Sonnig bzw. klar',
-		'2'   => 'Meist sonnig, vereinzelt bewölkt',
-		'3'   => 'Vereinzelt sonnig, überwiegend bewölkt',
-		'4'   => 'Bewölkt bzw. bedeckt',
-		'5'   => 'Dunstig',
-		'6'   => 'Neblig',
-		'7'   => 'Sehr heiss',
-		'8'   => 'Sehr kalt',
-		'9'   => 'Schneetreiben',
-		'10'  => 'Schauer sind möglich',
-		'11'  => 'Schauer',
-		'12'  => 'Regen ist möglich',
-		'13'  => 'Regen',
-		'14'  => 'Gewitter sind möglich',
-		'15'  => 'Gewitter',
-		'16'  => 'Schneegestöber',
-		'18'  => 'Schneegstöber möglich, Schneeregen möglich',
-		'19'  => 'Schneeregen',
-		'20'  => 'Schnee möglich',
-		'21'  => 'Schnee',
-		'22'  => 'Windig',
-		'23'  => 'Schneeregen',
-		'26'  => 'Schneeregen',
-		'28'  => 'Leichter Schneeregen',
-		'29'  => 'Schneeregen',
-	);
-	my $weather_text = $translation_table{$code};
-	print F ucfirst($weather_text) . "|";
+	print F "$description|";
 	
 	# # Astro Data
 	# my $moonageWO = $decodedCurrent->{moon}->[0]->{age};
@@ -584,6 +741,7 @@ open(F,"<$lbplogdir/current.dat.tmp");
 close (F);
 
 } # End current
+
 
 #
 # Fetch daily data
@@ -704,182 +862,13 @@ open(F,">$lbplogdir/dailyforecast.dat.tmp") or $error = 1;
 		print F sprintf("%.0f",$max_humidity * 100), "|";
 		print F sprintf("%.0f",$min_humidity * 100), "|";
 		
-		# dfc0_we_icon && dfc0_we_code		
-		my %translation_table = (					# translating wetteronline weather-code to openweather weather-code
-		"200"  => ["wbg1__", "mbg1__", "bdg1__"],
-		"210"  => ["bwg1__"],
-		"211"  => ["wbg2__", "mbg2__", "bdg2__", "bwg2__"],
-		"212"  => ["bwg3__"],
-		"500"  => ["wbs1__", "mbs1__", "bwr1__"],
-		"501"  => ["wbs2__", "mbs2__", "bwr2__"],
-		"502"  => ["wbs3__", "mbs3__", "bwr3__"],
-		"511"  => ["bdgr1_", "bdgr2_", "bwgr1_", "bwgr2_"],
-		"520"  => ["bdr1__", "bws1__"],
-		"521"  => ["bdr2__", "bws2__"],
-		"522"  => ["bdr3__", "bws3__"],
-		"600"  => ["bdsn1_", "bwsn1_"],
-		"601"  => ["bdsn2_", "bwsn2_"],
-		"602"  => ["bdsn3_", "bwsn3_"],
-		"611"  => ["bwgs2_", "bwhs2_", "bwsnr2", "bwek__"],
-		"612"  => ["bwgs1_", "bwhs1_", "bwsnr1"],
-		"615"  => ["wbsrs1", "mbsrs1", "bdsr1_", "bwsrs1"],
-		"616"  => ["wbsrs2", "mbsrs2", "bdsr2_", "bdsr3_", "bwsrs2"],
-		"620"  => ["wbsns1", "mbsns1", "bwsns1"],
-		"621"  => ["wbsns2", "mbsns2", "bwsns2"],
-		"622"  => ["wbsg__", "mbsg__", "bdsg__", "bwsns3"],
-		"721"  => ["ns____", "nm____"],
-		"741"  => ["nb____"],
-		"800"  => ["so____", "mo____"],
-		"801"  => ["wb____", "mb____"],
-		"802"  => ["bd____"],
-		);
-	  
-		$weather = $results->{symbol};
-	  
-		$code = "";
-		$icon = "";
-		
-		for my $translated_weather (keys %translation_table) {
-			if (grep { $_ eq $weather } @{$translation_table{$translated_weather}}) {
-				if ($translated_weather == 200) { $code = "18"; $icon = "tstorms" };
-				if ($translated_weather == 201) { $code = "18"; $icon = "tstorms" };
-				if ($translated_weather == 202) { $code = "19"; $icon = "tstorms" };
-				if ($translated_weather == 210) { $code = "18"; $icon = "tstorms" };
-				if ($translated_weather == 211) { $code = "18"; $icon = "tstorms" };
-				if ($translated_weather == 212) { $code = "19"; $icon = "tstorms" };
-				if ($translated_weather == 221) { $code = "19"; $icon = "tstorms" };
-				if ($translated_weather == 230) { $code = "18"; $icon = "tstorms" };
-				if ($translated_weather == 231) { $code = "18"; $icon = "tstorms" };
-				if ($translated_weather == 232) { $code = "19"; $icon = "tstorms" };
-				if ($translated_weather == 300) { $code = "13"; $icon = "chancerain" };
-				if ($translated_weather == 301) { $code = "13"; $icon = "chancerain" };
-				if ($translated_weather == 302) { $code = "13"; $icon = "chancerain" };
-				if ($translated_weather == 310) { $code = "10"; $icon = "chancerain" };
-				if ($translated_weather == 311) { $code = "11"; $icon = "rain" };
-				if ($translated_weather == 312) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 313) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 314) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 321) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 500) { $code = "10"; $icon = "chancerain" };
-				if ($translated_weather == 501) { $code = "11"; $icon = "rain" };
-				if ($translated_weather == 502) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 503) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 504) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 511) { $code = "14"; $icon = "sleet" };
-				if ($translated_weather == 520) { $code = "10"; $icon = "rain" };
-				if ($translated_weather == 521) { $code = "11"; $icon = "rain" };
-				if ($translated_weather == 522) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 531) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 600) { $code = "20"; $icon = "snow" };
-				if ($translated_weather == 601) { $code = "21"; $icon = "snow" };
-				if ($translated_weather == 602) { $code = "21"; $icon = "snow" };
-				if ($translated_weather == 611) { $code = "26"; $icon = "sleet" };
-				if ($translated_weather == 612) { $code = "28"; $icon = "sleet" };
-				if ($translated_weather == 613) { $code = "29"; $icon = "sleet" };
-				if ($translated_weather == 615) { $code = "23"; $icon = "sleet" };
-				if ($translated_weather == 616) { $code = "23"; $icon = "snow" };
-				if ($translated_weather == 620) { $code = "21"; $icon = "snow" };
-				if ($translated_weather == 621) { $code = "21"; $icon = "snow" };
-				if ($translated_weather == 622) { $code = "21"; $icon = "snow" };
-				if ($translated_weather == 701) { $code = "6";  $icon = "fog" };
-				if ($translated_weather == 711) { $code = "6";  $icon = "fog" };
-				if ($translated_weather == 721) { $code = "5";  $icon = "hazy" };
-				if ($translated_weather == 731) { $code = "6";  $icon = "fog" };
-				if ($translated_weather == 741) { $code = "6";  $icon = "fog" };
-				if ($translated_weather == 751) { $code = "6";  $icon = "fog" };
-				if ($translated_weather == 761) { $code = "6";  $icon = "fog" };
-				if ($translated_weather == 762) { $code = "6";  $icon = "fog" };
-				if ($translated_weather == 771) { $code = "19";  $icon = "tstorms" };
-				if ($translated_weather == 781) { $code = "19";  $icon = "tstorms" };
-				if ($translated_weather == 800) { $code = "1";  $icon = "clear" };
-				if ($translated_weather == 801) { $code = "2";  $icon = "mostlysunny" };
-				if ($translated_weather == 802) { $code = "3";  $icon = "mostlycloudy" };
-				if ($translated_weather == 803) { $code = "4";  $icon = "cloudy" };
-				if ($translated_weather == 804) { $code = "4";  $icon = "overcast" };
-			}
-		}
-		if (!$icon) { $icon = "clear" };
-		if (!$code) { $code = "1" };
+		# dfc0_we_icon, dfc0_we_code, dfc0_we_des	
+		# Mapping: Wetteronline Symbol => [Loxone Code, Weather4Lox Icon, Description]
+		my ($code, $icon, $description) = wetteronline_to_lox($results->{symbol});
 		print F "$icon|";
 		print F "$code|";
+		print F "$description|";
 
-		# dfc0_we_des
-		#my %translation_table = (
-		#	'so____'   => 'sonnig bzw. klar',
-		#	'mo____'   => 'sonnig bzw. klar',
-		#	'ns____'   => 'teils neblig',
-		#	'nm____'   => 'teils neblig',
-		#	'nb____'   => 'neblig',
-		#	'wb____'   => 'unterschiedlich bewölkt',
-		#	'mb____'   => 'unterschiedlich bewölkt',
-		#	'bd____'   => 'bedeckt',
-		#	'wbs1__'  => 'unterschiedlich bewölkt und vereinzelt Schauer',
-		#	'mbs1__'  => 'unterschiedlich bewölkt und vereinzelt Schauer',
-		#	'wbs2__'  => 'unterschiedlich bewölkt und Schauer',
-		#	'mbs2__'  => 'unterschiedlich bewölkt und Schauer',
-		#	'bdr1__'  => 'bedeckt, etwas Regen oder vereinzelt Schauer',
-		#	'bdr2__'  => 'bedeckt, Regen oder Schauer',
-		#	'bdr3__'  => 'bedeckt und ergiebiger Regen',
-		#	'wbsrs1'  => 'unterschiedlich bewölkt und vereinzelt Schneeregenschauer',
-		#	'mbsrs1'  => 'unterschiedlich bewölkt und vereinzelt Schneeregenschauer',
-		#	'wbsrs2'  => 'unterschiedlich bewölkt und Schneeregenschauer',
-		#	'mbsrs2'  => 'unterschiedlich bewölkt und Schneeregenschauer',
-		#	'bdsr1_'  => 'bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer',
-		#	'bdsr2_'  => 'bedeckt, Schneeregen oder Schneeregenschauer',
-		#	'bdsr3_'  => 'bedeckt und ergiebiger Schneeregen',
-		#	'wbsns1'  => 'unterschiedlich bewölkt und vereinzelt Schneeschauer',
-		#	'mbsns1'  => 'unterschiedlich bewölkt und vereinzelt Schneeschauer',
-		#	'bdsn1_'  => 'bedeckt, leichter Schneefall oder vereinzelt Schneeschauer',
-		#	'wbsns2'  => 'unterschiedlich bewölkt und Schneeschauer',
-		#	'mbsns2'  => 'unterschiedlich bewölkt und Schneeschauer',
-		#	'bdsn1_'  => 'bedeckt, leichter Schneefall oder Schneeschauer',
-		#	'bdsn2_'  => 'bedeckt, Schneefall oder Schneeschauer',
-		#	'bdsn3_'  => 'bedeckt und ergiebiger Schneefall',
-		#	'wbsg__'  => 'unterschiedlich bewölkt und Schneegewitter',
-		#	'mbsg__'  => 'unterschiedlich bewölkt und Schneegewitter',
-		#	'bdsg__'  => 'bedeckt und Schneegewitter',
-		#	'wbg1__'  => 'unterschiedlich bewölkt, vereinzelt Schauer und Gewitter',
-		#	'mbg1__'  => 'unterschiedlich bewölkt, vereinzelt Schauer und Gewitter',
-		#	'bdg1__'  => 'bedeckt, vereinzelt Schauer und Gewitter',
-		#	'wbg2__'  => 'unterschiedlich bewölkt, Schauer und Gewitter',
-		#	'mbg2__'  => 'unterschiedlich bewölkt, Schauer und Gewitter',
-		#	'bdg2__'  => 'bedeckt, Schauer und Gewitter',
-		#	'bdgr1_'  => 'bedeckt und gefrierender Sprühregen',
-		#	'bdgr2_'  => 'bedeckt und gefrierender Regen',
-		#);
-		#my $weather_text = $translation_table{$weather};
-		#print F ucfirst($weather_text) . "|";
-		# --> Using https://wiki.loxberry.de/plugins/weather4loxone/start#wetter-codes
-		my %translation_table = (
-			'1'   => 'Sonnig bzw. klar',
-			'2'   => 'Meist sonnig, vereinzelt bewölkt',
-			'3'   => 'Vereinzelt sonnig, überwiegend bewölkt',
-			'4'   => 'Bewölkt bzw. bedeckt',
-			'5'   => 'Dunstig',
-			'6'   => 'Neblig',
-			'7'   => 'Sehr heiss',
-			'8'   => 'Sehr kalt',
-			'9'   => 'Schneetreiben',
-			'10'  => 'Schauer sind möglich',
-			'11'  => 'Schauer',
-			'12'  => 'Regen ist möglich',
-			'13'  => 'Regen',
-			'14'  => 'Gewitter sind möglich',
-			'15'  => 'Gewitter',
-			'16'  => 'Schneegestöber',
-			'18'  => 'Schneegstöber möglich, Schneeregen möglich',
-			'19'  => 'Schneeregen',
-			'20'  => 'Schnee möglich',
-			'21'  => 'Schnee',
-			'22'  => 'Windig',
-			'23'  => 'Schneeregen',
-			'26'  => 'Schneeregen',
-			'28'  => 'Leichter Schneeregen',
-			'29'  => 'Schneeregen',
-		);
-		my $weather_text = $translation_table{$code};
-		print F ucfirst($weather_text) . "|";
-		
 		# dfc0_ozone
 		print F "-9999|";
 		
@@ -929,7 +918,7 @@ open(F,">$lbplogdir/dailyforecast.dat.tmp") or $error = 1;
 		# dfc0_sun_s
 		my $sunset_str = qx( TZ='$timezone' date  -d "$results->{sun}{set}" +'%Y-%m-%d %H:%M' );
 		chomp($sunset_str);
-		my $srt = Time::Piece->strptime($sunset_str, "%Y-%m-%d %H:%M");
+		$srt = Time::Piece->strptime($sunset_str, "%Y-%m-%d %H:%M");
 		print F sprintf("%02d", $srt->hour), "|";
 		print F sprintf("%02d", $srt->minute), "|";
 		
@@ -981,10 +970,10 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 	my $n = 0;
 	for my $results( @{$decodedHourly->{hours}} ){
 		# Skip first dataset (eq to current)
-		if ($n eq "0") {
-			$n++;
-			next;
-		}
+		#if ($n eq "0") {
+		#	$n++;
+		#	next;
+		#}
 		
 		# hfc1_per
 		print F "$i|";
@@ -1087,181 +1076,12 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
                         print F "0|";
                 }
 				
-		# hfc1_we_icon && hfc1_we_code		
-		my %translation_table = (					# translating wetteronline weather-code to openweather weather-code
-		"200"  => ["wbg1__", "mbg1__", "bdg1__"],
-		"210"  => ["bwg1__"],
-		"211"  => ["wbg2__", "mbg2__", "bdg2__", "bwg2__"],
-		"212"  => ["bwg3__"],
-		"500"  => ["wbs1__", "mbs1__", "bwr1__"],
-		"501"  => ["wbs2__", "mbs2__", "bwr2__"],
-		"502"  => ["wbs3__", "mbs3__", "bwr3__"],
-		"511"  => ["bdgr1_", "bdgr2_", "bwgr1_", "bwgr2_"],
-		"520"  => ["bdr1__", "bws1__"],
-		"521"  => ["bdr2__", "bws2__"],
-		"522"  => ["bdr3__", "bws3__"],
-		"600"  => ["bdsn1_", "bwsn1_"],
-		"601"  => ["bdsn2_", "bwsn2_"],
-		"602"  => ["bdsn3_", "bwsn3_"],
-		"611"  => ["bwgs2_", "bwhs2_", "bwsnr2", "bwek__"],
-		"612"  => ["bwgs1_", "bwhs1_", "bwsnr1"],
-		"615"  => ["wbsrs1", "mbsrs1", "bdsr1_", "bwsrs1"],
-		"616"  => ["wbsrs2", "mbsrs2", "bdsr2_", "bdsr3_", "bwsrs2"],
-		"620"  => ["wbsns1", "mbsns1", "bwsns1"],
-		"621"  => ["wbsns2", "mbsns2", "bwsns2"],
-		"622"  => ["wbsg__", "mbsg__", "bdsg__", "bwsns3"],
-		"721"  => ["ns____", "nm____"],
-		"741"  => ["nb____"],
-		"800"  => ["so____", "mo____"],
-		"801"  => ["wb____", "mb____"],
-		"802"  => ["bd____"],
-		);
-	  
-		$weather = $results->{symbol};
-	  
-		$code = "";
-		$icon = "";
-		
-		for my $translated_weather (keys %translation_table) {
-			if (grep { $_ eq $weather } @{$translation_table{$translated_weather}}) {
-				if ($translated_weather == 200) { $code = "18"; $icon = "tstorms" };
-				if ($translated_weather == 201) { $code = "18"; $icon = "tstorms" };
-				if ($translated_weather == 202) { $code = "19"; $icon = "tstorms" };
-				if ($translated_weather == 210) { $code = "18"; $icon = "tstorms" };
-				if ($translated_weather == 211) { $code = "18"; $icon = "tstorms" };
-				if ($translated_weather == 212) { $code = "19"; $icon = "tstorms" };
-				if ($translated_weather == 221) { $code = "19"; $icon = "tstorms" };
-				if ($translated_weather == 230) { $code = "18"; $icon = "tstorms" };
-				if ($translated_weather == 231) { $code = "18"; $icon = "tstorms" };
-				if ($translated_weather == 232) { $code = "19"; $icon = "tstorms" };
-				if ($translated_weather == 300) { $code = "13"; $icon = "chancerain" };
-				if ($translated_weather == 301) { $code = "13"; $icon = "chancerain" };
-				if ($translated_weather == 302) { $code = "13"; $icon = "chancerain" };
-				if ($translated_weather == 310) { $code = "10"; $icon = "chancerain" };
-				if ($translated_weather == 311) { $code = "11"; $icon = "rain" };
-				if ($translated_weather == 312) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 313) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 314) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 321) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 500) { $code = "10"; $icon = "chancerain" };
-				if ($translated_weather == 501) { $code = "11"; $icon = "rain" };
-				if ($translated_weather == 502) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 503) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 504) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 511) { $code = "14"; $icon = "sleet" };
-				if ($translated_weather == 520) { $code = "10"; $icon = "rain" };
-				if ($translated_weather == 521) { $code = "11"; $icon = "rain" };
-				if ($translated_weather == 522) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 531) { $code = "12"; $icon = "rain" };
-				if ($translated_weather == 600) { $code = "20"; $icon = "snow" };
-				if ($translated_weather == 601) { $code = "21"; $icon = "snow" };
-				if ($translated_weather == 602) { $code = "21"; $icon = "snow" };
-				if ($translated_weather == 611) { $code = "26"; $icon = "sleet" };
-				if ($translated_weather == 612) { $code = "28"; $icon = "sleet" };
-				if ($translated_weather == 613) { $code = "29"; $icon = "sleet" };
-				if ($translated_weather == 615) { $code = "23"; $icon = "sleet" };
-				if ($translated_weather == 616) { $code = "23"; $icon = "snow" };
-				if ($translated_weather == 620) { $code = "21"; $icon = "snow" };
-				if ($translated_weather == 621) { $code = "21"; $icon = "snow" };
-				if ($translated_weather == 622) { $code = "21"; $icon = "snow" };
-				if ($translated_weather == 701) { $code = "6";  $icon = "fog" };
-				if ($translated_weather == 711) { $code = "6";  $icon = "fog" };
-				if ($translated_weather == 721) { $code = "5";  $icon = "hazy" };
-				if ($translated_weather == 731) { $code = "6";  $icon = "fog" };
-				if ($translated_weather == 741) { $code = "6";  $icon = "fog" };
-				if ($translated_weather == 751) { $code = "6";  $icon = "fog" };
-				if ($translated_weather == 761) { $code = "6";  $icon = "fog" };
-				if ($translated_weather == 762) { $code = "6";  $icon = "fog" };
-				if ($translated_weather == 771) { $code = "19";  $icon = "tstorms" };
-				if ($translated_weather == 781) { $code = "19";  $icon = "tstorms" };
-				if ($translated_weather == 800) { $code = "1";  $icon = "clear" };
-				if ($translated_weather == 801) { $code = "2";  $icon = "mostlysunny" };
-				if ($translated_weather == 802) { $code = "3";  $icon = "mostlycloudy" };
-				if ($translated_weather == 803) { $code = "4";  $icon = "cloudy" };
-				if ($translated_weather == 804) { $code = "4";  $icon = "overcast" };
-			}
-		}
-		if (!$icon) { $icon = "clear" };
-		if (!$code) { $code = "1" };
-		print F "$code|";
+		# hfc1_we_icon && hfc1_we_code, hfc1_we_des
+		# Mapping: Wetteronline Symbol => [Loxone Code, Weather4Lox Icon, Description]
+		my ($code, $icon, $description) = wetteronline_to_lox($results->{symbol});
 		print F "$icon|";
-
-		# hfc1_we_des
-		#my %translation_table = (
-		#	'so____'   => 'sonnig bzw. klar',
-		#	'mo____'   => 'sonnig bzw. klar',
-		#	'ns____'   => 'teils neblig',
-		#	'nm____'   => 'teils neblig',
-		#	'nb____'   => 'neblig',
-		#	'wb____'   => 'unterschiedlich bewölkt',
-		#	'mb____'   => 'unterschiedlich bewölkt',
-		#	'bd____'   => 'bedeckt',
-		#	'wbs1__'  => 'unterschiedlich bewölkt und vereinzelt Schauer',
-		#	'mbs1__'  => 'unterschiedlich bewölkt und vereinzelt Schauer',
-		#	'bdr1__'  => 'bedeckt, etwas Regen oder vereinzelt Schauer',
-		#	'wbs2__'  => 'unterschiedlich bewölkt und Schauer',
-		#	'mbs2__'  => 'unterschiedlich bewölkt und Schauer',
-		#	'bdr2__'  => 'bedeckt, Regen oder Schauer',
-		#	'bdr3__'  => 'bedeckt und ergiebiger Regen',
-		#	'wbsrs1'  => 'unterschiedlich bewölkt und vereinzelt Schneeregenschauer',
-		#	'mbsrs1'  => 'unterschiedlich bewölkt und vereinzelt Schneeregenschauer',
-		#	'bdsr1_'  => 'bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer',
-		#	'wbsrs2'  => 'unterschiedlich bewölkt und Schneeregenschauer',
-		#	'mbsrs2'  => 'unterschiedlich bewölkt und Schneeregenschauer',
-		#	'bdsr2_'  => 'bedeckt, Schneeregen oder Schneeregenschauer',
-		#	'bdsr3_'  => 'bedeckt und ergiebiger Schneeregen',
-		#	'wbsns1'  => 'unterschiedlich bewölkt und vereinzelt Schneeschauer',
-		#	'mbsns1'  => 'unterschiedlich bewölkt und vereinzelt Schneeschauer',
-		#	'bdsn1_'  => 'bedeckt, leichter Schneefall oder vereinzelt Schneeschauer',
-		#	'wbsns2'  => 'unterschiedlich bewölkt und Schneeschauer',
-		#	'mbsns2'  => 'unterschiedlich bewölkt und Schneeschauer',
-		#	'bdsn2_'  => 'bedeckt, Schneefall oder Schneeschauer',
-		#	'bdsn3_'  => 'bedeckt und ergiebiger Schneefall',
-		#	'wbsg__'  => 'unterschiedlich bewölkt und Schneegewitter',
-		#	'mbsg__'  => 'unterschiedlich bewölkt und Schneegewitter',
-		#	'bdsg__'  => 'bedeckt und Schneegewitter',
-		#	'wbg1__'  => 'unterschiedlich bewölkt, vereinzelt Schauer und Gewitter',
-		#	'mbg1__'  => 'unterschiedlich bewölkt, vereinzelt Schauer und Gewitter',
-		#	'bdg1__'  => 'bedeckt, vereinzelt Schauer und Gewitter',
-		#	'wbg2__'  => 'unterschiedlich bewölkt, Schauer und Gewitter',
-		#	'mbg2__'  => 'unterschiedlich bewölkt, Schauer und Gewitter',
-		#	'bdg2__'  => 'bedeckt, Schauer und Gewitter',
-		#	'bdgr1_'  => 'bedeckt und gefrierender Sprühregen',
-		#	'bdgr2_'  => 'bedeckt und gefrierender Regen',
-		#);
-		#my $weather_text = $translation_table{$weather};
-		#print F  ucfirst($weather_text) . "|";
-
-		# --> Using https://wiki.loxberry.de/plugins/weather4loxone/start#wetter-codes
-		my %translation_table = (
-			'1'   => 'Sonnig bzw. klar',
-			'2'   => 'Meist sonnig, vereinzelt bewölkt',
-			'3'   => 'Vereinzelt sonnig, überwiegend bewölkt',
-			'4'   => 'Bewölkt bzw. bedeckt',
-			'5'   => 'Dunstig',
-			'6'   => 'Neblig',
-			'7'   => 'Sehr heiss',
-			'8'   => 'Sehr kalt',
-			'9'   => 'Schneetreiben',
-			'10'  => 'Schauer sind möglich',
-			'11'  => 'Schauer',
-			'12'  => 'Regen ist möglich',
-			'13'  => 'Regen',
-			'14'  => 'Gewitter sind möglich',
-			'15'  => 'Gewitter',
-			'16'  => 'Schneegestöber',
-			'18'  => 'Schneegstöber möglich, Schneeregen möglich',
-			'19'  => 'Schneeregen',
-			'20'  => 'Schnee möglich',
-			'21'  => 'Schnee',
-			'22'  => 'Windig',
-			'23'  => 'Schneeregen',
-			'26'  => 'Schneeregen',
-			'28'  => 'Leichter Schneeregen',
-			'29'  => 'Schneeregen',
-		);
-		my $weather_text = $translation_table{$code};
-		print F ucfirst($weather_text) . "|";
+		print F "$code|";
+		print F "$description|";
 
 		# Ozone
 		print F "-9999|";

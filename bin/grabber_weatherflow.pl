@@ -121,52 +121,100 @@ my $forecast_json = decode_json( $json );
 my $t;
 my $weather;
 my $icon;
+my $code;
 my $wdir;
 my $wdirdes;
 my @filecontent;
 my $i;
 my $error;
 
+# Mapping: WeatherFlow Icon => [Loxone Code, Weather4Lox Icon Name]
+# https://weatherflow.github.io/Tempest/api/swagger/#/forecast/getBetterForecast
+# https://www.loxone.com/enen/kb/weather-service/
+my %weatherflow_to_lox = (                            # Possible WeatherFlow Icon Values:
+    "clear"                => ["1",  "clear"],           # was clear-day, clear-night
+    "partlycloudy"         => ["3",  "partlycloudy"],    # was partly-cloudy-day, partly-cloudy-night
+    "cloudy"               => ["4",  "cloudy"],          # was cloudy
+    "sleet"                => ["26", "sleet"],			 # was sleet
+    "chancesleet"          => ["26", "chancesleet"],     # was possibly-sleet-day, possibly-sleet-night
+    "snow"                 => ["21", "snow"],            # was snow
+    "chancesnow"           => ["23", "chancesnow"],      # was possibly-snow-day, possibly-snow-night
+    "rainy"                => ["11", "rain"],      # was rainy
+    "chancerainy"          => ["16", "chancerain"],      # was possibly-rainy-day, possibly-rainy-night
+    "chancethunderstorm"   => ["18", "chancetstorms"],   # was possibly-thunderstorm-day, possibly-thunderstorm-night
+    "thunderstorm"         => ["18", "tstorms"],         # was thunderstorm
+    "foggy"                => ["6",  "fog"],             # was foggy
+    "windy"                => ["5", "wind"],            # was windy
+);
+
+sub weatherflow_to_lox {
+    my ($weather_raw) = @_;
+    
+    # Check for empty/undefined values
+    if (!defined $weather_raw || $weather_raw eq "") {
+        LOGWARN "WeatherFlow icon is empty/undefined!";
+        return ("0", "clear");
+    }
+    
+    # Normalization
+    my $weather = lc($weather_raw);           # Lowercase
+    $weather =~ s/-(?:night|day)//;           # remove -night and -day
+    $weather =~ s/cc-//;                      # remove cc- (current Weatherflow API bug)
+    $weather =~ s/-//g;                       # remove all hyphens
+    $weather =~ s/possibly/chance/;           # replace possibly with chance
+    
+    # Lookup in the hash
+    my $result = $weatherflow_to_lox{$weather};
+    
+    if ($result) {
+        return ($result->[0], $result->[1]);  # (code, icon)
+    } else {
+        # Fallback
+        LOGWARN "Unknown weather icon name from WeatherFlow: '$weather_raw' (normalized: '$weather'). Using fallback code 1 = 'clear'.";
+        return ("1", $weather);  # Code 1 = Clear, but keep the icon name
+    }
+}
+
 
 if ( $current ) { # Start current
 
-# Get current station observation from Weatherflow Server
-# API : https://weatherflow.github.io/Tempest/api/swagger/#!/observations/getStationObservation
-# Docs: https://apidocs.tempestwx.com/reference/get_better-forecast-1
-my $queryurlcr_curr = "$url\/observations/station/$stationid?token=$apikey";
+	# Get current station observation from Weatherflow Server
+	# API : https://weatherflow.github.io/Tempest/api/swagger/#!/observations/getStationObservation
+	# Docs: https://apidocs.tempestwx.com/reference/get_better-forecast-1
+	my $queryurlcr_curr = "$url\/observations/station/$stationid?token=$apikey";
 
-LOGINF "Fetching Current Data for Station $stationid";
-LOGDEB "URL: $queryurlcr_curr";
+	LOGINF "Fetching Current Data for Station $stationid";
+	LOGDEB "URL: $queryurlcr_curr";
 
-my $ua_curr = new LWP::UserAgent;
-my $res_curr = $ua_curr->get($queryurlcr_curr);
-my $json_curr = $res_curr->decoded_content();
+	my $ua_curr = new LWP::UserAgent;
+	my $res_curr = $ua_curr->get($queryurlcr_curr);
+	my $json_curr = $res_curr->decoded_content();
 
-# Check status of request
-my $urlstatus_curr = $res_curr->status_line;
-my $urlstatuscode_curr = substr($urlstatus_curr,0,3);
+	# Check status of request
+	my $urlstatus_curr = $res_curr->status_line;
+	my $urlstatuscode_curr = substr($urlstatus_curr,0,3);
 
-LOGDEB "Status: $urlstatus_curr";
+	LOGDEB "Status: $urlstatus_curr";
 
-if ($urlstatuscode_curr ne "200") {
-  LOGCRIT "Failed to fetch current observation data for Station $stationid\. Status Code: $urlstatuscode";
-  exit 2;
-} else {
-  LOGOK "Data fetched successfully for Station $stationid";
-}
+	if ($urlstatuscode_curr ne "200") {
+		LOGCRIT "Failed to fetch current observation data for Station $stationid\. Status Code: $urlstatuscode";
+		exit 2;
+	} else {
+		LOGOK "Data fetched successfully for Station $stationid";
+	}
 
-# Decode JSON response from server
-my $current_observation_json = decode_json( $json_curr );
+	# Decode JSON response from server
+	my $current_observation_json = decode_json( $json_curr );
 
-# end retreiving current station observation data
+	# end retreiving current station observation data
 
-# Write location data into database
-$t = localtime($forecast_json->{current_conditions}->{time});
-LOGINF "Saving new Data for Timestamp $t to database.";
+	# Write location data into database
+	$t = localtime($forecast_json->{current_conditions}->{time});
+	LOGINF "Saving new Data for Timestamp $t to database.";
 
-# Saving new current data...
-$error = 0;
-open(F,">$lbplogdir/current.dat.tmp") or $error = 1;
+	# Saving new current data...
+	$error = 0;
+	open(F,">$lbplogdir/current.dat.tmp") or $error = 1;
 	if ($error) {
 		LOGCRIT "Cannot open $lbpconfigdir/current.dat.tmp";
 		exit 2;
@@ -213,50 +261,11 @@ open(F,">$lbplogdir/current.dat.tmp") or $error = 1;
 	print F "$current_observation_json->{obs}->[0]->{uv}|"; # UV Index
 	print F sprintf("%.3f",$current_observation_json->{obs}->[0]->{precip_accum_local_day}), "|";  # Precipitation Today
 	print F sprintf("%.3f",$forecast_json->{forecast}->{hourly}->[0]->{precip}), "|"; # Precipitation 1hr (note: forecast, to reflect the expected rain in mm/h)
-	# Convert Weather string into Weather Code and convert icon name
-	# Possible Icon Values:
-	#  clear-day
-	#  clear-night
-	#  cloudy
-	#  foggy
-	#  partly-cloudy-day
-	#  partly-cloudy-night
-	#  possibly-rainy-day
-	#  possibly-rainy-night
-	#  possibly-sleet-day
-	#  possibly-sleet-night
-	#  possibly-snow-day
-	#  possibly-snow-night
-	#  possibly-thunderstorm-day
-	#  possibly-thunderstorm-night
-	#  rainy
-	#  sleet
-	#  snow
-	#  thunderstorm
-	#  windy
-	$weather = $forecast_json->{current_conditions}->{icon};
-	$weather =~ s/\-night|\-day//; # remove -night and -day
-	$weather =~ s/cc\-//; # remove cc- (current Weatherflow API bug)
-	$weather =~ s/\-//; # remove -
-	$weather =~ s/possibly/chance/; # replace possibly by chance
-	$weather =~ tr/A-Z/a-z/; # All Lowercase
-	my $icon = $weather; # by default the Weather4Lox icon name is equal to the Weatherflow icon name, or changed below
-	if ($weather eq "clear") {$weather = "1";}
-	elsif ($weather eq "partlycloudy") {$weather = "2";}
-	elsif ($weather eq "cloudy") {$weather = "4";}
-	elsif ($weather eq "sleet") {$weather = "19";}
-	elsif ($weather eq "chancesleet") {$weather = "18";}
-	elsif ($weather eq "snow") {$weather = "21";}
-	elsif ($weather eq "chancesnow") {$weather = "20";}
-	elsif ($weather eq "rainy") {$weather = "12"; $icon="chancerain"}
-	elsif ($weather eq "chancerainy") {$weather = "12"; $icon="chancerain"}
-	elsif ($weather eq "chancethunderstorm") {$weather = "14"; $icon="chancetstorms"}
-	elsif ($weather eq "thunderstorm") {$weather = "15"; $icon="tstorms"}
-	elsif ($weather eq "foggy") {$weather = "6"; $icon="fog"}
-	elsif ($weather eq "windy") {$weather = "22"; $icon="wind"}
-	else {$weather = "0";}
+
+	# Convert Weatherflow weather icon string into normalized icon name and Loxone picto-code
+	($code, $icon)= weatherflow_to_lox($forecast_json->{current_conditions}->{icon});
 	print F "$icon|"; # Weather4Lox Weather Icon name
-	print F "$weather|"; # Weather Code
+	print F "$code|"; # Loxone Weather Code
 	print F "$forecast_json->{current_conditions}->{conditions}|"; # Weather Description (note: forecast, since current observation does not have this info)
 	my ( $moonphase,
 	  $moonillum,
@@ -283,20 +292,20 @@ open(F,">$lbplogdir/current.dat.tmp") or $error = 1;
 	print F "-9999|"; # Sky (clouds) % (not available in Weatherflow API)
 	print F $forecast_json->{forecast}->{daily}->[0]->{precip_probability}*100, "|"; # % of Precipitation
 	print F "-9999|"; # Snow (not available in Weatherflow API)
-close(F);
+	close(F);
 
-LOGOK "Saving current data to $lbplogdir/current.dat.tmp successfully.";
+	LOGOK "Saving current data to $lbplogdir/current.dat.tmp successfully.";
 
-my @filecontent;
-LOGDEB "Database content:";
-open(F,"<$lbplogdir/current.dat.tmp");
+	my @filecontent;
+	LOGDEB "Database content:";
+	open(F,"<$lbplogdir/current.dat.tmp");
 	@filecontent = <F>;
 	foreach (@filecontent) {
 		chomp ($_);
-	# Convert elevation from feet to meter
+		# Convert elevation from feet to meter
 		LOGDEB "$_";
 	}
-close (F);
+	close (F);
 
 } # end current
 
@@ -306,9 +315,9 @@ close (F);
 
 if ( $daily ) { # Start daily
 
-# Saving new daily forecast data...
-$error = 0;
-open(F,">$lbplogdir/dailyforecast.dat.tmp") or $error = 1;
+	# Saving new daily forecast data...
+	$error = 0;
+	open(F,">$lbplogdir/dailyforecast.dat.tmp") or $error = 1;
 	if ($error) {
 		LOGCRIT "Cannot open $lbplogdir/dailyforecast.dat.tmp";
 		exit 2;
@@ -351,28 +360,11 @@ open(F,">$lbplogdir/dailyforecast.dat.tmp") or $error = 1;
 		print F "-9999|"; # Ave. Humidity (not available in Weatherflow API)
 		print F "-9999|"; # Max. Humidity (not available in Weatherflow API)
 		print F "-9999|"; # Min. Humidity (not available in Weatherflow API)
-		$weather = $results->{icon}; # Icon Name
-		$weather =~ s/\-night|\-day//; # No -night and -day
-		$weather =~ s/\-//; # No -
-		$weather =~ s/possibly/chance/; # added fr wf: replace possibly by chance
-		$weather =~ tr/A-Z/a-z/; # All Lowercase
-		my $icon = $weather; # by default the Weather4Lox icon name is equal to the Weatherflow icon name, or changed below
-		if ($weather eq "clear") {$weather = "1";}
-		elsif ($weather eq "partlycloudy") {$weather = "2";}
-		elsif ($weather eq "cloudy") {$weather = "4";}
-		elsif ($weather eq "sleet") {$weather = "19";}
-		elsif ($weather eq "chancesleet") {$weather = "18";}
-		elsif ($weather eq "snow") {$weather = "21";}
-		elsif ($weather eq "chancesnow") {$weather = "20";}
-		elsif ($weather eq "rainy") {$weather = "12"; $icon="chancerain"}
-		elsif ($weather eq "chancerainy") {$weather = "12"; $icon="chancerain"}
-		elsif ($weather eq "chancethunderstorm") {$weather = "14"; $icon="chancetstorms"}
-		elsif ($weather eq "thunderstorm") {$weather = "15"; $icon="tstorms"}
-		elsif ($weather eq "foggy") {$weather = "6"; $icon="fog"}
-		elsif ($weather eq "windy") {$weather = "22"; $icon="wind"}
-		else {$weather = "0";}
+
+		# Convert Weatherflow weather icon string into normalized icon name and Loxone picto-code
+		($code, $icon)= weatherflow_to_lox($results->{icon});
 		print F "$icon|"; # Weather4Lox Weather Icon name
-		print F "$weather|"; # Weather4Lox Weather Code
+		print F "$code|"; # Loxone Weather Code
 		print F "$results->{conditions}|"; # Weather Description
 		print F "-9999|"; # Density of atmospheric ozone (not available in Weatherflow API)
 		my ( $moonphase,
@@ -397,18 +389,18 @@ open(F,">$lbplogdir/dailyforecast.dat.tmp") or $error = 1;
 		print F sprintf("%.2f",$moonphase*100), "|";
 		print F "\n";
 	}
-close(F);
+	close(F);
 
-LOGOK "Saving daily forecast data to $lbplogdir/dailyforecast.dat.tmp successfully.";
+	LOGOK "Saving daily forecast data to $lbplogdir/dailyforecast.dat.tmp successfully.";
 
-LOGDEB "Database content:";
-open(F,"<$lbplogdir/dailyforecast.dat.tmp");
-	@filecontent = <F>;
-	foreach (@filecontent) {
-		chomp ($_);
-		LOGDEB "$_";
-	}
-close (F);
+	LOGDEB "Database content:";
+	open(F,"<$lbplogdir/dailyforecast.dat.tmp");
+		@filecontent = <F>;
+		foreach (@filecontent) {
+			chomp ($_);
+			LOGDEB "$_";
+		}
+	close (F);
 
 } # end daily
 
@@ -418,9 +410,9 @@ close (F);
 
 if ( $hourly ) { # Start hourly
 
-# Saving new hourly forecast data...
-$error = 0;
-open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
+	# Saving new hourly forecast data...
+	$error = 0;
+	open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 	if ($error) {
 		LOGCRIT "Cannot open $lbplogdir/hourlyforecast.dat.tmp";
 		exit 2;
@@ -476,28 +468,11 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 		print F $results->{precip}, "|";  # Quant. Precipitation FC in mm
 		print F "-9999|"; # Snow Forecast (not available in Weatherflow API)
 		print F $results->{precip_probability}, "|";
-		$weather = $results->{icon};
-		$weather =~ s/\-night|\-day//; # No -night and -day
-		$weather =~ s/\-//; # No -
-		$weather =~ s/possibly/chance/; # replace possibly by chance
-		$weather =~ tr/A-Z/a-z/; # All Lowercase
-		my $icon = $weather; # by default the Weather4Lox icon name is equal to the Weatherflow icon name, or changed below
-		if ($weather eq "clear") {$weather = "1";}
-		elsif ($weather eq "partlycloudy") {$weather = "2";}
-		elsif ($weather eq "cloudy") {$weather = "4";}
-		elsif ($weather eq "sleet") {$weather = "19";}
-		elsif ($weather eq "chancesleet") {$weather = "18";}
-		elsif ($weather eq "snow") {$weather = "21";}
-		elsif ($weather eq "chancesnow") {$weather = "20";}
-		elsif ($weather eq "rainy") {$weather = "12"; $icon="chancerain"}
-		elsif ($weather eq "chancerainy") {$weather = "12"; $icon="chancerain"}
-		elsif ($weather eq "chancethunderstorm") {$weather = "14"; $icon="chancetstorms"}
-		elsif ($weather eq "thunderstorm") {$weather = "15"; $icon="tstorms"}
-		elsif ($weather eq "foggy") {$weather = "6"; $icon="fog"}
-		elsif ($weather eq "windy") {$weather = "22"; $icon="wind"}
-		else {$weather = "0";}
-		print F "$weather|"; # Weather4Lox Weather Code
+
+		# Convert Weatherflow weather icon string into normalized icon name and Loxone picto-code
+		($code, $icon)= weatherflow_to_lox($results->{icon});
 		print F "$icon|"; # Weather4Lox Weather Icon name
+		print F "$code|"; # Loxone Weather Code
 		print F "$results->{conditions}|"; # Weather description
 		print F "-9999|"; # Ozone (not available in Weatherflow API)
 		print F "-9999|"; # Solar Radiation (not available in Weatherflow API)

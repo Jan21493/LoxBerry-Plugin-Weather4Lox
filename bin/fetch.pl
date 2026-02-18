@@ -51,12 +51,16 @@ my $verbose = '';
 my $cronjob = '';
 my $default = '';
 my $alternate = '';
+my $dump = '';
 
 GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 },
             'cronjob' => \$cronjob,
             'default' => \$default,
-            'alternate' => \$alternate);
+            'alternate' => \$alternate,
+			'dump' => \$dump,
+			);
+$dump = "--dump";
 
 # Create a logging object
 my $log = LoxBerry::Log->new (
@@ -93,9 +97,9 @@ if( !$cronjob || ( $cronjob && $default ) ){
 	}
 
 	if (-e "$lbpbindir/grabber_$service.pl") {
-		LOGINF "Starting Grabber grabber_$service.pl $service_opt $verbose_opt";
+		LOGINF "Starting Grabber grabber_$service.pl $service_opt $verbose_opt $dump";
 		$log->close;
-		system ("$lbpbindir/grabber_$service.pl $service_opt $verbose_opt");
+		system ("$lbpbindir/grabber_$service.pl $service_opt $verbose_opt $dump");
 	} else {
 		LOGCRIT "Cannot find grabber script for service $service.";
 		exit (1);
@@ -109,18 +113,18 @@ if( !$cronjob || ( $cronjob && $alternate ) ){
 	# Grab alternate DFC / HFC
 	if ( $servicedfc && $servicedfc eq $servicehfc ) {
 		if (-e "$lbpbindir/grabber_$servicedfc.pl") {
-			LOGINF "Starting Grabber grabber_$servicedfc.pl --daily --hourly $verbose_opt";
+			LOGINF "Starting Grabber grabber_$servicedfc.pl --daily --hourly $verbose_opt $dump";
 			$log->close;
-			system ("$lbpbindir/grabber_$servicedfc.pl --daily --hourly $verbose_opt");
+			system ("$lbpbindir/grabber_$servicedfc.pl --daily --hourly $verbose_opt $dump");
 		} else {
 			LOGCRIT "Cannot find grabber script for service $servicedfc.";
 			exit (1);
 		}
 	} elsif ( $servicedfc && $servicedfc ne $servicehfc ) {
 		if (-e "$lbpbindir/grabber_$servicedfc.pl") {
-			LOGINF "Starting Grabber grabber_$servicedfc.pl --daily $verbose_opt";
+			LOGINF "Starting Grabber grabber_$servicedfc.pl --daily $verbose_opt $dump";
 			$log->close;
-			system ("$lbpbindir/grabber_$servicedfc.pl --daily $verbose_opt");
+			system ("$lbpbindir/grabber_$servicedfc.pl --daily $verbose_opt $dump");
 		} else {
 			LOGCRIT "Cannot find grabber script for service $servicedfc.";
 			exit (1);
@@ -130,9 +134,9 @@ if( !$cronjob || ( $cronjob && $alternate ) ){
 
 	if ( $servicehfc && $servicehfc ne $servicedfc ) {
 		if (-e "$lbpbindir/grabber_$servicehfc.pl") {
-			LOGINF "Starting Grabber grabber_$servicehfc.pl --hourly $verbose_opt";
+			LOGINF "Starting Grabber grabber_$servicehfc.pl --hourly $verbose_opt $dump";
 			$log->close;
-			system ("$lbpbindir/grabber_$servicehfc.pl --hourly $verbose_opt");
+			system ("$lbpbindir/grabber_$servicehfc.pl --hourly $verbose_opt $dump");
 		} else {
 			LOGCRIT "Cannot find grabber script for service $servicehfc.";
 			exit (1);
@@ -143,7 +147,7 @@ if( !$cronjob || ( $cronjob && $alternate ) ){
 
 # Grab some data from Wunderground
 if ( $pcfg->param("SERVER.WUGRABBER") ) {
-	LOGINF "Starting Grabber grabber_wu.pl";
+	LOGINF "Starting Grabber grabber_wu.pl $verbose_opt $dump";
 	$log->close;
 	system ("$lbpbindir/grabber_wu.pl $verbose_opt");
 	$log->open;

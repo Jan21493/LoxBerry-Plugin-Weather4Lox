@@ -80,7 +80,7 @@ LOGSTART "Weather4Lox GRABBER_OPENWEATHER process started";
 LOGDEB "This is $0 Version $version";
 
 # Mappingstabelle für die Umwandlung der OpenWeatherMap-Wetter-IDs in die Loxone-Wetter Picto-Codes und Kurzname für Symbol
-my %owm_to_loxone = (
+my %owm_to_lox = (
     # OWM => [Picto-Code, Symbol]   # Beschreibung
     200 => [18, "tstorms"],     # thunderstorm with light rain -> Gewitter
     201 => [19, "tstorms"],     # thunderstorm with rain -> kräftiges Gewitter
@@ -148,14 +148,14 @@ my %owm_to_loxone = (
 # - Extreme (771 & 781): Squalls treten fast immer mit massivem Regen auf (12), ein Tornado ist das extremste Wettereignis und passt daher am ehesten in die Kategorie des kräftigen Gewitters (19), da er meist aus solchen Zellen entsteht.
 
 
-sub owm_to_loxone {
+sub owm_to_lox {
     my ($owm_id) = @_;
-    my $data = $owm_to_loxone{$owm_id} // [1, "clear"];
+    my $data = $owm_to_lox{$owm_id} // [1, "clear"];
     
-    if (!exists $owm_to_loxone{$owm_id}) {
-        LOGDEB "Unbekannte OpenWeatherMap-ID: $owm_id. Bitte prüfen! Setze 'sonnig'.";
+    if (!exists $owm_to_lox{$owm_id}) {
+        LOGDEB "Unknown ID from OpenWeatherMap: $owm_id. Please check! Using fallback 'clear'.";
     }
-    return @$data; # Gibt (Code, Icon) zurück
+    return @$data; # Returns (Code, Icon)
 }
 
 # Get data from openweathermap.org (API request) for current conditions
@@ -262,10 +262,10 @@ open(F,">$lbplogdir/current.dat.tmp") or $error = 1;
 	} else {
 		print F "0|";
 	}
-	# Convert Weather string into Weather Code and convert icon name
+	# Convert Weather string into Weather Code and normalized icon name
     # Weather conditions: https://openweathermap.org/weather-conditions
 	$owmid = $decoded_json->{current}->{weather}->[0]->{id};
-	($code, $icon) = owm_to_loxone($owmid);
+	($code, $icon) = owm_to_lox($owmid);
 	print F "$icon|";
 	print F "$code|";
 	print F "$decoded_json->{current}->{weather}->[0]->{description}|";
@@ -400,9 +400,9 @@ open(F,">$lbplogdir/dailyforecast.dat.tmp") or $error = 1;
 		print F "$results->{humidity}|";
 		print F "-9999|";
 		print F "-9999|";
-		# Convert Weather string into Weather Code and convert icon name
+		# Convert Weather string into Weather Code and normalized icon name
 		$owmid = $results->{weather}->[0]->{id};
-		($code, $icon) = owm_to_loxone($owmid);	
+		($code, $icon) = owm_to_lox($owmid);	
 		print F "$icon|";
 		print F "$code|";
 		print F "$results->{weather}->[0]->{description}|";
@@ -528,9 +528,9 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
                 } else {
                         print F "0|";
                 }
-		# Convert Weather string into Weather Code and convert icon name
+		# Convert Weather string into Weather Code and normalized icon name
 		$owmid = $results->{weather}->[0]->{id};
-		($code, $icon) = owm_to_loxone($owmid);	
+		($code, $icon) = owm_to_lox($owmid);	
 		print F "$icon|";
 		print F "$code|";
 		print F "$results->{weather}->[0]->{description}|";
@@ -700,9 +700,9 @@ if ($i < 168) {
 					$newline .= $oldfields[29];
 					$newline .= "|";
 				} else {
-					# Convert Weather string into Weather Code and convert icon name
+					# Convert Weather string into Weather Code and normalized icon name
 					$owmid = $results->{weather}->[0]->{id};
-					($code, $icon) = owm_to_loxone($owmid);	
+					($code, $icon) = owm_to_lox($owmid);	
 					$newline .= "$icon|";
 					$newline .= "$code|";
 					$newline .= $results->{weather}->[0]->{description};
