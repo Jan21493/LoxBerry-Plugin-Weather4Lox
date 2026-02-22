@@ -1021,8 +1021,10 @@ if ( $hourly ) { # Start hourly
 
 	my $sky_condition;
 	my $sky_description;
-	$error = 0;
+	my $t;
 	my $epoch_time = 0;
+
+	$error = 0;
 	open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 	flock(F,2);
 	if ($error) {
@@ -1046,7 +1048,7 @@ if ( $hourly ) { # Start hourly
 		# hfc1_date
 		my $date_str = qx( TZ='$timezone' date  -d "$results->{date}" +'%Y-%m-%d %H:%M' );
 		chomp($date_str);
-		my $t = Time::Piece->strptime($date_str, "%Y-%m-%d %H:%M");
+		$t = Time::Piece->strptime($date_str, "%Y-%m-%d %H:%M");
 		$epoch_time = $t->epoch;
 		print F $epoch_time, "|";
 
@@ -1182,8 +1184,7 @@ if ( $hourly ) { # Start hourly
 	# "dayparts": array with 4 "dayparts" per day (at 05:00, 11:00, 17:00, 23:00), each containing weather data for the corresponding time interval,
 	# It is assumed that the daypart data is ordered by time!
 
-	# '$i' counts the entry, '$epoch_time' time stamp from the last entry
-	$epoch_time += 3600;
+	# '$i' counts the entry, '$t' time stamp from the last entry
 
 	# --- helper: parse daypart epoch in timezone ---
 	sub _daypart_epoch {
@@ -1272,6 +1273,10 @@ if ( $hourly ) { # Start hourly
 	# Write hourly output from $epoch_time up to last daypart 
 	my $end_epoch_time = $dp_epochs[-1];
 
+	# increase time $t by 1 hour for next entry
+	$t += 3600;
+	$epoch_time = $t->epoch;
+
 	while ($epoch_time <= $end_epoch_time) {
 
 		# For step/hold fields (symbol -> icon/code/description and wind direction text),
@@ -1287,9 +1292,8 @@ if ( $hourly ) { # Start hourly
 		$i++;
 
 		# hfc1_date - epoch time of the hourly forecast
+		$epoch_time = $t->epoch;
 		print F "$epoch_time|";
-		my $t = Time::Piece->new($epoch_time);
-		$epoch_time += 3600;
 
 		# hfc1_day && hfc1_month && ... - extract date components for the hourly timestamp in local timezone
 		print F sprintf("%02d", $t->mday), "|";
@@ -1390,6 +1394,7 @@ if ( $hourly ) { # Start hourly
 		print F sprintf("%.2f", $moonphase * 100), "|";
 
 		print F "\n";
+		$t += 3600;
 	}
 
 	flock(F,8);
