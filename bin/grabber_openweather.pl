@@ -33,6 +33,8 @@ use Getopt::Long;
 use Time::Piece;
 use Astro::MoonPhase;
 
+require "$lbpbindir/grabber_utils.pl";
+
 ##########################################################################
 # Read Settings
 ##########################################################################
@@ -65,11 +67,14 @@ my $verbose = '';
 my $current = '';
 my $daily = '';
 my $hourly = '';
+my $maskkeys = 1; # optional
 GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 },
             'current' => \$current,
             'daily' => \$daily,
-            'hourly' => \$hourly);
+            'hourly' => \$hourly,
+			'maskkeys' => \$maskkeys,
+			);
 
 if ($verbose) {
 	$log->stdout(1);
@@ -79,7 +84,7 @@ if ($verbose) {
 LOGSTART "Weather4Lox GRABBER_OPENWEATHER process started";
 LOGDEB "This is $0 Version $version";
 
-# Mappingstabelle für die Umwandlung der OpenWeatherMap-Wetter-IDs in die Loxone-Wetter Picto-Codes und Kurzname für Symbol
+# Mapping table for conversion of OpenWeatherMap weather codes to Loxone weather Picto-Codes and short names for weather symbols
 my %owm_to_lox = (
     # OWM => [Picto-Code, Symbol]   # Beschreibung
     200 => [18, "tstorms"],     # thunderstorm with light rain -> Gewitter
@@ -153,37 +158,19 @@ sub owm_to_lox {
     my $data = $owm_to_lox{$owm_id} // [1, "clear"];
     
     if (!exists $owm_to_lox{$owm_id}) {
-        LOGDEB "Unknown ID from OpenWeatherMap: $owm_id. Please check! Using fallback 'clear'.";
+        LOGWARN "Unknown ID from OpenWeatherMap: $owm_id. Please check! Using fallback 'clear'.";
     }
     return @$data; # Returns (Code, Icon)
 }
 
-# Get data from openweathermap.org (API request) for current conditions
-my $queryurlcr = "$url/3.0/onecall?appid=$apikey&$stationid&lang=$lang&units=metric";
-
-my $error = 0;
-LOGINF "Fetching Current Data for Location $stationid";
-LOGDEB "URL: $queryurlcr";
-
-my $ua = new LWP::UserAgent;
-my $res = $ua->get($queryurlcr);
-my $json = $res->decoded_content();
-
-# Check status of request
-my $urlstatus = $res->status_line;
-my $urlstatuscode = substr($urlstatus,0,3);
-
-LOGDEB "Status: $urlstatus";
-
-if ($urlstatuscode ne "200") {
-  LOGCRIT "Failed to fetch data for $stationid\. Status Code: $urlstatuscode";
-  exit 2;
-} else {
-  LOGOK "Data fetched successfully for $stationid";
-}
-
-# Decode JSON response from server
-my $decoded_json = decode_json( "$json" );
+# Get data from openweathermap.org (API request) for current conditions, daily and hourly forecasts via OneCall API
+my $decoded_json = api_call(
+	url => "$url/3.0/onecall?appid=$apikey&$stationid&lang=$lang&units=metric",
+	maskkeys => $maskkeys,
+	keyparam => 'appid',
+	# apikey => $apikey,	# not needed here as the URL is already masked and the key won't appear elsewhere in the response
+	info => "for Location $stationid (Current, Daily, and Hourly Weather Data)",
+);
 
 my $t;
 my $owmid;
@@ -193,6 +180,7 @@ my $wdir;
 my $wdirdes;
 my @filecontent;
 my $i;
+my $error = 0;
 
 #
 # Fetch current data
@@ -205,7 +193,7 @@ $t = localtime($decoded_json->{current}->{dt});
 LOGINF "Saving new Data for Timestamp $t to database.";
 
 # Saving new current data...
-$error = 0;
+my $error = 0;
 open(F,">$lbplogdir/current.dat.tmp") or $error = 1;
   flock(F,2);
 	if ($error) {
@@ -555,31 +543,16 @@ close(F);
 # OpenWeatherMap only offers 48h in the free account. Interpolate with 3-hours data to have more entries for the weather emulator
 if ($i < 168) {
 
-	# Get data from OPenWeatherMap Server (API request) for current conditions
-	$queryurlcr = "$url/2.5/forecast?appid=$apikey&$stationid&lang=$lang&units=metric&cnt=40";
+	LOGINF "Fetching additional 3-Hourly Forecat Data to interpolite hourly data (only 48h of hourly data available via OneCall API).";
 
-	LOGINF "Fetching additional 3-Hourly Forecat Data for Location $stationid to interpolite hourly data";
-	LOGDEB "URL: $queryurlcr";
-
-	$ua = new LWP::UserAgent;
-	$res = $ua->get($queryurlcr);
-	$json = $res->decoded_content();
-
-	# Check status of request
-	$urlstatus = $res->status_line;
-	$urlstatuscode = substr($urlstatus,0,3);
-
-	LOGDEB "Status: $urlstatus";
-
-	if ($urlstatuscode ne "200") {
-	  LOGCRIT "Failed to fetch data for $stationid\. Status Code: $urlstatuscode";
-	  exit 2;
-	} else {
-	  LOGOK "Data fetched successfully for $stationid";
-	}
-
-	# Decode JSON response from server
-	$decoded_json = decode_json( "$json" );
+	# Get data from openweathermap.org (API request) for 3-hourly forecasts via free 5 day / 3 hour forecast data
+	$decoded_json = api_call(
+		url => "$url/2.5/forecast?appid=$apikey&$stationid&lang=$lang&units=metric&cnt=40",
+		maskkeys => $maskkeys,
+		keyparam => 'appid',
+		# apikey => $apikey,	# not needed here as the URL is already masked and the key won't appear elsewhere in the response
+		info => "for Location $stationid (3-Hourly Weather Forecast Data)",
+	);
 
 	$error = 0;
 	open(F,"+<$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;;

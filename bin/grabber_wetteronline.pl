@@ -40,6 +40,9 @@ use Astro::MoonPhase;
 use utf8;
 use Encode qw(encode_utf8);
 use HTML::Entities;
+use Data::Dumper;
+
+require "$lbpbindir/grabber_utils.pl";
 
 ##########################################################################
 # Read Settings
@@ -55,6 +58,7 @@ my $apikey           = "av=2&mv=13&c=d2ViOmFxcnhwWDR3ZWJDSlRuWeb=";
 my $apikey_current   = "c=d293ZWI6QzhMNFRINmVUbkRoVWFqYg==";
 my $useragent        = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
 my $urlGEO_raw       = "https://www.wetteronline.de/wetter/";
+my $uriUV_raw        = "?prefpar=sun";
 my $urlCurrent_raw   = "https://api-web.wo-cloud.com/weather/nowcast/v10?";
 my $urlDaily_raw     = "https://api-app.wetteronline.de/app/weather/forecast?";
 my $urlHourly_raw    = "https://api-app.wetteronline.de/app/weather/hourcast?";
@@ -86,13 +90,13 @@ my $verbose = '';
 my $current = '';
 my $daily = '';
 my $hourly = '';
-my $dump = '';
+my $maskkeys = 1;
 GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 },
             'current' => \$current,
             'daily' => \$daily,
             'hourly' => \$hourly,
-            'dump' => \$dump,
+            'maskkeys' => \$maskkeys,
 			);
 
 if ($verbose) {
@@ -116,7 +120,12 @@ sub getUrl {
     
     if ($response->is_success) {
         LOGDEB("Status: " . $response->status_line);
-        return $response->decoded_content;
+        my $content = $response->decoded_content;
+        #LOGDEB("HTTP response:\n$content") if $content ne '';
+        #LOGDEB("-" x 80);
+
+        #print Dumper $content;
+        return $content;
     } else {
         LOGCRIT("Failed to fetch data for $city. Status: " . $response->status_line);
         die "Quit fetching data.";
@@ -137,104 +146,62 @@ sub findGid {
     }
 }
 
-# Getting GEO data and decoding to perl format
-LOGINF "Fetching GEO data for location $city";
-my $urlGEO  = "$urlGEO_raw$city";
-my $body = getUrl($urlGEO, $useragent);
-my $geodataMatch;
-if ($body =~ /WO\.geo = (\{(?:[^{}"]|"(?:[^"\\]|\\.)*"|(?1))*\});/s) {
-	$geodataMatch = $1;
-} else {
-        LOGCRIT("Failed to fetch data for $city. No valid data found in the server response. Check Station name.");
-        die "Quit fetching data.";
-}
-my $decodedGeodata;
+# Getting GEO data first to get lat and long for the API call for weather data
+my $geodataMatch = api_call(
+	url => "$urlGEO_raw$city",
+	# maskkeys => $maskkeys,    # no masking needed here as there are no secret API keys
+	# keyparam => 'appid',
+	# apikey => $apikey, 
+	info => "for Location $city (GEO data only)",
+    match => qr/WO\.geo = (\{(?:[^{}"]|"(?:[^"\\]|\\.)*"|(?1))*\});/s,
+);
+
 $geodataMatch = decode_entities($geodataMatch);
 $geodataMatch = encode_utf8($geodataMatch);
-$decodedGeodata = $json->decode($geodataMatch);
+my $decodedGeodata = $json->decode($geodataMatch);
 my $lat = $decodedGeodata->{lat};
 my $long = $decodedGeodata->{lon};
 my $altitude = $decodedGeodata->{alt};
 
-# Getting current data and decoding to perl format
-LOGINF "Fetching current data for location $city";
-my $gid = findGid($city, $body);
-my $urlCurrent = "$urlCurrent_raw$apikey_current&grid_longitude=$long&grid_latitude=$lat&location_id=$gid&astro_longitude=$long&astro_latitude=$lat&latitude=$lat&longitude=$long&timezone=$timezone&language=de-DE&timeformat=HH:mm&windunit=kmh&system_of_measurement=metric&altitude=$altitude";
-my $currentData = getUrl($urlCurrent, $useragent);
-my $decodedCurrent;
-$currentData = encode_utf8($currentData);
-$decodedCurrent = $json->decode($currentData);
-
-if ( $dump ) { # Start dump
-	# Dumping Content from Wetteronline ...
-	LOGINF "Dumping current data from Wetteronline for location $city to $lbplogdir/wetteronline-current.raw";
-	open(F,">$lbplogdir/wetteronline-current.raw") or $error = 1;
-	flock(F,2);
-	if ($error) {
-		LOGCRIT "Cannot open $lbpconfigdir/wetteronline-current.raw";
-		exit 2;
-	}
-	binmode F, ':encoding(UTF-8)';
-	print F "Request URL: $urlCurrent\n";	
-	print F "Decoded JSON response:\n";
-	print F $json->pretty->encode($decodedCurrent);
-	print F "\n";
-	flock(F,8);
-	close(F);
+if ($geodataMatch) {
+    LOGDEB("Extracted GEO data:\n$geodataMatch");
+    LOGDEB("-" x 80);
+}
+# my $gid = findGid($city, $geodataMatch); 
+my $gid = $decodedGeodata->{gid}; 
+if ($gid) {
+    LOGDEB "The GID of city $city is $gid.";
+} else {
+    LOGCRIT "Failed to fetch GID for $city";
+    die "Quit fetching GID.";
 }
 
-# Getting daily data and decoding to perl format
-LOGINF "Fetching daily data for location $city";
-my $urlDaily = "$urlDaily_raw$apikey&location_id=$gid&timezone=$timezone";
-my $dailyData = getUrl($urlDaily, $useragent);
-my $decodedDaily;
-$dailyData = encode_utf8($dailyData);
-$decodedDaily = $json->decode($dailyData);
+# Get weather data from wetteronline.de (API request) for current conditions
+my $decodedCurrent = api_call(
+	url => "$urlCurrent_raw$apikey_current&grid_longitude=$long&grid_latitude=$lat&location_id=$gid&astro_longitude=$long&astro_latitude=$lat&latitude=$lat&longitude=$long&timezone=$timezone&language=de-DE&timeformat=HH:mm&windunit=kmh&system_of_measurement=metric&altitude=$altitude",
+	# maskkeys => $maskkeys,    # no masking needed here as there are no secret API keys
+	# keyparam => 'appid',
+	# apikey => $apikey,
+	info => "for Location $city (Current Weather Data)",
+);
 
-if ( $dump ) { # Start dump
-	# Dumping Content from Wetteronline ...
-	LOGINF "Dumping daily data from Wetteronline for location $city to $lbplogdir/wetteronline-daily.raw";
-	open(F,">$lbplogdir/wetteronline-daily.raw") or $error = 1;
-	flock(F,2);
-	if ($error) {
-		LOGCRIT "Cannot open $lbpconfigdir/wetteronline-daily.raw";
-		exit 2;
-	}
-	binmode F, ':encoding(UTF-8)';
+# Get weather data from wetteronline.de (API request) for daily conditions
+my $decodedDaily = api_call(
+	url => "$urlDaily_raw$apikey&location_id=$gid&timezone=$timezone",
+	# maskkeys => $maskkeys,    # no masking needed here as there are no secret API keys
+	# keyparam => 'appid',
+	# apikey => $apikey,
+	info => "for Location $city (Daily Weather Data)",
+);
 
-	print F "Request URL: $urlDaily\n";	
-	print F "Decoded JSON response:\n";
-	print F $json->pretty->encode($decodedDaily);
-	print F "\n";
-	flock(F,8);
-	close(F);
-}
-# Getting hourly data and decoding to perl format
-LOGINF "Fetching hourly data for location $city";
-my $urlHourly = "$urlHourly_raw$apikey&location_id=$gid&timezone=$timezone";
-my $hourlyData = getUrl($urlHourly, $useragent);
-my $decodedHourly;
-$hourlyData = encode_utf8($hourlyData);
-$decodedHourly = $json->decode($hourlyData);
-
-if ( $dump ) { # Start dump
-	# Dumping Content from Wetteronline ...
-	LOGINF "Dumping hourly data from Wetteronline for location $city to $lbplogdir/wetteronline-hourly.raw";
-	open(F,">$lbplogdir/wetteronline-hourly.raw") or $error = 1;
-	flock(F,2);
-	if ($error) {
-		LOGCRIT "Cannot open $lbpconfigdir/wetteronline-hourly.raw";
-		exit 2;
-	}
-	binmode F, ':encoding(UTF-8)';
-
-	print F "Request URL: $urlHourly\n";	
-	print F "Decoded JSON response:\n";
-	print F $json->pretty->encode($decodedHourly);
-	print F "\n";
-	flock(F,8);
-	close(F);
-}
+# Get weather data from wetteronline.de (API request) for hourly conditions
+my $decodedHourly = api_call(
+	url => "$urlHourly_raw$apikey&location_id=$gid&timezone=$timezone",
+	# maskkeys => $maskkeys,    # no masking needed here as there are no secret API keys
+	# keyparam => 'appid',
+	# apikey => $apikey,
+	info => "for Location $city (Hourly Weather Data)",
+);
 
 my $t;
 my $weather;
@@ -247,6 +214,7 @@ my @filecontent;
 my $i;
 
 # Mapping: Wetteronline Symbol => [Loxone Code, Weather4Lox Icon, Description]
+# Weather symbols with meaning: https://www.wetteronline.de/symbole
 # --> Using https://wiki.loxberry.de/plugins/weather4loxone/start#wetter-codes
 		
 
@@ -256,149 +224,319 @@ my $i;
 # Position 1-2: Tageszeit + Bewölkung
 
 # Code	Bedeutung
-# so	Sonne (Tag, wolkenlos)
-# mo	Mond (Nacht, wolkenlos)
-# wb	Wolke + Basis (Tag, leicht bewölkt)
-# mb	Mond + Basis (Nacht, leicht bewölkt)
-# mw	Mond + Wolke (Nacht, bewölkt)
-# bd	Bedeckt Day (Tag, stark bewölkt)
-# bw	Bewölkt + Wetter (mit Niederschlag)
-# wd	Wetter Day (Tag mit Niederschlag)
-# md	Mond + Dunkel (Nacht mit Niederschlag)
-# ns	Nebel/Schnee
-# nm	Nebel Mond (Nacht)
+# so	Sonnig (Tag)
+# mo	Klar (Nacht)
+
+# wb	Leicht bewölkt (Tag)
+# mb	Leicht bewölkt (Nacht)
+
+# bw	Bewölkt (Tag)
+# mw	Bewölkt (Nacht)
+
+# bd	Bedeckt (Tag)
+# md	Bedeckt (Nacht)
+
+# ns	Nebel (Tag)
+# nm	Nebel (Nacht)
 # nb	Nebel
 
-# Position 3-4: Niederschlagsart
+# Position 3-6: Niederschlagsart, aufgefüllt mit Unterstrichen, wenn kein Niederschlag oder Code kürzer ist
 
 # Code	Bedeutung
-# __	Kein Niederschlag
-# sn	Schnee
-# sr	Schneeregen
-# s1-s3	Schauer (Intensität 1-3)
-# r1-r3	Regen (Intensität 1-3)
-# g1-g3	Gewitter (Intensität 1-3)
-# gr	Gefrierender Regen
-# gs	Graupel/Schnee
-# hs	Hagel/Schnee
-# ek	Eiskörner
-# sg	Schneegestöber
+# ____	Kein Niederschlag
 
-# Position 5-6: Intensität/Variante
+# für alle Bewölkungsarten:
+#   wb, mb - leicht bewölkt mit Symbol für Tag und Nacht (Wolken sind keiner als Sonne/Mond)
+#   bw, mw - bewölkt mit Symbol für Tag und Nacht (Wolken sind größer als Sonne/Mond)
+#   bd, md - bedeckt, haben gleiches Symbol für Tag und Nacht (nur Woklen, keine Sonne/Mond)
 
-# Code	Bedeutung
-# __	Keine Angabe/Standard
-# 1_	Leicht/Schwach
-# 2_	Mittel/Mäßig
-# 3_	Stark/Kräftig
-# r1-r2	Regen-Variante
-# s1-s3	Schnee-Variante
+# gibt es die Kombination mit Niederschlag in unterschiedlichen Intensitäten/Varianten
+#  s1-s3	    Schauer (Intensität 1-3 - Leicht, Mittel, Stark), Intensität 1-3 wird durch Anzahl der Tropfen im Symbol dargestellt
+#  r1-r3	    Regen (Intensität 1-3 - Leicht, Mittel, Stark), Symbole wie s1-s3
+#  g1-g3	    Gewitter (Intensität 1-3 - Leicht, Mittel, Stark), Symbol mit einem Blitz, Intensität 1-2 wird durch Anzahl der Tropfen im Symbol dargestellt, bei 3 zusätzlich Warndreieck
+#  sn1-sn3	    Schneefall (Intensität 1-3 - Leicht, Mittel, Stark), Intensität 1-3 wird durch Anzahl der Schneeflocken im Symbol dargestellt
+#  sr1-sr3	    Schneeregen (Intensität 1-3 - Leicht, Mittel, Stark), bei allen Intensitäten immer ein Tropfen und eine Schneeflocke im Symbol
+#  snr1-snr3	Schneeregen, siehe sr1-sr3
+#  srs1-srs3	Schneeregenschauer, Symbole wie sr
 
+#  gr1-gr2	Gefrierender Regen (Intensität 1-2 - Leicht, Stark)
+#  gs1-gs2	Graupelschauer (Intensität 1-2 - Leicht, Stark)
+#  hs1-hs2	Hagelschauer (Intensität 1-2 - Leicht, Stark)
+
+#  ek	Eiskörner
+#  sg	Schneegestöber (Schneegewitter), Symbol mit Schneeflocke und Blitz
+
+# mapping is created from https://www.wetteronline.de/symbole
+# additional symbols that are not listed in the overview but are used in practice were added after verifying symbol, e.g. "bw___", "mw___"
 my %wetteronline_to_lox = (
-    # Gewitter
-    "wbg1__" => ["18", "tstorms", "Gewitter"],
-    "mbg1__" => ["18", "tstorms", "Gewitter"],
-    "bdg1__" => ["18", "tstorms", "Gewitter"],
-    "bwg1__" => ["18", "tstorms", "Gewitter"],
-    "wbg2__" => ["18", "tstorms", "Gewitter"],
-    "mbg2__" => ["18", "tstorms", "Gewitter"],
-    "bdg2__" => ["18", "tstorms", "Gewitter"],
-    "bwg2__" => ["18", "tstorms", "Gewitter"],
-    "bwg3__" => ["19", "tstorms", "Kräftiges Gewitter"],
-    
-    # Regen
-    "wbs1__" => ["10", "chancerain", "Leichter Regen"],
-    "mbs1__" => ["10", "chancerain", "Leichter Regen"],
-    "mws1__" => ["10", "chancerain", "Leichter Regen"],
-    "bwr1__" => ["10", "chancerain", "Leichter Regen"],
-    "wbs2__" => ["11", "rain", "Regen"],
-    "mbs2__" => ["11", "rain", "Regen"],
-    "mws2__" => ["11", "rain", "Regen"],
-    "bwr2__" => ["11", "rain", "Regen"],
-    "wbs3__" => ["12", "rain", "Starker Regen"],
-    "mbs3__" => ["12", "rain", "Starker Regen"],
-    "mws3__" => ["12", "rain", "Starker Regen"],
-    "bwr3__" => ["12", "rain", "Starker Regen"],
-    
-    # Gefrierender Regen
-    "bdgr1_" => ["14", "sleet", "Gefrierender Regen"],
-    "bdgr2_" => ["14", "sleet", "Gefrierender Regen"],
-    "bwgr1_" => ["14", "sleet", "Gefrierender Regen"],
-    "bwgr2_" => ["14", "sleet", "Gefrierender Regen"],
-    
-    # Regenschauer
-    "bdr1__" => ["16", "rain", "Leichter Regenschauer"],
-    "bws1__" => ["16", "rain", "Leichter Regenschauer"],
-    "bdr2__" => ["16", "rain", "Regenschauer"],
-    "bws2__" => ["16", "rain", "Regenschauer"],
-    "bdr3__" => ["17", "rain", "Starker Regenschauer"],
-    "bws3__" => ["17", "rain", "Starker Regenschauer"],
 
-    "wdr1__" => ["16", "rain", "Leichter Regenschauer"],
-    "mds1__" => ["16", "rain", "Leichter Regenschauer"],
-    "wdr2__" => ["16", "rain", "Regenschauer"],
-    "mds2__" => ["16", "rain", "Regenschauer"],
-    "wdr3__" => ["17", "rain", "Starker Regenschauer"],
-    "mds3__" => ["17", "rain", "Starker Regenschauer"],
+    # in Farbe: https://st.wetteronline.de/dr/1.1.617/city/prozess/graphiken/symbole/standard/farbe/png/50x35/so____.png
+    # in SW:    https://st.wetteronline.de/dr/1.1.617/city/prozess/graphiken/symbole/wom/standard/sw/gif/so____.gif
+    # aktuelles Wetter in Farbe: https://st.wetteronline.de/dr/1.1.617/aktuell/prozess/graphiken/symbole/standard/farbe/gif/so____.gif
 
-    # Schnee
-    "bdsn1_" => ["20", "snow", "Leichter Schneefall"],
-    "bwsn1_" => ["20", "snow", "Leichter Schneefall"],
-    "bdsn2_" => ["21", "snow", "Schneefall"],
-    "bwsn2_" => ["21", "snow", "Schneefall"],
-    "bdsn3_" => ["22", "snow", "Starker Schneefall"],
-    "bwsn3_" => ["22", "snow", "Starker Schneefall"],
-    "wdsn1_" => ["20", "snow", "Leichter Schneefall"],
-    "mdsn1_" => ["20", "snow", "Leichter Schneefall"],
-    "wdsn2_" => ["21", "snow", "Schneefall"],
-    "mdsn2_" => ["21", "snow", "Schneefall"],
-    "wdsn3_" => ["22", "snow", "Starker Schneefall"],
-    "mdsn3_" => ["22", "snow", "Starker Schneefall"],
+    # Wolken (in Abstufungen von klar bis bedeckt)
+    "so____" => ["1", "clear", "Sonnig"],                                        # sonnig bzw. klar / wolkenlos (Tag)
+    "mo____" => ["1", "clear", "Klar"],                                          # sonnig bzw. klar / wolkenlos (Nacht)
+    "wb____" => ["2", "mostlysunny", "Leicht bewölkt"],                          # leicht bewölkt (Tag)
+    "mb____" => ["2", "mostlysunny", "Leicht bewölkt"],                          # leicht bewölkt (Nacht)
+    "bw____" => ["3", "cloudy", "Bewölkt"],                                      # Bewölkt (Tag)
+    "mw____" => ["3", "cloudy", "Bewölkt"],                                      # Bewölkt (Nacht)
+    "bd____" => ["5", "overcast", "Bedeckt"],                                    # bedeckt
+    "md____" => ["5", "overcast", "Bedeckt"],                                    # Bedeckt
 
-    # Schneeregen/Graupel
-    "bwgs2_" => ["26", "sleet", "Graupel"],
-    "bwhs2_" => ["26", "sleet", "Graupel"],
-    "bwsnr2" => ["26", "sleet", "Schneeregen"],
-    "bwek__" => ["26", "sleet", "Eiskörner"],
-    "bwgs1_" => ["28", "sleet", "Leichte Graupel"],
-    "bwhs1_" => ["28", "sleet", "Leichte Graupel"],
-    "bwsnr1" => ["28", "sleet", "Leichter Schneeregen"],
-    
-    # Schneeregen (gemischt)
-    "wbsrs1" => ["25", "sleet", "Leichter Schneeregen"],
-    "mbsrs1" => ["25", "sleet", "Leichter Schneeregen"],
-    "bdsr1_" => ["25", "sleet", "Leichter Schneeregen"],
-    "bwsrs1" => ["25", "sleet", "Leichter Schneeregen"],
-    "wbsrs2" => ["26", "snow", "Schneeregen"],
-    "mbsrs2" => ["26", "snow", "Schneeregen"],
-    "bdsr2_" => ["26", "snow", "Schneeregen"],
-    "bdsr3_" => ["27", "snow", "Starker Schneeregen"],
-    "bwsrs2" => ["27", "snow", "Starker Schneeregen"],
-    
-    # Schneeschauer
-    "wbsns1" => ["23", "snow", "Leichter Schneeschauer"],
-    "mbsns1" => ["23", "snow", "Leichter Schneeschauer"],
-    "bwsns1" => ["23", "snow", "Leichter Schneeschauer"],
-    "wbsns2" => ["23", "snow", "Schneeschauer"],
-    "mbsns2" => ["23", "snow", "Schneeschauer"],
-    "bwsns2" => ["23", "snow", "Schneeschauer"],
-    "wbsg__" => ["24", "snow", "Schneegestöber"],
-    "mbsg__" => ["24", "snow", "Schneegestöber"],
-    "bdsg__" => ["24", "snow", "Schneegestöber"],
-    "bwsns3" => ["24", "snow", "Starker Schneeschauer"],
-    
     # Nebel/Dunst
-    "ns____" => ["5", "hazy", "Hochnebel"],
-    "nm____" => ["5", "hazy", "Hochnebel"],
-    "nb____" => ["6", "fog", "Nebel"],
-    
-    # Wolken
-    "so____" => ["1", "clear", "Sonnig"],
-    "mo____" => ["1", "clear", "Klar"],
-    "wb____" => ["2", "mostlysunny", "Heiter"],
-    "mb____" => ["2", "mostlysunny", "Heiter"],
-    "mw____" => ["3", "mostlycloudy", "Wolkig"],
-    "bd____" => ["4", "cloudy", "Stark Bewölkt"],
+    "ns____" => ["6", "fog", "Teils neblig"],                                    # teils neblig (Tag)
+    "nm____" => ["6", "fog", "Teils neblig"],                                    # teils neblig (Nacht)
+    "nb____" => ["6", "fog", "Nebelig"],                                         # neblig / Nebel
+
+    # Schauer
+
+    # leicht Bewölkt und Schauer (Tag und Nacht)
+    "wbs1__" => ["16", "chancerain", "Vereinzelt Regenschauer"],                 # leicht bewölkt und vereinzelt Schauer (Tag)
+    "wbs2__" => ["16", "rain", "Regenschauer"],                                  # leicht bewölkt und Schauer (Tag)
+    "wbs3__" => ["12", "rain", "Starker Regenschauer"],                          # leicht bewölkt und Starke Regenschauer (Tag)
+
+    "mbs1__" => ["16", "chancerain", "Vereinzelt Regenschauer"],                 # leicht bewölkt und vereinzelt Schauer (Nacht)
+    "mbs2__" => ["16", "rain", "Regenschauer"],                                  # leicht bewölkt und Schauer (Nacht)
+    "mbs3__" => ["12", "rain", "Starker Regenschauer"],                          # leicht bewölkt und Starke Regenschauer (Nacht)
+
+   # Bewölkt und Schauer (Tag und Nacht)
+    "bws1__" => ["16", "chancerain", "Vereinzelt Regenschauer"],                 # bewölkt und vereinzelt Schauer (Tag)
+    "mws1__" => ["16", "chancerain", "Vereinzelt Regenschauer"],                 # bewölkt und vereinzelt Schauer (Nacht)
+    "bws2__" => ["16", "rain", "Regenschauer"],                                  # bewölkt und Schauer (Tag)
+    "mws2__" => ["16", "rain", "Regenschauer"],                                  # bewölkt und Schauer (Nacht)
+    "bws3__" => ["12", "rain", "Starker Regenschauer"],                          # bewölkt und Starke Regenschauer (Tag)
+    "mws3__" => ["12", "rain", "Starker Regenschauer"],                          # bewölkt und Starke Regenschauer (Nacht)
+
+    # Bedeckt und Schauer
+    "bds1__" => ["10", "rain", "Leichter Regenschauer"],                         # Leichter Regenschauer
+    "bds2__" => ["11", "rain", "Regenschauer"],                                  # Regenschauer
+    "bds3__" => ["12", "rain", "Starker Regenschauer"],                          # Starker Regenschauer
+
+    "mds1__" => ["10", "rain", "Leichter Regenschauer"],                         # Leichter Regenschauer
+    "mds2__" => ["11", "rain", "Regenschauer"],                                  # Regenschauer
+    "mds3__" => ["12", "rain", "Starker Regenschauer"],                          # Starker Regenschauer
+
+    # Regen
+
+    # leicht Bewölkt und Regen (Tag und Nacht)
+    "wbr1__" => ["16", "chancerain", "Leichter Regen"],                          # leicht bewölkt und leichter Regen (Tag)
+    "wbr2__" => ["11", "rain", "Regen"],                                         # leicht bewölkt und Regen (Tag)
+    "wbr3__" => ["12", "rain", "Starker Regen"],                                 # leicht bewölkt und Starker Regen (Tag)
+
+    "mbr1__" => ["16", "chancerain", "Leichter Regen"],                          # leicht bewölkt und leichter Regen (Nacht)
+    "mbr2__" => ["11", "rain", "Regen"],                                         # leicht bewölkt und Regen (Nacht)
+    "mbr3__" => ["12", "rain", "Starker Regen"],                                 # leicht bewölkt und Starker Regen (Nacht)
+
+    # Bewölkt und Regen (Tag und Nacht)
+    "bwr1__" => ["16", "chancerain", "Leichter Regen"],                          # bewölkt und leichter Regen (Tag)
+    "mwr1__" => ["16", "chancerain", "Leichter Regen"],                          # bewölkt und leichter Regen (Nacht)
+    "bwr2__" => ["11", "rain", "Regen"],                                         # bewölkt und Regen (Tag)
+    "mwr2__" => ["11", "rain", "Regen"],                                         # bewölkt und Regen (Nacht)
+    "bwr3__" => ["12", "rain", "Starker Regen"],                                 # bewölkt und Starker Regen (Tag)
+    "mwr3__" => ["12", "rain", "Starker Regen"],                                 # bewölkt und Starker Regen (Nacht)
+
+    # Bedeckt und Regen
+    "bdr1__" => ["16", "chancerain", "Regenschauer"],                            # bedeckt, etwas Regen oder vereinzelt Schauer
+    "bdr2__" => ["11", "rain", "Regen"],                                         # bedeckt, Regen oder Schauer
+    "bdr3__" => ["12", "rain", "Ergiebiger Regen"],                              # bedeckt und ergiebiger Regen
+
+    "mdr1__" => ["10", "rain", "Leichter Regen"],                                # Leichter Regen
+    "mdr2__" => ["11", "rain", "Regen"],                                         # Regen
+    "mdr3__" => ["12", "rain", "Starker Regen"],                                 # Starker Regen
+
+    # Schneeregenschauer
+
+    # leicht bewölkt und Schneeregenschauer
+    "wbsrs1" => ["28", "sleet", "Vereinzelt Schneeregenschauer"],                # leicht bewölkt und vereinzelt Schneeregenschauer (Tag)
+    "wbsrs2" => ["28", "sleet", "Schneeregenschauer"],                           # leicht bewölkt und Schneeregenschauer (Tag)
+    "wbsrs3" => ["29", "sleet", "Starke Schneeregenschauer"],                    # leicht bewölkt und Schneeregenschauer (Tag)
+
+    "mbsrs1" => ["28", "sleet", "Vereinzelt Schneeregenschauer"],                # leicht bewölkt und vereinzelt Schneeregenschauer (Nacht)
+    "mbsrs2" => ["28", "sleet", "Schneeregenschauer"],                           # leicht bewölkt und Schneeregenschauer (Nacht)
+    "mbsrs3" => ["29", "sleet", "Starke Schneeregenschauer"],                    # leicht bewölkt und Schneeregenschauer (Nacht)
+
+    # bewölkt und Schneeregenschauer
+    "bwsrs1" => ["28", "sleet", "Vereinzelt Schneeregenschauer"],                # bewölkt und vereinzelt Schneeregenschauer (Tag)
+    "bwsrs2" => ["28", "sleet", "Schneeregenschauer"],                           # bewölkt und Schneeregenschauer (Tag)
+    "bwsrs3" => ["29", "sleet", "Starke Schneeregenschauer"],                    # bewölkt und Schneeregenschauer (Tag)
+
+    "mwsrs1" => ["28", "sleet", "Vereinzelt Schneeregenschauer"],                # bewölkt und vereinzelt Schneeregenschauer (Nacht)
+    "mwsrs2" => ["28", "sleet", "Schneeregenschauer"],                           # bewölkt und Schneeregenschauer (Nacht)
+    "mwsrs3" => ["29", "sleet", "Starke Schneeregenschauer"],                    # bewölkt und Schneeregenschauer (Nacht)
+
+    # bedeckt und Schneeregenschauer
+    "bdsrs1" => ["25", "sleet", "Leichter Schneeregenschauer"],                  # bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer
+    "bdsrs2" => ["26", "sleet", "Schneeregenschauer"],                           # bedeckt, Schneeregen oder Schneeregenschauer
+    "bdsrs3" => ["27", "sleet", "Ergiebiger Schneeregenschauer"],                # bedeckt und ergiebiger Schneeregen
+
+    "mdsrs1" => ["25", "sleet", "Leichter Schneeregenschauer"],                  # bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer
+    "mdsrs2" => ["26", "sleet", "Schneeregenschauer"],                           # bedeckt, Schneeregen oder Schneeregenschauer
+    "mdsrs3" => ["27", "sleet", "Ergiebiger Schneeregenschauer"],                # bedeckt und ergiebiger Schneeregen
+
+    # Schneeregen ### ToDo: snr in sr umwandeln
+    "bwsnr1" => ["28", "sleet", "Leichter Schneeregen"],                         # leichter Schneeregen
+    "bwsnr2" => ["26", "sleet", "Schneeregen"],                                  # Schneeregen
+
+    # Schneeregen
+
+    # leicht bewölkt und Schneeregen
+    "wbsr1_" => ["25", "sleet", "Leichter Schneeregen"],                         # leicht bewölkt und vereinzelt Schneeregen (Tag)
+    "wbsr2_" => ["26", "sleet", "Schneeregen"],                                  # leicht bewölkt und Schneeregen (Tag)
+    "wbsr3_" => ["27", "sleet", "Starker Schneeregen"],                          # leicht bewölkt und ergiebiger Schneeregen (Tag)
+
+    "mbsr1_" => ["25", "sleet", "Leichter Schneeregen"],                         # leicht bewölkt und vereinzelt Schneeregen (Nacht)
+    "mbsr2_" => ["26", "sleet", "Schneeregen"],                                  # leicht bewölkt und Schneeregen (Nacht)
+    "mbsr3_" => ["27", "sleet", "Starker Schneeregen"],                          # leicht bewölkt und ergiebiger Schneeregen (Nacht)
+
+    # bewölkt und Schneeregen
+    "bwsr1_" => ["25", "sleet", "Leichter Schneeregen"],                         # bewölkt und vereinzelt Schneeregen (Tag)
+    "bwsr2_" => ["26", "sleet", "Schneeregen"],                                  # bewölkt und Schneeregen (Tag)
+    "bwsr3_" => ["27", "sleet", "Starker Schneeregen"],                          # bewölkt und ergiebiger Schneeregen (Tag)
+
+    "mwsr1_" => ["25", "sleet", "Leichter Schneeregen"],                         # bewölkt und vereinzelt Schneeregen (Nacht)
+    "mwsr2_" => ["26", "sleet", "Schneeregen"],                                  # bewölkt und Schneeregen (Nacht)
+    "mwsr3_" => ["27", "sleet", "Starker Schneeregen"],                          # bewölkt und ergiebiger Schneeregen (Nacht)
+
+    # bedeckt und Schneeregen
+    "bdsr1_" => ["25", "sleet", "Leichter Schneeregen"],                         # bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer
+    "bdsr2_" => ["26", "sleet", "Schneeregen"],                                  # bedeckt, Schneeregen oder Schneeregenschauer
+    "bdsr3_" => ["27", "sleet", "Ergiebiger Schneeregen"],                       # bedeckt und ergiebiger Schneeregen
+
+    "mdsr1_" => ["25", "sleet", "Leichter Schneeregen"],                         # bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer
+    "mdsr2_" => ["26", "sleet", "Schneeregen"],                                  # bedeckt, Schneeregen oder Schneeregenschauer
+    "mdsr3_" => ["27", "sleet", "Ergiebiger Schneeregen"],                       # bedeckt und ergiebiger Schneeregen
+
+    # Schneeschauer
+
+    # leicht bewölkt und Schneeschauer
+    "wbsns1" => ["23", "snow", "Leichter Schneeschauer"],                        # leicht bewölkt und vereinzelt Schneeschauer (Tag)
+    "wbsns2" => ["24", "snow", "Schneeschauer"],                                 # leicht bewölkt und Schneeschauer (Tag)
+    "wbsns3" => ["24", "snow", "Starker Schneeschauer"],                         # leicht bewölkt und starke Schneeschauer (Tag)
+
+    "mbsns1" => ["23", "snow", "Leichter Schneeschauer"],                        # leicht bewölkt und vereinzelt Schneeschauer (Nacht)
+    "mbsns2" => ["24", "snow", "Schneeschauer"],                                 # leicht bewölkt und Schneeschauer (Nacht)
+    "mbsns3" => ["24", "snow", "Starker Schneeschauer"],                         # leicht bewölkt und starke Schneeschauer (Nacht)
+
+    # bewölkt und Schneeschauer
+    "bwsns1" => ["23", "snow", "Leichter Schneeschauer"],                        # bewölkt und vereinzelt Schneeschauer (Tag)
+    "bwsns2" => ["24", "snow", "Schneeschauer"],                                 # bewölkt und Schneeschauer (Tag)
+    "bwsns3" => ["24", "snow", "Starker Schneeschauer"],                         # bewölkt und starke Schneeschauer (Tag)
+
+    "mwsns1" => ["23", "snow", "Leichter Schneeschauer"],                        # bewölkt und vereinzelt Schneeschauer (Nacht)
+    "mwsns2" => ["24", "snow", "Schneeschauer"],                                 # bewölkt und Schneeschauer (Nacht)
+    "mwsns3" => ["24", "snow", "Starker Schneeschauer"],                         # bewölkt und starke Schneeschauer (Nacht)
+
+    # bedeckt und Schneeschauer
+    "bdsns1" => ["23", "snow", "Leichter Schneeschauer"],                        # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer
+    "bdsns2" => ["24", "snow", "Schneeschauer"],                                 # bedeckt, Schneefall oder Schneeschauer
+    "bdsns3" => ["24", "snow", "Starker Schneeschauer"],                         # bedeckt und ergiebiger Schneefall
+
+    "mdsns1" => ["23", "snow", "Leichter Schneeschauer"],                        # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer
+    "mdsns2" => ["24", "snow", "Schneeschauer"],                                 # bedeckt, Schneefall oder Schneeschauer
+    "mdsns3" => ["24", "snow", "Starker Schneeschauer"],                         # bedeckt und ergiebiger Schneefall
+
+    # Schneefall
+
+    # leicht bewölkt und Schneefall
+    "wbsn1_" => ["20", "snow", "Leichter Schneefall"],                           # leicht bewölkt und vereinzelt Schneefall (Tag)
+    "wbsn2_" => ["21", "snow", "Schneefall"],                                    # leicht bewölkt und Schneefall (Tag)
+    "wbsn3_" => ["22", "snow", "Starker Schneefall"],                            # leicht bewölkt und starker Schneefall (Tag)
+
+    "mbsn1_" => ["20", "snow", "Leichter Schneefall"],                           # leicht bewölkt und vereinzelt Schneefall (Nacht)
+    "mbsn2_" => ["21", "snow", "Schneefall"],                                    # leicht bewölkt und Schneefall (Nacht)
+    "mbsn3_" => ["22", "snow", "Starker Schneefall"],                            # leicht bewölkt und starker Schneefall (Nacht)
+
+    # bewölkt und Schneefall
+    "bwsn1_" => ["20", "snow", "Leichter Schneefall"],                           # bewölkt und vereinzelt Schneefall (Tag)
+    "bwsn2_" => ["21", "snow", "Schneefall"],                                    # bewölkt und Schneefall (Tag)
+    "bwsn3_" => ["22", "snow", "Starker Schneefall"],                            # bewölkt und starker Schneefall (Tag)
+
+    "mwsn1_" => ["20", "snow", "Leichter Schneefall"],                           # bewölkt und vereinzelt Schneefall (Nacht)
+    "mwsn2_" => ["21", "snow", "Schneefall"],                                    # bewölkt und Schneefall (Nacht)
+    "mwsn3_" => ["22", "snow", "Starker Schneefall"],                            # bewölkt und starker Schneefall (Nacht)
+
+    # bedeckt und Schneefall
+    "bdsn1_" => ["20", "snow", "Leichter Schneefall"],                           # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer (Tag)
+    "bdsn2_" => ["21", "snow", "Schneefall"],                                    # bedeckt, Schneefall oder Schneeschauer (Tag)
+    "bdsn3_" => ["22", "snow", "Ergiebiger Schneefall"],                         # bedeckt und ergiebiger Schneefall (Tag)
+
+    "mdsn1_" => ["20", "snow", "Leichter Schneefall"],                           # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer (Nacht)
+    "mdsn2_" => ["21", "snow", "Schneefall"],                                    # bedeckt, Schneefall oder Schneeschauer (Nacht)
+    "mdsn3_" => ["22", "snow", "Ergiebiger Schneefall"],                         # bedeckt und ergiebiger Schneefall (Nacht)
+
+    # Schnegewitter
+
+    # leicht bewölkt und Schneegewitter
+    "wbsg__" => ["24", "snow", "Vereinzelt Schneegewitter"],                     # leicht bewölkt und Schneegewitter (Tag)
+    "mbsg__" => ["24", "snow", "Vereinzelt Schneegewitter"],                     # leicht bewölkt und Schneegewitter (Nacht)
+
+    # bewölkt und Schneegewitter
+    "bwsg__" => ["24", "snow", "Schneegewitter"],                                # bewölkt und Schneegewitter (Tag)
+    "mwsg__" => ["24", "snow", "Schneegewitter"],                                # bewölkt und Schneegewitter (Nacht)
+
+    # bedeckt und Schneegewitter
+    "bdsg__" => ["24", "snow", "Schneegewitter"],                                # bedeckt und Schneegewitter (Tag)
+    "mdsg__" => ["24", "snow", "Schneegewitter"],                                # bedeckt und Schneegewitter (Nacht)
+
+    # Gewitter
+
+    # leicht bewölkt mit Gewitter
+    "wbg1__" => ["18", "tstorms", "Vereinzelt Gewitter"],                        # leicht bewölkt, vereinzelt Schauer und Gewitter (Tag)
+    "wbg2__" => ["18", "tstorms", "Gewitter"],                                   # leicht bewölkt, Schauer und Gewitter (Tag)
+    "wbg3__" => ["19", "tstorms", "Kräftiges Gewitter"],                         # leicht bewölkt, Schauer und Gewitter (Tag)
+
+    "mbg1__" => ["18", "tstorms", "Vereinzelt Gewitter"],                        # leicht bewölkt, vereinzelt Schauer und Gewitter (Nacht)
+    "mbg2__" => ["18", "tstorms", "Gewitter"],                                   # leicht bewölkt, Schauer und Gewitter (Nacht)
+    "mbg3__" => ["19", "tstorms", "Kräftiges Gewitter"],                         # leicht bewölkt, Schauer und Gewitter (Nacht)
+
+    # Bewölkt mit Gewitter
+    "bwg1__" => ["18", "tstorms", "Vereinzelt Gewitter"],                        # bewölkt, vereinzelt Schauer und Gewitter (Tag)
+    "bwg2__" => ["18", "tstorms", "Gewitter"],                                   # Gewitter (Tag)
+    "bwg3__" => ["19", "tstorms", "Kräftiges Gewitter"],                         # starke Gewitter (Tag)
+
+    "mwg1__" => ["18", "tstorms", "Vereinzelt Gewitter"],                        # leichte Gewitter (Nacht)
+    "mwg2__" => ["18", "tstorms", "Gewitter"],                                   # Gewitter (Nacht)
+    "mwg3__" => ["19", "tstorms", "Kräftiges Gewitter"],                         # starke Gewitter (Nacht)
+
+    # Bedeckt mit Gewitter
+    "bdg1__" => ["18", "tstorms", "Gewitter"],                                   # bedeckt, vereinzelt Schauer und Gewitter
+    "bdg2__" => ["18", "tstorms", "Gewitter"],                                   # bedeckt, Schauer und Gewitter (Tag)
+
+    "mdg1__" => ["18", "tstorms", "Gewitter"],                                   # bedeckt, vereinzelt Schauer und Gewitter (Nacht)
+    "mdg2__" => ["18", "tstorms", "Gewitter"],                                   # bedeckt, Schauer und Gewitter (Nacht)
+
+    # gefrierender Regen
+
+    # leicht Bewölkt mit gefrierendem Regen
+    "wbgr1_" => ["14", "sleet", "Gefrierender Sprühregen"],                      # bewölkt und gefrierender Sprühregen (Tag)
+    "wbgr2_" => ["14", "sleet", "Gefrierender Regen"],                           # bewölkt und gefrierender Regen (Tag)
+
+    "mbgr1_" => ["14", "sleet", "Gefrierender Sprühregen"],                      # bewölkt und gefrierender Sprühregen (Nacht)
+    "mbgr2_" => ["14", "sleet", "Gefrierender Regen"],                           # bewölkt und gefrierender Regen (Nacht)
+
+    # Bewölkt mit gefrierendem Regen
+    "bwgr1_" => ["14", "sleet", "Gefrierender Sprühregen"],                      # bewölkt und gefrierender Sprühregen (Tag)
+    "bwgr2_" => ["14", "sleet", "Gefrierender Regen"],                           # bewölkt und gefrierender Regen (Tag)
+
+    "mwgr1_" => ["14", "sleet", "Gefrierender Sprühregen"],                      # bewölkt und gefrierender Sprühregen (Nacht)
+    "mwgr2_" => ["14", "sleet", "Gefrierender Regen"],                           # bewölkt und gefrierender Regen (Nacht)
+
+    # Bedeckt mit gefrierendem Regen
+    "bdgr1_" => ["14", "sleet", "Gefrierender Sprühregen"],                      # bedeckt und gefrierender Sprühregen (Tag)
+    "bdgr2_" => ["14", "sleet", "Gefrierender Regen"],                           # bedeckt und gefrierender Regen (Tag)
+
+    "mdgr1_" => ["14", "sleet", "Gefrierender Sprühregen"],                      # bedeckt und gefrierender Sprühregen (Nacht)
+    "mdgr2_" => ["14", "sleet", "Gefrierender Regen"],                           # bedeckt und gefrierender Regen (Nacht)
+
+    # Graupel, Hagel und Eiskörner
+    "bwgs1_" => ["28", "sleet", "Leichter Graupelschauer"],                        # leichte Graupelschauer
+    "bwgs2_" => ["26", "sleet", "Graupelschauer"],                                 # Graupelschauer
+
+    "bwhs1_" => ["28", "sleet", "Leichte Hagelschauer"],                           # leichte Hagelschauer
+    "bwhs2_" => ["26", "sleet", "Hagelschauer"],                                   # Hagelschauer
+
+    "bwek__" => ["26", "sleet", "Eiskörner"],                                      # Eiskörner
 );
 
 sub wetteronline_to_lox {
@@ -420,50 +558,6 @@ sub wetteronline_to_lox {
         return ("1", "clear", "Wolkenlos");  # Default fallback
     }
 }
-
-#my %translation_table = (
-#	'so____'   => 'sonnig bzw. klar',
-#	'mo____'   => 'sonnig bzw. klar',
-#	'ns____'   => 'teils neblig',
-#	'nm____'   => 'teils neblig',
-#	'nb____'   => 'neblig',
-#	'wb____'   => 'unterschiedlich bewölkt',
-#	'mb____'   => 'unterschiedlich bewölkt',
-#	'bd____'   => 'bedeckt',
-#	'wbs1__'  => 'unterschiedlich bewölkt und vereinzelt Schauer',
-#	'mbs1__'  => 'unterschiedlich bewölkt und vereinzelt Schauer',
-#	'wbs2__'  => 'unterschiedlich bewölkt und Schauer',
-#	'mbs2__'  => 'unterschiedlich bewölkt und Schauer',
-#	'bdr1__'  => 'bedeckt, etwas Regen oder vereinzelt Schauer',
-#	'bdr2__'  => 'bedeckt, Regen oder Schauer',
-#	'bdr3__'  => 'bedeckt und ergiebiger Regen',
-#	'wbsrs1'  => 'unterschiedlich bewölkt und vereinzelt Schneeregenschauer',
-#	'mbsrs1'  => 'unterschiedlich bewölkt und vereinzelt Schneeregenschauer',
-#	'wbsrs2'  => 'unterschiedlich bewölkt und Schneeregenschauer',
-#	'mbsrs2'  => 'unterschiedlich bewölkt und Schneeregenschauer',
-#	'bdsr1_'  => 'bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer',
-#	'bdsr2_'  => 'bedeckt, Schneeregen oder Schneeregenschauer',
-#	'bdsr3_'  => 'bedeckt und ergiebiger Schneeregen',
-#	'wbsns1'  => 'unterschiedlich bewölkt und vereinzelt Schneeschauer',
-#	'mbsns1'  => 'unterschiedlich bewölkt und vereinzelt Schneeschauer',
-#	'bdsn1_'  => 'bedeckt, leichter Schneefall oder vereinzelt Schneeschauer',
-#	'wbsns2'  => 'unterschiedlich bewölkt und Schneeschauer',
-#	'mbsns2'  => 'unterschiedlich bewölkt und Schneeschauer',
-#	'bdsn1_'  => 'bedeckt, leichter Schneefall oder Schneeschauer',
-#	'bdsn2_'  => 'bedeckt, Schneefall oder Schneeschauer',
-#	'bdsn3_'  => 'bedeckt und ergiebiger Schneefall',
-#	'wbsg__'  => 'unterschiedlich bewölkt und Schneegewitter',
-#	'mbsg__'  => 'unterschiedlich bewölkt und Schneegewitter',
-#	'bdsg__'  => 'bedeckt und Schneegewitter',
-#	'wbg1__'  => 'unterschiedlich bewölkt, vereinzelt Schauer und Gewitter',
-#	'mbg1__'  => 'unterschiedlich bewölkt, vereinzelt Schauer und Gewitter',
-#	'bdg1__'  => 'bedeckt, vereinzelt Schauer und Gewitter',
-#	'wbg2__'  => 'unterschiedlich bewölkt, Schauer und Gewitter',
-#	'mbg2__'  => 'unterschiedlich bewölkt, Schauer und Gewitter',
-#	'bdg2__'  => 'bedeckt, Schauer und Gewitter',
-#	'bdgr1_'  => 'bedeckt und gefrierender Sprühregen',
-#	'bdgr2_'  => 'bedeckt und gefrierender Regen',
-#);
 
 #
 # Fetch current data
@@ -596,10 +690,17 @@ open(F,">$lbplogdir/current.dat.tmp") or $error = 1;
 	print F "-9999|";
 	
 	# cur_uvi
-	my $uvi = -9999;
-	if ($body =~ m{<span[^>]+label[^>]*>UV-Index</span>.*?<div[^>]+class="text"[^>]*>\s*([\d]+)}si) {
-		$uvi = $1;
-	}
+
+    # there is no UV index in the API response for current weather data, nor on the web page itself or hourly forecast data,
+    # but there is one for daily forecast, not sure if this should be the UV index for the current time or the day (maximum)
+    my $uvi = -9999;
+    if (
+        @{$decodedDaily}
+        && exists $decodedDaily->[0]->{uv_index}
+        && exists $decodedDaily->[0]->{uv_index}->{value}
+    ) {
+        $uvi = $decodedDaily->[0]->{uv_index}->{value};
+    }
 	print F sprintf("%.0f",$uvi), "|";
 	
 	# cur_prec_today
@@ -1142,13 +1243,15 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 		$t->day_list(@days);
 		print F $t->wdayname . "|";
 
-		# writing rubish till dataset is full
-		my $x = 0;
-		while ($x < 25) {
-			$x++;
-			print F "-9999|";
-		}
-		print F "\n";
+		# using fixed dummy data for the rest of the hourly forecast dataset, otherwise Loxone app returns black screen due to missing picto-icons
+		print F "0.0|0.0|-9999|0|Norden|0|0|0|1024|0.0|-9999|-9999|-9999|0.0|0|0|overcast|5|Keine Daten|-9999|-9999|0.0|0.0|0.0|0.0|\n";
+		# writing dummy data dataset is full
+		#my $x = 0;
+		#while ($x < 25) {
+		#	$x++;
+		#	print F "-9999|";
+		#}
+		#print F "\n";
 	}
 
 

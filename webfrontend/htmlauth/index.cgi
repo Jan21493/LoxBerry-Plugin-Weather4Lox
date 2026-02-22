@@ -231,6 +231,8 @@ if ($R::saveformdata1) {
 	$cfg->param("SERVER.WEATHERSERVICE", "$R::weatherservice");
 	$cfg->param("SERVER.WEATHERSERVICEDFC", "$R::weatherservicedfc");
 	$cfg->param("SERVER.WEATHERSERVICEHFC", "$R::weatherservicehfc");
+	$cfg->param("SERVER.MASKKEYS", "$R::maskkeys");
+
 
 	$cfg->save();
 
@@ -506,6 +508,21 @@ if ($R::form eq "1" || !$R::form) {
 	-default => $cfg->param('SERVER.PWSCATCHUPLOADGRABBER'),
     );
   $template->param( PWSCATCHUPLOADGRABBER => $pwscatchuploadgrabber );
+
+# Mask Keys
+  @values = ('0', '1' );
+  %labels = (
+        '0' => $L{'SETTINGS.LABEL_OFF'},
+        '1' => $L{'SETTINGS.LABEL_ON'},
+    );
+  my $maskkeys = $cgi->popup_menu(
+        -name    => 'maskkeys',
+        -id      => 'maskkeys',
+        -values  => \@values,
+	-labels  => \%labels,
+	-default => $cfg->param('SERVER.MASKKEYS'),
+    );
+  $template->param( MASKKEYS => $maskkeys );
 
   # GetData
   @values = ('0', '1' );
@@ -1091,7 +1108,8 @@ sub wetteronlinequery
 	if ($response->is_success) {
 		$error = 0;
 		$body = $response->decoded_content;
-		if ($body =~ /WO\.metadata\.p_city_weather\.nowcastBarMetadata = (\{.+\})$/m) {
+		# if ($body =~ /WO\.metadata\.p_city_weather\.nowcastBarMetadata = (\{.+\})$/m) {
+		if ($body =~ /WO\.metadata\.p_city_weather\.forecastTexts = (\[.+?\]);$/m) {
 			$error = 0;
 			return ();
 		} else {

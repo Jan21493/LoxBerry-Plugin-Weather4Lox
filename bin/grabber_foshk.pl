@@ -33,6 +33,8 @@ use Getopt::Long;
 use Time::Piece;
 #use Data::Dumper;
 
+require "$lbpbindir/grabber_utils.pl";
+
 ##########################################################################
 # Read Settings
 ##########################################################################
@@ -73,31 +75,13 @@ LOGSTART "Weather4Lox GRABBER_FOSHK process started";
 LOGDEB "This is $0 Version $version";
 
 # Get data from FOSHK Plugin Server for current conditions
-my $wgqueryurlcr = "http://$server\:$port/$url";
-
-LOGINF "Fetching Data from FOSHK Plugin at $server\:$port";
-LOGDEB "URL: $wgqueryurlcr";
-
-my $ua = new LWP::UserAgent;
-my $resp = $ua->get($wgqueryurlcr);
-my $json = $resp->decoded_content();
-
-# Check status of request
-my $urlstatus = $resp->status_line;
-my $urlstatuscode = substr($urlstatus,0,3);
-
-LOGDEB "Status: $urlstatus";
-
-if ($urlstatuscode ne "200") {
-  LOGCRIT "Failed to fetch data from $server\:$port\. Status Code: $urlstatuscode";
-  exit 2;
-} else {
-  LOGOK "Data fetched successfully from $server\:$port";
-}
-
-# Decode JSON response from server
-my $decoded_json = decode_json( $json );
-#print Dumper $decoded_json;
+my $decoded_json = api_call(
+	url => "http://$server\:$port/$url",
+	#maskkeys => $maskkeys, # not needed here
+	#keyparam => 'api_key',
+	# apikey => $apikey,
+	info => "from FOSHK Plugin at $server\:$port (Current Weather Data)",
+);
 
 # Write location data into database
 my $t = localtime($decoded_json->{observations}->[0]->{epoch});

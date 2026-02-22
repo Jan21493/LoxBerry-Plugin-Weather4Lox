@@ -244,6 +244,24 @@
 														</td>
 													</tr>
 													<tr>
+														<td width="25%">
+															<label id="labelmaskkeys"><TMPL_VAR SETTINGS.LABEL_MASKKEYS></label>
+														</td>
+														<td width="50%">
+															<TMPL_VAR MASKKEYS>
+														</td>
+														<td width="5%">
+															&nbsp;
+														</td>
+														<td width="20%">
+															<font size="-1"><TMPL_VAR SETTINGS.HINT_MASKKEYS></font>
+														</td>
+													</tr>
+													<tr>
+														<td colspan="4">
+															<hr>
+														</td>
+													</tr>													<tr>
 														<td colspan=3 width="75%">
 															<h2><TMPL_VAR SETTINGS.LABEL_VISUALCROSSING_SETTINGS></h2>
 														</td>
@@ -661,6 +679,7 @@
 									$('select[name=getdata]').attr('data-role','flipswitch');
 									$('select[name=getdata_forecast]').attr('data-role','flipswitch');
 									$('select[name=loxgrabber]').attr('data-role','flipswitch');
+									$('select[name=maskkeys]').attr('data-role','flipswitch');
 									$('select[name=wugrabber]').attr('data-role','flipswitch');
 									$('select[name=foshkgrabber]').attr('data-role','flipswitch');
 									$('select[name=pwscatchuploadgrabber]').attr('data-role','flipswitch');

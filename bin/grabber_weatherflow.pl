@@ -34,6 +34,8 @@ use Getopt::Long;
 use Time::Piece;
 use Astro::MoonPhase;
 
+require "$lbpbindir/grabber_utils.pl";
+
 ##########################################################################
 # Read Settings
 ##########################################################################
@@ -68,11 +70,14 @@ my $verbose = '';
 my $current = '';
 my $daily = '';
 my $hourly = '';
+my $maskkeys = 1; # optional
 GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 },
             'current' => \$current,
             'daily' => \$daily,
-            'hourly' => \$hourly);
+            'hourly' => \$hourly,
+            'maskkeys' => \$maskkeys,
+            );
 
 # Due to a bug in the Logging routine, set the loglevel fix to 3
 #$log->loglevel(3);
@@ -91,32 +96,13 @@ LOGDEB "This is $0 Version $version";
 # API: https://weatherflow.github.io/Tempest/api/swagger/#/forecast
 # Note: the forecast data also contains current conditions, but these are not as accurate as the station observations
 # For that reason, we also query the station observations (see below)
-my $queryurlcr = "$url\/better_forecast?station_id=$stationid&api_key=$apikey";
-
-LOGINF "Fetching Forecast Data for Station $stationid";
-LOGDEB "URL: $queryurlcr";
-
-my $ua = new LWP::UserAgent;
-my $res = $ua->get($queryurlcr);
-my $json = $res->decoded_content();
-
-# Check status of request
-my $urlstatus = $res->status_line;
-my $urlstatuscode = substr($urlstatus,0,3);
-
-LOGDEB "Status: $urlstatus";
-
-if ($urlstatuscode ne "200") {
-  LOGCRIT "Failed to fetch forecast data for Station $stationid\. Status Code: $urlstatuscode";
-  exit 2;
-} else {
-  LOGOK "Data fetched successfully for Station $stationid";
-}
-
-# Decode JSON response from server
-my $forecast_json = decode_json( $json );
-
-# end retreiving forecast data
+my $forecast_json = api_call(
+	url => "$url\/better_forecast?station_id=$stationid&api_key=$apikey",
+	maskkeys => $maskkeys,
+	keyparam => 'api_key',
+	# apikey => $apikey,	# not needed here as the URL is already masked and the key won't appear elsewhere in the response
+	info => "for Location $stationid (Current, Daily, and Hourly Weather Data)",
+);
 
 my $t;
 my $weather;
@@ -131,7 +117,7 @@ my $error;
 # Mapping: WeatherFlow Icon => [Loxone Code, Weather4Lox Icon Name]
 # https://weatherflow.github.io/Tempest/api/swagger/#/forecast/getBetterForecast
 # https://www.loxone.com/enen/kb/weather-service/
-my %weatherflow_to_lox = (                            # Possible WeatherFlow Icon Values:
+my %weatherflow_to_lox = (                            # WeatherFlow Icon Values (originally with -day and -night suffixes)
     "clear"                => ["1",  "clear"],           # was clear-day, clear-night
     "partlycloudy"         => ["3",  "partlycloudy"],    # was partly-cloudy-day, partly-cloudy-night
     "cloudy"               => ["4",  "cloudy"],          # was cloudy
@@ -181,32 +167,13 @@ if ( $current ) { # Start current
 	# Get current station observation from Weatherflow Server
 	# API : https://weatherflow.github.io/Tempest/api/swagger/#!/observations/getStationObservation
 	# Docs: https://apidocs.tempestwx.com/reference/get_better-forecast-1
-	my $queryurlcr_curr = "$url\/observations/station/$stationid?token=$apikey";
-
-	LOGINF "Fetching Current Data for Station $stationid";
-	LOGDEB "URL: $queryurlcr_curr";
-
-	my $ua_curr = new LWP::UserAgent;
-	my $res_curr = $ua_curr->get($queryurlcr_curr);
-	my $json_curr = $res_curr->decoded_content();
-
-	# Check status of request
-	my $urlstatus_curr = $res_curr->status_line;
-	my $urlstatuscode_curr = substr($urlstatus_curr,0,3);
-
-	LOGDEB "Status: $urlstatus_curr";
-
-	if ($urlstatuscode_curr ne "200") {
-		LOGCRIT "Failed to fetch current observation data for Station $stationid\. Status Code: $urlstatuscode";
-		exit 2;
-	} else {
-		LOGOK "Data fetched successfully for Station $stationid";
-	}
-
-	# Decode JSON response from server
-	my $current_observation_json = decode_json( $json_curr );
-
-	# end retreiving current station observation data
+    my $current_observation_json = api_call(
+        url => "$url\/observations/station/$stationid?token=$apikey",
+        maskkeys => $maskkeys,
+        keyparam => 'token',
+        # apikey => $apikey,	# not needed here as the URL is already masked and the key won't appear elsewhere in the response
+        info => "for Location $stationid (Current Observation Data)",
+    );
 
 	# Write location data into database
 	$t = localtime($forecast_json->{current_conditions}->{time});

@@ -33,6 +33,8 @@ use Getopt::Long;
 use Time::Piece;
 #use Data::Dumper;
 
+require "$lbpbindir/grabber_utils.pl";
+
 ##########################################################################
 # Read Settings
 ##########################################################################
@@ -101,30 +103,13 @@ if ($urlstatuscode ne "200") {
 }
 
 # Get data from Wunderground Server (API request) for current conditions
-my $wgqueryurlcr = "$wuurl?apiKey=$apikey&stationId=$stationid&format=json&units=m&numericPrecision=decimal";
-
-LOGINF "Fetching Data for Station $stationid";
-LOGDEB "URL: $wgqueryurlcr";
-
-$ua = new LWP::UserAgent;
-$resp = $ua->get($wgqueryurlcr);
-my $json = $resp->decoded_content();
-
-# Check status of request
-$urlstatus = $resp->status_line;
-$urlstatuscode = substr($urlstatus,0,3);
-
-LOGDEB "Status: $urlstatus";
-
-if ($urlstatuscode ne "200") {
-  LOGCRIT "Failed to fetch data for $stationid\. Status Code: $urlstatuscode";
-  exit 2;
-} else {
-  LOGOK "Data fetched successfully for $stationid";
-}
-
-# Decode JSON response from server
-my $decoded_json = decode_json( $json );
+my $decoded_json = api_call(
+	url => "$wuurl?apiKey=$apikey&stationId=$stationid&format=json&units=m&numericPrecision=decimal",
+	#maskkeys => $maskkeys, # not needed here 
+	#keyparam => 'appid',
+	# apikey => $apikey,
+	info => "for Location $stationid (Current Weather Data)",
+);
 #print Dumper $decoded_json;
 
 # Write location data into database

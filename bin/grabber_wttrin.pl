@@ -35,6 +35,8 @@ use Math::Function::Interpolator;
 use Astro::MoonPhase;
 #use Data::Dumper;
 
+require "$lbpbindir/grabber_utils.pl";
+
 ##########################################################################
 # Read Settings
 ##########################################################################
@@ -78,33 +80,81 @@ if ($verbose) {
 LOGSTART "Weather4Lox GRABBER_WTTRIN process started";
 LOGDEB "This is $0 Version $version";
 
+# Mapping table for conversion of WTTR.in weather codes to Loxone weather Picto-Codes and short names for weather symbols
+# Weather codes are based on https://www.worldweatheronline.com/weather-api/api/docs/weather-icons.aspx
+my %wttr_to_lox = (
+    113 => [ 1,  'sunny' ],         # description: Clear/Sunny
+    116 => [ 2,  'partlycloudy' ],  # description: Partly Cloudy
+    119 => [ 3,  'cloudy' ],        # description: Cloudy
+    122 => [ 5,  'overcast' ],      # description: Overcast
+    143 => [ 6,  'fog' ],           # description: Mist
+    176 => [ 11, 'rain' ],          # description: Patchy rain nearby
+    179 => [ 23, 'snow' ],          # description: Patchy snow nearby
+    182 => [ 26, 'sleet' ],         # description: Patchy sleet nearby
+    185 => [ 14, 'sleet' ],         # description: Patchy freezing drizzle nearby
+    200 => [ 18, 'tstorms' ],       # description: Thundery outbreaks in nearby
+    227 => [ 21, 'snow' ],          # description: Blowing snow
+    230 => [ 22, 'snow' ],          # description: Blizzard
+    248 => [ 6,  'fog' ],           # description: Fog
+    260 => [ 6,  'fog' ],           # description: Freezing fog
+    263 => [ 13, 'chancerain' ],    # description: Patchy light drizzle
+    266 => [ 13, 'chancerain' ],    # description: Light drizzle
+    281 => [ 14, 'sleet' ],         # description: Freezing drizzle
+    284 => [ 15, 'sleet' ],         # description: Heavy freezing drizzle
+    293 => [ 16, 'chancerain' ],    # description: Patchy light rain
+    296 => [ 10, 'rain' ],          # description: Light rain
+    299 => [ 11, 'rain' ],          # description: Moderate rain at times
+    302 => [ 11, 'rain' ],          # description: Moderate rain
+    305 => [ 12, 'rain' ],          # description: Heavy rain at times
+    308 => [ 12, 'rain' ],          # description: Heavy rain
+    311 => [ 14, 'sleet' ],         # description: Light freezing rain
+    314 => [ 15, 'sleet' ],         # description: Moderate or Heavy freezing rain
+    317 => [ 25, 'sleet' ],         # description: Light sleet
+    320 => [ 26, 'sleet' ],         # description: Moderate or heavy sleet
+    323 => [ 23, 'snow' ],          # description: Patchy light snow
+    326 => [ 20, 'snow' ],          # description: Light snow
+    329 => [ 21, 'snow' ],          # description: Patchy moderate snow
+    332 => [ 21, 'snow' ],          # description: Moderate snow
+    335 => [ 24, 'snow' ],          # description: Patchy heavy snow
+    338 => [ 22, 'snow' ],          # description: Heavy snow
+    350 => [ 26, 'sleet' ],         # description: Ice pellets
+    353 => [ 16, 'rain' ],          # description: Light rain shower
+    356 => [ 17, 'rain' ],          # description: Moderate or heavy rain shower
+    359 => [ 17, 'rain' ],          # description: Torrential rain shower
+    362 => [ 26, 'sleet' ],         # description: Light sleet showers
+    365 => [ 26, 'sleet' ],         # description: Moderate or heavy sleet showers
+    368 => [ 23, 'snow' ],          # description: Light snow showers
+    371 => [ 24, 'snow' ],          # description: Moderate or heavy snow showers
+    374 => [ 28, 'sleet' ],         # description: Light showers of ice pellets
+    377 => [ 29, 'sleet' ],         # description: Moderate or heavy showers of ice pellets
+    386 => [ 18, 'tstorms' ],       # description: Patchy light rain in area with thunder
+    389 => [ 19, 'tstorms' ],       # description: Moderate or heavy rain in area with thunder
+    392 => [ 18, 'snow' ],          # description: Patchy light snow in area with thunder
+    395 => [ 19, 'snow' ],          # description: Moderate or heavy snow in area with thunder
+);
 
-# Get data from openweathermap.org (API request) for current conditions
-my $queryurlcr = "$url/$stationid?lang=$lang&M&3&format=j1";
+sub wttr_to_lox {
+    my ($wwo_id) = @_;
 
-my $error = 0;
-LOGINF "Fetching Current Data for Location $stationid";
-LOGDEB "URL: $queryurlcr";
+    # wttr liefert weatherCode oft als String -> numerisch normalisieren
+    $wwo_id = int($wwo_id);
 
-my $ua = new LWP::UserAgent;
-my $res = $ua->get($queryurlcr);
-my $json = $res->decoded_content();
-
-# Check status of request
-my $urlstatus = $res->status_line;
-my $urlstatuscode = substr($urlstatus,0,3);
-
-LOGDEB "Status: $urlstatus";
-
-if ($urlstatuscode ne "200") {
-  LOGCRIT "Failed to fetch data for $stationid\. Status Code: $urlstatuscode";
-  exit 2;
-} else {
-  LOGOK "Data fetched successfully for $stationid";
+    my $data = $wttr_to_lox{$wwo_id} // [1, "clear"];
+    
+    if (!exists $wttr_to_lox{$wwo_id}) {
+        LOGWARN "Unknown ID from WTTR.in: $wwo_id. Please check! Using fallback 'clear'.";
+    }
+    return @$data; # Returns (Code, Icon)
 }
 
-# Decode JSON response from server
-my $decoded_json = decode_json( "$json" );
+# Get weather data from WTTR.in (API request)
+my $decoded_json = api_call(
+	url => "$url/$stationid?lang=$lang&M&3&format=j1",
+	# maskkeys => $maskkeys, # not needed here
+	# keyparam => 'appid',
+	# apikey => $apikey,
+	info => "for Location $stationid (Current, Daily, and Hourly Weather Data)",
+);
 
 my $t;
 my $weather;
@@ -114,6 +164,8 @@ my $wdir;
 my $wdirdes;
 my @filecontent;
 my $i;
+my $wwo_id;
+my $error = 0;
 
 #
 # Fetch current data
@@ -178,60 +230,9 @@ open(F,">$lbplogdir/current.dat.tmp") or $error = 1;
 	print F sprintf("%.2f",$decoded_json->{current_condition}[0]->{uvIndex}),"|";
 	print F "-9999|";
 	print F sprintf("%.2f",$decoded_json->{current_condition}[0]->{precipMM}), "|";
-	# Convert Weather string into Weather Code and convert icon name
-	$weather = $decoded_json->{current_condition}[0]->{weatherCode};
-	$code = "";
-	$icon = "";
-	if ($weather eq "113") { $code = "1"; $icon = "sunny" };
-	if ($weather eq "116") { $code = "2"; $icon = "partlycloudy" };
-	if ($weather eq "119") { $code = "4"; $icon = "cloudy" };
-	if ($weather eq "122") { $code = "4"; $icon = "cloudy" };
-	if ($weather eq "143") { $code = "6"; $icon = "fog" };
-	if ($weather eq "176") { $code = "10"; $icon = "rain" };
-	if ($weather eq "179") { $code = "18"; $icon = "sleet" };
-	if ($weather eq "182") { $code = "18"; $icon = "sleet" };
-	if ($weather eq "185") { $code = "18"; $icon = "sleet" };
-	if ($weather eq "200") { $code = "15"; $icon = "tstorms" };
-	if ($weather eq "227") { $code = "21"; $icon = "snow" };
-	if ($weather eq "230") { $code = "21"; $icon = "snow" };
-	if ($weather eq "248") { $code = "6"; $icon = "fog" };
-	if ($weather eq "260") { $code = "6"; $icon = "fog" };
-	if ($weather eq "263") { $code = "10"; $icon = "rain" };
-	if ($weather eq "266") { $code = "12"; $icon = "rain" };
-	if ($weather eq "281") { $code = "19"; $icon = "sleet" };
-	if ($weather eq "284") { $code = "19"; $icon = "sleet" };
-	if ($weather eq "293") { $code = "12"; $icon = "rain" };
-	if ($weather eq "296") { $code = "12"; $icon = "rain" };
-	if ($weather eq "299") { $code = "13"; $icon = "rain" };
-	if ($weather eq "302") { $code = "13"; $icon = "rain" };
-	if ($weather eq "305") { $code = "13"; $icon = "rain" };
-	if ($weather eq "308") { $code = "13"; $icon = "rain" };
-	if ($weather eq "311") { $code = "19"; $icon = "sleet" };
-	if ($weather eq "314") { $code = "19"; $icon = "sleet" };
-	if ($weather eq "317") { $code = "19"; $icon = "sleet" };
-	if ($weather eq "320") { $code = "20"; $icon = "snow" };
-	if ($weather eq "323") { $code = "20"; $icon = "sleet" };
-	if ($weather eq "326") { $code = "20"; $icon = "sleet" };
-	if ($weather eq "329") { $code = "21"; $icon = "snow" };
-	if ($weather eq "332") { $code = "21"; $icon = "snow" };
-	if ($weather eq "335") { $code = "21"; $icon = "snow" };
-	if ($weather eq "338") { $code = "21"; $icon = "snow" };
-	if ($weather eq "350") { $code = "18"; $icon = "sleet" };
-	if ($weather eq "353") { $code = "12"; $icon = "rain" };
-	if ($weather eq "356") { $code = "13"; $icon = "rain" };
-	if ($weather eq "359") { $code = "13"; $icon = "rain" };
-	if ($weather eq "362") { $code = "18"; $icon = "sleet" };
-	if ($weather eq "365") { $code = "18"; $icon = "sleet" };
-	if ($weather eq "368") { $code = "20"; $icon = "sleet" };
-	if ($weather eq "371") { $code = "21"; $icon = "sleet" };
-	if ($weather eq "374") { $code = "18"; $icon = "sleet" };
-	if ($weather eq "377") { $code = "18"; $icon = "sleet" };
-	if ($weather eq "386") { $code = "15"; $icon = "tstorms" };
-	if ($weather eq "389") { $code = "15"; $icon = "tstorms" };
-	if ($weather eq "392") { $code = "15"; $icon = "tstorms" };
-	if ($weather eq "395") { $code = "16"; $icon = "sleet" };
-	if (!$icon) { $icon = "clear" };
-	if (!$code) { $code = "1" };
+	# Convert WTTR weather code into Loxone Weather Code (picto-code) and weather symbol name
+	my $wwo_id = $decoded_json->{current_condition}[0]->{weatherCode};
+	($code, $icon) = wttr_to_lox($wwo_id);
 	print F "$icon|";
 	print F "$code|";
 	my $wdes = $decoded_json->{current_condition}[0]->{'lang_' . $lang}[0]{value};
@@ -436,60 +437,10 @@ open(F,">$lbplogdir/dailyforecast.dat.tmp") or $error = 1;
 		} else {
 			print F "0|";
 		}
-		# Convert Weather string into Weather Code and convert icon name: We do not have an average, so we take value from 12 o'clock
-		$weather = $results->{hourly}[4]->{weatherCode};
-		$code = "";
-		$icon = "";
-		if ($weather eq "113") { $code = "1"; $icon = "sunny" };
-		if ($weather eq "116") { $code = "2"; $icon = "partlycloudy" };
-		if ($weather eq "119") { $code = "4"; $icon = "cloudy" };
-		if ($weather eq "122") { $code = "4"; $icon = "cloudy" };
-		if ($weather eq "143") { $code = "6"; $icon = "fog" };
-		if ($weather eq "176") { $code = "10"; $icon = "rain" };
-		if ($weather eq "179") { $code = "18"; $icon = "sleet" };
-		if ($weather eq "182") { $code = "18"; $icon = "sleet" };
-		if ($weather eq "185") { $code = "18"; $icon = "sleet" };
-		if ($weather eq "200") { $code = "15"; $icon = "tstorms" };
-		if ($weather eq "227") { $code = "21"; $icon = "snow" };
-		if ($weather eq "230") { $code = "21"; $icon = "snow" };
-		if ($weather eq "248") { $code = "6"; $icon = "fog" };
-		if ($weather eq "260") { $code = "6"; $icon = "fog" };
-		if ($weather eq "263") { $code = "10"; $icon = "rain" };
-		if ($weather eq "266") { $code = "12"; $icon = "rain" };
-		if ($weather eq "281") { $code = "19"; $icon = "sleet" };
-		if ($weather eq "284") { $code = "19"; $icon = "sleet" };
-		if ($weather eq "293") { $code = "12"; $icon = "rain" };
-		if ($weather eq "296") { $code = "12"; $icon = "rain" };
-		if ($weather eq "299") { $code = "13"; $icon = "rain" };
-		if ($weather eq "302") { $code = "13"; $icon = "rain" };
-		if ($weather eq "305") { $code = "13"; $icon = "rain" };
-		if ($weather eq "308") { $code = "13"; $icon = "rain" };
-		if ($weather eq "311") { $code = "19"; $icon = "sleet" };
-		if ($weather eq "314") { $code = "19"; $icon = "sleet" };
-		if ($weather eq "317") { $code = "19"; $icon = "sleet" };
-		if ($weather eq "320") { $code = "20"; $icon = "snow" };
-		if ($weather eq "323") { $code = "20"; $icon = "sleet" };
-		if ($weather eq "326") { $code = "20"; $icon = "sleet" };
-		if ($weather eq "329") { $code = "21"; $icon = "snow" };
-		if ($weather eq "332") { $code = "21"; $icon = "snow" };
-		if ($weather eq "335") { $code = "21"; $icon = "snow" };
-		if ($weather eq "338") { $code = "21"; $icon = "snow" };
-		if ($weather eq "350") { $code = "18"; $icon = "sleet" };
-		if ($weather eq "353") { $code = "12"; $icon = "rain" };
-		if ($weather eq "356") { $code = "13"; $icon = "rain" };
-		if ($weather eq "359") { $code = "13"; $icon = "rain" };
-		if ($weather eq "362") { $code = "18"; $icon = "sleet" };
-		if ($weather eq "365") { $code = "18"; $icon = "sleet" };
-		if ($weather eq "368") { $code = "20"; $icon = "sleet" };
-		if ($weather eq "371") { $code = "21"; $icon = "sleet" };
-		if ($weather eq "374") { $code = "18"; $icon = "sleet" };
-		if ($weather eq "377") { $code = "18"; $icon = "sleet" };
-		if ($weather eq "386") { $code = "15"; $icon = "tstorms" };
-		if ($weather eq "389") { $code = "15"; $icon = "tstorms" };
-		if ($weather eq "392") { $code = "15"; $icon = "tstorms" };
-		if ($weather eq "395") { $code = "16"; $icon = "sleet" };
-		if (!$icon) { $icon = "clear" };
-		if (!$code) { $code = "1" };
+        # Convert WTTR weather code into Loxone Weather Code (picto-code) and weather symbol name
+        #  We do not have an average, so we take value from 12 o'clock
+	    $wwo_id = $results->{hourly}[4]->{weatherCode};
+	    ($code, $icon) = wttr_to_lox($wwo_id);
 		print F "$icon|";
 		print F "$code|";
 		my $wdes = "";
@@ -666,73 +617,26 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 		$newline = $newline . sprintf("%.2f", $precs->linear($ep)) . "|";
 		$newline = $newline . "-9999" . "|";
 		$newline = $newline . sprintf("%.0f", $pops->linear($ep)) . "|";
-		my $weather;
+        # Get nearest weather code
 		my $weatherdes;
 		if ( $codes{$ep} ) {
-			$weather = $codes{$ep};
+			$wwo_id = $codes{$ep};
 			$weatherdes = $weatherdess{$ep};
 		} elsif ( $codes{$ep-3600} ) {
-			$weather = $codes{$ep-3600};
+			$wwo_id = $codes{$ep-3600};
 			$weatherdes = $weatherdess{$ep-3600};
 		} elsif ( $codes{$ep+3600} ) {
-			$weather = $codes{$ep+3600};
+			$wwo_id = $codes{$ep+3600};
 			$weatherdes = $weatherdess{$ep+3600};
 		} elsif ( $codes{$ep-7200} ) {
-			$weather = $codes{$ep-7200};
+			$wwo_id = $codes{$ep-7200};
 			$weatherdes = $weatherdess{$ep-7200};
-		} 
-		$code = "";
-		$icon = "";
-		if ($weather eq "113") { $code = "1"; $icon = "sunny" };
-		if ($weather eq "116") { $code = "2"; $icon = "partlycloudy" };
-		if ($weather eq "119") { $code = "4"; $icon = "cloudy" };
-		if ($weather eq "122") { $code = "4"; $icon = "cloudy" };
-		if ($weather eq "143") { $code = "6"; $icon = "fog" };
-		if ($weather eq "176") { $code = "10"; $icon = "rain" };
-		if ($weather eq "179") { $code = "18"; $icon = "sleet" };
-		if ($weather eq "182") { $code = "18"; $icon = "sleet" };
-		if ($weather eq "185") { $code = "18"; $icon = "sleet" };
-		if ($weather eq "200") { $code = "15"; $icon = "tstorms" };
-		if ($weather eq "227") { $code = "21"; $icon = "snow" };
-		if ($weather eq "230") { $code = "21"; $icon = "snow" };
-		if ($weather eq "248") { $code = "6"; $icon = "fog" };
-		if ($weather eq "260") { $code = "6"; $icon = "fog" };
-		if ($weather eq "263") { $code = "10"; $icon = "rain" };
-		if ($weather eq "266") { $code = "12"; $icon = "rain" };
-		if ($weather eq "281") { $code = "19"; $icon = "sleet" };
-		if ($weather eq "284") { $code = "19"; $icon = "sleet" };
-		if ($weather eq "293") { $code = "12"; $icon = "rain" };
-		if ($weather eq "296") { $code = "12"; $icon = "rain" };
-		if ($weather eq "299") { $code = "13"; $icon = "rain" };
-		if ($weather eq "302") { $code = "13"; $icon = "rain" };
-		if ($weather eq "305") { $code = "13"; $icon = "rain" };
-		if ($weather eq "308") { $code = "13"; $icon = "rain" };
-		if ($weather eq "311") { $code = "19"; $icon = "sleet" };
-		if ($weather eq "314") { $code = "19"; $icon = "sleet" };
-		if ($weather eq "317") { $code = "19"; $icon = "sleet" };
-		if ($weather eq "320") { $code = "20"; $icon = "snow" };
-		if ($weather eq "323") { $code = "20"; $icon = "sleet" };
-		if ($weather eq "326") { $code = "20"; $icon = "sleet" };
-		if ($weather eq "329") { $code = "21"; $icon = "snow" };
-		if ($weather eq "332") { $code = "21"; $icon = "snow" };
-		if ($weather eq "335") { $code = "21"; $icon = "snow" };
-		if ($weather eq "338") { $code = "21"; $icon = "snow" };
-		if ($weather eq "350") { $code = "18"; $icon = "sleet" };
-		if ($weather eq "353") { $code = "12"; $icon = "rain" };
-		if ($weather eq "356") { $code = "13"; $icon = "rain" };
-		if ($weather eq "359") { $code = "13"; $icon = "rain" };
-		if ($weather eq "362") { $code = "18"; $icon = "sleet" };
-		if ($weather eq "365") { $code = "18"; $icon = "sleet" };
-		if ($weather eq "368") { $code = "20"; $icon = "sleet" };
-		if ($weather eq "371") { $code = "21"; $icon = "sleet" };
-		if ($weather eq "374") { $code = "18"; $icon = "sleet" };
-		if ($weather eq "377") { $code = "18"; $icon = "sleet" };
-		if ($weather eq "386") { $code = "15"; $icon = "tstorms" };
-		if ($weather eq "389") { $code = "15"; $icon = "tstorms" };
-		if ($weather eq "392") { $code = "15"; $icon = "tstorms" };
-		if ($weather eq "395") { $code = "16"; $icon = "sleet" };
-		if (!$icon) { $icon = "clear" };
-		if (!$code) { $code = "1" };
+		} else {
+            $wwo_id = 113; # Default to clear
+            $weatherdes = Encode::decode("UTF-8", "Unknown");
+        }
+        # Convert WTTR weather code into Loxone Weather Code (picto-code) and weather symbol name
+	    ($code, $icon) = wttr_to_lox($wwo_id);
 		$newline = $newline . "$icon" . "|";
 		$newline = $newline . "$code" . "|";
 		$newline = $newline . "$weatherdes" . "|";

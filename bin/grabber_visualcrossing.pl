@@ -34,6 +34,8 @@ use Time::Piece;
 use Time::Seconds;
 use Astro::MoonPhase;
 
+require "$lbpbindir/grabber_utils.pl";
+
 ##########################################################################
 # Read Settings
 ##########################################################################
@@ -66,13 +68,13 @@ my $verbose = '';
 my $current = '';
 my $daily = '';
 my $hourly = '';
-my $dump = '';
+my $maskkeys = 1; # optional
 GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 },
             'current' => \$current,
             'daily' => \$daily,
             'hourly' => \$hourly,
-            'dump' => \$dump,
+			'maskkeys' => \$maskkeys,
 			);
 
 if ($verbose) {
@@ -83,54 +85,14 @@ if ($verbose) {
 LOGSTART "Weather4Lox GRABBER_VISUALCROSSING process started";
 LOGDEB "This is $0 Version $version";
 
-
-# Get data from www.visualcrossing.com (API request) for current conditions
-my $queryurlcr = "$url/$stationid?unitGroup=metric&lang=$lang&iconSet=icons2&include=days,hours,current&key=$apikey&contentType=json";
-
-my $error = 0;
-LOGINF "Fetching Current Data for Location $stationid";
-LOGDEB "URL: $queryurlcr";
-
-my $ua = new LWP::UserAgent;
-my $res = $ua->get($queryurlcr);
-my $json = $res->decoded_content();
-
-# Check status of request
-my $urlstatus = $res->status_line;
-my $urlstatuscode = substr($urlstatus,0,3);
-
-LOGDEB "Status: $urlstatus";
-
-if ($urlstatuscode ne "200") {
-  LOGCRIT "Failed to fetch data for $stationid\. Status Code: $urlstatuscode";
-  exit 2;
-} else {
-  LOGOK "Data fetched successfully for $stationid";
-}
-
-# Decode JSON response from server
-my $decoded_json = decode_json( "$json" );
-
-if ( $dump ) { # Start dump
-	# Dumping Content from Visual Crossing ...
-	LOGINF "Dumping current data from Visual Crossing for location $stationid to $lbplogdir/visualcrossing.dump";
-	open(F,">$lbplogdir/visualcrossing.dump") or $error = 1;
-	flock(F,2);
-	if ($error) {
-		LOGCRIT "Cannot open $lbpconfigdir/visualcrossing.dump";
-		exit 2;
-	}
-	binmode F, ':encoding(UTF-8)';
-
-	print F "Request URL: $queryurlcr\n";	
-	print F "Decoded JSON response:\n";
-
-	my $json_obj = JSON->new->pretty;
-	print F $json_obj->encode($decoded_json);
-	print F "\n";
-	flock(F,8);
-	close(F);
-}
+# Get data from www.visualcrossing.com (API request) for current conditions, daily and hourly forecasts
+my $decoded_json = api_call(
+	url => "$url/$stationid?unitGroup=metric&lang=$lang&iconSet=icons2&include=days,hours,current&key=$apikey&contentType=json",
+	maskkeys => $maskkeys,
+	keyparam => 'key',
+	# apikey => $apikey,	# not needed here as the URL is already masked and the key won't appear elsewhere in the response
+	info => "for Location $stationid (Current, Daily, and Hourly Weather Data)",
+);
 
 my $t;
 my $weather;
@@ -141,6 +103,7 @@ my $wdirdes;
 my @filecontent;
 my $i;
 my $currentepoche = 0;
+my $error = 0;
 
 # Convert Visual Crossing weather icon string into Loxone picto-code and icon name
 # Weather icons: https://www.visualcrossing.com/resources/documentation/weather-api/defining-icon-set-in-the-weather-api/
@@ -185,7 +148,7 @@ sub vc_to_lox {
 # Fetch current data
 #
 
-if ( $current ) { # Start current
+if ( $current ) {
 
 	# Write location data into database
 	$currentepoche = $decoded_json->{currentConditions}->{datetimeEpoch}; # Needed during hourly forecast
@@ -294,19 +257,19 @@ if ( $current ) { # Start current
 	print F "$decoded_json->{currentConditions}->{precipprob}|";
 	print F sprintf("%.2f",$decoded_json->{currentConditions}->{snow}), "|";
 	print F "\n";
-  flock(F,8);
-close(F);
+    flock(F,8);
+	close(F);
 
-LOGOK "Saving current data to $lbplogdir/current.dat.tmp successfully.";
+	LOGOK "Saving current data to $lbplogdir/current.dat.tmp successfully.";
 
-LOGDEB "Database content:";
-open(F,"<$lbplogdir/current.dat.tmp");
-	@filecontent = <F>;
-	foreach (@filecontent) {
-		chomp ($_);
-		LOGDEB "$_";
-	}
-close (F);
+	LOGDEB "Database content:";
+	open(F,"<$lbplogdir/current.dat.tmp");
+		@filecontent = <F>;
+		foreach (@filecontent) {
+			chomp ($_);
+			LOGDEB "$_";
+		}
+	close (F);
 
 } # End current
 
@@ -401,19 +364,19 @@ if ( $daily ) { # Start daily
 		print F sprintf("%.2f",$moonphase*100), "|";
 		print F "\n";
 	}
-  flock(F,8);
-close(F);
+  	flock(F,8);
+	close(F);
 
-LOGOK "Saving daily forecast data to $lbplogdir/dailyforecast.dat.tmp successfully.";
+	LOGOK "Saving daily forecast data to $lbplogdir/dailyforecast.dat.tmp successfully.";
 
-LOGDEB "Database content:";
-open(F,"<$lbplogdir/dailyforecast.dat.tmp");
-	@filecontent = <F>;
-	foreach (@filecontent) {
-		chomp ($_);
-		LOGDEB "$_";
-	}
-close (F);
+	LOGDEB "Database content:";
+	open(F,"<$lbplogdir/dailyforecast.dat.tmp");
+		@filecontent = <F>;
+		foreach (@filecontent) {
+			chomp ($_);
+			LOGDEB "$_";
+		}
+	close (F);
 
 } # End daily
 
@@ -511,124 +474,120 @@ if ( $hourly ) { # Start hourly
 			print F "\n";
 		}
 	}
-  flock(F,8);
-close(F);
+  	flock(F,8);
+	close(F);
 
-LOGOK "Saving hourly forecast data to $lbplogdir/hourlyforecast.dat.tmp successfully.";
+	LOGOK "Saving hourly forecast data to $lbplogdir/hourlyforecast.dat.tmp successfully.";
 
-LOGDEB "Database content:";
-open(F,"<$lbplogdir/hourlyforecast.dat.tmp");
-	@filecontent = <F>;
-	foreach (@filecontent) {
-		chomp ($_);
-		LOGDEB "$_";
-	}
-close (F);
-
+	LOGDEB "Database content:";
+	open(F,"<$lbplogdir/hourlyforecast.dat.tmp");
+		@filecontent = <F>;
+		foreach (@filecontent) {
+			chomp ($_);
+			LOGDEB "$_";
+		}
+	close (F);
 } # end hourly
 
 # Clean Up Databases
 
 if ( $current ) {
 
-LOGINF "Cleaning $lbplogdir/current.dat.tmp";
-open(F,"+<$lbplogdir/current.dat.tmp");
-  flock(F,2);
-	@filecontent = <F>;
-	seek(F,0,0);
-	truncate(F,0);
-	foreach (@filecontent){
-		s/[\n\r]//g;
-		if($_ =~ /^#/) {
-		  print F "$_\n";
-		  next;
+	LOGINF "Cleaning $lbplogdir/current.dat.tmp";
+	open(F,"+<$lbplogdir/current.dat.tmp");
+	flock(F,2);
+		@filecontent = <F>;
+		seek(F,0,0);
+		truncate(F,0);
+		foreach (@filecontent){
+			s/[\n\r]//g;
+			if($_ =~ /^#/) {
+			print F "$_\n";
+			next;
+			}
+			LOGDEB "Original: $_";
+			s/\|null\|/"|0|"/eg;
+			s/\|--\|/"|0|"/eg;
+			s/\|na\|/"|-9999.00|"/eg;
+			s/\|NA\|/"|-9999.00|"/eg;
+			s/\|n\/a\|/"|-9999.00|"/eg;
+			s/\|N\/A\|/"|-9999.00|"/eg;
+			LOGDEB "Cleaned:  $_";
+			print F "$_\n";
 		}
-		LOGDEB "Original: $_";
-		s/\|null\|/"|0|"/eg;
-		s/\|--\|/"|0|"/eg;
-		s/\|na\|/"|-9999.00|"/eg;
-		s/\|NA\|/"|-9999.00|"/eg;
-		s/\|n\/a\|/"|-9999.00|"/eg;
-		s/\|N\/A\|/"|-9999.00|"/eg;
-		LOGDEB "Cleaned:  $_";
-		print F "$_\n";
+	flock(F,8);
+	close(F);
+	my $currentname = "$lbplogdir/current.dat.tmp";
+	my $currentsize = -s ($currentname);
+	if ($currentsize > 100) {
+			move($currentname, "$lbplogdir/current.dat");
 	}
-  flock(F,8);
-close(F);
-my $currentname = "$lbplogdir/current.dat.tmp";
-my $currentsize = -s ($currentname);
-if ($currentsize > 100) {
-        move($currentname, "$lbplogdir/current.dat");
-}
-
 }
 
 if ( $daily ) {
 
-LOGINF "Cleaning $lbplogdir/dailyforecast.dat.tmp";
-open(F,"+<$lbplogdir/dailyforecast.dat.tmp");
-  flock(F,2);
-	@filecontent = <F>;
-	seek(F,0,0);
-	truncate(F,0);
-	foreach (@filecontent){
-		s/[\n\r]//g;
-		if($_ =~ /^#/) {
-		  print F "$_\n";
-		  next;
+	LOGINF "Cleaning $lbplogdir/dailyforecast.dat.tmp";
+	open(F,"+<$lbplogdir/dailyforecast.dat.tmp");
+	flock(F,2);
+		@filecontent = <F>;
+		seek(F,0,0);
+		truncate(F,0);
+		foreach (@filecontent){
+			s/[\n\r]//g;
+			if($_ =~ /^#/) {
+			print F "$_\n";
+			next;
+			}
+			LOGDEB "Original: $_";
+			s/\|null\|/"|0|"/eg;
+			s/\|--\|/"|0|"/eg;
+			s/\|na\|/"|-9999.00|"/eg;
+			s/\|NA\|/"|-9999.00|"/eg;
+			s/\|n\/a\|/"|-9999.00|"/eg;
+			s/\|N\/A\|/"|-9999.00|"/eg;
+			LOGDEB "Cleaned:  $_";
+			print F "$_\n";
 		}
-		LOGDEB "Original: $_";
-		s/\|null\|/"|0|"/eg;
-		s/\|--\|/"|0|"/eg;
-		s/\|na\|/"|-9999.00|"/eg;
-		s/\|NA\|/"|-9999.00|"/eg;
-		s/\|n\/a\|/"|-9999.00|"/eg;
-		s/\|N\/A\|/"|-9999.00|"/eg;
-		LOGDEB "Cleaned:  $_";
-		print F "$_\n";
+	flock(F,8);
+	close(F);
+	my $dailyname = "$lbplogdir/dailyforecast.dat.tmp";
+	my $dailysize = -s ($dailyname);
+	if ($dailysize > 100) {
+			move($dailyname, "$lbplogdir/dailyforecast.dat");
 	}
-  flock(F,8);
-close(F);
-my $dailyname = "$lbplogdir/dailyforecast.dat.tmp";
-my $dailysize = -s ($dailyname);
-if ($dailysize > 100) {
-        move($dailyname, "$lbplogdir/dailyforecast.dat");
-}
-
 }
 
 if ( $hourly ) {
 
-LOGINF "Cleaning $lbplogdir/hourlyforecast.dat.tmp";
-open(F,"+<$lbplogdir/hourlyforecast.dat.tmp");
-  flock(F,2);
-	@filecontent = <F>;
-	seek(F,0,0);
-	truncate(F,0);
-	foreach (@filecontent){
-		s/[\n\r]//g;
-		if($_ =~ /^#/) {
-		  print F "$_\n";
-		  next;
+	LOGINF "Cleaning $lbplogdir/hourlyforecast.dat.tmp";
+	open(F,"+<$lbplogdir/hourlyforecast.dat.tmp");
+	flock(F,2);
+		@filecontent = <F>;
+		seek(F,0,0);
+		truncate(F,0);
+		foreach (@filecontent){
+			s/[\n\r]//g;
+			if($_ =~ /^#/) {
+			print F "$_\n";
+			next;
+			}
+			LOGDEB "Original: $_";
+			s/\|null\|/"|0|"/eg;
+			s/\|--\|/"|0|"/eg;
+			s/\|na\|/"|-9999.00|"/eg;
+			s/\|NA\|/"|-9999.00|"/eg;
+			s/\|n\/a\|/"|-9999.00|"/eg;
+			s/\|N\/A\|/"|-9999.00|"/eg;
+			LOGDEB "Cleaned:  $_";
+			print F "$_\n";
 		}
-		LOGDEB "Original: $_";
-		s/\|null\|/"|0|"/eg;
-		s/\|--\|/"|0|"/eg;
-		s/\|na\|/"|-9999.00|"/eg;
-		s/\|NA\|/"|-9999.00|"/eg;
-		s/\|n\/a\|/"|-9999.00|"/eg;
-		s/\|N\/A\|/"|-9999.00|"/eg;
-		LOGDEB "Cleaned:  $_";
-		print F "$_\n";
+	flock(F,8);
+	close(F);
+	my $hourlyname = "$lbplogdir/hourlyforecast.dat.tmp";
+	my $hourlysize = -s ($hourlyname);
+	if ($hourlysize > 100) {
+			move($hourlyname, "$lbplogdir/hourlyforecast.dat");
 	}
-  flock(F,8);
-close(F);
-my $hourlyname = "$lbplogdir/hourlyforecast.dat.tmp";
-my $hourlysize = -s ($hourlyname);
-if ($hourlysize > 100) {
-        move($hourlyname, "$lbplogdir/hourlyforecast.dat");
-}
-
 }
 
 # Give OK status to client.
