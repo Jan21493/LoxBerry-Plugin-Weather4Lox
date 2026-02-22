@@ -32,6 +32,7 @@ use JSON::PP;
 use File::Copy;
 use Getopt::Long;
 use Time::Piece;
+use Math::Function::Interpolator;
 use HTTP::Request;
 use DateTime;
 #use DateTime::TimeZone;
@@ -274,105 +275,69 @@ my %wetteronline_to_lox = (
     # in SW:    https://st.wetteronline.de/dr/1.1.617/city/prozess/graphiken/symbole/wom/standard/sw/gif/so____.gif
     # aktuelles Wetter in Farbe: https://st.wetteronline.de/dr/1.1.617/aktuell/prozess/graphiken/symbole/standard/farbe/gif/so____.gif
 
-    # Wolken (in Abstufungen von klar bis bedeckt)
+    # clouds in steps from clear to overcast, each with code for day and night (kept in mapping for clarity)
     "so____" => ["1", "clear", "Sonnig"],                                        # sonnig bzw. klar / wolkenlos (Tag)
-    "mo____" => ["1", "clear", "Klar"],                                          # sonnig bzw. klar / wolkenlos (Nacht)
+  # "mo____" => ["1", "clear", "Klar"],                                          # sonnig bzw. klar / wolkenlos (Nacht)
     "wb____" => ["2", "mostlysunny", "Leicht bewölkt"],                          # leicht bewölkt (Tag)
-    "mb____" => ["2", "mostlysunny", "Leicht bewölkt"],                          # leicht bewölkt (Nacht)
+  # "mb____" => ["2", "mostlysunny", "Leicht bewölkt"],                          # leicht bewölkt (Nacht)
     "bw____" => ["3", "cloudy", "Bewölkt"],                                      # Bewölkt (Tag)
-    "mw____" => ["3", "cloudy", "Bewölkt"],                                      # Bewölkt (Nacht)
-    "bd____" => ["5", "overcast", "Bedeckt"],                                    # bedeckt
-    "md____" => ["5", "overcast", "Bedeckt"],                                    # Bedeckt
+  # "mw____" => ["3", "cloudy", "Bewölkt"],                                      # Bewölkt (Nacht)
+    "bd____" => ["5", "overcast", "Bedeckt"],                                    # bedeckt (Tag)
+  # "md____" => ["5", "overcast", "Bedeckt"],                                    # Bedeckt (Nacht)
 
-    # Nebel/Dunst
+    # fog/haze
     "ns____" => ["6", "fog", "Teils neblig"],                                    # teils neblig (Tag)
-    "nm____" => ["6", "fog", "Teils neblig"],                                    # teils neblig (Nacht)
+  # "nm____" => ["6", "fog", "Teils neblig"],                                    # teils neblig (Nacht)
     "nb____" => ["6", "fog", "Nebelig"],                                         # neblig / Nebel
 
-    # Schauer
 
-    # leicht Bewölkt und Schauer (Tag und Nacht)
-    "wbs1__" => ["16", "chancerain", "Vereinzelt Regenschauer"],                 # leicht bewölkt und vereinzelt Schauer (Tag)
-    "wbs2__" => ["16", "rain", "Regenschauer"],                                  # leicht bewölkt und Schauer (Tag)
-    "wbs3__" => ["12", "rain", "Starker Regenschauer"],                          # leicht bewölkt und Starke Regenschauer (Tag)
+    # Schauer (mit Tag und Nacht) bei leicht bewölkt
+    "wbs1__" => ["16", "chancerain", "Vereinzelt Regenschauer"],                 # leicht bewölkt und vereinzelt Schauer
+    "wbs2__" => ["16", "rain", "Regenschauer"],                                  # leicht bewölkt und Schauer
+    "wbs3__" => ["12", "rain", "Starker Regenschauer"],                          # leicht bewölkt und Starke Regenschauer 
 
-    "mbs1__" => ["16", "chancerain", "Vereinzelt Regenschauer"],                 # leicht bewölkt und vereinzelt Schauer (Nacht)
-    "mbs2__" => ["16", "rain", "Regenschauer"],                                  # leicht bewölkt und Schauer (Nacht)
-    "mbs3__" => ["12", "rain", "Starker Regenschauer"],                          # leicht bewölkt und Starke Regenschauer (Nacht)
+    # Schauer (mit Tag und Nacht) bei bewölkt
+    "bws1__" => ["16", "chancerain", "Vereinzelt Regenschauer"],                 # bewölkt und vereinzelt Schauer
+    "bws2__" => ["16", "rain", "Regenschauer"],                                  # bewölkt und Schauer
+    "bws3__" => ["12", "rain", "Starker Regenschauer"],                          # bewölkt und Starke Regenschauer
 
-   # Bewölkt und Schauer (Tag und Nacht)
-    "bws1__" => ["16", "chancerain", "Vereinzelt Regenschauer"],                 # bewölkt und vereinzelt Schauer (Tag)
-    "mws1__" => ["16", "chancerain", "Vereinzelt Regenschauer"],                 # bewölkt und vereinzelt Schauer (Nacht)
-    "bws2__" => ["16", "rain", "Regenschauer"],                                  # bewölkt und Schauer (Tag)
-    "mws2__" => ["16", "rain", "Regenschauer"],                                  # bewölkt und Schauer (Nacht)
-    "bws3__" => ["12", "rain", "Starker Regenschauer"],                          # bewölkt und Starke Regenschauer (Tag)
-    "mws3__" => ["12", "rain", "Starker Regenschauer"],                          # bewölkt und Starke Regenschauer (Nacht)
-
-    # Bedeckt und Schauer
+    # Schauer (mit Tag und Nacht) bei bedeckt
     "bds1__" => ["10", "rain", "Leichter Regenschauer"],                         # Leichter Regenschauer
     "bds2__" => ["11", "rain", "Regenschauer"],                                  # Regenschauer
     "bds3__" => ["12", "rain", "Starker Regenschauer"],                          # Starker Regenschauer
 
-    "mds1__" => ["10", "rain", "Leichter Regenschauer"],                         # Leichter Regenschauer
-    "mds2__" => ["11", "rain", "Regenschauer"],                                  # Regenschauer
-    "mds3__" => ["12", "rain", "Starker Regenschauer"],                          # Starker Regenschauer
 
-    # Regen
+    # Regen (Tag und Nacht) bei leicht bewölkt
+    "wbr1__" => ["16", "chancerain", "Leichter Regen"],                          # leicht bewölkt und leichter Regen
+    "wbr2__" => ["11", "rain", "Regen"],                                         # leicht bewölkt und Regen
+    "wbr3__" => ["12", "rain", "Starker Regen"],                                 # leicht bewölkt und Starker Regen
 
-    # leicht Bewölkt und Regen (Tag und Nacht)
-    "wbr1__" => ["16", "chancerain", "Leichter Regen"],                          # leicht bewölkt und leichter Regen (Tag)
-    "wbr2__" => ["11", "rain", "Regen"],                                         # leicht bewölkt und Regen (Tag)
-    "wbr3__" => ["12", "rain", "Starker Regen"],                                 # leicht bewölkt und Starker Regen (Tag)
+    # Regen (Tag und Nacht) bei bewölkt
+    "bwr1__" => ["16", "chancerain", "Leichter Regen"],                          # bewölkt und leichter Regen
+    "bwr2__" => ["11", "rain", "Regen"],                                         # bewölkt und Regen
+    "bwr3__" => ["12", "rain", "Starker Regen"],                                 # bewölkt und Starker Regen
 
-    "mbr1__" => ["16", "chancerain", "Leichter Regen"],                          # leicht bewölkt und leichter Regen (Nacht)
-    "mbr2__" => ["11", "rain", "Regen"],                                         # leicht bewölkt und Regen (Nacht)
-    "mbr3__" => ["12", "rain", "Starker Regen"],                                 # leicht bewölkt und Starker Regen (Nacht)
-
-    # Bewölkt und Regen (Tag und Nacht)
-    "bwr1__" => ["16", "chancerain", "Leichter Regen"],                          # bewölkt und leichter Regen (Tag)
-    "mwr1__" => ["16", "chancerain", "Leichter Regen"],                          # bewölkt und leichter Regen (Nacht)
-    "bwr2__" => ["11", "rain", "Regen"],                                         # bewölkt und Regen (Tag)
-    "mwr2__" => ["11", "rain", "Regen"],                                         # bewölkt und Regen (Nacht)
-    "bwr3__" => ["12", "rain", "Starker Regen"],                                 # bewölkt und Starker Regen (Tag)
-    "mwr3__" => ["12", "rain", "Starker Regen"],                                 # bewölkt und Starker Regen (Nacht)
-
-    # Bedeckt und Regen
+    # Regen (Tag und Nacht) bei bedeckt
     "bdr1__" => ["16", "chancerain", "Regenschauer"],                            # bedeckt, etwas Regen oder vereinzelt Schauer
     "bdr2__" => ["11", "rain", "Regen"],                                         # bedeckt, Regen oder Schauer
     "bdr3__" => ["12", "rain", "Ergiebiger Regen"],                              # bedeckt und ergiebiger Regen
 
-    "mdr1__" => ["10", "rain", "Leichter Regen"],                                # Leichter Regen
-    "mdr2__" => ["11", "rain", "Regen"],                                         # Regen
-    "mdr3__" => ["12", "rain", "Starker Regen"],                                 # Starker Regen
 
-    # Schneeregenschauer
+    # Schneeregenschauer (Tag und Nacht) bei leicht bewölkt
+    "wbsrs1" => ["28", "sleet", "Vereinzelt Schneeregenschauer"],                # leicht bewölkt und vereinzelt Schneeregenschauer
+    "wbsrs2" => ["28", "sleet", "Schneeregenschauer"],                           # leicht bewölkt und Schneeregenschauer
+    "wbsrs3" => ["29", "sleet", "Starke Schneeregenschauer"],                    # leicht bewölkt und Schneeregenschauer
 
-    # leicht bewölkt und Schneeregenschauer
-    "wbsrs1" => ["28", "sleet", "Vereinzelt Schneeregenschauer"],                # leicht bewölkt und vereinzelt Schneeregenschauer (Tag)
-    "wbsrs2" => ["28", "sleet", "Schneeregenschauer"],                           # leicht bewölkt und Schneeregenschauer (Tag)
-    "wbsrs3" => ["29", "sleet", "Starke Schneeregenschauer"],                    # leicht bewölkt und Schneeregenschauer (Tag)
+    # Schneeregenschauer (Tag und Nacht) bei bewölkt
+    "bwsrs1" => ["28", "sleet", "Vereinzelt Schneeregenschauer"],                # bewölkt und vereinzelt Schneeregenschauer
+    "bwsrs2" => ["28", "sleet", "Schneeregenschauer"],                           # bewölkt und Schneeregenschauer
+    "bwsrs3" => ["29", "sleet", "Starke Schneeregenschauer"],                    # bewölkt und Schneeregenschauer
 
-    "mbsrs1" => ["28", "sleet", "Vereinzelt Schneeregenschauer"],                # leicht bewölkt und vereinzelt Schneeregenschauer (Nacht)
-    "mbsrs2" => ["28", "sleet", "Schneeregenschauer"],                           # leicht bewölkt und Schneeregenschauer (Nacht)
-    "mbsrs3" => ["29", "sleet", "Starke Schneeregenschauer"],                    # leicht bewölkt und Schneeregenschauer (Nacht)
-
-    # bewölkt und Schneeregenschauer
-    "bwsrs1" => ["28", "sleet", "Vereinzelt Schneeregenschauer"],                # bewölkt und vereinzelt Schneeregenschauer (Tag)
-    "bwsrs2" => ["28", "sleet", "Schneeregenschauer"],                           # bewölkt und Schneeregenschauer (Tag)
-    "bwsrs3" => ["29", "sleet", "Starke Schneeregenschauer"],                    # bewölkt und Schneeregenschauer (Tag)
-
-    "mwsrs1" => ["28", "sleet", "Vereinzelt Schneeregenschauer"],                # bewölkt und vereinzelt Schneeregenschauer (Nacht)
-    "mwsrs2" => ["28", "sleet", "Schneeregenschauer"],                           # bewölkt und Schneeregenschauer (Nacht)
-    "mwsrs3" => ["29", "sleet", "Starke Schneeregenschauer"],                    # bewölkt und Schneeregenschauer (Nacht)
-
-    # bedeckt und Schneeregenschauer
+    # Schneeregenschauer (Tag und Nacht) bei bedeckt
     "bdsrs1" => ["25", "sleet", "Leichter Schneeregenschauer"],                  # bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer
     "bdsrs2" => ["26", "sleet", "Schneeregenschauer"],                           # bedeckt, Schneeregen oder Schneeregenschauer
     "bdsrs3" => ["27", "sleet", "Ergiebiger Schneeregenschauer"],                # bedeckt und ergiebiger Schneeregen
 
-    "mdsrs1" => ["25", "sleet", "Leichter Schneeregenschauer"],                  # bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer
-    "mdsrs2" => ["26", "sleet", "Schneeregenschauer"],                           # bedeckt, Schneeregen oder Schneeregenschauer
-    "mdsrs3" => ["27", "sleet", "Ergiebiger Schneeregenschauer"],                # bedeckt und ergiebiger Schneeregen
 
     # Schneeregen ### ToDo: snr in sr umwandeln
     "bwsnr1" => ["28", "sleet", "Leichter Schneeregen"],                         # leichter Schneeregen
@@ -380,32 +345,20 @@ my %wetteronline_to_lox = (
 
     # Schneeregen
 
-    # leicht bewölkt und Schneeregen
+    # leicht bewölkt und Schneeregen (Tag und Nacht)
     "wbsr1_" => ["25", "sleet", "Leichter Schneeregen"],                         # leicht bewölkt und vereinzelt Schneeregen (Tag)
     "wbsr2_" => ["26", "sleet", "Schneeregen"],                                  # leicht bewölkt und Schneeregen (Tag)
     "wbsr3_" => ["27", "sleet", "Starker Schneeregen"],                          # leicht bewölkt und ergiebiger Schneeregen (Tag)
 
-    "mbsr1_" => ["25", "sleet", "Leichter Schneeregen"],                         # leicht bewölkt und vereinzelt Schneeregen (Nacht)
-    "mbsr2_" => ["26", "sleet", "Schneeregen"],                                  # leicht bewölkt und Schneeregen (Nacht)
-    "mbsr3_" => ["27", "sleet", "Starker Schneeregen"],                          # leicht bewölkt und ergiebiger Schneeregen (Nacht)
-
-    # bewölkt und Schneeregen
+    # bewölkt und Schneeregen (Tag und Nacht)
     "bwsr1_" => ["25", "sleet", "Leichter Schneeregen"],                         # bewölkt und vereinzelt Schneeregen (Tag)
     "bwsr2_" => ["26", "sleet", "Schneeregen"],                                  # bewölkt und Schneeregen (Tag)
     "bwsr3_" => ["27", "sleet", "Starker Schneeregen"],                          # bewölkt und ergiebiger Schneeregen (Tag)
 
-    "mwsr1_" => ["25", "sleet", "Leichter Schneeregen"],                         # bewölkt und vereinzelt Schneeregen (Nacht)
-    "mwsr2_" => ["26", "sleet", "Schneeregen"],                                  # bewölkt und Schneeregen (Nacht)
-    "mwsr3_" => ["27", "sleet", "Starker Schneeregen"],                          # bewölkt und ergiebiger Schneeregen (Nacht)
-
-    # bedeckt und Schneeregen
+    # bedeckt und Schneeregen (Tag und Nacht)
     "bdsr1_" => ["25", "sleet", "Leichter Schneeregen"],                         # bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer
     "bdsr2_" => ["26", "sleet", "Schneeregen"],                                  # bedeckt, Schneeregen oder Schneeregenschauer
     "bdsr3_" => ["27", "sleet", "Ergiebiger Schneeregen"],                       # bedeckt und ergiebiger Schneeregen
-
-    "mdsr1_" => ["25", "sleet", "Leichter Schneeregen"],                         # bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer
-    "mdsr2_" => ["26", "sleet", "Schneeregen"],                                  # bedeckt, Schneeregen oder Schneeregenschauer
-    "mdsr3_" => ["27", "sleet", "Ergiebiger Schneeregen"],                       # bedeckt und ergiebiger Schneeregen
 
     # Schneeschauer
 
@@ -414,27 +367,15 @@ my %wetteronline_to_lox = (
     "wbsns2" => ["24", "snow", "Schneeschauer"],                                 # leicht bewölkt und Schneeschauer (Tag)
     "wbsns3" => ["24", "snow", "Starker Schneeschauer"],                         # leicht bewölkt und starke Schneeschauer (Tag)
 
-    "mbsns1" => ["23", "snow", "Leichter Schneeschauer"],                        # leicht bewölkt und vereinzelt Schneeschauer (Nacht)
-    "mbsns2" => ["24", "snow", "Schneeschauer"],                                 # leicht bewölkt und Schneeschauer (Nacht)
-    "mbsns3" => ["24", "snow", "Starker Schneeschauer"],                         # leicht bewölkt und starke Schneeschauer (Nacht)
-
     # bewölkt und Schneeschauer
     "bwsns1" => ["23", "snow", "Leichter Schneeschauer"],                        # bewölkt und vereinzelt Schneeschauer (Tag)
     "bwsns2" => ["24", "snow", "Schneeschauer"],                                 # bewölkt und Schneeschauer (Tag)
     "bwsns3" => ["24", "snow", "Starker Schneeschauer"],                         # bewölkt und starke Schneeschauer (Tag)
 
-    "mwsns1" => ["23", "snow", "Leichter Schneeschauer"],                        # bewölkt und vereinzelt Schneeschauer (Nacht)
-    "mwsns2" => ["24", "snow", "Schneeschauer"],                                 # bewölkt und Schneeschauer (Nacht)
-    "mwsns3" => ["24", "snow", "Starker Schneeschauer"],                         # bewölkt und starke Schneeschauer (Nacht)
-
     # bedeckt und Schneeschauer
     "bdsns1" => ["23", "snow", "Leichter Schneeschauer"],                        # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer
     "bdsns2" => ["24", "snow", "Schneeschauer"],                                 # bedeckt, Schneefall oder Schneeschauer
     "bdsns3" => ["24", "snow", "Starker Schneeschauer"],                         # bedeckt und ergiebiger Schneefall
-
-    "mdsns1" => ["23", "snow", "Leichter Schneeschauer"],                        # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer
-    "mdsns2" => ["24", "snow", "Schneeschauer"],                                 # bedeckt, Schneefall oder Schneeschauer
-    "mdsns3" => ["24", "snow", "Starker Schneeschauer"],                         # bedeckt und ergiebiger Schneefall
 
     # Schneefall
 
@@ -443,93 +384,58 @@ my %wetteronline_to_lox = (
     "wbsn2_" => ["21", "snow", "Schneefall"],                                    # leicht bewölkt und Schneefall (Tag)
     "wbsn3_" => ["22", "snow", "Starker Schneefall"],                            # leicht bewölkt und starker Schneefall (Tag)
 
-    "mbsn1_" => ["20", "snow", "Leichter Schneefall"],                           # leicht bewölkt und vereinzelt Schneefall (Nacht)
-    "mbsn2_" => ["21", "snow", "Schneefall"],                                    # leicht bewölkt und Schneefall (Nacht)
-    "mbsn3_" => ["22", "snow", "Starker Schneefall"],                            # leicht bewölkt und starker Schneefall (Nacht)
-
     # bewölkt und Schneefall
     "bwsn1_" => ["20", "snow", "Leichter Schneefall"],                           # bewölkt und vereinzelt Schneefall (Tag)
     "bwsn2_" => ["21", "snow", "Schneefall"],                                    # bewölkt und Schneefall (Tag)
     "bwsn3_" => ["22", "snow", "Starker Schneefall"],                            # bewölkt und starker Schneefall (Tag)
-
-    "mwsn1_" => ["20", "snow", "Leichter Schneefall"],                           # bewölkt und vereinzelt Schneefall (Nacht)
-    "mwsn2_" => ["21", "snow", "Schneefall"],                                    # bewölkt und Schneefall (Nacht)
-    "mwsn3_" => ["22", "snow", "Starker Schneefall"],                            # bewölkt und starker Schneefall (Nacht)
 
     # bedeckt und Schneefall
     "bdsn1_" => ["20", "snow", "Leichter Schneefall"],                           # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer (Tag)
     "bdsn2_" => ["21", "snow", "Schneefall"],                                    # bedeckt, Schneefall oder Schneeschauer (Tag)
     "bdsn3_" => ["22", "snow", "Ergiebiger Schneefall"],                         # bedeckt und ergiebiger Schneefall (Tag)
 
-    "mdsn1_" => ["20", "snow", "Leichter Schneefall"],                           # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer (Nacht)
-    "mdsn2_" => ["21", "snow", "Schneefall"],                                    # bedeckt, Schneefall oder Schneeschauer (Nacht)
-    "mdsn3_" => ["22", "snow", "Ergiebiger Schneefall"],                         # bedeckt und ergiebiger Schneefall (Nacht)
-
     # Schnegewitter
 
     # leicht bewölkt und Schneegewitter
     "wbsg__" => ["24", "snow", "Vereinzelt Schneegewitter"],                     # leicht bewölkt und Schneegewitter (Tag)
-    "mbsg__" => ["24", "snow", "Vereinzelt Schneegewitter"],                     # leicht bewölkt und Schneegewitter (Nacht)
 
     # bewölkt und Schneegewitter
     "bwsg__" => ["24", "snow", "Schneegewitter"],                                # bewölkt und Schneegewitter (Tag)
-    "mwsg__" => ["24", "snow", "Schneegewitter"],                                # bewölkt und Schneegewitter (Nacht)
 
     # bedeckt und Schneegewitter
     "bdsg__" => ["24", "snow", "Schneegewitter"],                                # bedeckt und Schneegewitter (Tag)
-    "mdsg__" => ["24", "snow", "Schneegewitter"],                                # bedeckt und Schneegewitter (Nacht)
 
     # Gewitter
 
-    # leicht bewölkt mit Gewitter
+    # leicht bewölkt mit Gewitter (Tag und Nacht)
     "wbg1__" => ["18", "tstorms", "Vereinzelt Gewitter"],                        # leicht bewölkt, vereinzelt Schauer und Gewitter (Tag)
     "wbg2__" => ["18", "tstorms", "Gewitter"],                                   # leicht bewölkt, Schauer und Gewitter (Tag)
     "wbg3__" => ["19", "tstorms", "Kräftiges Gewitter"],                         # leicht bewölkt, Schauer und Gewitter (Tag)
 
-    "mbg1__" => ["18", "tstorms", "Vereinzelt Gewitter"],                        # leicht bewölkt, vereinzelt Schauer und Gewitter (Nacht)
-    "mbg2__" => ["18", "tstorms", "Gewitter"],                                   # leicht bewölkt, Schauer und Gewitter (Nacht)
-    "mbg3__" => ["19", "tstorms", "Kräftiges Gewitter"],                         # leicht bewölkt, Schauer und Gewitter (Nacht)
-
-    # Bewölkt mit Gewitter
+    # Bewölkt mit Gewitter (Tag und Nacht)
     "bwg1__" => ["18", "tstorms", "Vereinzelt Gewitter"],                        # bewölkt, vereinzelt Schauer und Gewitter (Tag)
     "bwg2__" => ["18", "tstorms", "Gewitter"],                                   # Gewitter (Tag)
     "bwg3__" => ["19", "tstorms", "Kräftiges Gewitter"],                         # starke Gewitter (Tag)
 
-    "mwg1__" => ["18", "tstorms", "Vereinzelt Gewitter"],                        # leichte Gewitter (Nacht)
-    "mwg2__" => ["18", "tstorms", "Gewitter"],                                   # Gewitter (Nacht)
-    "mwg3__" => ["19", "tstorms", "Kräftiges Gewitter"],                         # starke Gewitter (Nacht)
-
-    # Bedeckt mit Gewitter
+    # Bedeckt mit Gewitter (Tag und Nacht)
     "bdg1__" => ["18", "tstorms", "Gewitter"],                                   # bedeckt, vereinzelt Schauer und Gewitter
     "bdg2__" => ["18", "tstorms", "Gewitter"],                                   # bedeckt, Schauer und Gewitter (Tag)
 
-    "mdg1__" => ["18", "tstorms", "Gewitter"],                                   # bedeckt, vereinzelt Schauer und Gewitter (Nacht)
-    "mdg2__" => ["18", "tstorms", "Gewitter"],                                   # bedeckt, Schauer und Gewitter (Nacht)
-
     # gefrierender Regen
 
-    # leicht Bewölkt mit gefrierendem Regen
+    # leicht Bewölkt mit gefrierendem Regen (Tag und Nacht)
     "wbgr1_" => ["14", "sleet", "Gefrierender Sprühregen"],                      # bewölkt und gefrierender Sprühregen (Tag)
     "wbgr2_" => ["14", "sleet", "Gefrierender Regen"],                           # bewölkt und gefrierender Regen (Tag)
 
-    "mbgr1_" => ["14", "sleet", "Gefrierender Sprühregen"],                      # bewölkt und gefrierender Sprühregen (Nacht)
-    "mbgr2_" => ["14", "sleet", "Gefrierender Regen"],                           # bewölkt und gefrierender Regen (Nacht)
-
-    # Bewölkt mit gefrierendem Regen
+    # Bewölkt mit gefrierendem Regen (Tag und Nacht)
     "bwgr1_" => ["14", "sleet", "Gefrierender Sprühregen"],                      # bewölkt und gefrierender Sprühregen (Tag)
     "bwgr2_" => ["14", "sleet", "Gefrierender Regen"],                           # bewölkt und gefrierender Regen (Tag)
 
-    "mwgr1_" => ["14", "sleet", "Gefrierender Sprühregen"],                      # bewölkt und gefrierender Sprühregen (Nacht)
-    "mwgr2_" => ["14", "sleet", "Gefrierender Regen"],                           # bewölkt und gefrierender Regen (Nacht)
-
-    # Bedeckt mit gefrierendem Regen
+    # Bedeckt mit gefrierendem Regen (Tag und Nacht)
     "bdgr1_" => ["14", "sleet", "Gefrierender Sprühregen"],                      # bedeckt und gefrierender Sprühregen (Tag)
     "bdgr2_" => ["14", "sleet", "Gefrierender Regen"],                           # bedeckt und gefrierender Regen (Tag)
 
-    "mdgr1_" => ["14", "sleet", "Gefrierender Sprühregen"],                      # bedeckt und gefrierender Sprühregen (Nacht)
-    "mdgr2_" => ["14", "sleet", "Gefrierender Regen"],                           # bedeckt und gefrierender Regen (Nacht)
-
-    # Graupel, Hagel und Eiskörner
+    # Graupel, Hagel und Eiskörner (Tag und Nacht)
     "bwgs1_" => ["28", "sleet", "Leichter Graupelschauer"],                        # leichte Graupelschauer
     "bwgs2_" => ["26", "sleet", "Graupelschauer"],                                 # Graupelschauer
 
@@ -539,23 +445,78 @@ my %wetteronline_to_lox = (
     "bwek__" => ["26", "sleet", "Eiskörner"],                                      # Eiskörner
 );
 
+# Convert night symbols to day symbols to reduce the lookup table
+my %night_to_day_prefix = (
+	'mo' => 'so',  # clear night -> clear day
+	'mb' => 'wb',  # lightly cloudy night -> lightly cloudy day
+	'mw' => 'bw',  # cloudy night -> cloudy day
+	'md' => 'bd',  # overcast night -> overcast day
+	'nm' => 'ns',  # partly foggy night -> partly foggy day
+);
+
+my %skycondition_by_prefix = (
+  # Clear / (mostly) sunny
+  'so' => [  0, 'clear' ],          # sunny/clear
+  'wb' => [ 25, 'mostly clear' ],   # lightly cloudy
+
+  # Cloudy / overcast
+  'bw' => [ 75, 'cloudy' ],         # cloudy
+  'bd' => [100, 'overcast' ],       # overcast
+
+  # Fog / haze (treat as overcast-like sky condition)
+  'ns' => [100, 'fog' ],            # partly foggy
+  'nb' => [100, 'fog' ],            # fog
+);
+
+sub skycondition_from_wocode {
+	my ($wocode) = @_;
+
+	# Check for empty/undefined values
+	if (!defined $wocode || length($wocode) < 2) {
+		LOGWARN "Wetteronline symbol '$wocode' (to calculate sky condition) is undefined!";
+		return (-9999, "Unknown");
+	}
+	# only the first two characters are relevant for sky condition
+	my $prefix = substr($wocode, 0, 2);
+	# Convert night symbols to day symbols for sky condition calculation
+	if (exists $night_to_day_prefix{$prefix}) {
+		$prefix = $night_to_day_prefix{$prefix};
+	}
+	my $entry  = $skycondition_by_prefix{$prefix};
+
+	if ($entry && ref($entry) eq 'ARRAY' && @$entry >= 2) {
+		return ($entry->[0], $entry->[1]);
+	}
+
+	LOGWARN "Unknown Wetteronline symbol prefix '$prefix' for sky condition, using 'Unknown' as fallback.";
+	return (-9999, "Unknown");
+}
+
 sub wetteronline_to_lox {
-    my ($weather_symbol) = @_;
+    my ($wocode) = @_;
     
     # Check for empty/undefined values
-    if (!defined $weather_symbol || $weather_symbol eq "") {
-        LOGWARN "Wetteronline symbol is empty/undefined!";
-        return ("1", "clear", "Wolkenlos");
+    if (!defined $wocode || $wocode eq "") {
+        LOGWARN "Wetteronline symbol is empty or was not found in data set!";
+        return ("1", "clear", "No data");  # Default fallback
     }
+
+	if (defined $wocode && length($wocode) >= 2) {
+		$wocode =~ s/^(.{2})snr(.)$/${1}sr${2}_/;  # Convert "snr" to "sr" for Schneeregen
+		my $prefix = substr($wocode, 0, 2);
+		if (exists $night_to_day_prefix{$prefix}) {
+			substr($wocode, 0, 2, $night_to_day_prefix{$prefix});
+		}
+	}
     
-    # Lookup in the hash
-    my $result = $wetteronline_to_lox{$weather_symbol};
+    # Lookup in the table
+    my $result = $wetteronline_to_lox{$wocode};
     
     if ($result) {
         return @$result;  # Returns (code, icon, description)
     } else {
-        LOGWARN "Unknown weather symbol from Wetteronline: '$weather_symbol', using 'clear' as fallback.";
-        return ("1", "clear", "Wolkenlos");  # Default fallback
+        LOGWARN "Unknown weather symbol from Wetteronline: '$wocode', using 'clear' as fallback.";
+        return ("1", "clear", "No data");  # Default fallback
     }
 }
 
@@ -1034,19 +995,19 @@ open(F,">$lbplogdir/dailyforecast.dat.tmp") or $error = 1;
 
 		print F "\n";
 	}
-  flock(F,8);
-close(F);
+	flock(F,8);
+	close(F);
 
-LOGOK "Saving daily forecast data to $lbplogdir/dailyforecast.dat.tmp successfully.";
+	LOGOK "Saving daily forecast data to $lbplogdir/dailyforecast.dat.tmp successfully.";
 
-LOGDEB "Database content:";
-open(F,"<$lbplogdir/dailyforecast.dat.tmp");
-	@filecontent = <F>;
-	foreach (@filecontent) {
-		chomp ($_);
-		LOGDEB "$_";
-	}
-close (F);
+	LOGDEB "Database content:";
+	open(F,"<$lbplogdir/dailyforecast.dat.tmp");
+		@filecontent = <F>;
+		foreach (@filecontent) {
+			chomp ($_);
+			LOGDEB "$_";
+		}
+	close (F);
 
 } # End daily
 
@@ -1056,12 +1017,14 @@ close (F);
 
 if ( $hourly ) { # Start hourly
 
-# Saving new hourly forecast data...
+	# Saving new hourly forecast data...
 
-$error = 0;
-my $epoch_time = 0;
-open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
-  flock(F,2);
+	my $sky_condition;
+	my $sky_description;
+	$error = 0;
+	my $epoch_time = 0;
+	open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
+	flock(F,2);
 	if ($error) {
 		LOGCRIT "Cannot open $lbplogdir/hourlyforecast.dat.tmp";
 		exit 2;
@@ -1106,19 +1069,19 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 		$t->day_list(@days);
 		print F $t->wdayname . "|";
 
-		# hfc1_tt
+		# hfc1_tt - real temperature
 		print F sprintf("%.1f",$results->{temperature}{air}), "|";
 
-		# hfc1_tt_fl
+		# hfc1_tt_fl - feels like temperature
 		print F sprintf("%.1f",$results->{temperature}{apparent}), "|";
 		
-		# hfc1_hi
+		# hfc1_hi - heat index
 		print F "-9999|";
 		
-		# hfc1_hu
+		# hfc1_hu - humidity
 		print F sprintf("%.0f",$results->{humidity} * 100), "|";
 		
-		# hfc1_w_dirdes
+		# hfc1_w_dirdes - wind direction description
 		$wdir = $results->{wind}{direction};
 			if ( $wdir >= 0 && $wdir <= 22 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'}) }; # North
 			if ( $wdir > 22 && $wdir <= 68 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NE'}) }; # NorthEast
@@ -1131,31 +1094,31 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 			if ( $wdir > 338 && $wdir <= 360 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'}) }; # North
 		print F "$wdirdes|";
 
-		# hfc1_w_dir
+		# hfc1_w_dir - wind direction in degrees
 		print F "$results->{wind}{direction}|";
 		
-		# hfc1_w_sp
+		# hfc1_w_sp - wind speed in km/h
 		print F sprintf("%.2f",$results->{wind}{speed}{kilometer_per_hour}{value}), "|";
 		
-		# hfc1_w_ch
+		# hfc1_w_ch - wind chill
 		print F sprintf("%.1f",$results->{temperature}{apparent}), "|";
 		
-		# hfc1_pr
+		# hfc1_pr - air pressure in hPa
 		print F sprintf("%.0f",$results->{air_pressure}{hpa}), "|";
 		
-		# hfc1_dp
+		# hfc1_dp - dew point
 		print F sprintf("%.1f",$results->{dew_point}{celsius}), "|";
 		
-		# hfc1_sky
+		# hfc1_sky - sky condition
+		($sky_condition, $sky_description) = skycondition_from_wocode($results->{symbol});
+		print F "$sky_condition|";
+		# sky_des - sky description
+		print F "$sky_description|";
+		
+		# hfc1_uvi - UV index
 		print F "-9999|";
 		
-		# hfc1_sky_des
-		print F "-9999|";
-		
-		# hfc1_uvi
-		print F "-9999|";
-		
-		# hfc1_prec
+		# hfc1_prec - precipitation amount in mm (mean of interval begin/end if available, otherwise 0)
 		if ($results->{precipitation}{details}{rainfall_amount}{millimeter}) {
 			my $rfamount = ($results->{precipitation}{details}{rainfall_amount}{millimeter}{interval_begin} + $results->{precipitation}{details}{rainfall_amount}{millimeter}{interval_end}) / 2;
 			print F sprintf("%.2f",$rfamount), "|";
@@ -1163,37 +1126,39 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 			print F "0|";
 		}
 		
-		# hfc1_snow
+		# hfc1_snow - snow height in cm
 		if ($results->{precipitation}{details}{snow_height}{centimeter}) {
 			print F sprintf("%.2f",$results->{precipitation}{details}{snow_height}{centimeter}), "|";
 		} else {
 			print F "0|";
 		}
 		
-		# hfc1_pop
+		# hfc1_pop - probability of precipitation in percent
 		if ($results->{precipitation}{probability}) {
                         print F sprintf("%.0f",$results->{precipitation}{probability} * 100), "|";
                 } else {
                         print F "0|";
                 }
 				
-		# hfc1_we_icon && hfc1_we_code, hfc1_we_des
+		# hfc1_we_icon - weather icon
+		# hfc1_we_code - weather code
+		# hfc1_we_des - weather description
 		# Mapping: Wetteronline Symbol => [Loxone Code, Weather4Lox Icon, Description]
 		my ($code, $icon, $description) = wetteronline_to_lox($results->{symbol});
 		print F "$icon|";
 		print F "$code|";
 		print F "$description|";
 
-		# Ozone
+		# Ozone - not available in API response, nor on web page
 		print F "-9999|";
 		
-		# Solar Radiation
+		# Solar Radiation - not available in API response, nor on web page
 		print F "-9999|";
 		
-		# Visibility km
+		# Visibility km - not available in API response, nor on web page, but there is one for daily forecast
 		print F sprintf("%.2f",$results->{visibility} / 1000), "|";
 		
-		# hfc0_moon_p
+		# hfc0_moon_p - moon phase in percent (0..100)
 		my ( $moonphase,
 		  $moonillum,
 		  $moonage,
@@ -1203,28 +1168,130 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 		  $sunang ) = phase($epoch_time);
 		print F sprintf("%.2f",$moonillum*100), "|";
 
-		# hfc0_moon_a
+		# hfc0_moon_a - moon age in days
 		print F sprintf("%.2f",$moonage), "|";
 		
-		# hfc0_moon_ph
+		# hfc0_moon_ph - moon phase (0..1) -> percent (0..100)
 		print F sprintf("%.2f",$moonphase*100), "|";
 		
 		print F "\n";
+	}
+
+	# WetterOnline only offers 32h hourly forecast, so the rest is retriveved by interpolating the dayly forecast data. This set has the following structure:
+	# crawl through all available 'dayparts' and interpolate the hourly data that is missing. 
+	# "dayparts": array with 4 "dayparts" per day (at 05:00, 11:00, 17:00, 23:00), each containing weather data for the corresponding time interval,
+	# It is assumed that the daypart data is ordered by time!
+
+	# '$i' counts the entry, '$epoch_time' time stamp from the last entry
+	$epoch_time += 3600;
+
+	# --- helper: parse daypart epoch in timezone ---
+	sub _daypart_epoch {
+		my ($date_str, $timezone) = @_;
+		# $date_str is assumed to be compatible with "YYYY-MM-DD HH:MM"
+		my $local = qx( TZ='$timezone' date -d "$date_str" +'%Y-%m-%d %H:%M' );
+		chomp($local);
+		my $t = Time::Piece->strptime($local, "%Y-%m-%d %H:%M");
+		return $t->epoch;
+	}
+
+	# Collect support points from $decodedDaily
+	my @dp_epochs;
+
+	my (%t_air, %t_app, %hum, %w_dir, %w_sp_kmh, %pr_hpa, %dp_c, %prec_mm, %snow_cm, %pop_pct);
+	my (%symbol); # step/hold (do not interpolate)
+
+	for my $dailyResults (@{$decodedDaily}) {
+		my @dayparts = @{$dailyResults->{dayparts}};
+
+		for my $daypart (@dayparts) {
+			# Convert daypart timestamp to epoch seconds
+			my $ep = _daypart_epoch($daypart->{date}, $timezone);
+			push @dp_epochs, $ep;
+
+			# Temperatures
+			$t_air{$ep} = $daypart->{temperature}{air};
+			$t_app{$ep} = $daypart->{temperature}{apparent};
+
+			# Humidity (0..1) -> store as percent (0..100) and interpolate in that domain
+			$hum{$ep} = (defined $daypart->{humidity}) ? ($daypart->{humidity} * 100) : undef;
+
+			# Wind direction (deg) and speed (km/h)
+			$w_dir{$ep}    = $daypart->{wind}{direction};
+			$w_sp_kmh{$ep} = $daypart->{wind}{speed}{kilometer_per_hour}{value};
+
+			# Pressure / dew point
+			$pr_hpa{$ep} = $daypart->{air_pressure}{hpa};
+			$dp_c{$ep}   = $daypart->{dew_point}{celsius};
+
+			# Rain amount: mean of interval begin/end (if present), otherwise 0
+			if ($daypart->{precipitation}{details}{rainfall_amount}{millimeter}) {
+				my $rf = ($daypart->{precipitation}{details}{rainfall_amount}{millimeter}{interval_begin}
+						+ $daypart->{precipitation}{details}{rainfall_amount}{millimeter}{interval_end}) / 2;
+				$prec_mm{$ep} = $rf;
+			} else {
+				$prec_mm{$ep} = 0;
+			}
+
+			# Snow height (cm), if not present -> 0
+			if ($daypart->{precipitation}{details}{snow_height}{centimeter}) {
+				$snow_cm{$ep} = $daypart->{precipitation}{details}{snow_height}{centimeter};
+			} else {
+				$snow_cm{$ep} = 0;
+			}
+
+			# PoP (0..1) -> percent (0..100)
+			$pop_pct{$ep} = (defined $daypart->{precipitation}{probability}) ? ($daypart->{precipitation}{probability} * 100) : 0;
+
+			# Symbol is categorical data -> keep as step/hold value
+			$symbol{$ep} = $daypart->{symbol};
 		}
-		
-	# WetterOnline only offers 32h hourly forecast. Fill data with "-9999" to have at least 72h of hourly forecast data for the weather emulator - otherwise Loxone app scrambles the webdata.
-	while ($i <= 75) {
-			
-		# hfc1_per
+	}
+
+	# Sort and de-duplicate epochs
+	@dp_epochs = sort { $a <=> $b } @dp_epochs;
+	{
+		my %seen;
+		@dp_epochs = grep { !$seen{$_}++ } @dp_epochs;
+	}
+
+	die "No dayparts to interpolate\n" if !@dp_epochs;
+
+	# Create interpolators (once)
+	my $t_air_i  = Math::Function::Interpolator::Linear->new(points => \%t_air);
+	my $t_app_i  = Math::Function::Interpolator::Linear->new(points => \%t_app);
+	my $hum_i    = Math::Function::Interpolator::Linear->new(points => \%hum);
+	my $w_dir_i  = Math::Function::Interpolator::Linear->new(points => \%w_dir);
+	my $w_sp_i   = Math::Function::Interpolator::Linear->new(points => \%w_sp_kmh);
+	my $pr_i     = Math::Function::Interpolator::Linear->new(points => \%pr_hpa);
+	my $dp_i     = Math::Function::Interpolator::Linear->new(points => \%dp_c);
+	my $prec_i   = Math::Function::Interpolator::Linear->new(points => \%prec_mm);
+	my $snow_i   = Math::Function::Interpolator::Linear->new(points => \%snow_cm);
+	my $pop_i    = Math::Function::Interpolator::Linear->new(points => \%pop_pct);
+
+	# Write hourly output from $epoch_time up to last daypart 
+	my $end_epoch_time = $dp_epochs[-1];
+
+	while ($epoch_time <= $end_epoch_time) {
+
+		# For step/hold fields (symbol -> icon/code/description and wind direction text),
+		# select the field from last daypart epoch <= current hourly epoch
+		my $step_ep = $dp_epochs[0];
+		for my $e (@dp_epochs) {
+			last if $e > $epoch_time;
+			$step_ep = $e;
+		}
+
+		# hfc1_per - hourly period number
 		print F "$i|";
 		$i++;
 
-		# hfc1_date
-		$epoch_time += 3600;
+		# hfc1_date - epoch time of the hourly forecast
 		print F "$epoch_time|";
-		$t = Time::Piece->new ($epoch_time);
+		my $t = Time::Piece->new($epoch_time);
+		$epoch_time += 3600;
 
-		# hfc1_day && hfc1_month && hfc1_monthn && hfc1_monthn_sh && hfc1_year && hfc1_hour &&hfc1_min && hfc1_wday && hfc1_wday_sh
+		# hfc1_day && hfc1_month && ... - extract date components for the hourly timestamp in local timezone
 		print F sprintf("%02d", $t->mday), "|";
 		print F sprintf("%02d", $t->mon), "|";
 		my @month = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_MONTH'}) );
@@ -1243,31 +1310,101 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 		$t->day_list(@days);
 		print F $t->wdayname . "|";
 
-		# using fixed dummy data for the rest of the hourly forecast dataset, otherwise Loxone app returns black screen due to missing picto-icons
-		print F "0.0|0.0|-9999|0|Norden|0|0|0|1024|0.0|-9999|-9999|-9999|0.0|0|0|overcast|5|Keine Daten|-9999|-9999|0.0|0.0|0.0|0.0|\n";
-		# writing dummy data dataset is full
-		#my $x = 0;
-		#while ($x < 25) {
-		#	$x++;
-		#	print F "-9999|";
-		#}
-		#print F "\n";
+		# From here: real hourly interpolation based on dayparts
+
+		# hfc1_tt - real temperature
+		print F sprintf("%.1f", $t_air_i->linear($t->epoch)), "|";
+
+		# hfc1_tt_fl - feels like temperature
+		print F sprintf("%.1f", $t_app_i->linear($t->epoch)), "|";
+
+		# hfc1_hi - heat index (not calculated here, but could be derived from temp and humidity if needed)
+		print F "-9999|";
+
+		# hfc1_hu - humidity
+		print F sprintf("%.0f", $hum_i->linear($t->epoch)), "|";
+
+		# hfc1_w_dirdes - wind direction description (from step/hold value)
+		my $wdir = $w_dir{$step_ep};
+		my $wdirdes = "";
+		if    ($wdir >= 0   && $wdir <= 22)  { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'})  }  # North
+		elsif ($wdir > 22   && $wdir <= 68)  { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NE'}) }  # NorthEast
+		elsif ($wdir > 68   && $wdir <= 112) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_E'})  }  # East
+		elsif ($wdir > 112  && $wdir <= 158) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_SE'}) }  # SouthEast
+		elsif ($wdir > 158  && $wdir <= 202) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_S'})  }  # South
+		elsif ($wdir > 202  && $wdir <= 248) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_SW'}) }  # SouthWest
+		elsif ($wdir > 248  && $wdir <= 292) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_W'})  }  # West
+		elsif ($wdir > 292  && $wdir <= 338) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NW'}) }  # NorthWest
+		elsif ($wdir > 338  && $wdir <= 360) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'})  }  # North
+		else { $wdirdes = "-9999" }
+		print F "$wdirdes|";
+
+		# hfc1_w_dir - wind direction in degrees (cyclic -> step/hold is safer than linear interpolation)
+		print F ($w_dir{$step_ep} // -9999), "|";
+
+		# hfc1_w_sp - wind speed in km/h
+		print F sprintf("%.2f", $w_sp_i->linear($t->epoch)), "|";
+
+		# hfc1_w_ch - wind chill (not calculated here, but could be derived from temp and wind speed if needed)
+		print F sprintf("%.1f", $t_app_i->linear($t->epoch)), "|";
+
+		# hfc1_pr - air pressure in hPa 
+		print F sprintf("%.0f", $pr_i->linear($t->epoch)), "|";
+
+		# hfc1_dp - dew point in °C
+		print F sprintf("%.1f", $dp_i->linear($t->epoch)), "|";
+
+		# hfc1_sky - sky condition
+		($sky_condition, $sky_description) = skycondition_from_wocode($symbol{$step_ep});
+		print F "$sky_condition|";
+		# sky_des - sky description
+		print F "$sky_description|";
+		# uvi - UV index (not available in hourly data)
+		print F "-9999|";
+
+		# hfc1_prec (mm)
+		print F sprintf("%.2f", $prec_i->linear($t->epoch)), "|";
+
+		# hfc1_snow (cm)
+		print F sprintf("%.2f", $snow_i->linear($t->epoch)), "|";
+
+		# hfc1_pop (%)
+		print F sprintf("%.0f", $pop_i->linear($t->epoch)), "|";
+
+		# we_icon / we_code / we_des (step/hold from symbol)
+		my $sym = $symbol{$step_ep};
+		my ($code, $icon, $description) = wetteronline_to_lox($sym);
+		print F "$icon|";
+		print F "$code|";
+		print F "$description|";
+
+		# Ozone / Solar / Visibility not available here
+		print F "-9999|";
+		print F "-9999|";
+		print F "-9999|";
+
+		# hfc0_moon_p / moon_a / moon_ph (kept from your code)
+		my ($moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang) = phase($epoch_time);
+		print F sprintf("%.2f", $moonillum * 100), "|";
+		print F sprintf("%.2f", $moonage), "|";
+		print F sprintf("%.2f", $moonphase * 100), "|";
+
+		print F "\n";
 	}
 
+	flock(F,8);
+	close(F);
 
-  flock(F,8);
-close(F);
+	LOGOK "Saving hourly forecast data to $lbplogdir/hourlyforecast.dat.tmp successfully.";
 
-LOGOK "Saving hourly forecast data to $lbplogdir/hourlyforecast.dat.tmp successfully.";
-
-LOGDEB "Database content:";
-open(F,"<$lbplogdir/hourlyforecast.dat.tmp");
-	@filecontent = <F>;
-	foreach (@filecontent) {
-		chomp ($_);
-		LOGDEB "$_";
-	}
-close (F);
+	LOGDEB "Database content:";
+	open(F,"<$lbplogdir/hourlyforecast.dat.tmp");
+		@filecontent = <F>;
+		foreach (@filecontent) {
+			chomp ($_);
+			LOGDEB "$_";
+		}
+	close (F);
 
 } # end hourly
 
@@ -1275,9 +1412,9 @@ close (F);
 
 if ( $current ) {
 
-LOGINF "Cleaning $lbplogdir/current.dat.tmp";
-open(F,"+<$lbplogdir/current.dat.tmp");
-  flock(F,2);
+	LOGINF "Cleaning $lbplogdir/current.dat.tmp";
+	open(F,"+<$lbplogdir/current.dat.tmp");
+	flock(F,2);
 	@filecontent = <F>;
 	seek(F,0,0);
 	truncate(F,0);
@@ -1297,21 +1434,20 @@ open(F,"+<$lbplogdir/current.dat.tmp");
 		LOGDEB "Cleaned:  $_";
 		print F "$_\n";
 	}
-  flock(F,8);
-close(F);
-my $currentname = "$lbplogdir/current.dat.tmp";
-my $currentsize = -s ($currentname);
-if ($currentsize > 100) {
-        move($currentname, "$lbplogdir/current.dat");
-}
-
+    flock(F,8);
+	close(F);
+	my $currentname = "$lbplogdir/current.dat.tmp";
+	my $currentsize = -s ($currentname);
+	if ($currentsize > 100) {
+		move($currentname, "$lbplogdir/current.dat");
+	}
 }
 
 if ( $daily ) {
 
-LOGINF "Cleaning $lbplogdir/dailyforecast.dat.tmp";
-open(F,"+<$lbplogdir/dailyforecast.dat.tmp");
-  flock(F,2);
+	LOGINF "Cleaning $lbplogdir/dailyforecast.dat.tmp";
+	open(F,"+<$lbplogdir/dailyforecast.dat.tmp");
+  	flock(F,2);
 	@filecontent = <F>;
 	seek(F,0,0);
 	truncate(F,0);
@@ -1331,21 +1467,20 @@ open(F,"+<$lbplogdir/dailyforecast.dat.tmp");
 		LOGDEB "Cleaned:  $_";
 		print F "$_\n";
 	}
-  flock(F,8);
-close(F);
-my $dailyname = "$lbplogdir/dailyforecast.dat.tmp";
-my $dailysize = -s ($dailyname);
-if ($dailysize > 100) {
-        move($dailyname, "$lbplogdir/dailyforecast.dat");
-}
-
+	flock(F,8);
+	close(F);
+	my $dailyname = "$lbplogdir/dailyforecast.dat.tmp";
+	my $dailysize = -s ($dailyname);
+	if ($dailysize > 100) {
+			move($dailyname, "$lbplogdir/dailyforecast.dat");
+	}
 }
 
 if ( $hourly ) {
 
-LOGINF "Cleaning $lbplogdir/hourlyforecast.dat.tmp";
-open(F,"+<$lbplogdir/hourlyforecast.dat.tmp");
-  flock(F,2);
+	LOGINF "Cleaning $lbplogdir/hourlyforecast.dat.tmp";
+	open(F,"+<$lbplogdir/hourlyforecast.dat.tmp");
+	flock(F,2);
 	@filecontent = <F>;
 	seek(F,0,0);
 	truncate(F,0);
@@ -1365,14 +1500,13 @@ open(F,"+<$lbplogdir/hourlyforecast.dat.tmp");
 		LOGDEB "Cleaned:  $_";
 		print F "$_\n";
 	}
-  flock(F,8);
-close(F);
-my $hourlyname = "$lbplogdir/hourlyforecast.dat.tmp";
-my $hourlysize = -s ($hourlyname);
-if ($hourlysize > 100) {
-        move($hourlyname, "$lbplogdir/hourlyforecast.dat");
-}
-
+	flock(F,8);
+	close(F);
+	my $hourlyname = "$lbplogdir/hourlyforecast.dat.tmp";
+	my $hourlysize = -s ($hourlyname);
+	if ($hourlysize > 100) {
+		move($hourlyname, "$lbplogdir/hourlyforecast.dat");
+	}
 }
 
 # Give OK status to client.
