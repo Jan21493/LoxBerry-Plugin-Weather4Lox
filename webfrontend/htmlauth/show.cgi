@@ -240,25 +240,25 @@ if ($hfc) {
     ${hfc.$per._sky._des} = @fields[22];
     ${hfc.$per._uvi} = @fields[23];
     ${hfc.$per._pop} = @fields[26];
-    ${hfc.$per._we_code} = @fields[27];
-    ${hfc.$per._we_icon} = @fields[28];
+    ${hfc.$per._we_icon} = @fields[27];
+    ${hfc.$per._we_code} = @fields[28];
     ${hfc.$per._we_des} = @fields[29];
     if (!$metric) {
-    ${hfc.$per._tt} = @fields[11]*1.8+32;
-    ${hfc.$per._tt_fl} = @fields[12]*1.8+32;
-    ${hfc.$per._hi} = @fields[13]*1.8+32;
-    ${hfc.$per._w_sp} = @fields[17]*0.621;
-    ${hfc.$per._w_ch} = @fields[18]*1.8+32;
-    ${hfc.$per._prec} = @fields[24]*0.0393700787;
-    ${hfc.$per._snow} = @fields[25]*0.393700787;
+      ${hfc.$per._tt} = @fields[11]*1.8+32;
+      ${hfc.$per._tt_fl} = @fields[12]*1.8+32;
+      ${hfc.$per._hi} = @fields[13]*1.8+32;
+      ${hfc.$per._w_sp} = @fields[17]*0.621;
+      ${hfc.$per._w_ch} = @fields[18]*1.8+32;
+      ${hfc.$per._prec} = @fields[24]*0.0393700787;
+      ${hfc.$per._snow} = @fields[25]*0.393700787;
     } else {
-    ${hfc.$per._tt} = @fields[11];
-    ${hfc.$per._tt_fl} = @fields[12];
-    ${hfc.$per._hi} = @fields[13];
-    ${hfc.$per._w_sp} = @fields[17];
-    ${hfc.$per._w_ch} = @fields[18];
-    ${hfc.$per._prec} = @fields[24];
-    ${hfc.$per._snow} = @fields[25];
+      ${hfc.$per._tt} = @fields[11];
+      ${hfc.$per._tt_fl} = @fields[12];
+      ${hfc.$per._hi} = @fields[13];
+      ${hfc.$per._w_sp} = @fields[17];
+      ${hfc.$per._w_ch} = @fields[18];
+      ${hfc.$per._prec} = @fields[24];
+      ${hfc.$per._snow} = @fields[25];
     }
     # Use night icons between sunset and sunrise
     if (${hfc.$per._hour} > $hour_sun_s || ${hfc.$per._hour} < $hour_sun_r) {
@@ -331,29 +331,29 @@ $cur_moon_ph    = @fields[32];
 $cur_moon_h     = @fields[33];
 
 if (!$metric) {
-$cur_tt         = @fields[11]*1.8+32;
-$cur_tt_fl      = @fields[12]*1.8+32;
-$cur_w_sp       = @fields[16]*0.621371192;
-$cur_w_gu       = @fields[17]*0.621371192;
-$cur_w_ch       = @fields[18]*1.8+32;
-$cur_pr         = @fields[19]*0.0295301;
-$cur_dp         = @fields[20]*1.8+32;
-$cur_vis        = @fields[21]*0.621371192;
-$cur_hi         = @fields[23]*1.8+32;
-$cur_prec_today = @fields[25]*0.0393700787;
-$cur_prec_1hr   = @fields[26]*0.0393700787;
+  $cur_tt         = @fields[11]*1.8+32;
+  $cur_tt_fl      = @fields[12]*1.8+32;
+  $cur_w_sp       = @fields[16]*0.621371192;
+  $cur_w_gu       = @fields[17]*0.621371192;
+  $cur_w_ch       = @fields[18]*1.8+32;
+  $cur_pr         = @fields[19]*0.0295301;
+  $cur_dp         = @fields[20]*1.8+32;
+  $cur_vis        = @fields[21]*0.621371192;
+  $cur_hi         = @fields[23]*1.8+32;
+  $cur_prec_today = @fields[25]*0.0393700787;
+  $cur_prec_1hr   = @fields[26]*0.0393700787;
 } else {
-$cur_tt         = @fields[11];
-$cur_tt_fl      = @fields[12];
-$cur_w_sp       = @fields[16];
-$cur_w_gu       = @fields[17];
-$cur_w_ch       = @fields[18];
-$cur_pr         = @fields[19];
-$cur_dp         = @fields[20];
-$cur_vis        = @fields[21];
-$cur_hi         = @fields[23];
-$cur_prec_today = @fields[25];
-$cur_prec_1hr   = @fields[26];
+  $cur_tt         = @fields[11];
+  $cur_tt_fl      = @fields[12];
+  $cur_w_sp       = @fields[16];
+  $cur_w_gu       = @fields[17];
+  $cur_w_ch       = @fields[18];
+  $cur_pr         = @fields[19];
+  $cur_dp         = @fields[20];
+  $cur_vis        = @fields[21];
+  $cur_hi         = @fields[23];
+  $cur_prec_today = @fields[25];
+  $cur_prec_1hr   = @fields[26];
 }
 
 $cur_sun_r = "@fields[34]:@fields[35]";

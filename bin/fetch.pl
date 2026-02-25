@@ -52,7 +52,8 @@ my $cronjob = '';
 my $default = '';
 my $alternate = '';
 # optional, default: 1, used to mask keyparam in URLs and literal key value in dumps
-my $maskkeys = $pcfg->param("SERVER.MASKKEYS") // 1;
+my $maskkeys = $pcfg->param('SERVER.MASKKEYS');
+$maskkeys = 1 if !defined($maskkeys) || $maskkeys eq '';
 
 GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 },
@@ -70,7 +71,6 @@ my $log = LoxBerry::Log->new (
 #	filename => "$lbplogdir/weather4lox.log",
 #	append => 1,
 );
-my $maskkeys_opt = "--maskkeys" . ($maskkeys ? "=1" : "=0");
 
 # Due to a bug in the Logging routine, set the loglevel fix to 3
 #$log->loglevel(3);
@@ -83,6 +83,12 @@ if ($verbose) {
 
 LOGSTART "Weather4Lox FETCH process";
 LOGDEB "This is $0 Version $version";
+
+my $maskkeys_opt = '';
+if ($maskkeys) {
+	$maskkeys_opt = "--maskkeys"
+} 
+LOGINF "Weather4Lox Fetch (masking API keys in dumps is " . ($maskkeys ? "enabled" : "disabled") . ")";
 
 # execute when fetch.pl is called directly or with cronjob and default flag
 if( !$cronjob || ( $cronjob && $default ) ){

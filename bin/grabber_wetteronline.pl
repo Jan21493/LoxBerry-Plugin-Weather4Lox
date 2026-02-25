@@ -21,7 +21,7 @@ use strict;
 use warnings;
 
 ##########################################################################
-# Modules
+# Standard Modules (no error handling in case of missing modules)
 ##########################################################################
 
 use LoxBerry::System;
@@ -32,16 +32,16 @@ use JSON::PP;
 use File::Copy;
 use Getopt::Long;
 use Time::Piece;
-use Math::Function::Interpolator;
+#use Math::Function::Interpolator;
 use HTTP::Request;
 use DateTime;
 #use DateTime::TimeZone;
-use DateTime::Format::ISO8601;
+#use DateTime::Format::ISO8601;
 use Astro::MoonPhase;
 use utf8;
 use Encode qw(encode_utf8);
 use HTML::Entities;
-use Data::Dumper;
+#use Data::Dumper;
 
 require "$lbpbindir/grabber_utils.pl";
 
@@ -107,6 +107,35 @@ if ($verbose) {
 
 LOGSTART "Weather4Lox GRABBER_WETTERONLINE process started";
 LOGDEB "This is $0 Version $version";
+
+##########################################################################
+# Special Modules (with error handling in case of missing modules)
+##########################################################################
+
+sub require_or_logdie {
+    my ($module) = @_;
+
+    eval "require $module; 1;" or do {
+        my $err = $@ || "Unknown error while loading $module";
+        chomp $err;
+
+        LOGCRIT "Missing Perl module $module - cannot continue.";
+        LOGCRIT $err;
+        warn "CRIT: $err\n";   # falls fetch.pl STDERR mitsammelt
+
+        exit 2;
+    };
+
+    return 1;
+}
+
+require_or_logdie('DateTime::Format::ISO8601');
+
+if ($hourly) {
+    require_or_logdie('Lexical::Sub');
+    require_or_logdie('Math::Function::Interpolator');
+    require_or_logdie('Math::Function::Interpolator::Linear');
+}
 
 # Get HTML data from wetteronline.de (HTTP Body request)
 sub getUrl {
