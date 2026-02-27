@@ -1249,11 +1249,11 @@ if (defined $pcfg->param("WEB.LANG")) {
 } else {
 	$themelang = $lang;
 }
-if (!-e "$lbptemplatedir/themes/$themelang/$theme.hfc.html") {
+
+# if (!-e "$lbptemplatedir/themes/$themelang/$theme.hfc.html") {
+if (!-e "$lbptemplatedir/themes/$themelang/$theme.main.html") {
 	$themelang = "en";
-}
-if (!-e "$lbptemplatedir/themes/$themelang/$theme.hfc.html") {
-	$theme = "dark";
+  $theme = "dark";
 }
 
 #############################################

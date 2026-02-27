@@ -132,7 +132,7 @@ sub require_or_logdie {
 require_or_logdie('DateTime::Format::ISO8601');
 
 if ($hourly) {
-    require_or_logdie('Lexical::Sub');
+    #require_or_logdie('Lexical::Sub');
     require_or_logdie('Math::Function::Interpolator');
     require_or_logdie('Math::Function::Interpolator::Linear');
 }
@@ -306,7 +306,7 @@ my %wetteronline_to_lox = (
 
     # clouds in steps from clear to overcast, each with code for day and night (kept in mapping for clarity)
     "so____" => ["1", "clear", "Sonnig"],                                        # sonnig bzw. klar / wolkenlos (Tag)
-  # "mo____" => ["1", "clear", "Klar"],                                          # sonnig bzw. klar / wolkenlos (Nacht)
+    "mo____" => ["1", "clear", "Klar"],                                          # sonnig bzw. klar / wolkenlos (Nacht)
     "wb____" => ["2", "mostlysunny", "Leicht bewölkt"],                          # leicht bewölkt (Tag)
   # "mb____" => ["2", "mostlysunny", "Leicht bewölkt"],                          # leicht bewölkt (Nacht)
     "bw____" => ["3", "cloudy", "Bewölkt"],                                      # Bewölkt (Tag)
@@ -474,9 +474,8 @@ my %wetteronline_to_lox = (
     "bwek__" => ["26", "sleet", "Eiskörner"],                                      # Eiskörner
 );
 
-# Convert night symbols to day symbols to reduce the lookup table
+# Convert night symbols with clouds to day symbols to reduce the lookup table
 my %night_to_day_prefix = (
-	'mo' => 'so',  # clear night -> clear day
 	'mb' => 'wb',  # lightly cloudy night -> lightly cloudy day
 	'mw' => 'bw',  # cloudy night -> cloudy day
 	'md' => 'bd',  # overcast night -> overcast day
@@ -485,7 +484,8 @@ my %night_to_day_prefix = (
 
 my %skycondition_by_prefix = (
   # Clear / (mostly) sunny
-  'so' => [  0, 'clear' ],          # sunny/clear
+  'so' => [  0, 'clear' ],          # sunny
+  'mo' => [  0, 'clear' ],          # clear
   'wb' => [ 25, 'mostly clear' ],   # lightly cloudy
 
   # Cloudy / overcast
