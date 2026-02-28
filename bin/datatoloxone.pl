@@ -30,6 +30,8 @@ use DateTime;
 use Time::HiRes;
 use Net::MQTT::Simple;
 #use Data::Dumper;
+use Config::Simple;
+use File::HomeDir;
 
 ##########################################################################
 # Read settings
@@ -1250,10 +1252,215 @@ if (defined $pcfg->param("WEB.LANG")) {
 	$themelang = $lang;
 }
 
-# if (!-e "$lbptemplatedir/themes/$themelang/$theme.hfc.html") {
+# new style themes only use the main template for all views, the specific templates are only used for old style themes
+my $newstyle = 0;
+if (!-e "$lbptemplatedir/themes/$themelang/$theme.hfc.html" &&
+    !-e "$lbptemplatedir/themes/$themelang/$theme.dfc.html") {
+  $newstyle = 1;
+}
+
 if (!-e "$lbptemplatedir/themes/$themelang/$theme.main.html") {
 	$themelang = "en";
   $theme = "dark";
+}
+
+#############################################
+# MAP VIEW
+#############################################
+
+if (!$newstyle) {
+  # Write cached weboage
+  open(F1,">$lbplogdir/webpage.map.html");
+  flock(F1,2);
+  open(F,"<$lbptemplatedir/themes/$themelang/$theme.map.html");
+    while (<F>) {
+      $_ =~ s/<!--\$(.*?)-->/${$1}/g;
+      print F1 $_;
+    }
+  close(F);
+  flock(F1,8);
+  close(F1);
+
+  if (-e "$lbplogdir/webpage.map.html") {
+    LOGDEB "$lbplogdir/webpage.map.html created.";
+  }
+}
+
+#############################################
+# Daily Forecast
+#############################################
+
+# Read data
+#open(F,"<$home/data/plugins/$psubfolder/dailyforecast.dat") || die "Cannot open $home/data/plugins/$psubfolder/dailyforecast.dat";
+#  our @dfcdata = <F>;
+#close(F);
+
+foreach (@dfcdata){
+  s/[\n\r]//g;
+  @fields = split(/\|/);
+
+  $per = @fields[0] - 1;
+
+  ${dfc.$per._per} = @fields[0] - 1;
+  ${dfc.$per._date} = @fields[1];
+  ${dfc.$per._day} = @fields[2];
+  ${dfc.$per._month} = @fields[3];
+  ${dfc.$per._monthn} = @fields[4];
+  ${dfc.$per._monthn_sh} = @fields[5];
+  ${dfc.$per._year} = @fields[6];
+  ${dfc.$per._hour} = @fields[7];
+  ${dfc.$per._min} = @fields[8];
+  ${dfc.$per._wday} = @fields[9];
+  ${dfc.$per._wday_sh} = @fields[10];
+  ${dfc.$per._pop} = @fields[13];
+  ${dfc.$per._w_dirdes_h} = @fields[17];
+  ${dfc.$per._w_dir_h} = @fields[18];
+  ${dfc.$per._w_dirdes_a} = @fields[20];
+  ${dfc.$per._w_dir_a} = @fields[21];
+  ${dfc.$per._hu_a} = @fields[22];
+  ${dfc.$per._hu_h} = @fields[23];
+  ${dfc.$per._hu_l} = @fields[24];
+  ${dfc.$per._we_icon} = @fields[25];
+  ${dfc.$per._we_code} = @fields[26];
+  ${dfc.$per._we_des} = @fields[27];
+  if (!$metric) {
+  ${dfc.$per._tt_h} = @fields[11]*1.8+32;
+  ${dfc.$per._tt_l} = @fields[12]*1.8+32;
+  ${dfc.$per._prec} = @fields[14]*0.0393700787;
+  ${dfc.$per._snow} = @fields[15]*0.393700787;
+  ${dfc.$per._w_sp_h} = @fields[16]*0.621;
+  ${dfc.$per._w_sp_a} = @fields[19]*0.621;
+  ${dfc.$per._pr} = @fields[31]*0.0295301;
+  ${dfc.$per._dp} = @fields[30]*1.8+32;
+  } else {
+  ${dfc.$per._tt_h} = @fields[11];
+  ${dfc.$per._tt_l} = @fields[12];
+  ${dfc.$per._prec} = @fields[14];
+  ${dfc.$per._snow} = @fields[15];
+  ${dfc.$per._w_sp_h} = @fields[16];
+  ${dfc.$per._w_sp_a} = @fields[19];
+  ${dfc.$per._pr} = @fields[31];
+  ${dfc.$per._dp} = @fields[30];
+  }
+  ${dfc.$per._sun_r} = "@fields[34]:@fields[35]";
+  ${dfc.$per._sun_s} = "@fields[36]:@fields[37]";
+  ${dfc.$per._ozone} = @fields[28];
+  ${dfc.$per._moon_p} = @fields[29];
+  ${dfc.$per._moon_ph} = @fields[39];
+  ${dfc.$per._moon_a} = @fields[38];
+  ${dfc.$per._uvi} = @fields[32];
+  # Use night icons between sunset and sunrise
+  #if (${dfc.$per._hour} > $hour_sun_s || ${dfc.$per._hour} < $hour_sun_r) {
+  #  ${dfc.$per._dayornight} = "n";
+  #} else {
+  #  ${dfc.$per._dayornight} = "d";
+  #}
+
+}
+
+if (!$newstyle) {
+  # Write cached weboage
+  open(F1,">$lbplogdir/webpage.dfc.html");
+  flock(F1,2);
+  open(F,"<$lbptemplatedir/themes/$themelang/$theme.dfc.html");
+    while (<F>) {
+      $_ =~ s/<!--\$(.*?)-->/${$1}/g;
+      print F1 $_;
+    }
+  close(F);
+  flock(F1,8);
+  close(F1);
+
+  if (-e "$lbplogdir/webpage.dfc.html") {
+    LOGDEB "$lbplogdir/webpage.dfc.html created.";
+  }
+}
+
+#############################################
+# Hourly Forecast
+#############################################
+
+# Read data
+#open(F,"<$home/data/plugins/$psubfolder/hourlyforecast.dat") || die "Cannot open $home/data/plugins/$psubfolder/hourlyforecast.dat";
+#  our @hfcdata = <F>;
+#close(F);
+
+foreach (@hfcdata){
+  s/[\n\r]//g;
+  my @fields = split(/\|/);
+
+  $per = @fields[0];
+
+  ${hfc.$per._per} = @fields[0];
+  ${hfc.$per._date} = @fields[1];
+  ${hfc.$per._day} = @fields[2];
+  ${hfc.$per._month} = @fields[3];
+  ${hfc.$per._monthn} = @fields[4];
+  ${hfc.$per._monthn_sh} = @fields[5];
+  ${hfc.$per._year} = @fields[6];
+  ${hfc.$per._hour} = @fields[7];
+  ${hfc.$per._min} = @fields[8];
+  ${hfc.$per._wday} = @fields[9];
+  ${hfc.$per._wday_sh} = @fields[10];
+  ${hfc.$per._hu} = @fields[14];
+  ${hfc.$per._w_dirdes} = @fields[15];
+  ${hfc.$per._w_dir} = @fields[16];
+  ${hfc.$per._pr} = @fields[19];
+  ${hfc.$per._dp} = @fields[20];
+  ${hfc.$per._sky} = @fields[21];
+  ${hfc.$per._sky._des} = @fields[22];
+  ${hfc.$per._uvi} = @fields[23];
+  ${hfc.$per._pop} = @fields[26];
+  ${hfc.$per._we_code} = @fields[28];
+  ${hfc.$per._we_icon} = @fields[27];
+  ${hfc.$per._we_des} = @fields[29];
+  ${hfc.$per._ozone} = @fields[30];
+  ${hfc.$per._moon_p} = @fields[33];
+  ${hfc.$per._moon_ph} = @fields[35];
+  ${hfc.$per._moon_a} = @fields[34];
+  if (!$metric) {
+  ${hfc.$per._tt} = @fields[11]*1.8+32;
+  ${hfc.$per._tt_fl} = @fields[12]*1.8+32;
+  ${hfc.$per._hi} = @fields[13]*1.8+32;
+  ${hfc.$per._w_sp} = @fields[17]*0.621;
+  ${hfc.$per._w_ch} = @fields[18]*1.8+32;
+  ${hfc.$per._prec} = @fields[24]*0.0393700787;
+  ${hfc.$per._snow} = @fields[25]*0.393700787;
+  } else {
+  ${hfc.$per._tt} = @fields[11];
+  ${hfc.$per._tt_fl} = @fields[12];
+  ${hfc.$per._hi} = @fields[13];
+  ${hfc.$per._w_sp} = @fields[17];
+  ${hfc.$per._w_ch} = @fields[18];
+  ${hfc.$per._prec} = @fields[24];
+  ${hfc.$per._snow} = @fields[25];
+  }
+  # Use night icons between sunset and sunrise
+  if (${hfc.$per._hour} > $hour_sun_s || ${hfc.$per._hour} < $hour_sun_r) {
+    ${hfc.$per._dayornight} = "n";
+  } else {
+    ${hfc.$per._dayornight} = "d";
+  }
+
+}
+
+if (!$newstyle) {
+  # Write cached weboage
+  # If Theme Lang is set, us it instead of system lang
+  open(F1,">$lbplogdir/webpage.hfc.html");
+  flock(F1,2);
+  open(F,"<$lbptemplatedir/themes/$themelang/$theme.hfc.html");
+    while (<F>) {
+      $_ =~ s/<!--\$(.*?)-->/${$1}/g;
+      print F1 $_;
+    }
+  close(F);
+  flock(F1,8);
+  close(F1);
+
+  if (-e "$lbplogdir/webpage.hfc.html") {
+    LOGDEB "$lbplogdir/webpage.hfc.html created.";
+  }
 }
 
 #############################################
@@ -1359,199 +1566,6 @@ close(F1);
 
 if (-e "$lbplogdir/webpage.html") {
 	LOGDEB "$lbplogdir/webpage.html created.";
-}
-
-#############################################
-# MAP VIEW
-#############################################
-
-# Write cached weboage
-open(F1,">$lbplogdir/webpage.map.html");
-flock(F1,2);
-open(F,"<$lbptemplatedir/themes/$themelang/$theme.map.html");
-  while (<F>) {
-    $_ =~ s/<!--\$(.*?)-->/${$1}/g;
-    print F1 $_;
-  }
-close(F);
-flock(F1,8);
-close(F1);
-
-if (-e "$lbplogdir/webpage.map.html") {
-	LOGDEB "$lbplogdir/webpage.map.html created.";
-}
-
-#############################################
-# Daily Forecast
-#############################################
-
-# Read data
-#open(F,"<$home/data/plugins/$psubfolder/dailyforecast.dat") || die "Cannot open $home/data/plugins/$psubfolder/dailyforecast.dat";
-#  our @dfcdata = <F>;
-#close(F);
-
-foreach (@dfcdata){
-  s/[\n\r]//g;
-  @fields = split(/\|/);
-
-  $per = @fields[0] - 1;
-
-  ${dfc.$per._per} = @fields[0] - 1;
-  ${dfc.$per._date} = @fields[1];
-  ${dfc.$per._day} = @fields[2];
-  ${dfc.$per._month} = @fields[3];
-  ${dfc.$per._monthn} = @fields[4];
-  ${dfc.$per._monthn_sh} = @fields[5];
-  ${dfc.$per._year} = @fields[6];
-  ${dfc.$per._hour} = @fields[7];
-  ${dfc.$per._min} = @fields[8];
-  ${dfc.$per._wday} = @fields[9];
-  ${dfc.$per._wday_sh} = @fields[10];
-  ${dfc.$per._pop} = @fields[13];
-  ${dfc.$per._w_dirdes_h} = @fields[17];
-  ${dfc.$per._w_dir_h} = @fields[18];
-  ${dfc.$per._w_dirdes_a} = @fields[20];
-  ${dfc.$per._w_dir_a} = @fields[21];
-  ${dfc.$per._hu_a} = @fields[22];
-  ${dfc.$per._hu_h} = @fields[23];
-  ${dfc.$per._hu_l} = @fields[24];
-  ${dfc.$per._we_icon} = @fields[25];
-  ${dfc.$per._we_code} = @fields[26];
-  ${dfc.$per._we_des} = @fields[27];
-  if (!$metric) {
-  ${dfc.$per._tt_h} = @fields[11]*1.8+32;
-  ${dfc.$per._tt_l} = @fields[12]*1.8+32;
-  ${dfc.$per._prec} = @fields[14]*0.0393700787;
-  ${dfc.$per._snow} = @fields[15]*0.393700787;
-  ${dfc.$per._w_sp_h} = @fields[16]*0.621;
-  ${dfc.$per._w_sp_a} = @fields[19]*0.621;
-  ${dfc.$per._pr} = @fields[31]*0.0295301;
-  ${dfc.$per._dp} = @fields[30]*1.8+32;
-  } else {
-  ${dfc.$per._tt_h} = @fields[11];
-  ${dfc.$per._tt_l} = @fields[12];
-  ${dfc.$per._prec} = @fields[14];
-  ${dfc.$per._snow} = @fields[15];
-  ${dfc.$per._w_sp_h} = @fields[16];
-  ${dfc.$per._w_sp_a} = @fields[19];
-  ${dfc.$per._pr} = @fields[31];
-  ${dfc.$per._dp} = @fields[30];
-  }
-  ${dfc.$per._sun_r} = "@fields[34]:@fields[35]";
-  ${dfc.$per._sun_s} = "@fields[36]:@fields[37]";
-  ${dfc.$per._ozone} = @fields[28];
-  ${dfc.$per._moon_p} = @fields[29];
-  ${dfc.$per._moon_ph} = @fields[39];
-  ${dfc.$per._moon_a} = @fields[38];
-  ${dfc.$per._uvi} = @fields[32];
-  # Use night icons between sunset and sunrise
-  #if (${dfc.$per._hour} > $hour_sun_s || ${dfc.$per._hour} < $hour_sun_r) {
-  #  ${dfc.$per._dayornight} = "n";
-  #} else {
-  #  ${dfc.$per._dayornight} = "d";
-  #}
-
-}
-
-# Write cached weboage
-open(F1,">$lbplogdir/webpage.dfc.html");
-flock(F1,2);
-open(F,"<$lbptemplatedir/themes/$themelang/$theme.dfc.html");
-  while (<F>) {
-    $_ =~ s/<!--\$(.*?)-->/${$1}/g;
-    print F1 $_;
-  }
-close(F);
-flock(F1,8);
-close(F1);
-
-if (-e "$lbplogdir/webpage.dfc.html") {
-	LOGDEB "$lbplogdir/webpage.dfc.html created.";
-}
-
-#############################################
-# Hourly Forecast
-#############################################
-
-# Read data
-#open(F,"<$home/data/plugins/$psubfolder/hourlyforecast.dat") || die "Cannot open $home/data/plugins/$psubfolder/hourlyforecast.dat";
-#  our @hfcdata = <F>;
-#close(F);
-
-foreach (@hfcdata){
-  s/[\n\r]//g;
-  my @fields = split(/\|/);
-
-  $per = @fields[0];
-
-  ${hfc.$per._per} = @fields[0];
-  ${hfc.$per._date} = @fields[1];
-  ${hfc.$per._day} = @fields[2];
-  ${hfc.$per._month} = @fields[3];
-  ${hfc.$per._monthn} = @fields[4];
-  ${hfc.$per._monthn_sh} = @fields[5];
-  ${hfc.$per._year} = @fields[6];
-  ${hfc.$per._hour} = @fields[7];
-  ${hfc.$per._min} = @fields[8];
-  ${hfc.$per._wday} = @fields[9];
-  ${hfc.$per._wday_sh} = @fields[10];
-  ${hfc.$per._hu} = @fields[14];
-  ${hfc.$per._w_dirdes} = @fields[15];
-  ${hfc.$per._w_dir} = @fields[16];
-  ${hfc.$per._pr} = @fields[19];
-  ${hfc.$per._dp} = @fields[20];
-  ${hfc.$per._sky} = @fields[21];
-  ${hfc.$per._sky._des} = @fields[22];
-  ${hfc.$per._uvi} = @fields[23];
-  ${hfc.$per._pop} = @fields[26];
-  ${hfc.$per._we_code} = @fields[28];
-  ${hfc.$per._we_icon} = @fields[27];
-  ${hfc.$per._we_des} = @fields[29];
-  ${hfc.$per._ozone} = @fields[30];
-  ${hfc.$per._moon_p} = @fields[33];
-  ${hfc.$per._moon_ph} = @fields[35];
-  ${hfc.$per._moon_a} = @fields[34];
-  if (!$metric) {
-  ${hfc.$per._tt} = @fields[11]*1.8+32;
-  ${hfc.$per._tt_fl} = @fields[12]*1.8+32;
-  ${hfc.$per._hi} = @fields[13]*1.8+32;
-  ${hfc.$per._w_sp} = @fields[17]*0.621;
-  ${hfc.$per._w_ch} = @fields[18]*1.8+32;
-  ${hfc.$per._prec} = @fields[24]*0.0393700787;
-  ${hfc.$per._snow} = @fields[25]*0.393700787;
-  } else {
-  ${hfc.$per._tt} = @fields[11];
-  ${hfc.$per._tt_fl} = @fields[12];
-  ${hfc.$per._hi} = @fields[13];
-  ${hfc.$per._w_sp} = @fields[17];
-  ${hfc.$per._w_ch} = @fields[18];
-  ${hfc.$per._prec} = @fields[24];
-  ${hfc.$per._snow} = @fields[25];
-  }
-  # Use night icons between sunset and sunrise
-  if (${hfc.$per._hour} > $hour_sun_s || ${hfc.$per._hour} < $hour_sun_r) {
-    ${hfc.$per._dayornight} = "n";
-  } else {
-    ${hfc.$per._dayornight} = "d";
-  }
-
-}
-
-# Write cached weboage
-# If Theme Lang is set, us it instead of system lang
-open(F1,">$lbplogdir/webpage.hfc.html");
-flock(F1,2);
-open(F,"<$lbptemplatedir/themes/$themelang/$theme.hfc.html");
-  while (<F>) {
-    $_ =~ s/<!--\$(.*?)-->/${$1}/g;
-    print F1 $_;
-  }
-close(F);
-flock(F1,8);
-close(F1);
-
-if (-e "$lbplogdir/webpage.hfc.html") {
-	LOGDEB "$lbplogdir/webpage.hfc.html created.";
 }
 
 LOGOK "Webpages created successfully.";

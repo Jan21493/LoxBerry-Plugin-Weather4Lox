@@ -24,9 +24,10 @@ cpanm Astro::MoonPhase
 echo "<INFO> Reconfigure Timezone - just to make sure..."
 dpkg-reconfigure -f noninteractive tzdata
 
-echo "<INFO> Installing Perl Module DateTime::Format::ISO8601"
-apt-get update
-apt-get install -y libdatetime-format-iso8601-perl
+# moved to dpkg/apt
+# echo "<INFO> Installing Perl Module DateTime::Format::ISO8601"
+# apt-get update
+# apt-get install -y libdatetime-format-iso8601-perl
 
 # Exit with Status 0
 exit 0

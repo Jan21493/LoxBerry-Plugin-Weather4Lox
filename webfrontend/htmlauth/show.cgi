@@ -93,6 +93,19 @@ $themeurldfc = "$themeurl&dfc=1";
 $themeurlhfc = "$themeurl&hfc=1";
 $themeurlmap = "$themeurl&map=1";
 
+my $main_file = "$home/templates/plugins/$psubfolder/themes/$lang/$theme.main.html";
+my $dfc_file  = "$home/templates/plugins/$psubfolder/themes/$lang/$theme.dfc.html";
+my $hfc_file  = "$home/templates/plugins/$psubfolder/themes/$lang/$theme.hfc.html";
+my $map_file  = "$home/templates/plugins/$psubfolder/themes/$lang/$theme.map.html";
+
+# new style themes only use the main template for all views, the specific templates are only used for old style themes
+my $newstyle = 0;
+if (!-e $dfc_file || !-e $hfc_file) {
+  $dfc = 1;
+  $hfc = 1;
+  $newstyle = 1;
+}
+
 # Date Reference: Convert into Loxone Epoche (1.1.2009)
 my $dateref = DateTime->new(
       year      => 2009,
@@ -109,11 +122,18 @@ my $dateref = DateTime->new(
 if ($map) {
   # Output Theme ot Browser
   print "Content-type: text/html\n\n";
-  open(F,"<$home/templates/plugins/$psubfolder/themes/$lang/$theme.map.html") || die "Missing template $home/templates/plugins/$psubfolder/themes/$lang/$theme.map.html";
-       while (<F>) {
-         $_ =~ s/<!--\$(.*?)-->/${$1}/g;
-         print $_;
-       }
+  
+  # Try to open map.html, if not available, fallback to main.html, if not available, die with error
+  if (open(F, "<", $map_file)) {
+  } elsif (open(F, "<", $main_file)) {
+  } else {
+    die "Missing template: neither $map_file nor $main_file could be opened";
+  }
+  # Process template with data and output to browser
+  while (<F>) {
+    $_ =~ s/<!--\$(.*?)-->/${$1}/g;
+    print $_;
+  }
   close(F);
 
   exit;
@@ -182,16 +202,19 @@ if ($dfc) {
 
   }
 
-  # Output Theme to Browser
-  print "Content-type: text/html\n\n";
-  open(F,"<$home/templates/plugins/$psubfolder/themes/$lang/$theme.dfc.html") || die "Missing template <$home/templates/plugins/$psubfolder/themes/$lang/$theme.dfc.html";
-       while (<F>) {
-         $_ =~ s/<!--\$(.*?)-->/${$1}/g;
-         print $_;
-       }
-  close(F);
+  if (!$newstyle) {
+  
+    # Output Theme to Browser
+    print "Content-type: text/html\n\n";
+    open(F,"<$home/templates/plugins/$psubfolder/themes/$lang/$theme.dfc.html") || die "Missing template <$home/templates/plugins/$psubfolder/themes/$lang/$theme.dfc.html";
+        while (<F>) {
+          $_ =~ s/<!--\$(.*?)-->/${$1}/g;
+          print $_;
+        }
+    close(F);
 
-  exit;
+    exit;
+  }
 }
 
 #############################################
@@ -269,17 +292,18 @@ if ($hfc) {
 
   }
 
-  # Output Theme to Browser
-  print "Content-type: text/html\n\n";
-  open(F,"<$home/templates/plugins/$psubfolder/themes/$lang/$theme.hfc.html") || die "Missing template <$home/templates/plugins/$psubfolder/themes/$lang/$theme.hfc.html";
-       while (<F>) {
-         $_ =~ s/<!--\$(.*?)-->/${$1}/g;
-         print $_;
-       }
-  close(F);
+  if (!$newstyle) {
+    # Output Theme to Browser
+    print "Content-type: text/html\n\n";
+    open(F,"<$home/templates/plugins/$psubfolder/themes/$lang/$theme.hfc.html") || die "Missing template <$home/templates/plugins/$psubfolder/themes/$lang/$theme.hfc.html";
+        while (<F>) {
+          $_ =~ s/<!--\$(.*?)-->/${$1}/g;
+          print $_;
+        }
+    close(F);
 
-  exit;
-
+    exit;
+  }
 }
 
 #############################################

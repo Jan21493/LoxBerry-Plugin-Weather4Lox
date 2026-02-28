@@ -829,11 +829,13 @@ if ($R::form eq "1" || !$R::form) {
   $template->param( MYIP => LoxBerry::System::get_localip() );
 
   # Theme
-  @values = ('dark', 'light', 'fresh', 'custom' );
+  @values = ('dark', 'light', 'fresh', 'arctic', 'ocean', 'custom' );
   %labels = (
         'dark' => "Dark Theme",
         'light' => "Light Theme",
         'fresh' => "Fresh Theme",
+		'arctic' => "Arctic Mist Theme",
+		'ocean' => "Deep Ocean Theme",
         'custom' => "Custom Theme",
     );
   my $theme = $cgi->popup_menu(
