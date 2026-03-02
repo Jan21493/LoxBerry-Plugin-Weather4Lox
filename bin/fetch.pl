@@ -184,6 +184,14 @@ if ( $pcfg->param("SERVER.LOXGRABBER") ) {
 	$log->open;
 }
 
+# Grab air quality / pollen data from Open-Meteo
+if ( $pcfg->param("SERVER.OPENMETEOAIRQUALITYGRABBER") ) {
+	LOGINF "Starting Grabber grabber_openmeteo_airquality.pl";
+	$log->close;
+	system ("$lbpbindir/grabber_openmeteo_airquality.pl $verbose_opt");
+	$log->open;
+}
+
 # Data to Loxone
 LOGINF "Starting script datatoloxone.pl";
 $log->close;
