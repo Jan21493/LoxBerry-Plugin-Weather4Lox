@@ -127,6 +127,7 @@ sub api_call {
     my $resp_entry = '';
     $resp_entry = "HTTP body (JSON):\n$body" if $body ne '';
     $resp_entry = sanitize_dump($resp_entry, $apikey, $keyparam) if $resp_entry ne '';
+    $resp_entry = encode_utf8($resp_entry) if $resp_entry ne '';
     LOGDEB($resp_entry) if $resp_entry ne '';
     LOGDEB("-" x 80);
 

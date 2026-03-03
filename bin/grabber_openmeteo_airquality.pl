@@ -26,10 +26,14 @@ use warnings;
 
 use LoxBerry::System;
 use LoxBerry::Log;
+use LWP::UserAgent;
 use JSON qw( decode_json encode_json );
 use File::Copy;
 use Getopt::Long;
+use DateTime;
 use POSIX qw(floor);
+use utf8;
+use Encode qw(encode_utf8);
 
 require "$lbpbindir/grabber_utils.pl";
 
@@ -43,6 +47,9 @@ my $version = LoxBerry::System::pluginversion();
 my $pcfg   = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $lat    = $pcfg->param("OPENMETEOAIRQUALITY.COORDLAT");
 my $lon    = $pcfg->param("OPENMETEOAIRQUALITY.COORDLONG");
+
+my $timezone         = qx(cat /etc/timezone);
+chomp ($timezone);
 
 # Create a logging object
 my $log = LoxBerry::Log->new (
@@ -81,12 +88,12 @@ my $url = "https://air-quality-api.open-meteo.com/v1/air-quality"
         . "?latitude=$lat&longitude=$lon"
         . "&current=european_aqi,us_aqi,pm10,pm2_5"
         . "&hourly=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen"
-        . "&forecast_days=5&timezone=auto";
+        . "&forecast_days=5&timezone=$timezone";
 
 my $decoded_json = api_call(
 	url      => $url,
 	maskkeys => 0,
-	info     => "air quality and pollen data",
+	info     => "air quality and pollen data for lat=$lat lon=$lon and timezone=$timezone",
 );
 
 ##########################################################################
