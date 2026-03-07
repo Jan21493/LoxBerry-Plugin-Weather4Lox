@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60">
+  <rect width="200" height="60" rx="8" ry="8" fill="#1565C0"/>
+  <text x="10" y="22" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF">Open-Meteo</text>
+  <text x="10" y="40" font-family="Arial, sans-serif" font-size="10" fill="#90CAF9">Free Weather API</text>
+  <!-- Simple sun/cloud icon -->
+  <circle cx="175" cy="22" r="10" fill="#FDD835"/>
+  <circle cx="168" cy="38" r="8" fill="#E3F2FD"/>
+  <circle cx="178" cy="40" r="7" fill="#E3F2FD"/>
+  <rect x="163" y="40" width="22" height="7" rx="3" fill="#E3F2FD"/>
+</svg>

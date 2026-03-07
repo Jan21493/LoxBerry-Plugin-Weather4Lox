@@ -52,6 +52,13 @@
 														</td>
 													</tr>
 													<tr>
+														<td colspan=3 width="75%">
+															<h2><TMPL_VAR SETTINGS.LABEL_SECTION_STANDARD_WEATHER></h2>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_STANDARD_WEATHER></i></font>
+														</td>
+														<td align="right">&nbsp;</td>
+													</tr>
+													<tr>
 														<td width="25%">
 															<label id="labelweatherservice"><TMPL_VAR SETTINGS.LABEL_WEATHERSERVICE></label>
 														</td>
@@ -88,6 +95,13 @@
 														<td colspan="4">
 															<hr>
 														</td>
+													</tr>
+													<tr>
+														<td colspan=3 width="75%">
+															<h2><TMPL_VAR SETTINGS.LABEL_SECTION_ALTERNATE_WEATHER></h2>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_ALTERNATE_WEATHER></i></font>
+														</td>
+														<td align="right">&nbsp;</td>
 													</tr>
 													<tr>
 														<td width="25%">
@@ -147,6 +161,13 @@
 														</td>
 													</tr>
 													<tr>
+														<td colspan=3 width="75%">
+															<h2><TMPL_VAR SETTINGS.LABEL_SECTION_GENERAL_SETTINGS></h2>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_GENERAL_SETTINGS></i></font>
+														</td>
+														<td align="right">&nbsp;</td>
+													</tr>
+													<tr>
 														<td width="25%">
 															<label id="labelmetric"><TMPL_VAR SETTINGS.LABEL_UNITS></label>
 														</td>
@@ -192,9 +213,30 @@
 														</td>
 													</tr>
 													<tr>
+														<td width="25%">
+															<label id="labelmaskkeys"><TMPL_VAR SETTINGS.LABEL_MASKKEYS></label>
+														</td>
+														<td width="50%">
+															<TMPL_VAR MASKKEYS>
+														</td>
+														<td width="5%">
+															&nbsp;
+														</td>
+														<td width="20%">
+															<font size="-1"><TMPL_VAR SETTINGS.HINT_MASKKEYS></font>
+														</td>
+													</tr>
+													<tr>
 														<td colspan="4">
 															<hr>
 														</td>
+													</tr>
+													<tr>
+														<td colspan=3 width="75%">
+															<h2><TMPL_VAR SETTINGS.LABEL_SECTION_GRABBER></h2>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_GRABBER></i></font>
+														</td>
+														<td align="right">&nbsp;</td>
 													</tr>
 													<tr>
 														<td width="25%">
@@ -255,23 +297,6 @@
 															<font size="-1"><TMPL_VAR SETTINGS.HINT_PWSCATCHUPLOADGRABBER></font>
 														</td>
 													</tr>
-													<!-- Open-Meteo Air Quality / Pollen Grabber (NEW) -->
-													<tr>
-													<td width="25%">
-														<label id="labelopenmeteoairqualitygrabber"><TMPL_VAR SETTINGS.LABEL_OPENMETEOAIRQUALITYGRABBER></label>
-													</td>
-													<td width="50%">
-														<table border="0" width="100%">
-														<tr>
-															<td><TMPL_VAR OPENMETEOAIRQUALITYGRABBER></td>
-														</tr>
-														</table>
-													</td>
-													<td width="5%">&nbsp;</td>
-													<td width="20%">
-														<font size="-1"><TMPL_VAR SETTINGS.HINT_OPENMETEOAIRQUALITYGRABBER></font>
-													</td>
-													</tr>
 													<tr>
 														<td width="25%">
 															<label id="labelloxgrabber"><TMPL_VAR SETTINGS.LABEL_LOXGRABBER></label>
@@ -292,29 +317,114 @@
 														</td>
 													</tr>
 													<tr>
+														<td colspan=3 width="75%">
+															<h2><TMPL_VAR SETTINGS.LABEL_SECTION_POLLEN_AIRQUALITY></h2>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_POLLEN_AIRQUALITY></i></font>
+														</td>
+														<td align="right">
+															<a href="https://open-meteo.com/" target="_blank"><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/openmeteo.svg"></a>
+														</td>
+													</tr>
+													<!-- Open-Meteo Air Quality / Pollen Grabber -->
+													<tr>
+													<td width="25%">
+														<label id="labelopenmeteoairqualitygrabber"><TMPL_VAR SETTINGS.LABEL_OPENMETEOAIRQUALITYGRABBER></label>
+													</td>
+													<td width="50%">
+														<table border="0" width="100%">
+														<tr>
+															<td><TMPL_VAR OPENMETEOAIRQUALITYGRABBER></td>
+														</tr>
+														</table>
+													</td>
+													<td width="5%">&nbsp;</td>
+													<td width="20%">
+														<font size="-1"><TMPL_VAR SETTINGS.HINT_OPENMETEOAIRQUALITYGRABBER></font>
+													</td>
+													</tr>
+													<tr id="rowpollensettings">
+														<td colspan=3 width="75%">
+															<h3><TMPL_VAR SETTINGS.LABEL_POLLEN_SETTINGS></h3>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_POLLEN_SETTINGS></i></font>
+														</td>
+														<td align="right">&nbsp;</td>
+													</tr>
+													<tr class="pollen-row">
 														<td width="25%">
-															<label id="labelmaskkeys"><TMPL_VAR SETTINGS.LABEL_MASKKEYS></label>
+															<label id="labelpollengrasses"><TMPL_VAR SETTINGS.LABEL_POLLEN_GRASSES></label>
 														</td>
 														<td width="50%">
-															<TMPL_VAR MASKKEYS>
+															<TMPL_VAR POLLEN_GRASSES>
 														</td>
-														<td width="5%">
-															&nbsp;
+														<td width="5%">&nbsp;</td>
+														<td width="20%">&nbsp;</td>
+													</tr>
+													<tr class="pollen-row">
+														<td width="25%">
+															<label id="labelpollenbirch"><TMPL_VAR SETTINGS.LABEL_POLLEN_BIRCH></label>
 														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_MASKKEYS></font>
+														<td width="50%">
+															<TMPL_VAR POLLEN_BIRCH>
 														</td>
+														<td width="5%">&nbsp;</td>
+														<td width="20%">&nbsp;</td>
+													</tr>
+													<tr class="pollen-row">
+														<td width="25%">
+															<label id="labelpollenalder"><TMPL_VAR SETTINGS.LABEL_POLLEN_ALDER></label>
+														</td>
+														<td width="50%">
+															<TMPL_VAR POLLEN_ALDER>
+														</td>
+														<td width="5%">&nbsp;</td>
+														<td width="20%">&nbsp;</td>
+													</tr>
+													<tr class="pollen-row">
+														<td width="25%">
+															<label id="labelpollenmugwort"><TMPL_VAR SETTINGS.LABEL_POLLEN_MUGWORT></label>
+														</td>
+														<td width="50%">
+															<TMPL_VAR POLLEN_MUGWORT>
+														</td>
+														<td width="5%">&nbsp;</td>
+														<td width="20%">&nbsp;</td>
+													</tr>
+													<tr class="pollen-row">
+														<td width="25%">
+															<label id="labelpollenolive"><TMPL_VAR SETTINGS.LABEL_POLLEN_OLIVE></label>
+														</td>
+														<td width="50%">
+															<TMPL_VAR POLLEN_OLIVE>
+														</td>
+														<td width="5%">&nbsp;</td>
+														<td width="20%">&nbsp;</td>
+													</tr>
+													<tr class="pollen-row">
+														<td width="25%">
+															<label id="labelpollenragweed"><TMPL_VAR SETTINGS.LABEL_POLLEN_RAGWEED></label>
+														</td>
+														<td width="50%">
+															<TMPL_VAR POLLEN_RAGWEED>
+														</td>
+														<td width="5%">&nbsp;</td>
+														<td width="20%">&nbsp;</td>
 													</tr>
 													<tr>
 														<td colspan="4">
 															<hr>
 														</td>
-													</tr>													<tr>
+													</tr>
+													<tr>
 														<td colspan=3 width="75%">
 															<h2><TMPL_VAR SETTINGS.LABEL_VISUALCROSSING_SETTINGS></h2>
 														</td>
 														<td align="right">
 															<a href="https://www.visualcrossing.com/" target="_blank"><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/visualcrossing.svg"></a>
+														</td>
+													</tr>
+													<tr>
+														<td colspan=4>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_VISUALCROSSING_DESC></i></font>
 														</td>
 													</tr>
 													<tr>
@@ -359,6 +469,11 @@
 														</td>
 													</tr>
 													<tr>
+														<td colspan=4>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_OPENWEATHER_DESC></i></font>
+														</td>
+													</tr>
+													<tr>
 														<td width="25%">
 															<label id="labelopenweatherapikey"><TMPL_VAR SETTINGS.LABEL_APIKEY></label>
 														</td>
@@ -400,6 +515,11 @@
 														</td>
 													</tr>
 													<tr>
+														<td colspan=4>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_WTTRIN_DESC></i></font>
+														</td>
+													</tr>
+													<tr>
 														<td width="25%">
 															<label id="labelwttrinstationid"><TMPL_VAR SETTINGS.LABEL_STATIONID></label>
 														</td>
@@ -433,6 +553,11 @@
 														</td>
 													</tr>
 													<tr>
+														<td colspan=4>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_WETTERONLINE_DESC></i></font>
+														</td>
+													</tr>
+													<tr>
 														<td width="25%">
 															<label id="labelwetteronlinestationid"><TMPL_VAR SETTINGS.LABEL_WETTERONLINE_STATIONID></label>
 														</td>
@@ -462,6 +587,11 @@
 														</td>
 														<td align="right">
 															<a href="https://weatherflow.com/" target="_blank"><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/weatherflow.svg"></a>
+														</td>
+													</tr>
+													<tr>
+														<td colspan=4>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_WEATHERFLOW_DESC></i></font>
 														</td>
 													</tr>
 													<tr>
@@ -625,11 +755,11 @@
 									// OpenMeteoAirQualityGrabber
 									$( document ).on( 'change', '#openmeteoairqualitygrabber', function ( e ) {
 										if ( $( "select[name=openmeteoairqualitygrabber]" ).val()  === "1" ) {
-											//alert("An!");
-
+											$('.pollen-row').show();
+											$('#rowpollensettings').show();
 										} else {
-											//alert("Aus!");
-
+											$('.pollen-row').hide();
+											$('#rowpollensettings').hide();
 										}
 									});
 
@@ -686,7 +816,8 @@
 											$('#foshkport').addClass('ui-disabled');
 										}
 										if ( $( "select[name=openmeteoairqualitygrabber]" ).val()  === "0" ) {
-
+											$('.pollen-row').hide();
+											$('#rowpollensettings').hide();
 										}
 									}
 
