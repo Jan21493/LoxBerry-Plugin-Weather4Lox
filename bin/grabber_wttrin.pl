@@ -825,6 +825,11 @@ if ($hourlysize > 100) {
 
 }
 
+# Write JSON files from the .dat files
+write_current_json($lbplogdir) if $current;
+write_daily_json($lbplogdir) if $daily;
+write_hourly_json($lbplogdir) if $hourly;
+
 # Give OK status to client.
 LOGOK "Current Data and Forecasts saved successfully.";
 

@@ -112,13 +112,29 @@ if ($search) {
 
   # If we received a query, send it to Google API
   $ua = new LWP::UserAgent;
+  $ua->agent("Weather4Lox-LoxBerry/4.15 (LoxBerry Plugin; contact: loxberry.de)");
+  $ua->default_header('Accept' => 'application/json');
   $res = $ua->get($queryurl);
 
   $json=$res->decoded_content();
   $json = encode_utf8( $json );
 
-  # JSON Answer
-  $decoded_json = decode_json( $json );
+  # JSON Answer - with error handling for non-JSON responses
+  eval {
+    $decoded_json = decode_json( $json );
+  };
+  if ($@) {
+    my $http_status = $res->status_line;
+    my $preview = substr($json, 0, 200);
+    $preview =~ s/</&lt;/g;
+    $preview =~ s/>/&gt;/g;
+    $table = "<tr><td>Error parsing API response (HTTP $http_status).<br>Response: <code>$preview</code></td></tr>\n";
+    $template->param( "TABLE", $table);
+    LoxBerry::Web::head();
+    print $template->output();
+    LoxBerry::Web::foot();
+    exit;
+  }
 
   $urlstatus = $res->status_line;
   $urlstatuscode = substr($urlstatus,0,3);
@@ -138,11 +154,16 @@ if ($search) {
 	$country = $results->{address}->{country};
 	$lat = sprintf "%.6f", $results->{lat};
 	$long = sprintf "%.6f", $results->{lon};
-	# Add City and Country for DarkSky
-	  $addon = ";window.opener.document.getElementById('" . $service . "city').value = '$city'";
-	  $addon = $addon . ";window.opener.document.getElementById('" . $service . "country').value = '$country'";
+	# Build field ID prefix: for "server" service, coord fields have no prefix
+	my $coord_prefix = ($service eq "server") ? "" : $service;
+	# Add City and Country update (skip for "server" which has no city/country fields)
+	  $addon = "";
+	  if ($service ne "server") {
+	    $addon = ";window.opener.document.getElementById('" . $service . "city').value = '$city'";
+	    $addon = $addon . ";window.opener.document.getElementById('" . $service . "country').value = '$country'";
+	  }
         $table = $table . "<tr><td align=\"right\">$i\.</td><td>$results->{display_name}</td>\n";
-        $table = "$table" ."<td style=\"vertical-align: middle; text-align: center\"><button type=\"button\" data-role=\"button\" data-inline=\"true\" data-mini=\"true\" onClick=\"window.opener.document.getElementById('" . $service . "coordlat').value = '$lat';window.opener.document.getElementById('" . $service . "coordlong').value = '$long'$addon;window.close()\"> <font size=\"-1\">" . $L{'SETTINGS.BUTTON_APPLY'} .  "</font></button></td></tr>\n";
+        $table = "$table" ."<td style=\"vertical-align: middle; text-align: center\"><button type=\"button\" data-role=\"button\" data-inline=\"true\" data-mini=\"true\" onClick=\"window.opener.document.getElementById('" . $coord_prefix . "coordlat').value = '$lat';window.opener.document.getElementById('" . $coord_prefix . "coordlong').value = '$long'$addon;window.close()\"> <font size=\"-1\">" . $L{'SETTINGS.BUTTON_APPLY'} .  "</font></button></td></tr>\n";
         $i++;
       };
   }

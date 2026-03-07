@@ -1749,7 +1749,7 @@ if ($emu) {
   #close(F);
 
   # Original file has 169 entrys, but always starts at 0:00 today or 12:00 yesterday. We alsways start with current data
-  # (we don't have historical data) and offer 168 hourly forcast datasets. This seems to be ok for the miniserver.
+  # 7 days * 24 hours = 168 datasets. It is unclear why the ms needs 7 days, because the emulator only displays 'today', 'tomorrow' and 'day after tomorrow'.
 
   $i = 0;
   my $hfcdate;

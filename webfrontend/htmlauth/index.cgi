@@ -88,17 +88,17 @@ if ($R::saveformdata1) {
   	$template->param( FORMNO => '1' );
 	$R::wucoordlat =~ tr/,/./;
 	$R::wucoordlong =~ tr/,/./;
-	$R::openweathercoordlat =~ tr/,/./;
-	$R::openweathercoordlong =~ tr/,/./;
-	$R::visualcrossingcoordlat =~ tr/,/./;
-	$R::visualcrossingcoordlong =~ tr/,/./;
-	$R::openmeteoairqualitycoordlat =~ tr/,/./;
-	$R::openmeteoairqualitycoordlong =~ tr/,/./;
+	$R::coordlat =~ tr/,/./;
+	$R::coordlong =~ tr/,/./;
+
+	# Central coordinates → propagate to all services
+	my $central_lat  = $R::coordlat;
+	my $central_long = $R::coordlong;
 
 	# Check for Station : OPENWEATHER
 	if ($R::weatherservice eq "openweather") {
 		our $url = $cfg->param("OPENWEATHER.URL");
-		our $querystation = "lat=" . $R::openweathercoordlat . "&lon=" . $R::openweathercoordlong;
+		our $querystation = "lat=" . $central_lat . "&lon=" . $central_long;
 		# 1. attempt to query OpenWeather
 		&openweatherquery;
 		$found = 0;
@@ -128,7 +128,7 @@ if ($R::saveformdata1) {
 	# Check for Station : VISUALCROSSING
 	if ($R::weatherservice eq "visualcrossing") {
 		our $url = $cfg->param("VISUALCROSSING.URL");
-		our $querystation = $R::visualcrossingcoordlat . "," . $R::visualcrossingcoordlong;
+		our $querystation = $central_lat . "," . $central_long;
 		# 1. attempt to query VisualCrossing
 		&visualcrossingquery;
 		$found = 0;
@@ -191,26 +191,26 @@ if ($R::saveformdata1) {
 	$cfg->param("WUNDERGROUND.LANG", "$R::wulang");
 
 	$cfg->param("OPENWEATHER.APIKEY", "$R::openweatherapikey");
-	$cfg->param("OPENWEATHER.COORDLAT", "$R::openweathercoordlat");
-	$cfg->param("OPENWEATHER.COORDLONG", "$R::openweathercoordlong");
-	$cfg->param("OPENWEATHER.LANG", "$R::openweatherlang");
+	$cfg->param("OPENWEATHER.COORDLAT", "$central_lat");
+	$cfg->param("OPENWEATHER.COORDLONG", "$central_long");
+	$cfg->param("OPENWEATHER.LANG", "$R::serverlang");
 	$cfg->param("OPENWEATHER.STATION", "$R::openweathercity");
 	$cfg->param("OPENWEATHER.COUNTRY", "$R::openweathercountry");
 
 	$cfg->param("WEATHERFLOW.APIKEY", "$R::weatherflowapikey");
-	$cfg->param("WEATHERFLOW.LANG", "$R::weatherflowlang");
+	$cfg->param("WEATHERFLOW.LANG", "$R::serverlang");
 	$cfg->param("WEATHERFLOW.CITY", "$R::weatherflowcity");
 	$cfg->param("WEATHERFLOW.COUNTRY", "$R::weatherflowcountry");
 	$cfg->param("WEATHERFLOW.STATIONID", "$R::weatherflowstationid");
 
 	$cfg->param("VISUALCROSSING.APIKEY", "$R::visualcrossingapikey");
-	$cfg->param("VISUALCROSSING.COORDLAT", "$R::visualcrossingcoordlat");
-	$cfg->param("VISUALCROSSING.COORDLONG", "$R::visualcrossingcoordlong");
-	$cfg->param("VISUALCROSSING.LANG", "$R::visualcrossinglang");
+	$cfg->param("VISUALCROSSING.COORDLAT", "$central_lat");
+	$cfg->param("VISUALCROSSING.COORDLONG", "$central_long");
+	$cfg->param("VISUALCROSSING.LANG", "$R::serverlang");
 	$cfg->param("VISUALCROSSING.STATION", "$R::visualcrossingcity");
 	$cfg->param("VISUALCROSSING.COUNTRY", "$R::visualcrossingcountry");
 
-	$cfg->param("WTTRIN.LANG", "$R::wttrinlang");
+	$cfg->param("WTTRIN.LANG", "$R::serverlang");
 	$cfg->param("WTTRIN.STATIONID", "$R::wttrinstationid");
 
 	$cfg->param("WETTERONLINE.STATIONID", "$R::wetteronlinestationid");
@@ -226,14 +226,17 @@ if ($R::saveformdata1) {
 	$cfg->param("SERVER.LOXGRABBER", "$R::loxgrabber");
 	$cfg->param("SERVER.FOSHKGRABBER", "$R::foshkgrabber");
 	$cfg->param("SERVER.OPENMETEOAIRQUALITYGRABBER", "$R::openmeteoairqualitygrabber");
-	$cfg->param("OPENMETEOAIRQUALITY.COORDLAT", "$R::openmeteoairqualitycoordlat");
-	$cfg->param("OPENMETEOAIRQUALITY.COORDLONG", "$R::openmeteoairqualitycoordlong");
+	$cfg->param("OPENMETEOAIRQUALITY.COORDLAT", "$central_lat");
+	$cfg->param("OPENMETEOAIRQUALITY.COORDLONG", "$central_long");
 	$cfg->param("SERVER.USEALTERNATEDFC", "$R::usealternatedfc");
 	$cfg->param("SERVER.USEALTERNATEHFC", "$R::usealternatehfc");
 	$cfg->param("SERVER.GETDATA", "$R::getdata");
 	$cfg->param("SERVER.CRON", "$R::cron");
 	$cfg->param("SERVER.CRON_ALTERNATE", "$R::cron_alternate");
 	$cfg->param("SERVER.METRIC", "$R::metric");
+	$cfg->param("SERVER.COORDLAT", "$central_lat");
+	$cfg->param("SERVER.COORDLONG", "$central_long");
+	$cfg->param("SERVER.LANG", "$R::serverlang");
 	$cfg->param("SERVER.WEATHERSERVICE", "$R::weatherservice");
 	$cfg->param("SERVER.WEATHERSERVICEDFC", "$R::weatherservicedfc");
 	$cfg->param("SERVER.WEATHERSERVICEHFC", "$R::weatherservicehfc");
@@ -751,6 +754,39 @@ if ($R::form eq "1" || !$R::form) {
 	-default => $cfg->param('WTTRIN.LANG'),
     );
   $template->param( WTTRINLANG => $wttrinweatherlang );
+
+  # Central language selector (used by all services)
+  @values = ('de', 'en', 'da', 'el', 'es', 'fa', 'fr', 'hi', 'hu', 'id', 'it', 'lt', 'nl', 'pl', 'ro', 'ru', 'th', 'tr', 'uk', 'vi');
+  %labels = (
+	'da' => 'Danish',
+	'de' => 'German',
+	'el' => 'Greek',
+	'en' => 'English',
+	'es' => 'Spanish',
+	'fa' => 'Persian',
+	'fr' => 'French',
+	'hi' => 'Hindi',
+	'hu' => 'Hungarian',
+	'id' => 'Indonesian',
+	'it' => 'Italian',
+	'lt' => 'Lithuanian',
+	'nl' => 'Dutch',
+	'pl' => 'Polish',
+	'ro' => 'Romanian',
+	'ru' => 'Russian',
+	'th' => 'Thai',
+	'tr' => 'Turkish',
+	'uk' => 'Ukrainian',
+	'vi' => 'Vietnamese',
+  );
+  my $serverlang = $cgi->popup_menu(
+        -name    => 'serverlang',
+        -id      => 'serverlang',
+        -values  => \@values,
+	-labels  => \%labels,
+	-default => $cfg->param('SERVER.LANG') || 'en',
+  );
+  $template->param( SERVERLANG => $serverlang );
 
 
 # Menu: Miniserver
