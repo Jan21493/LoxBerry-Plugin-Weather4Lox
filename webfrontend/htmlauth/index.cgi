@@ -254,9 +254,12 @@ if ($R::saveformdata1) {
 		"olive"   => ($R::pollen_olive + 0),
 		"ragweed" => ($R::pollen_ragweed + 0),
 	);
-	open(my $fh, '>', "$lbpconfigdir/mapping_custom_mix_pollen.json") or die "Cannot write pollen config: $!";
-	print $fh encode_json(\%pollen_data);
-	close($fh);
+	if ( open(my $fh, '>', "$lbpconfigdir/mapping_custom_mix_pollen.json") ) {
+		print $fh encode_json(\%pollen_data);
+		close($fh);
+	} else {
+		$error = "Cannot write pollen config: $!";
+	}
 
 	# Create Cronjob
 	if ($R::getdata eq "1"){
