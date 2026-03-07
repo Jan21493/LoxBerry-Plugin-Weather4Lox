@@ -23,7 +23,7 @@ use Config::Simple '-strict';
 use CGI::Carp qw(fatalsToBrowser);
 use CGI;
 use LWP::UserAgent;
-use JSON qw( decode_json encode_json );
+use JSON qw( decode_json );
 use LoxBerry::System;
 use LoxBerry::Web;
 #use warnings;
@@ -228,19 +228,6 @@ if ($R::saveformdata1) {
 	$cfg->param("SERVER.OPENMETEOAIRQUALITYGRABBER", "$R::openmeteoairqualitygrabber");
 	$cfg->param("OPENMETEOAIRQUALITY.COORDLAT", "$central_lat");
 	$cfg->param("OPENMETEOAIRQUALITY.COORDLONG", "$central_long");
-
-	# Save pollen allergy settings to JSON file
-	my %pollen_save = (
-		grasses => int($R::pollen_grasses // 0),
-		birch   => int($R::pollen_birch   // 0),
-		alder   => int($R::pollen_alder   // 0),
-		mugwort => int($R::pollen_mugwort // 0),
-		olive   => int($R::pollen_olive   // 0),
-		ragweed => int($R::pollen_ragweed // 0),
-	);
-	my $pollen_json_out = encode_json(\%pollen_save);
-	open( my $pfh, '>', "$lbpconfigdir/mapping_custom_mix_pollen.json" ) or warn "Cannot write pollen JSON: $!";
-	if ( $pfh ) { print $pfh $pollen_json_out; close $pfh; }
 	$cfg->param("SERVER.USEALTERNATEDFC", "$R::usealternatedfc");
 	$cfg->param("SERVER.USEALTERNATEHFC", "$R::usealternatehfc");
 	$cfg->param("SERVER.GETDATA", "$R::getdata");
@@ -354,10 +341,10 @@ our %navbar;
 $navbar{1}{Name} = "$L{'SETTINGS.LABEL_SERVER_SETTINGS'}";
 $navbar{1}{URL} = 'index.cgi?form=1';
 
-$navbar{2}{Name} = "$L{'SETTINGS.LABEL_SENDTOMS'}";
+$navbar{2}{Name} = "$L{'SETTINGS.LABEL_MINISERVERCONNECTION'}";
 $navbar{2}{URL} = 'index.cgi?form=2';
 
-$navbar{3}{Name} = "$L{'SETTINGS.LABEL_WEBSITE_THEMES_EMU'}";
+$navbar{3}{Name} = "$L{'SETTINGS.LABEL_CLOUDEMU'} / $L{'SETTINGS.LABEL_WEBSITE'}";
 $navbar{3}{URL} = 'index.cgi?form=3';
 
 $navbar{99}{Name} = "$L{'SETTINGS.LABEL_LOG'}";
@@ -545,34 +532,6 @@ if ($R::form eq "1" || !$R::form) {
 	-default => $cfg->param('SERVER.OPENMETEOAIRQUALITYGRABBER'),
     );
   $template->param( OPENMETEOAIRQUALITYGRABBER => $openmeteoairqualitygrabber );
-
-  # Pollen allergy settings - read from JSON file
-  my %pollen_defaults = ( grasses => 0, birch => 0, alder => 0, mugwort => 0, olive => 0, ragweed => 0 );
-  my $pollen_json_file = "$lbpconfigdir/mapping_custom_mix_pollen.json";
-  if ( -e $pollen_json_file ) {
-    open( my $fh, '<', $pollen_json_file ) or warn "Cannot read $pollen_json_file: $!";
-    if ( $fh ) {
-      local $/;
-      my $json_text = <$fh>;
-      close $fh;
-      eval { my $pollen_data = decode_json($json_text); %pollen_defaults = %{$pollen_data} if $pollen_data; };
-    }
-  }
-
-  @values = ('0', '1', '2', '3', '4');
-  %labels = (
-        '0' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_0'},
-        '1' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_1'},
-        '2' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_2'},
-        '3' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_3'},
-        '4' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_4'},
-    );
-  $template->param( POLLEN_GRASSES => $cgi->popup_menu( -name => 'pollen_grasses', -id => 'pollen_grasses', -values => \@values, -labels => \%labels, -default => $pollen_defaults{grasses} ) );
-  $template->param( POLLEN_BIRCH   => $cgi->popup_menu( -name => 'pollen_birch',   -id => 'pollen_birch',   -values => \@values, -labels => \%labels, -default => $pollen_defaults{birch} ) );
-  $template->param( POLLEN_ALDER   => $cgi->popup_menu( -name => 'pollen_alder',   -id => 'pollen_alder',   -values => \@values, -labels => \%labels, -default => $pollen_defaults{alder} ) );
-  $template->param( POLLEN_MUGWORT => $cgi->popup_menu( -name => 'pollen_mugwort', -id => 'pollen_mugwort', -values => \@values, -labels => \%labels, -default => $pollen_defaults{mugwort} ) );
-  $template->param( POLLEN_OLIVE   => $cgi->popup_menu( -name => 'pollen_olive',   -id => 'pollen_olive',   -values => \@values, -labels => \%labels, -default => $pollen_defaults{olive} ) );
-  $template->param( POLLEN_RAGWEED => $cgi->popup_menu( -name => 'pollen_ragweed', -id => 'pollen_ragweed', -values => \@values, -labels => \%labels, -default => $pollen_defaults{ragweed} ) );
 
 # Mask Keys
   @values = ('0', '1' );
