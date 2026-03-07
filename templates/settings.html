@@ -695,6 +695,12 @@
 									$('select[name=serverlang]').attr('data-mini','true');
 									$('select[name=cron]').attr('data-mini','true');
 									$('select[name=cron_alternate]').attr('data-mini','true');
+									$('select[name=pollen_grasses]').attr('data-mini','true');
+									$('select[name=pollen_birch]').attr('data-mini','true');
+									$('select[name=pollen_alder]').attr('data-mini','true');
+									$('select[name=pollen_mugwort]').attr('data-mini','true');
+									$('select[name=pollen_olive]').attr('data-mini','true');
+									$('select[name=pollen_ragweed]').attr('data-mini','true');
 
 									// Get Data
 									$( document ).on( 'change', '#getdata', function ( e ) {
@@ -761,6 +767,27 @@
 											$('.pollen-row').hide();
 											$('#rowpollensettings').hide();
 										}
+									});
+
+									// Pollen hint texts by level
+									var pollenHints = {
+										'0': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_0>',
+										'1': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_1>',
+										'2': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_2>',
+										'3': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_3>',
+										'4': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_4>',
+										'5': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_5>',
+										'6': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_6>',
+										'7': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_7>'
+									};
+									function updatePollenHint(name) {
+										var val = $('select[name=' + name + ']').val();
+										$('#hint_pollen_' + name.replace('pollen_','') ).text(pollenHints[val] || '');
+									}
+									var pollenNames = ['pollen_grasses','pollen_birch','pollen_alder','pollen_mugwort','pollen_olive','pollen_ragweed'];
+									$.each(pollenNames, function(i, name) {
+										updatePollenHint(name);
+										$( document ).on( 'change', '#' + name, function() { updatePollenHint(name); });
 									});
 
 									// Alternate DFC
@@ -875,6 +902,7 @@
 													<tr>
 														<td colspan=3 width="75%">
 															<h2><TMPL_VAR SETTINGS.LABEL_MINISERVERCONNECTION></h2>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_MINISERVER></i></font>
 														</td>
 														<td align="right">
 															&nbsp;
@@ -883,6 +911,7 @@
 													<tr>
 														<td colspan=3 width="75%">
 															<h3><TMPL_VAR SETTINGS.LABEL_SENDWHAT></h3>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_SENDWHAT></i></font>
 														</td>
 														<td align="right">
 															&nbsp;
@@ -937,6 +966,7 @@
 													<tr>
 														<td colspan=3 width="75%">
 															<h3><TMPL_VAR SETTINGS.LABEL_MQTTCONNECTION></h3>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_MQTT></i></font>
 														</td>
 														<td align="right">
 															&nbsp;
@@ -983,6 +1013,7 @@
 													<tr>
 														<td colspan=3 width="75%">
 															<h3><TMPL_VAR SETTINGS.LABEL_UDPCONNECTION></h3>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_UDP></i></font>
 														</td>
 														<td align="right">
 															&nbsp;
@@ -1040,6 +1071,7 @@
 													<tr>
 														<td colspan=3 width="75%">
 															<h3><TMPL_VAR SETTINGS.LABEL_HTTPCONNECTION></h3>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_HTTP></i></font>
 														</td>
 														<td align="right">
 															&nbsp;
@@ -1109,6 +1141,7 @@
 													<tr>
 														<td colspan=3 width="75%">
 															<h2><TMPL_VAR SETTINGS.LABEL_CLOUDEMU></h2>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_CLOUDEMU></i></font>
 														</td>
 														<td align="right">
 															&nbsp;
@@ -1150,6 +1183,7 @@
 													<tr>
 														<td colspan=3 width="75%">
 															<h2><TMPL_VAR SETTINGS.LABEL_WEBSITE></h2>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_WEBSITE></i></font>
 														</td>
 														<td align="right">
 															&nbsp;
@@ -1183,9 +1217,7 @@
 															&nbsp;
 														</td>
 														<td width="20%">
-															<a href="#" data-role="button" id="preview1" data-inline="true" data-mini="true" onClick="preview();">
-																<font size="-1"><TMPL_VAR SETTINGS.LABEL_PREVIEW></font>
-															</a>
+															&nbsp;
 														</td>
 													</tr>
 													<tr>
@@ -1215,6 +1247,7 @@
 									<p>
 										<center>
 											<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="./index.cgi?form=3"><TMPL_VAR SETTINGS.BUTTON_CANCEL></a>
+												<a href="#" data-role="button" id="preview1" data-inline="true" data-mini="true" onClick="preview();"><TMPL_VAR SETTINGS.LABEL_PREVIEW></a>
 												<button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SETTINGS.BUTTON_SAVE></button>
 										</center>
 									</form>
