@@ -23,7 +23,7 @@ use Config::Simple '-strict';
 use CGI::Carp qw(fatalsToBrowser);
 use CGI;
 use LWP::UserAgent;
-use JSON qw( decode_json );
+use JSON qw( decode_json encode_json );
 use LoxBerry::System;
 use LoxBerry::Web;
 #use warnings;
@@ -244,6 +244,22 @@ if ($R::saveformdata1) {
 
 
 	$cfg->save();
+
+	# Save pollen sensitivity settings to JSON
+	my %pollen_data = (
+		"grasses" => ($R::pollen_grasses + 0),
+		"birch"   => ($R::pollen_birch + 0),
+		"alder"   => ($R::pollen_alder + 0),
+		"mugwort" => ($R::pollen_mugwort + 0),
+		"olive"   => ($R::pollen_olive + 0),
+		"ragweed" => ($R::pollen_ragweed + 0),
+	);
+	if ( open(my $fh, '>', "$lbpconfigdir/mapping_custom_mix_pollen.json") ) {
+		print $fh encode_json(\%pollen_data);
+		close($fh);
+	} else {
+		$error = "Cannot write pollen config: $!";
+	}
 
 	# Create Cronjob
 	if ($R::getdata eq "1"){
@@ -533,7 +549,91 @@ if ($R::form eq "1" || !$R::form) {
     );
   $template->param( OPENMETEOAIRQUALITYGRABBER => $openmeteoairqualitygrabber );
 
-# Mask Keys
+  # Pollen sensitivity dropdowns (0-7 scale)
+  # Read defaults from pollen JSON file if it exists
+  my %pollen_defaults = ( grasses => 0, birch => 0, alder => 0, mugwort => 0, olive => 0, ragweed => 0 );
+  if ( -e "$lbpconfigdir/mapping_custom_mix_pollen.json" ) {
+    open(my $pfh, '<', "$lbpconfigdir/mapping_custom_mix_pollen.json");
+    my $pjson = do { local $/; <$pfh> };
+    close($pfh);
+    my $pdata = eval { decode_json($pjson) };
+    if ($pdata) {
+      $pollen_defaults{grasses} = $pdata->{grasses} if defined $pdata->{grasses};
+      $pollen_defaults{birch}   = $pdata->{birch}   if defined $pdata->{birch};
+      $pollen_defaults{alder}   = $pdata->{alder}   if defined $pdata->{alder};
+      $pollen_defaults{mugwort} = $pdata->{mugwort} if defined $pdata->{mugwort};
+      $pollen_defaults{olive}   = $pdata->{olive}   if defined $pdata->{olive};
+      $pollen_defaults{ragweed} = $pdata->{ragweed} if defined $pdata->{ragweed};
+    }
+  }
+
+  @values = ('0', '1', '2', '3', '4', '5', '6', '7');
+  %labels = (
+        '0' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_0'},
+        '1' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_1'},
+        '2' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_2'},
+        '3' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_3'},
+        '4' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_4'},
+        '5' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_5'},
+        '6' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_6'},
+        '7' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_7'},
+    );
+
+  my $pollen_grasses = $cgi->popup_menu(
+        -name    => 'pollen_grasses',
+        -id      => 'pollen_grasses',
+        -values  => \@values,
+	-labels  => \%labels,
+	-default => $pollen_defaults{grasses},
+    );
+  $template->param( POLLEN_GRASSES => $pollen_grasses );
+
+  my $pollen_birch = $cgi->popup_menu(
+        -name    => 'pollen_birch',
+        -id      => 'pollen_birch',
+        -values  => \@values,
+	-labels  => \%labels,
+	-default => $pollen_defaults{birch},
+    );
+  $template->param( POLLEN_BIRCH => $pollen_birch );
+
+  my $pollen_alder = $cgi->popup_menu(
+        -name    => 'pollen_alder',
+        -id      => 'pollen_alder',
+        -values  => \@values,
+	-labels  => \%labels,
+	-default => $pollen_defaults{alder},
+    );
+  $template->param( POLLEN_ALDER => $pollen_alder );
+
+  my $pollen_mugwort = $cgi->popup_menu(
+        -name    => 'pollen_mugwort',
+        -id      => 'pollen_mugwort',
+        -values  => \@values,
+	-labels  => \%labels,
+	-default => $pollen_defaults{mugwort},
+    );
+  $template->param( POLLEN_MUGWORT => $pollen_mugwort );
+
+  my $pollen_olive = $cgi->popup_menu(
+        -name    => 'pollen_olive',
+        -id      => 'pollen_olive',
+        -values  => \@values,
+	-labels  => \%labels,
+	-default => $pollen_defaults{olive},
+    );
+  $template->param( POLLEN_OLIVE => $pollen_olive );
+
+  my $pollen_ragweed = $cgi->popup_menu(
+        -name    => 'pollen_ragweed',
+        -id      => 'pollen_ragweed',
+        -values  => \@values,
+	-labels  => \%labels,
+	-default => $pollen_defaults{ragweed},
+    );
+  $template->param( POLLEN_RAGWEED => $pollen_ragweed );
+
+
   @values = ('0', '1' );
   %labels = (
         '0' => $L{'SETTINGS.LABEL_OFF'},
