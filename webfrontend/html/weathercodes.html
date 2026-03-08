@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Weather Codes – Icon Preview</title>
+  <title>Weather4Lox Codes</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -18,44 +18,64 @@
       background: #1a3a5c;
       color: #fff;
       padding: 1rem 2rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      flex-wrap: wrap;
     }
 
     header h1 {
       font-size: 1.4rem;
       font-weight: 600;
+      margin-bottom: 0.25rem;
     }
 
-    header .iconset-badge {
-      background: rgba(255,255,255,0.15);
-      padding: 0.25rem 0.75rem;
-      border-radius: 999px;
+    header p {
       font-size: 0.9rem;
+      opacity: 0.75;
+    }
+
+    .controls {
+      background: #fff;
+      border-bottom: 1px solid #dde8f4;
+      padding: 0.75rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.88rem;
+    }
+
+    .control-group label {
+      font-weight: 600;
+      white-space: nowrap;
+      color: #1a3a5c;
+    }
+
+    .control-group select {
+      padding: 0.3rem 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.88rem;
+      background: #fff;
+    }
+
+    .control-group input[type=range] {
+      width: 120px;
+    }
+
+    .size-display {
+      font-size: 0.8rem;
+      color: #666;
+      min-width: 3rem;
     }
 
     .container {
       max-width: 1400px;
       margin: 0 auto;
       padding: 1.5rem 1rem;
-    }
-
-    .notice {
-      background: #fff3cd;
-      border: 1px solid #ffc107;
-      border-radius: 8px;
-      padding: 1.25rem 1.5rem;
-      margin-bottom: 1.5rem;
-      font-size: 0.95rem;
-    }
-
-    .notice code {
-      background: #eee;
-      padding: 0.1em 0.4em;
-      border-radius: 3px;
-      font-family: monospace;
     }
 
     .category-section {
@@ -103,378 +123,410 @@
 
     .codes-table td.nr { width: 2.5rem; text-align: center; color: #888; font-size: 0.8rem; }
     .codes-table td.code { font-family: monospace; font-size: 0.82rem; color: #0d4a8a; white-space: nowrap; }
-    .codes-table td.symbol { font-family: monospace; font-size: 0.78rem; color: #555; }
     .codes-table td.desc { color: #444; }
+    .codes-table td.ctx { font-size: 0.78rem; color: #666; white-space: nowrap; }
 
     .icon-cell {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
       flex-wrap: wrap;
-      min-width: 40px;
     }
 
     .icon-wrapper {
+      position: relative;
       display: inline-flex;
-      flex-direction: column;
       align-items: center;
-      gap: 2px;
+      justify-content: center;
+      padding: 3px;
+      border-radius: 4px;
+      cursor: default;
     }
 
     .icon-wrapper img {
-      width: 36px;
-      height: 36px;
-      object-fit: contain;
       display: block;
-    }
-
-    .icon-wrapper .phase-label {
-      font-size: 0.6rem;
-      color: #888;
-      text-align: center;
-      line-height: 1;
+      object-fit: contain;
     }
 
     .icon-missing {
-      width: 36px;
-      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       background: #f0f0f0;
       border: 1px dashed #ccc;
       border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       color: #bbb;
       font-size: 0.6rem;
       text-align: center;
     }
 
-    .symbol-names {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .symbol-tag {
-      display: inline-block;
-      background: #e8f0fb;
-      border-radius: 3px;
-      padding: 1px 5px;
-      font-family: monospace;
-      font-size: 0.75rem;
-      color: #1a3a5c;
-      white-space: nowrap;
-    }
-
-    .symbol-tag.night { background: #e8e0f8; color: #3a1a5c; }
-    .symbol-tag.neutral { background: #e8f4e8; color: #1a5c2a; }
-    .symbol-tag.phase { background: #f8f0e0; color: #5c3a1a; }
-
-    .toggle-btn {
-      display: inline-block;
-      font-size: 0.75rem;
-      color: #0d4a8a;
-      cursor: pointer;
-      text-decoration: underline;
-      margin-left: 4px;
-    }
-
-    .phase-icons-row {
+    /* Custom tooltip */
+    .icon-wrapper .tooltip {
       display: none;
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20,40,70,0.95);
+      color: #fff;
+      padding: 0.4rem 0.6rem;
+      border-radius: 5px;
+      font-size: 0.72rem;
+      white-space: nowrap;
+      z-index: 100;
+      pointer-events: none;
+      line-height: 1.5;
+      margin-bottom: 4px;
     }
 
-    .phase-icons-row.visible {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      padding: 4px 0;
+    .icon-wrapper .tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: rgba(20,40,70,0.95);
+    }
+
+    .icon-wrapper:hover .tooltip {
+      display: block;
     }
 
     @media (max-width: 768px) {
       .codes-table { font-size: 0.78rem; }
       .codes-table td { padding: 0.4rem 0.5rem; }
+      .controls { padding: 0.5rem 1rem; gap: 1rem; }
     }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>☁️ Weather Code Icon Preview</h1>
-  <span id="iconset-badge" class="iconset-badge">…</span>
+  <h1 id="hdr-title">☁️ Weather4Lox Codes</h1>
+  <p id="hdr-subtitle">Weather Code Reference</p>
 </header>
 
-<div class="container">
-  <div id="no-iconset-notice" class="notice" style="display:none;">
-    No icon set specified. Add <code>?iconset=&lt;name&gt;</code> to the URL to display icons.<br>
-    Available sets in <code>/plugins/LBPPLUGINDIR/icons/</code>: use the subdirectory name, e.g. <code>?iconset=svg</code>
+<div class="controls">
+  <div class="control-group">
+    <label id="lbl-iconset">Icon Set:</label>
+    <select id="iconset-select">
+      <option value="naturalistic">naturalistic</option>
+      <option value="color">color</option>
+      <option value="custom">custom</option>
+      <option value="dark">dark</option>
+      <option value="flat">flat</option>
+      <option value="green">green</option>
+      <option value="light">light</option>
+      <option value="realistic">realistic</option>
+      <option value="silver">silver</option>
+      <option value="svg">svg</option>
+    </select>
   </div>
+  <div class="control-group">
+    <label id="lbl-bg">Background:</label>
+    <select id="bg-select">
+      <option value="#ffffff" data-key="bg_white">White</option>
+      <option value="#e0e0e0" data-key="bg_light_gray">Light Gray</option>
+      <option value="#404040" data-key="bg_dark_gray">Dark Gray</option>
+      <option value="#000000" data-key="bg_black">Black</option>
+      <option value="#1565c0" data-key="bg_blue">Blue</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <label id="lbl-size">Icon Size:</label>
+    <input type="range" id="size-slider" min="32" max="256" value="48" step="8">
+    <span class="size-display" id="size-display">48px</span>
+  </div>
+  <div class="control-group">
+    <label id="lbl-lang">Language:</label>
+    <select id="lang-select">
+      <option value="en">English</option>
+      <option value="de">Deutsch</option>
+      <option value="nl">Nederlands</option>
+      <option value="es">Español</option>
+      <option value="sk">Slovenčina</option>
+    </select>
+  </div>
+</div>
 
+<div class="container">
   <div id="content"></div>
 </div>
 
 <script>
 // ---------------------------------------------------------------------------
-// Weather code definitions
+// Weather code definitions (45 codes)
 // ---------------------------------------------------------------------------
 
-const MOON_PHASES = [
-  { suffix: '0q', label: 'New' },
-  { suffix: '1q', label: '1st Q' },
-  { suffix: '2q', label: 'Half' },
-  { suffix: '3q', label: '3rd Q' },
-  { suffix: '4q', label: 'Full' },
-];
-
-// Each entry: [nr, weatherCode, description, daySymbol, nightSymbol]
-// daySymbol / nightSymbol: null means no symbol for that time of day
 const WEATHER_CODES = [
-  // --- Cloud Cover Only ---
-  [1,  'clear_day',    'Sunny',               'clear_sun',                    null,                           'current, forecast'],
-  [2,  'clear_night',  'Clear',               null,                           'clear_moon',                   'current, forecast'],
-  [3,  'fair',         'Partly cloudy',        'fair_sun',                     'fair_moon',                    'current, forecast'],
-  [4,  'cloudy',       'Cloudy',              'cloudy_sun',                   'cloudy_moon',                  'current, forecast'],
-  [5,  'overcast',     'Overcast',            'overcast',                     'overcast',                     'current, forecast'],
-
-  // --- Showers ---
-  [6,  'cloudy_shower_1',  'Cloudy, light showers',    'cloudy_shower_1_sun',    'cloudy_shower_1_moon',    'forecast'],
-  [7,  'cloudy_shower_2',  'Cloudy, showers',          'cloudy_shower_2_sun',    'cloudy_shower_2_moon',    'forecast'],
-  [8,  'overcast_shower_1','Overcast, light showers',  'overcast_shower_1',      'overcast_shower_1',       'current, forecast'],
-  [9,  'overcast_shower_2','Overcast, showers',        'overcast_shower_2',      'overcast_shower_2',       'current, forecast'],
-  [10, 'overcast_shower_3','Overcast, heavy showers',  'overcast_shower_3',      'overcast_shower_3',       'current, forecast'],
-
-  // --- Rain ---
-  [11, 'cloudy_rain_1',    'Cloudy, light rain',       'cloudy_rain_1_sun',      'cloudy_rain_1_moon',      'forecast'],
-  [12, 'cloudy_rain_2',    'Cloudy, rain',             'cloudy_rain_2_sun',      'cloudy_rain_2_moon',      'forecast'],
-  [13, 'overcast_rain_1',  'Overcast, light rain',     'overcast_rain_1',        'overcast_rain_1',         'current, forecast'],
-  [14, 'overcast_rain_2',  'Overcast, rain',           'overcast_rain_2',        'overcast_rain_2',         'current, forecast'],
-  [15, 'overcast_rain_3',  'Overcast, heavy rain',     'overcast_rain_3',        'overcast_rain_3',         'current, forecast'],
-
-  // --- Sleet ---
-  [16, 'cloudy_sleet_1',   'Cloudy, light sleet',      'cloudy_sleet_1_sun',     'cloudy_sleet_1_moon',     'forecast'],
-  [17, 'cloudy_sleet_2',   'Cloudy, sleet',            'cloudy_sleet_2_sun',     'cloudy_sleet_2_moon',     'forecast'],
-  [18, 'overcast_sleet_1', 'Overcast, light sleet',    'overcast_sleet_1',       'overcast_sleet_1',        'current, forecast'],
-  [19, 'overcast_sleet_2', 'Overcast, sleet',          'overcast_sleet_2',       'overcast_sleet_2',        'current, forecast'],
-  [20, 'overcast_sleet_3', 'Overcast, heavy sleet',    'overcast_sleet_3',       'overcast_sleet_3',        'current, forecast'],
-
-  // --- Snow ---
-  [21, 'cloudy_snow_1',    'Cloudy, light snowfall',   'cloudy_snow_1_sun',      'cloudy_snow_1_moon',      'forecast'],
-  [22, 'cloudy_snow_2',    'Cloudy, snowfall',         'cloudy_snow_2_sun',      'cloudy_snow_2_moon',      'forecast'],
-  [23, 'overcast_snow_1',  'Overcast, light snowfall', 'overcast_snow_1',        'overcast_snow_1',         'current, forecast'],
-  [24, 'overcast_snow_2',  'Overcast, snowfall',       'overcast_snow_2',        'overcast_snow_2',         'current, forecast'],
-  [25, 'overcast_snow_3',  'Overcast, heavy snowfall', 'overcast_snow_3',        'overcast_snow_3',         'current, forecast'],
-
-  // --- Freezing Rain ---
-  [26, 'cloudy_freezingrain_1',  'Cloudy, light freezing rain',   'cloudy_freezingrain_1_sun',  'cloudy_freezingrain_1_moon',  'forecast'],
-  [27, 'cloudy_freezingrain_2',  'Cloudy, freezing rain',         'cloudy_freezingrain_2_sun',  'cloudy_freezingrain_2_moon',  'forecast'],
-  [28, 'overcast_freezingrain_1','Overcast, light freezing rain', 'overcast_freezingrain_1',    'overcast_freezingrain_1',     'current, forecast'],
-  [29, 'overcast_freezingrain_2','Overcast, freezing rain',       'overcast_freezingrain_2',    'overcast_freezingrain_2',     'current, forecast'],
-  [30, 'overcast_freezingrain_3','Overcast, heavy freezing rain', 'overcast_freezingrain_3',    'overcast_freezingrain_3',     'current, forecast'],
-
-  // --- Thunderstorm ---
-  [31, 'cloudy_thunderstorm_1',   'Cloudy, light thunderstorm',   'cloudy_thunderstorm_1_sun',   'cloudy_thunderstorm_1_moon',   'forecast'],
-  [32, 'cloudy_thunderstorm_2',   'Cloudy, thunderstorm',         'cloudy_thunderstorm_2_sun',   'cloudy_thunderstorm_2_moon',   'forecast'],
-  [33, 'overcast_thunderstorm_1', 'Overcast, light thunderstorm', 'overcast_thunderstorm_1',     'overcast_thunderstorm_1',      'current, forecast'],
-  [34, 'overcast_thunderstorm_2', 'Overcast, thunderstorm',       'overcast_thunderstorm_2',     'overcast_thunderstorm_2',      'current, forecast'],
-  [35, 'overcast_thunderstorm_3', 'Overcast, severe thunderstorm','overcast_thunderstorm_3',     'overcast_thunderstorm_3',      'current, forecast'],
-
-  // --- Snow Thunderstorm ---
-  [36, 'cloudy_snowthunderstorm_1',   'Cloudy, light snow thunderstorm',   'cloudy_snowthunderstorm_1_sun',   'cloudy_snowthunderstorm_1_moon',   'forecast'],
-  [37, 'cloudy_snowthunderstorm_2',   'Cloudy, snow thunderstorm',         'cloudy_snowthunderstorm_2_sun',   'cloudy_snowthunderstorm_2_moon',   'forecast'],
-  [38, 'overcast_snowthunderstorm_1', 'Overcast, light snow thunderstorm', 'overcast_snowthunderstorm_1',     'overcast_snowthunderstorm_1',      'current, forecast'],
-  [39, 'overcast_snowthunderstorm_2', 'Overcast, snow thunderstorm',       'overcast_snowthunderstorm_2',     'overcast_snowthunderstorm_2',      'current, forecast'],
-  [40, 'overcast_snowthunderstorm_3', 'Overcast, severe snow thunderstorm','overcast_snowthunderstorm_3',     'overcast_snowthunderstorm_3',      'current, forecast'],
-
-  // --- Fog ---
-  [41, 'cloudy_fog',   'Foggy, partly clear', 'cloudy_fog_sun',  'cloudy_fog_moon',  'current, forecast'],
-  [42, 'overcast_fog', 'Fog',                 'overcast_fog',    'overcast_fog',     'current, forecast'],
-
-  // --- Hail ---
-  [43, 'overcast_hail_1', 'Overcast, light hail',  'overcast_hail_1', 'overcast_hail_1', 'current, forecast'],
-  [44, 'overcast_hail_2', 'Overcast, hail',         'overcast_hail_2', 'overcast_hail_2', 'current, forecast'],
-  [45, 'overcast_hail_3', 'Overcast, heavy hail',   'overcast_hail_3', 'overcast_hail_3', 'current, forecast'],
+  // [nr, code, context_key]
+  // Cloud Cover
+  [1,  'clear',                      'both'],
+  [2,  'fair',                       'both'],
+  [3,  'cloudy',                     'both'],
+  [4,  'overcast',                   'both'],
+  // Showers
+  [5,  'cloudy_shower_1',            'forecast'],
+  [6,  'cloudy_shower_2',            'forecast'],
+  [7,  'overcast_shower_1',          'both'],
+  [8,  'overcast_shower_2',          'both'],
+  [9,  'overcast_shower_3',          'both'],
+  // Rain
+  [10, 'cloudy_rain_1',              'forecast'],
+  [11, 'cloudy_rain_2',              'forecast'],
+  [12, 'overcast_rain_1',            'both'],
+  [13, 'overcast_rain_2',            'both'],
+  [14, 'overcast_rain_3',            'both'],
+  // Sleet
+  [15, 'cloudy_sleet_1',             'forecast'],
+  [16, 'cloudy_sleet_2',             'forecast'],
+  [17, 'overcast_sleet_1',           'both'],
+  [18, 'overcast_sleet_2',           'both'],
+  [19, 'overcast_sleet_3',           'both'],
+  // Snow
+  [20, 'cloudy_snow_1',              'forecast'],
+  [21, 'cloudy_snow_2',              'forecast'],
+  [22, 'overcast_snow_1',            'both'],
+  [23, 'overcast_snow_2',            'both'],
+  [24, 'overcast_snow_3',            'both'],
+  // Freezing Rain
+  [25, 'cloudy_freezingrain_1',      'forecast'],
+  [26, 'cloudy_freezingrain_2',      'forecast'],
+  [27, 'overcast_freezingrain_1',    'both'],
+  [28, 'overcast_freezingrain_2',    'both'],
+  [29, 'overcast_freezingrain_3',    'both'],
+  // Thunderstorm
+  [30, 'cloudy_thunderstorm_1',      'forecast'],
+  [31, 'cloudy_thunderstorm_2',      'forecast'],
+  [32, 'overcast_thunderstorm_1',    'both'],
+  [33, 'overcast_thunderstorm_2',    'both'],
+  [34, 'overcast_thunderstorm_3',    'both'],
+  // Snow Thunderstorm
+  [35, 'cloudy_snowthunderstorm_1',  'forecast'],
+  [36, 'cloudy_snowthunderstorm_2',  'forecast'],
+  [37, 'overcast_snowthunderstorm_1','both'],
+  [38, 'overcast_snowthunderstorm_2','both'],
+  [39, 'overcast_snowthunderstorm_3','both'],
+  // Fog
+  [40, 'cloudy_fog',                 'both'],
+  [41, 'overcast_fog',               'both'],
+  // Hail
+  [42, 'overcast_hail_1',            'both'],
+  [43, 'overcast_hail_2',            'both'],
+  [44, 'overcast_hail_3',            'both'],
+  // Special
+  [45, 'no_data',                    'both'],
 ];
 
 const CATEGORIES = [
-  { title: '☁️ Cloud Cover Only (no precipitation)', codes: [1, 2, 3, 4, 5] },
-  { title: '🌧️ Showers (shower)',                    codes: [6, 7, 8, 9, 10] },
-  { title: '🌦️ Rain (rain)',                          codes: [11, 12, 13, 14, 15] },
-  { title: '🌨️ Sleet (sleet)',                        codes: [16, 17, 18, 19, 20] },
-  { title: '❄️ Snow (snow)',                           codes: [21, 22, 23, 24, 25] },
-  { title: '🌧️ Freezing Rain (freezingrain)',         codes: [26, 27, 28, 29, 30] },
-  { title: '⛈️ Thunderstorm (thunderstorm)',          codes: [31, 32, 33, 34, 35] },
-  { title: '⛈️ Snow Thunderstorm (snowthunderstorm)', codes: [36, 37, 38, 39, 40] },
-  { title: '🌫️ Fog (fog)',                            codes: [41, 42] },
-  { title: '🌨️ Hail (hail)',                          codes: [43, 44, 45] },
+  { key: '☁️ Cloud Cover',        codes: [1, 2, 3, 4] },
+  { key: '🌦️ Showers',            codes: [5, 6, 7, 8, 9] },
+  { key: '🌧️ Rain',                codes: [10, 11, 12, 13, 14] },
+  { key: '🌨️ Sleet',               codes: [15, 16, 17, 18, 19] },
+  { key: '❄️ Snow',                codes: [20, 21, 22, 23, 24] },
+  { key: '🌧️ Freezing Rain',       codes: [25, 26, 27, 28, 29] },
+  { key: '⛈️ Thunderstorm',        codes: [30, 31, 32, 33, 34] },
+  { key: '⛈️ Snow Thunderstorm',   codes: [35, 36, 37, 38, 39] },
+  { key: '🌫️ Fog',                 codes: [40, 41] },
+  { key: '🌨️ Hail',                codes: [42, 43, 44] },
+  { key: '❓ Special',             codes: [45] },
 ];
 
-// Helper: is this a night symbol (has _moon suffix)?
-function isNightSymbol(sym) {
-  return sym && sym.endsWith('_moon');
-}
-
-// Helper: is this a cloudy/clear/fair symbol (moon phases apply)?
-function moonPhasesApply(sym) {
-  if (!sym) return false;
-  return isNightSymbol(sym) && !sym.startsWith('overcast');
-}
-
 // ---------------------------------------------------------------------------
-// Icon loading
+// State
 // ---------------------------------------------------------------------------
 
+let lang = {};
+let iconMapping = null;
+let iconSize = 48;
 let iconsetPath = '';
+let bgColor = '#ffffff';
 
-function iconUrl(symbolName) {
-  return `${iconsetPath}${symbolName}.svg`;
+// ---------------------------------------------------------------------------
+// Plugin base path detection
+// ---------------------------------------------------------------------------
+
+function getPluginBase() {
+  const pathParts = window.location.pathname.split('/');
+  const pluginsIdx = pathParts.indexOf('plugins');
+  if (pluginsIdx !== -1 && pathParts[pluginsIdx + 1]) {
+    return '/plugins/' + pathParts[pluginsIdx + 1];
+  }
+  return '';
 }
 
-function iconUrlPng(symbolName) {
-  return `${iconsetPath}${symbolName}.png`;
+const pluginBase = getPluginBase();
+
+// ---------------------------------------------------------------------------
+// URL parameters
+// ---------------------------------------------------------------------------
+
+const urlParams = new URLSearchParams(window.location.search);
+
+// Sanitize: only allow alphanumeric chars (plus hyphen/underscore) to prevent path traversal
+function sanitizeParam(val, fallback) {
+  if (!val) return fallback;
+  return /^[a-zA-Z0-9_-]+$/.test(val) ? val : fallback;
 }
 
-function makeIconEl(symbolName, label) {
+const urlLang = sanitizeParam((urlParams.get('lang') || 'en').toLowerCase(), 'en');
+const urlIconset = sanitizeParam(urlParams.get('iconset'), 'naturalistic');
+
+// ---------------------------------------------------------------------------
+// Load language JSON
+// ---------------------------------------------------------------------------
+
+async function loadLang(langCode) {
+  const supported = ['en', 'de', 'nl', 'es', 'sk'];
+  const code = supported.includes(langCode) ? langCode : 'en';
+  try {
+    const resp = await fetch(pluginBase + '/lang-' + code + '.json');
+    if (resp.ok) {
+      lang = await resp.json();
+    }
+  } catch (e) {
+    lang = {};
+  }
+}
+
+function t(key) {
+  return lang[key] || key;
+}
+
+function tDesc(code) {
+  if (lang.weather_descriptions && lang.weather_descriptions[code]) {
+    return lang.weather_descriptions[code];
+  }
+  return code;
+}
+
+function tMoonPhase(phaseIdx) {
+  const key = 'moon_phase_' + phaseIdx;
+  return lang[key] || ('Phase ' + phaseIdx);
+}
+
+// ---------------------------------------------------------------------------
+// Load icon mapping
+// ---------------------------------------------------------------------------
+
+async function loadIconMapping(iconset) {
+  try {
+    const resp = await fetch(pluginBase + '/icons/' + iconset + '/icon_mapping.json');
+    if (resp.ok) {
+      iconMapping = await resp.json();
+      return true;
+    }
+  } catch (e) {}
+  iconMapping = null;
+  return false;
+}
+
+// ---------------------------------------------------------------------------
+// Icon building
+// ---------------------------------------------------------------------------
+
+function buildIconPath(filename) {
+  return iconsetPath + filename;
+}
+
+function phaseFilename(baseFilename, phaseIdx, ext) {
+  // e.g. "clear_moon.png" + phase 0 → "clear_moon_0q.png"
+  const base = baseFilename.slice(0, -ext.length);
+  return base + '_' + phaseIdx + 'q' + ext;
+}
+
+function makeIcon(filename, tooltipLines) {
   const wrapper = document.createElement('div');
   wrapper.className = 'icon-wrapper';
-  wrapper.title = symbolName;
+  wrapper.style.background = bgColor;
+
+  // Tooltip
+  const tooltip = document.createElement('div');
+  tooltip.className = 'tooltip';
+  tooltip.innerHTML = tooltipLines.join('<br>');
+  wrapper.appendChild(tooltip);
 
   const img = document.createElement('img');
-  img.src = iconUrl(symbolName);
-  img.alt = symbolName;
-
-  // Fallback: try .png if .svg fails
+  img.width = iconSize;
+  img.height = iconSize;
+  img.style.width = iconSize + 'px';
+  img.style.height = iconSize + 'px';
+  img.src = buildIconPath(filename);
+  img.alt = filename;
   img.onerror = function() {
-    if (!this.src.endsWith('.png')) {
-      this.src = iconUrlPng(symbolName);
-    } else {
-      // Replace with missing placeholder
-      const missing = document.createElement('div');
-      missing.className = 'icon-missing';
-      missing.textContent = '?';
-      missing.title = symbolName + ' (not found)';
-      wrapper.replaceChild(missing, img);
-    }
+    const missing = document.createElement('div');
+    missing.className = 'icon-missing';
+    missing.style.width = iconSize + 'px';
+    missing.style.height = iconSize + 'px';
+    missing.textContent = '?';
+    wrapper.replaceChild(missing, img);
   };
-
   wrapper.appendChild(img);
-
-  if (label) {
-    const lbl = document.createElement('div');
-    lbl.className = 'phase-label';
-    lbl.textContent = label;
-    wrapper.appendChild(lbl);
-  }
 
   return wrapper;
 }
 
-// ---------------------------------------------------------------------------
-// Render
-// ---------------------------------------------------------------------------
+function renderIconCell(code) {
+  const cell = document.createElement('td');
+  cell.className = 'icon-cell-td';
 
-function renderSymbolNames(daySymbol, nightSymbol) {
   const container = document.createElement('div');
-  container.className = 'symbol-names';
+  container.className = 'icon-cell';
+  cell.appendChild(container);
 
-  const isOvercast = daySymbol && !daySymbol.endsWith('_sun');
-  const sameSymbol = daySymbol === nightSymbol;
-
-  if (isOvercast && sameSymbol) {
-    // Neutral overcast: base symbol + optional variants
-    const baseTag = document.createElement('span');
-    baseTag.className = 'symbol-tag neutral';
-    baseTag.textContent = daySymbol;
-    container.appendChild(baseTag);
-
-    // Optional variants
-    const sunTag = document.createElement('span');
-    sunTag.className = 'symbol-tag';
-    sunTag.textContent = daySymbol + '_sun (opt.)';
-    container.appendChild(sunTag);
-
-    const moonTag = document.createElement('span');
-    moonTag.className = 'symbol-tag night';
-    moonTag.textContent = daySymbol + '_moon (opt.)';
-    container.appendChild(moonTag);
-  } else {
-    if (daySymbol) {
-      const tag = document.createElement('span');
-      tag.className = 'symbol-tag';
-      tag.textContent = daySymbol;
-      container.appendChild(tag);
-    }
-    if (nightSymbol && !isOvercast) {
-      const tag = document.createElement('span');
-      tag.className = 'symbol-tag night';
-      tag.textContent = nightSymbol;
-      container.appendChild(tag);
-
-      // Show moon phase variants note if applicable
-      if (moonPhasesApply(nightSymbol)) {
-        const phaseTag = document.createElement('span');
-        phaseTag.className = 'symbol-tag phase';
-        phaseTag.textContent = nightSymbol + '_0q … _4q';
-        container.appendChild(phaseTag);
-      }
-    }
-  }
-
-  return container;
-}
-
-function renderIconCell(daySymbol, nightSymbol, rowId) {
-  const cell = document.createElement('div');
-  cell.className = 'icon-cell';
-
-  if (!iconsetPath) {
-    cell.textContent = '–';
+  if (!iconMapping) {
+    container.textContent = '–';
     return cell;
   }
 
-  const isOvercast = daySymbol && !daySymbol.endsWith('_sun');
-  const sameSymbol = daySymbol === nightSymbol;
+  const ext = '.' + (iconMapping.format || 'png');
+  const moonPhases = iconMapping.moon_phases || 0;
+  const codeEntry = iconMapping.icons && iconMapping.icons[code];
 
-  if (isOvercast && sameSymbol) {
-    // Show base symbol
-    cell.appendChild(makeIconEl(daySymbol, null));
-  } else {
-    if (daySymbol) {
-      cell.appendChild(makeIconEl(daySymbol, 'Day'));
-    }
-    if (nightSymbol && !isOvercast) {
-      cell.appendChild(makeIconEl(nightSymbol, 'Night'));
+  if (!codeEntry) {
+    container.textContent = '–';
+    return cell;
+  }
 
-      if (moonPhasesApply(nightSymbol)) {
-        // Add expand button for moon phases
-        const btn = document.createElement('span');
-        btn.className = 'toggle-btn';
-        btn.textContent = '🌙 phases';
-        btn.setAttribute('aria-expanded', 'false');
+  // Day icon
+  if (codeEntry.icon_day) {
+    const tooltip = [
+      '<b>' + t('hover_day') + '</b>',
+      t('hover_filename') + ': ' + codeEntry.icon_day
+    ];
+    container.appendChild(makeIcon(codeEntry.icon_day, tooltip));
+  }
 
-        const phaseRow = document.createElement('div');
-        phaseRow.className = 'phase-icons-row';
-        phaseRow.id = 'phases-' + rowId;
-
-        let loaded = false;
-        btn.addEventListener('click', function() {
-          const visible = phaseRow.classList.toggle('visible');
-          btn.setAttribute('aria-expanded', visible ? 'true' : 'false');
-          if (visible && !loaded) {
-            loaded = true;
-            MOON_PHASES.forEach(function(phase) {
-              const sym = nightSymbol + '_' + phase.suffix;
-              phaseRow.appendChild(makeIconEl(sym, phase.label));
-            });
-          }
-        });
-
-        cell.appendChild(btn);
-        cell.appendChild(phaseRow);
+  // Night icon(s)
+  if (codeEntry.icon_night) {
+    if (moonPhases > 0) {
+      // Show phase variants
+      for (let i = 0; i < moonPhases; i++) {
+        const phaseFile = phaseFilename(codeEntry.icon_night, i, ext);
+        const tooltip = [
+          '<b>' + t('hover_night') + '</b>',
+          t('hover_moon_phase') + ': ' + tMoonPhase(i),
+          t('hover_filename') + ': ' + phaseFile
+        ];
+        container.appendChild(makeIcon(phaseFile, tooltip));
       }
+    } else {
+      // Single night icon
+      const tooltip = [
+        '<b>' + t('hover_night') + '</b>',
+        t('hover_filename') + ': ' + codeEntry.icon_night
+      ];
+      container.appendChild(makeIcon(codeEntry.icon_night, tooltip));
     }
   }
 
   return cell;
 }
+
+// ---------------------------------------------------------------------------
+// Table building
+// ---------------------------------------------------------------------------
 
 function buildTable(codes) {
   const table = document.createElement('table');
@@ -483,43 +535,53 @@ function buildTable(codes) {
   const thead = document.createElement('thead');
   thead.innerHTML = `<tr>
     <th class="nr">Nr</th>
-    <th>Weather Code</th>
-    <th>Symbol Name(s)</th>
-    <th>Description</th>
-    <th>Symbol</th>
+    <th>${t('col_code')}</th>
+    <th>${t('col_description')}</th>
+    <th>${t('col_icon_day')} / ${t('col_icon_night')}</th>
+    <th>${t('col_context')}</th>
   </tr>`;
   table.appendChild(thead);
 
   const tbody = document.createElement('tbody');
+  const byNr = {};
+  WEATHER_CODES.forEach(function(row) { byNr[row[0]] = row; });
 
-  codes.forEach(function(row) {
-    const [nr, weatherCode, description, daySymbol, nightSymbol] = row;
+  codes.forEach(function(nr) {
+    const row = byNr[nr];
+    if (!row) return;
+    const [rowNr, code, ctxKey] = row;
+
     const tr = document.createElement('tr');
 
     const tdNr = document.createElement('td');
     tdNr.className = 'nr';
-    tdNr.textContent = nr;
+    tdNr.textContent = rowNr;
 
     const tdCode = document.createElement('td');
     tdCode.className = 'code';
-    tdCode.textContent = weatherCode;
-
-    const tdSymbol = document.createElement('td');
-    tdSymbol.className = 'symbol';
-    tdSymbol.appendChild(renderSymbolNames(daySymbol, nightSymbol));
+    tdCode.textContent = code;
 
     const tdDesc = document.createElement('td');
     tdDesc.className = 'desc';
-    tdDesc.textContent = description;
+    tdDesc.textContent = tDesc(code);
 
-    const tdIcon = document.createElement('td');
-    tdIcon.appendChild(renderIconCell(daySymbol, nightSymbol, nr));
+    const tdIcon = renderIconCell(code);
+
+    const tdCtx = document.createElement('td');
+    tdCtx.className = 'ctx';
+    if (ctxKey === 'forecast') {
+      tdCtx.textContent = t('context_forecast');
+    } else if (ctxKey === 'current') {
+      tdCtx.textContent = t('context_current');
+    } else {
+      tdCtx.textContent = t('context_both');
+    }
 
     tr.appendChild(tdNr);
     tr.appendChild(tdCode);
-    tr.appendChild(tdSymbol);
     tr.appendChild(tdDesc);
     tr.appendChild(tdIcon);
+    tr.appendChild(tdCtx);
 
     tbody.appendChild(tr);
   });
@@ -528,34 +590,14 @@ function buildTable(codes) {
   return table;
 }
 
+// ---------------------------------------------------------------------------
+// Render
+// ---------------------------------------------------------------------------
+
 function render() {
-  const params = new URLSearchParams(window.location.search);
-  const iconset = params.get('iconset') || '';
-
-  const badge = document.getElementById('iconset-badge');
-  const notice = document.getElementById('no-iconset-notice');
   const content = document.getElementById('content');
+  content.innerHTML = '';
 
-  if (!iconset) {
-    badge.textContent = 'No icon set selected';
-    notice.style.display = '';
-    return;
-  }
-
-  badge.textContent = 'Icon set: ' + iconset;
-
-  // Build the icon path: try to detect the plugin path from current URL
-  // The page lives at /plugins/LBPPLUGINDIR/htmlauth/... or /plugins/LBPPLUGINDIR/html/...
-  // Icons live at /plugins/LBPPLUGINDIR/icons/<iconset>/
-  const pathParts = window.location.pathname.split('/');
-  let pluginBase = '';
-  const pluginsIdx = pathParts.indexOf('plugins');
-  if (pluginsIdx !== -1 && pathParts[pluginsIdx + 1]) {
-    pluginBase = '/plugins/' + pathParts[pluginsIdx + 1];
-  }
-  iconsetPath = (pluginBase ? pluginBase : '') + '/icons/' + iconset + '/';
-
-  // Build categories
   const byNr = {};
   WEATHER_CODES.forEach(function(row) { byNr[row[0]] = row; });
 
@@ -564,16 +606,101 @@ function render() {
     section.className = 'category-section';
 
     const h2 = document.createElement('h2');
-    h2.textContent = cat.title;
+    h2.textContent = cat.key;
     section.appendChild(h2);
 
-    const rows = cat.codes.map(function(nr) { return byNr[nr]; }).filter(Boolean);
-    section.appendChild(buildTable(rows));
+    section.appendChild(buildTable(cat.codes));
     content.appendChild(section);
   });
 }
 
-render();
+function applyTranslations() {
+  document.getElementById('hdr-title').textContent = '☁️ ' + t('weathercodes_title');
+  document.getElementById('hdr-subtitle').textContent = t('weathercodes_subtitle');
+  document.getElementById('lbl-iconset').textContent = t('label_iconset') + ':';
+  document.getElementById('lbl-bg').textContent = t('label_background') + ':';
+  document.getElementById('lbl-size').textContent = t('label_icon_size') + ':';
+  document.getElementById('lbl-lang').textContent = t('label_language') + ':';
+
+  // Translate background options
+  const bgSel = document.getElementById('bg-select');
+  Array.from(bgSel.options).forEach(function(opt) {
+    const key = opt.getAttribute('data-key');
+    if (key && lang[key]) opt.text = lang[key];
+  });
+}
+
+function updateIconSizes() {
+  document.querySelectorAll('.icon-wrapper img').forEach(function(img) {
+    img.style.width = iconSize + 'px';
+    img.style.height = iconSize + 'px';
+    img.width = iconSize;
+    img.height = iconSize;
+  });
+  document.querySelectorAll('.icon-missing').forEach(function(el) {
+    el.style.width = iconSize + 'px';
+    el.style.height = iconSize + 'px';
+  });
+  document.getElementById('size-display').textContent = iconSize + 'px';
+}
+
+function updateBgColors() {
+  document.querySelectorAll('.icon-wrapper').forEach(function(el) {
+    el.style.background = bgColor;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+
+async function init() {
+  // Set UI from URL params
+  const iconsetSel = document.getElementById('iconset-select');
+  iconsetSel.value = urlIconset;
+  if (!iconsetSel.value) iconsetSel.value = 'naturalistic';
+
+  const langSel = document.getElementById('lang-select');
+  langSel.value = urlLang;
+  if (!langSel.value) langSel.value = 'en';
+
+  // Load language
+  await loadLang(langSel.value);
+  applyTranslations();
+
+  // Load icon mapping
+  const currentIconset = iconsetSel.value;
+  iconsetPath = pluginBase + '/icons/' + currentIconset + '/';
+  await loadIconMapping(currentIconset);
+
+  render();
+
+  // Event listeners
+  iconsetSel.addEventListener('change', async function() {
+    const sel = this.value;
+    iconsetPath = pluginBase + '/icons/' + sel + '/';
+    await loadIconMapping(sel);
+    render();
+  });
+
+  document.getElementById('bg-select').addEventListener('change', function() {
+    bgColor = this.value;
+    updateBgColors();
+  });
+
+  document.getElementById('size-slider').addEventListener('input', function() {
+    iconSize = parseInt(this.value, 10);
+    updateIconSizes();
+  });
+
+  langSel.addEventListener('change', async function() {
+    await loadLang(this.value);
+    applyTranslations();
+    render();
+  });
+}
+
+init();
 </script>
 </body>
 </html>
