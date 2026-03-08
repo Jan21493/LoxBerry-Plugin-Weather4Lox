@@ -1205,19 +1205,30 @@
 													</tr>
 													<tr>
 														<td width="25%">
-															<label id="labeltheme"><TMPL_VAR SETTINGS.LABEL_THEME> / <TMPL_VAR SETTINGS.LABEL_ICONSET></label>
+															<label id="labeltheme"><TMPL_VAR SETTINGS.LABEL_THEME></label>
 														</td>
 														<td width="50%">
-															<table border="0" width="100%"><tr>
-																<td width="50%"><TMPL_VAR THEME></td>
-																<td width="50%"><TMPL_VAR ICONSET></td>
-															</tr></table>
+															<TMPL_VAR THEME>
 														</td>
 														<td width="5%">
 															&nbsp;
 														</td>
 														<td width="20%">
+															<font size="-1"><TMPL_VAR SETTINGS.HINT_THEME></font>
+														</td>
+													</tr>
+													<tr>
+														<td width="25%">
+															<label id="labelihconset"><TMPL_VAR SETTINGS.LABEL_ICONSET></label>
+														</td>
+														<td width="50%">
+															<TMPL_VAR ICONSET>
+														</td>
+														<td width="5%">
 															&nbsp;
+														</td>
+														<td width="20%">
+															<font size="-1"><TMPL_VAR SETTINGS.HINT_ICONSET></font>
 														</td>
 													</tr>
 													<tr>
@@ -1249,6 +1260,7 @@
 											<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="./index.cgi?form=3"><TMPL_VAR SETTINGS.BUTTON_CANCEL></a>
 												<a href="#" data-role="button" id="preview1" data-inline="true" data-mini="true" onClick="preview();"><TMPL_VAR SETTINGS.LABEL_PREVIEW></a>
 												<button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SETTINGS.BUTTON_SAVE></button>
+												<a href="#" data-role="button" data-inline="true" data-mini="true" data-icon="info" onClick="openWeathercodes();"><TMPL_VAR SETTINGS.BUTTON_WEATHERCODES></a>
 										</center>
 									</form>
 									</p>
@@ -1263,6 +1275,12 @@
 									function preview() {
 										var url = './show.cgi?theme=' + $('#theme').val() + '&iconset=' + $('#iconset').val() + '&lang=' + $('#themelang').val();
 										window.open(url, 'NewWindow');
+									}
+
+									// Open Weathercodes page
+									function openWeathercodes() {
+										var url = '/plugins/<TMPL_VAR LBPPLUGINDIR>/weathercodes.html?lang=' + encodeURIComponent($('#themelang').val()) + '&iconset=' + encodeURIComponent($('#iconset').val());
+										window.open(url, '_blank');
 									}
 
 									// Cloud Emu Testlink
