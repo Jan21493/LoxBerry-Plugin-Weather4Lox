@@ -1,186 +1,231 @@
 {
   "set_name": "naturalistic",
   "format": "png",
-  "moon_phases": 5,
   "icons": {
     "clear": {
-      "icon_day": "clear_sun.png",
-      "icon_night": "clear_moon.png"
+      "icon_day": "clear_day.png",
+      "icon_night": "clear_night.png",
+      "moon_phases": 5
     },
     "fair": {
-      "icon_day": "fair_sun.png",
-      "icon_night": "fair_moon.png"
+      "icon_day": "fair_day.png",
+      "icon_night": "fair_night.png",
+      "moon_phases": 5
     },
     "cloudy": {
-      "icon_day": "cloudy_sun.png",
-      "icon_night": "cloudy_moon.png"
+      "icon_day": "cloudy_day.png",
+      "icon_night": "cloudy_night.png",
+      "moon_phases": 5
     },
     "overcast": {
-      "icon_day": "overcast_sun.png",
-      "icon_night": "overcast_moon.png"
+      "icon_day": "overcast_day.png",
+      "icon_night": "overcast_night.png",
+      "moon_phases": 0
     },
     "cloudy_shower_1": {
-      "icon_day": "cloudy_shower_1_sun.png",
-      "icon_night": "cloudy_shower_1_moon.png"
+      "icon_day": "cloudy_shower_1_day.png",
+      "icon_night": "cloudy_shower_1_night.png",
+      "moon_phases": 5
     },
     "cloudy_shower_2": {
-      "icon_day": "cloudy_shower_2_sun.png",
-      "icon_night": "cloudy_shower_2_moon.png"
+      "icon_day": "cloudy_shower_2_day.png",
+      "icon_night": "cloudy_shower_2_night.png",
+      "moon_phases": 5
     },
     "overcast_shower_1": {
-      "icon_day": "overcast_shower_1_sun.png",
-      "icon_night": "overcast_shower_1_moon.png"
+      "icon_day": "overcast_shower_1_day.png",
+      "icon_night": "overcast_shower_1_night.png",
+      "moon_phases": 0
     },
     "overcast_shower_2": {
-      "icon_day": "overcast_shower_2_sun.png",
-      "icon_night": "overcast_shower_2_moon.png"
+      "icon_day": "overcast_shower_2_day.png",
+      "icon_night": "overcast_shower_2_night.png",
+      "moon_phases": 0
     },
     "overcast_shower_3": {
-      "icon_day": "overcast_shower_3_sun.png",
-      "icon_night": "overcast_shower_3_moon.png"
+      "icon_day": "overcast_shower_3_day.png",
+      "icon_night": "overcast_shower_3_night.png",
+      "moon_phases": 0
     },
     "cloudy_rain_1": {
-      "icon_day": "cloudy_rain_1_sun.png",
-      "icon_night": "cloudy_rain_1_moon.png"
+      "icon_day": "cloudy_rain_1_day.png",
+      "icon_night": "cloudy_rain_1_night.png",
+      "moon_phases": 5
     },
     "cloudy_rain_2": {
-      "icon_day": "cloudy_rain_2_sun.png",
-      "icon_night": "cloudy_rain_2_moon.png"
+      "icon_day": "cloudy_rain_2_day.png",
+      "icon_night": "cloudy_rain_2_night.png",
+      "moon_phases": 5
     },
     "overcast_rain_1": {
-      "icon_day": "overcast_rain_1_sun.png",
-      "icon_night": "overcast_rain_1_moon.png"
+      "icon_day": "overcast_rain_1_day.png",
+      "icon_night": "overcast_rain_1_night.png",
+      "moon_phases": 0
     },
     "overcast_rain_2": {
-      "icon_day": "overcast_rain_2_sun.png",
-      "icon_night": "overcast_rain_2_moon.png"
+      "icon_day": "overcast_rain_2_day.png",
+      "icon_night": "overcast_rain_2_night.png",
+      "moon_phases": 0
     },
     "overcast_rain_3": {
-      "icon_day": "overcast_rain_3_sun.png",
-      "icon_night": "overcast_rain_3_moon.png"
+      "icon_day": "overcast_rain_3_day.png",
+      "icon_night": "overcast_rain_3_night.png",
+      "moon_phases": 0
     },
     "cloudy_sleet_1": {
-      "icon_day": "cloudy_sleet_1_sun.png",
-      "icon_night": "cloudy_sleet_1_moon.png"
+      "icon_day": "cloudy_sleet_1_day.png",
+      "icon_night": "cloudy_sleet_1_night.png",
+      "moon_phases": 5
     },
     "cloudy_sleet_2": {
-      "icon_day": "cloudy_sleet_2_sun.png",
-      "icon_night": "cloudy_sleet_2_moon.png"
+      "icon_day": "cloudy_sleet_2_day.png",
+      "icon_night": "cloudy_sleet_2_night.png",
+      "moon_phases": 5
     },
     "overcast_sleet_1": {
-      "icon_day": "overcast_sleet_1_sun.png",
-      "icon_night": "overcast_sleet_1_moon.png"
+      "icon_day": "overcast_sleet_1_day.png",
+      "icon_night": "overcast_sleet_1_night.png",
+      "moon_phases": 0
     },
     "overcast_sleet_2": {
-      "icon_day": "overcast_sleet_2_sun.png",
-      "icon_night": "overcast_sleet_2_moon.png"
+      "icon_day": "overcast_sleet_2_day.png",
+      "icon_night": "overcast_sleet_2_night.png",
+      "moon_phases": 0
     },
     "overcast_sleet_3": {
-      "icon_day": "overcast_sleet_3_sun.png",
-      "icon_night": "overcast_sleet_3_moon.png"
+      "icon_day": "overcast_sleet_3_day.png",
+      "icon_night": "overcast_sleet_3_night.png",
+      "moon_phases": 0
     },
     "cloudy_snow_1": {
-      "icon_day": "cloudy_snow_1_sun.png",
-      "icon_night": "cloudy_snow_1_moon.png"
+      "icon_day": "cloudy_snow_1_day.png",
+      "icon_night": "cloudy_snow_1_night.png",
+      "moon_phases": 5
     },
     "cloudy_snow_2": {
-      "icon_day": "cloudy_snow_2_sun.png",
-      "icon_night": "cloudy_snow_2_moon.png"
+      "icon_day": "cloudy_snow_2_day.png",
+      "icon_night": "cloudy_snow_2_night.png",
+      "moon_phases": 5
     },
     "overcast_snow_1": {
-      "icon_day": "overcast_snow_1_sun.png",
-      "icon_night": "overcast_snow_1_moon.png"
+      "icon_day": "overcast_snow_1_day.png",
+      "icon_night": "overcast_snow_1_night.png",
+      "moon_phases": 0
     },
     "overcast_snow_2": {
-      "icon_day": "overcast_snow_2_sun.png",
-      "icon_night": "overcast_snow_2_moon.png"
+      "icon_day": "overcast_snow_2_day.png",
+      "icon_night": "overcast_snow_2_night.png",
+      "moon_phases": 0
     },
     "overcast_snow_3": {
-      "icon_day": "overcast_snow_3_sun.png",
-      "icon_night": "overcast_snow_3_moon.png"
+      "icon_day": "overcast_snow_3_day.png",
+      "icon_night": "overcast_snow_3_night.png",
+      "moon_phases": 0
     },
     "cloudy_freezingrain_1": {
-      "icon_day": "cloudy_freezingrain_1_sun.png",
-      "icon_night": "cloudy_freezingrain_1_moon.png"
+      "icon_day": "cloudy_freezingrain_1_day.png",
+      "icon_night": "cloudy_freezingrain_1_night.png",
+      "moon_phases": 5
     },
     "cloudy_freezingrain_2": {
-      "icon_day": "cloudy_freezingrain_2_sun.png",
-      "icon_night": "cloudy_freezingrain_2_moon.png"
+      "icon_day": "cloudy_freezingrain_2_day.png",
+      "icon_night": "cloudy_freezingrain_2_night.png",
+      "moon_phases": 5
     },
     "overcast_freezingrain_1": {
-      "icon_day": "overcast_freezingrain_1_sun.png",
-      "icon_night": "overcast_freezingrain_1_moon.png"
+      "icon_day": "overcast_freezingrain_1_day.png",
+      "icon_night": "overcast_freezingrain_1_night.png",
+      "moon_phases": 0
     },
     "overcast_freezingrain_2": {
-      "icon_day": "overcast_freezingrain_2_sun.png",
-      "icon_night": "overcast_freezingrain_2_moon.png"
+      "icon_day": "overcast_freezingrain_2_day.png",
+      "icon_night": "overcast_freezingrain_2_night.png",
+      "moon_phases": 0
     },
     "overcast_freezingrain_3": {
-      "icon_day": "overcast_freezingrain_3_sun.png",
-      "icon_night": "overcast_freezingrain_3_moon.png"
+      "icon_day": "overcast_freezingrain_3_day.png",
+      "icon_night": "overcast_freezingrain_3_night.png",
+      "moon_phases": 0
     },
     "cloudy_thunderstorm_1": {
-      "icon_day": "cloudy_thunderstorm_1_sun.png",
-      "icon_night": "cloudy_thunderstorm_1_moon.png"
+      "icon_day": "cloudy_thunderstorm_1_day.png",
+      "icon_night": "cloudy_thunderstorm_1_night.png",
+      "moon_phases": 5
     },
     "cloudy_thunderstorm_2": {
-      "icon_day": "cloudy_thunderstorm_2_sun.png",
-      "icon_night": "cloudy_thunderstorm_2_moon.png"
+      "icon_day": "cloudy_thunderstorm_2_day.png",
+      "icon_night": "cloudy_thunderstorm_2_night.png",
+      "moon_phases": 5
     },
     "overcast_thunderstorm_1": {
-      "icon_day": "overcast_thunderstorm_1_sun.png",
-      "icon_night": "overcast_thunderstorm_1_moon.png"
+      "icon_day": "overcast_thunderstorm_1_day.png",
+      "icon_night": "overcast_thunderstorm_1_night.png",
+      "moon_phases": 0
     },
     "overcast_thunderstorm_2": {
-      "icon_day": "overcast_thunderstorm_2_sun.png",
-      "icon_night": "overcast_thunderstorm_2_moon.png"
+      "icon_day": "overcast_thunderstorm_2_day.png",
+      "icon_night": "overcast_thunderstorm_2_night.png",
+      "moon_phases": 0
     },
     "overcast_thunderstorm_3": {
-      "icon_day": "overcast_thunderstorm_3_sun.png",
-      "icon_night": "overcast_thunderstorm_3_moon.png"
+      "icon_day": "overcast_thunderstorm_3_day.png",
+      "icon_night": "overcast_thunderstorm_3_night.png",
+      "moon_phases": 0
     },
     "cloudy_snowthunderstorm_1": {
-      "icon_day": "cloudy_snowthunderstorm_1_sun.png",
-      "icon_night": "cloudy_snowthunderstorm_1_moon.png"
+      "icon_day": "cloudy_snowthunderstorm_1_day.png",
+      "icon_night": "cloudy_snowthunderstorm_1_night.png",
+      "moon_phases": 5
     },
     "cloudy_snowthunderstorm_2": {
-      "icon_day": "cloudy_snowthunderstorm_2_sun.png",
-      "icon_night": "cloudy_snowthunderstorm_2_moon.png"
+      "icon_day": "cloudy_snowthunderstorm_2_day.png",
+      "icon_night": "cloudy_snowthunderstorm_2_night.png",
+      "moon_phases": 5
     },
     "overcast_snowthunderstorm_1": {
-      "icon_day": "overcast_snowthunderstorm_1_sun.png",
-      "icon_night": "overcast_snowthunderstorm_1_moon.png"
+      "icon_day": "overcast_snowthunderstorm_1_day.png",
+      "icon_night": "overcast_snowthunderstorm_1_night.png",
+      "moon_phases": 0
     },
     "overcast_snowthunderstorm_2": {
-      "icon_day": "overcast_snowthunderstorm_2_sun.png",
-      "icon_night": "overcast_snowthunderstorm_2_moon.png"
+      "icon_day": "overcast_snowthunderstorm_2_day.png",
+      "icon_night": "overcast_snowthunderstorm_2_night.png",
+      "moon_phases": 0
     },
     "overcast_snowthunderstorm_3": {
-      "icon_day": "overcast_snowthunderstorm_3_sun.png",
-      "icon_night": "overcast_snowthunderstorm_3_moon.png"
+      "icon_day": "overcast_snowthunderstorm_3_day.png",
+      "icon_night": "overcast_snowthunderstorm_3_night.png",
+      "moon_phases": 0
     },
     "cloudy_fog": {
-      "icon_day": "cloudy_fog_sun.png",
-      "icon_night": "cloudy_fog_moon.png"
+      "icon_day": "cloudy_fog_day.png",
+      "icon_night": "cloudy_fog_night.png",
+      "moon_phases": 5
     },
     "overcast_fog": {
-      "icon_day": "overcast_fog_sun.png",
-      "icon_night": "overcast_fog_moon.png"
+      "icon_day": "overcast_fog_day.png",
+      "icon_night": "overcast_fog_night.png",
+      "moon_phases": 0
     },
     "overcast_hail_1": {
-      "icon_day": "overcast_hail_1_sun.png",
-      "icon_night": "overcast_hail_1_moon.png"
+      "icon_day": "overcast_hail_1_day.png",
+      "icon_night": "overcast_hail_1_night.png",
+      "moon_phases": 0
     },
     "overcast_hail_2": {
-      "icon_day": "overcast_hail_2_sun.png",
-      "icon_night": "overcast_hail_2_moon.png"
+      "icon_day": "overcast_hail_2_day.png",
+      "icon_night": "overcast_hail_2_night.png",
+      "moon_phases": 0
     },
     "overcast_hail_3": {
-      "icon_day": "overcast_hail_3_sun.png",
-      "icon_night": "overcast_hail_3_moon.png"
+      "icon_day": "overcast_hail_3_day.png",
+      "icon_night": "overcast_hail_3_night.png",
+      "moon_phases": 0
     },
     "no_data": {
-      "icon_day": "no_data_sun.png"
+      "icon_day": "no_data_day.png",
+      "icon_night": "no_data_night.png",
+      "moon_phases": 0
     }
   }
 }

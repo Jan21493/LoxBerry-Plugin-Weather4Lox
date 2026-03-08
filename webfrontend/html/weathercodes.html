@@ -227,15 +227,33 @@
     <label id="lbl-bg">Background:</label>
     <select id="bg-select">
       <option value="#ffffff" data-key="bg_white">White</option>
+      <option value="#f5f5dc" data-key="bg_beige">Beige</option>
+      <option value="#c0c0c0" data-key="bg_silver">Silver</option>
       <option value="#e0e0e0" data-key="bg_light_gray">Light Gray</option>
+      <option value="#666666" data-key="bg_gray">Gray</option>
       <option value="#404040" data-key="bg_dark_gray">Dark Gray</option>
       <option value="#000000" data-key="bg_black">Black</option>
-      <option value="#1565c0" data-key="bg_blue">Blue</option>
+      <option value="#800000" data-key="bg_maroon">Maroon</option>
+      <option value="#dc3545" data-key="bg_red">Red</option>
+      <option value="#795548" data-key="bg_brown">Brown</option>
+      <option value="#fd7e14" data-key="bg_orange">Orange</option>
+      <option value="#ffc107" data-key="bg_yellow">Yellow</option>
+      <option value="#ffd700" data-key="bg_gold">Gold</option>
+      <option value="#cddc39" data-key="bg_lime">Lime</option>
+      <option value="#808000" data-key="bg_olive">Olive</option>
+      <option value="#28a745" data-key="bg_green">Green</option>
+      <option value="#008080" data-key="bg_teal">Teal</option>
+      <option value="#17a2b8" data-key="bg_cyan">Cyan</option>
+      <option value="#1565c0" data-key="bg_light_blue">Light Blue</option>
+      <option value="#0074D9" data-key="bg_blue">Blue</option>
+      <option value="#001f3f" data-key="bg_navy">Navy</option>
+      <option value="#6f42c1" data-key="bg_purple">Purple</option>
+      <option value="#e83e8c" data-key="bg_pink">Pink</option>
     </select>
   </div>
   <div class="control-group">
     <label id="lbl-size">Icon Size:</label>
-    <input type="range" id="size-slider" min="32" max="256" value="48" step="8">
+    <input type="range" id="size-slider" min="32" max="1024" value="48" step="8">
     <span class="size-display" id="size-display">48px</span>
   </div>
   <div class="control-group">
@@ -481,13 +499,14 @@ function renderIconCell(code) {
   }
 
   const ext = '.' + (iconMapping.format || 'png');
-  const moonPhases = iconMapping.moon_phases || 0;
   const codeEntry = iconMapping.icons && iconMapping.icons[code];
 
   if (!codeEntry) {
     container.textContent = '–';
     return cell;
   }
+
+  const moonPhases = codeEntry.moon_phases || 0;
 
   // Day icon
   if (codeEntry.icon_day) {

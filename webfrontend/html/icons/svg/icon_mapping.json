@@ -1,186 +1,185 @@
 {
   "set_name": "svg",
   "format": "svg",
-  "moon_phases": 0,
   "icons": {
     "clear": {
-      "icon_day": "clear_sun.svg",
-      "icon_night": "clear_moon.svg"
+      "icon_day": "clear.svg",
+      "icon_night": "clear.svg"
     },
     "fair": {
-      "icon_day": "fair_sun.svg",
-      "icon_night": "fair_moon.svg"
+      "icon_day": "mostlysunny.svg",
+      "icon_night": "mostlysunny.svg"
     },
     "cloudy": {
-      "icon_day": "cloudy_sun.svg",
-      "icon_night": "cloudy_moon.svg"
+      "icon_day": "cloudy.svg",
+      "icon_night": "cloudy.svg"
     },
     "overcast": {
-      "icon_day": "overcast_sun.svg",
-      "icon_night": "overcast_moon.svg"
+      "icon_day": "overcast.svg",
+      "icon_night": "overcast.svg"
     },
     "cloudy_shower_1": {
-      "icon_day": "cloudy_shower_1_sun.svg",
-      "icon_night": "cloudy_shower_1_moon.svg"
+      "icon_day": "rain.svg",
+      "icon_night": "rain.svg"
     },
     "cloudy_shower_2": {
-      "icon_day": "cloudy_shower_2_sun.svg",
-      "icon_night": "cloudy_shower_2_moon.svg"
+      "icon_day": "rain.svg",
+      "icon_night": "rain.svg"
     },
     "overcast_shower_1": {
-      "icon_day": "overcast_shower_1_sun.svg",
-      "icon_night": "overcast_shower_1_moon.svg"
+      "icon_day": "rain.svg",
+      "icon_night": "rain.svg"
     },
     "overcast_shower_2": {
-      "icon_day": "overcast_shower_2_sun.svg",
-      "icon_night": "overcast_shower_2_moon.svg"
+      "icon_day": "rain.svg",
+      "icon_night": "rain.svg"
     },
     "overcast_shower_3": {
-      "icon_day": "overcast_shower_3_sun.svg",
-      "icon_night": "overcast_shower_3_moon.svg"
+      "icon_day": "rain.svg",
+      "icon_night": "rain.svg"
     },
     "cloudy_rain_1": {
-      "icon_day": "cloudy_rain_1_sun.svg",
-      "icon_night": "cloudy_rain_1_moon.svg"
+      "icon_day": "rain.svg",
+      "icon_night": "rain.svg"
     },
     "cloudy_rain_2": {
-      "icon_day": "cloudy_rain_2_sun.svg",
-      "icon_night": "cloudy_rain_2_moon.svg"
+      "icon_day": "rain.svg",
+      "icon_night": "rain.svg"
     },
     "overcast_rain_1": {
-      "icon_day": "overcast_rain_1_sun.svg",
-      "icon_night": "overcast_rain_1_moon.svg"
+      "icon_day": "rain.svg",
+      "icon_night": "rain.svg"
     },
     "overcast_rain_2": {
-      "icon_day": "overcast_rain_2_sun.svg",
-      "icon_night": "overcast_rain_2_moon.svg"
+      "icon_day": "rain.svg",
+      "icon_night": "rain.svg"
     },
     "overcast_rain_3": {
-      "icon_day": "overcast_rain_3_sun.svg",
-      "icon_night": "overcast_rain_3_moon.svg"
+      "icon_day": "rain.svg",
+      "icon_night": "rain.svg"
     },
     "cloudy_sleet_1": {
-      "icon_day": "cloudy_sleet_1_sun.svg",
-      "icon_night": "cloudy_sleet_1_moon.svg"
+      "icon_day": "sleet.svg",
+      "icon_night": "sleet.svg"
     },
     "cloudy_sleet_2": {
-      "icon_day": "cloudy_sleet_2_sun.svg",
-      "icon_night": "cloudy_sleet_2_moon.svg"
+      "icon_day": "sleet.svg",
+      "icon_night": "sleet.svg"
     },
     "overcast_sleet_1": {
-      "icon_day": "overcast_sleet_1_sun.svg",
-      "icon_night": "overcast_sleet_1_moon.svg"
+      "icon_day": "sleet.svg",
+      "icon_night": "sleet.svg"
     },
     "overcast_sleet_2": {
-      "icon_day": "overcast_sleet_2_sun.svg",
-      "icon_night": "overcast_sleet_2_moon.svg"
+      "icon_day": "sleet.svg",
+      "icon_night": "sleet.svg"
     },
     "overcast_sleet_3": {
-      "icon_day": "overcast_sleet_3_sun.svg",
-      "icon_night": "overcast_sleet_3_moon.svg"
+      "icon_day": "sleet.svg",
+      "icon_night": "sleet.svg"
     },
     "cloudy_snow_1": {
-      "icon_day": "cloudy_snow_1_sun.svg",
-      "icon_night": "cloudy_snow_1_moon.svg"
+      "icon_day": "snow.svg",
+      "icon_night": "snow.svg"
     },
     "cloudy_snow_2": {
-      "icon_day": "cloudy_snow_2_sun.svg",
-      "icon_night": "cloudy_snow_2_moon.svg"
+      "icon_day": "snow.svg",
+      "icon_night": "snow.svg"
     },
     "overcast_snow_1": {
-      "icon_day": "overcast_snow_1_sun.svg",
-      "icon_night": "overcast_snow_1_moon.svg"
+      "icon_day": "snow.svg",
+      "icon_night": "snow.svg"
     },
     "overcast_snow_2": {
-      "icon_day": "overcast_snow_2_sun.svg",
-      "icon_night": "overcast_snow_2_moon.svg"
+      "icon_day": "snow.svg",
+      "icon_night": "snow.svg"
     },
     "overcast_snow_3": {
-      "icon_day": "overcast_snow_3_sun.svg",
-      "icon_night": "overcast_snow_3_moon.svg"
+      "icon_day": "snow.svg",
+      "icon_night": "snow.svg"
     },
     "cloudy_freezingrain_1": {
-      "icon_day": "cloudy_freezingrain_1_sun.svg",
-      "icon_night": "cloudy_freezingrain_1_moon.svg"
+      "icon_day": "snow.svg",
+      "icon_night": "snow.svg"
     },
     "cloudy_freezingrain_2": {
-      "icon_day": "cloudy_freezingrain_2_sun.svg",
-      "icon_night": "cloudy_freezingrain_2_moon.svg"
+      "icon_day": "snow.svg",
+      "icon_night": "snow.svg"
     },
     "overcast_freezingrain_1": {
-      "icon_day": "overcast_freezingrain_1_sun.svg",
-      "icon_night": "overcast_freezingrain_1_moon.svg"
+      "icon_day": "snow.svg",
+      "icon_night": "snow.svg"
     },
     "overcast_freezingrain_2": {
-      "icon_day": "overcast_freezingrain_2_sun.svg",
-      "icon_night": "overcast_freezingrain_2_moon.svg"
+      "icon_day": "snow.svg",
+      "icon_night": "snow.svg"
     },
     "overcast_freezingrain_3": {
-      "icon_day": "overcast_freezingrain_3_sun.svg",
-      "icon_night": "overcast_freezingrain_3_moon.svg"
+      "icon_day": "snow.svg",
+      "icon_night": "snow.svg"
     },
     "cloudy_thunderstorm_1": {
-      "icon_day": "cloudy_thunderstorm_1_sun.svg",
-      "icon_night": "cloudy_thunderstorm_1_moon.svg"
+      "icon_day": "chancetstorms.svg",
+      "icon_night": "chancetstorms.svg"
     },
     "cloudy_thunderstorm_2": {
-      "icon_day": "cloudy_thunderstorm_2_sun.svg",
-      "icon_night": "cloudy_thunderstorm_2_moon.svg"
+      "icon_day": "tstorms.svg",
+      "icon_night": "tstorms.svg"
     },
     "overcast_thunderstorm_1": {
-      "icon_day": "overcast_thunderstorm_1_sun.svg",
-      "icon_night": "overcast_thunderstorm_1_moon.svg"
+      "icon_day": "chancetstorms.svg",
+      "icon_night": "chancetstorms.svg"
     },
     "overcast_thunderstorm_2": {
-      "icon_day": "overcast_thunderstorm_2_sun.svg",
-      "icon_night": "overcast_thunderstorm_2_moon.svg"
+      "icon_day": "tstorms.svg",
+      "icon_night": "tstorms.svg"
     },
     "overcast_thunderstorm_3": {
-      "icon_day": "overcast_thunderstorm_3_sun.svg",
-      "icon_night": "overcast_thunderstorm_3_moon.svg"
+      "icon_day": "tstorms.svg",
+      "icon_night": "tstorms.svg"
     },
     "cloudy_snowthunderstorm_1": {
-      "icon_day": "cloudy_snowthunderstorm_1_sun.svg",
-      "icon_night": "cloudy_snowthunderstorm_1_moon.svg"
+      "icon_day": "chancetstorms.svg",
+      "icon_night": "chancetstorms.svg"
     },
     "cloudy_snowthunderstorm_2": {
-      "icon_day": "cloudy_snowthunderstorm_2_sun.svg",
-      "icon_night": "cloudy_snowthunderstorm_2_moon.svg"
+      "icon_day": "tstorms.svg",
+      "icon_night": "tstorms.svg"
     },
     "overcast_snowthunderstorm_1": {
-      "icon_day": "overcast_snowthunderstorm_1_sun.svg",
-      "icon_night": "overcast_snowthunderstorm_1_moon.svg"
+      "icon_day": "chancetstorms.svg",
+      "icon_night": "chancetstorms.svg"
     },
     "overcast_snowthunderstorm_2": {
-      "icon_day": "overcast_snowthunderstorm_2_sun.svg",
-      "icon_night": "overcast_snowthunderstorm_2_moon.svg"
+      "icon_day": "tstorms.svg",
+      "icon_night": "tstorms.svg"
     },
     "overcast_snowthunderstorm_3": {
-      "icon_day": "overcast_snowthunderstorm_3_sun.svg",
-      "icon_night": "overcast_snowthunderstorm_3_moon.svg"
+      "icon_day": "tstorms.svg",
+      "icon_night": "tstorms.svg"
     },
     "cloudy_fog": {
-      "icon_day": "cloudy_fog_sun.svg",
-      "icon_night": "cloudy_fog_moon.svg"
+      "icon_day": "fog.svg",
+      "icon_night": "fog.svg"
     },
     "overcast_fog": {
-      "icon_day": "overcast_fog_sun.svg",
-      "icon_night": "overcast_fog_moon.svg"
+      "icon_day": "fog.svg",
+      "icon_night": "fog.svg"
     },
     "overcast_hail_1": {
-      "icon_day": "overcast_hail_1_sun.svg",
-      "icon_night": "overcast_hail_1_moon.svg"
+      "icon_day": "sleet.svg",
+      "icon_night": "sleet.svg"
     },
     "overcast_hail_2": {
-      "icon_day": "overcast_hail_2_sun.svg",
-      "icon_night": "overcast_hail_2_moon.svg"
+      "icon_day": "sleet.svg",
+      "icon_night": "sleet.svg"
     },
     "overcast_hail_3": {
-      "icon_day": "overcast_hail_3_sun.svg",
-      "icon_night": "overcast_hail_3_moon.svg"
+      "icon_day": "sleet.svg",
+      "icon_night": "sleet.svg"
     },
     "no_data": {
-      "icon_day": "no_data_sun.svg"
+      "icon_day": "no_data.svg"
     }
   }
 }
