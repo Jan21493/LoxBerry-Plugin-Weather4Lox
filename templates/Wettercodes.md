@@ -14,7 +14,9 @@ Dieses Dokument beschreibt ein granulares, herstellerübergreifendes Wettercode-
 | **Führendes System** | WetterOnline |
 | **Gemappte Systeme** | OpenWeatherMap (OWM), Loxone Wetter (Picto-Codes) |
 | **Anzahl Wettercodes** | 45 |
-| **Anzahl unique Symbole** | 62 |
+| **Anzahl unique Symbole (Basis)** | 62 |
+| **Optionale overcast Tag/Nacht-Varianten** | +52 (je 26 × `_sun` und `_moon`) |
+| **Optionale Mondphasen-Varianten (max. 5 Phasen)** | +90 (18 Nachtsymbole × 5 Phasen) |
 
 ---
 
@@ -44,13 +46,13 @@ Der Wettercode ist eine zusammengesetzte, eindeutige ID nach folgendem Schema:
 | `clear` | Wolkenlos | 0–5 % | ✅ `_sun` / `_moon` |
 | `fair` | Leicht bewölkt | 5–30 % | ✅ `_sun` / `_moon` |
 | `cloudy` | Bewölkt | 30–70 % | ✅ `_sun` / `_moon` |
-| `overcast` | Bedeckt | 70–100 % | ❌ (identisch Tag/Nacht) |
+| `overcast` | Bedeckt | 70–100 % | ⚪ `_sun` / `_moon` _(optional)_ |
 
 ### 2.3 Niederschlagsarten
 
 | Code | Bedeutung | Kombination mit `cloudy` | Kombination mit `overcast` |
 |---|---|---|---|
-| `shower` | Schauer (kurz, stoßartig) | ✅ Intensität 1–2 | ✅ Intensität 1–3 |
+| `shower` | Schauer (kurz) | ✅ Intensität 1–2 | ✅ Intensität 1–3 |
 | `rain` | Regen (anhaltend) | ✅ Intensität 1–2 | ✅ Intensität 1–3 |
 | `sleet` | Schneeregen | ✅ Intensität 1–2 | ✅ Intensität 1–3 |
 | `snow` | Schnee | ✅ Intensität 1–2 | ✅ Intensität 1–3 |
@@ -91,13 +93,13 @@ Für aktuelles Wetter (`current`) werden Niederschlagssymbole immer ohne Sonne/M
 | `clear` | `_sun` | `_moon` | `clear_sun` | `clear_moon` |
 | `fair` | `_sun` | `_moon` | `fair_sun` | `fair_moon` |
 | `cloudy` | `_sun` | `_moon` | `cloudy_rain_1_sun` | `cloudy_rain_1_moon` |
-| `overcast` | _(kein Suffix)_ | _(kein Suffix)_ | `overcast_rain_1` | `overcast_rain_1` |
+| `overcast` | `_sun` _(optional)_ | `_moon` _(optional)_ | `overcast_rain_1` oder `overcast_rain_1_sun` | `overcast_rain_1` oder `overcast_rain_1_moon` |
+
+> **Hinweis:** Das Tag-/Nacht-Suffix bei `overcast` ist optional, da Sonne / Mond im Symbol nicht sichtbar ist. Es kann aber z.B. unterschiedlich hell sein.
 
 ### 3.2 Eindeutigkeit
 
-{warning:title=Wichtig}
-Jeder Symbolname ist systemweit eindeutig. Es dürfen keine zwei unterschiedlichen Symbole mit demselben Namen existieren. Ebenso darf kein identisches Symbol unter verschiedenen Namen geführt werden.
-{warning}
+Jeder Symbolname ist systemweit eindeutig. Es soll kein identisches Symbol unter verschiedenen Namen geführt werden. In jedem Set mit Wettersymbolen muss es ein Mapping der Wettercodes auf die vorhandenen Symbole geben.
 
 ---
 
@@ -108,6 +110,8 @@ WetterOnline verwendet drei Symboltabellen, die wie folgt auf das Wettercode-Sys
 ### 4.1 Tabelle 1 – Tagsymbole (mit Sonne)
 
 _Verwendung: Vorhersagen tagsüber (`forecast_hourly`, `forecast_daily`)_
+
+> Die Symbole mit Sonne gibt es für die Bewölkungsgrade `clear`, `fair` und `cloudy`, da im Symbol entweder eine Sonne oder ein Mond hinter Wolken zu sehen ist. Es gibt bis zu 2 Intensitäten.
 
 | Nr | WetterOnline Beschreibung | Wettercode | Symbolname |
 |---|---|---|---|
@@ -134,6 +138,8 @@ _Verwendung: Vorhersagen tagsüber (`forecast_hourly`, `forecast_daily`)_
 
 _Verwendung: Vorhersagen nachts (`forecast_hourly`, `forecast_daily`)_
 
+> Die Symbole mit Mond gibt es für die Bewölkungsgrade `clear`, `fair` und `cloudy`, da im Symbol entweder eine Sonne oder ein Mond hinter Wolken zu sehen ist. Es gibt bis zu 2 Intensitäten.
+
 | Nr | WetterOnline Beschreibung | Wettercode | Symbolname |
 |---|---|---|---|
 | 1 | klar | `clear_night` | `clear_moon` |
@@ -155,38 +161,75 @@ _Verwendung: Vorhersagen nachts (`forecast_hourly`, `forecast_daily`)_
 | 17 | wolkig, Schneegewitter | `cloudy_snowthunderstorm_2` | `cloudy_snowthunderstorm_2_moon` |
 | 18 | Nebel, teils aufgelockert | `cloudy_fog` | `cloudy_fog_moon` |
 
-### 4.3 Tabelle 3 – Neutrale Symbole (ohne Sonne/Mond)
+### 4.3 Tabelle 3 – Symbole bei bedecktem Himmel (Overcast)
 
 _Verwendung: Aktuelles Wetter (`current`) und Vorhersagen (`forecast_hourly`, `forecast_daily`)_
 
-| Nr | WetterOnline Beschreibung | Wettercode | Symbolname | Intensität |
-|---|---|---|---|---|
-| 1 | bedeckt | `overcast` | `overcast` | – |
-| 2 | leichte Schauer | `overcast_shower_1` | `overcast_shower_1` | 1 |
-| 3 | Schauer | `overcast_shower_2` | `overcast_shower_2` | 2 |
-| 4 | starke Schauer | `overcast_shower_3` | `overcast_shower_3` | 3 |
-| 5 | leichter Regen | `overcast_rain_1` | `overcast_rain_1` | 1 |
-| 6 | Regen | `overcast_rain_2` | `overcast_rain_2` | 2 |
-| 7 | Starkregen | `overcast_rain_3` | `overcast_rain_3` | 3 |
-| 8 | leichter Schneeregen | `overcast_sleet_1` | `overcast_sleet_1` | 1 |
-| 9 | Schneeregen | `overcast_sleet_2` | `overcast_sleet_2` | 2 |
-| 10 | starker Schneeregen | `overcast_sleet_3` | `overcast_sleet_3` | 3 |
-| 11 | leichter Schneefall | `overcast_snow_1` | `overcast_snow_1` | 1 |
-| 12 | Schneefall | `overcast_snow_2` | `overcast_snow_2` | 2 |
-| 13 | starker Schneefall | `overcast_snow_3` | `overcast_snow_3` | 3 |
-| 14 | leichter gefrierender Regen | `overcast_freezingrain_1` | `overcast_freezingrain_1` | 1 |
-| 15 | gefrierender Regen | `overcast_freezingrain_2` | `overcast_freezingrain_2` | 2 |
-| 16 | starker gefrierender Regen | `overcast_freezingrain_3` | `overcast_freezingrain_3` | 3 |
-| 17 | leichtes Gewitter | `overcast_thunderstorm_1` | `overcast_thunderstorm_1` | 1 |
-| 18 | Gewitter | `overcast_thunderstorm_2` | `overcast_thunderstorm_2` | 2 |
-| 19 | schweres Gewitter | `overcast_thunderstorm_3` | `overcast_thunderstorm_3` | 3 |
-| 20 | leichtes Schneegewitter | `overcast_snowthunderstorm_1` | `overcast_snowthunderstorm_1` | 1 |
-| 21 | Schneegewitter | `overcast_snowthunderstorm_2` | `overcast_snowthunderstorm_2` | 2 |
-| 22 | schweres Schneegewitter | `overcast_snowthunderstorm_3` | `overcast_snowthunderstorm_3` | 3 |
-| 23 | Nebel | `overcast_fog` | `overcast_fog` | – |
-| 24 | leichter Hagel | `overcast_hail_1` | `overcast_hail_1` | 1 |
-| 25 | Hagel | `overcast_hail_2` | `overcast_hail_2` | 2 |
-| 26 | schwerer Hagel | `overcast_hail_3` | `overcast_hail_3` | 3 |
+> Der Bewölkungsgrad 'overcast' zeigt keine Sonne / Mond an. Es gibt drei Intensitäten 1, 2 und 3. Die Symbole können für Tag und Nacht unterschiedlich sein, um z.B. eine unterschiedliche Helligkeit oder Tag / Nacht Szene darzustellen.
+
+| Nr | WetterOnline Beschreibung | Wettercode | Symbolname (Basis) | Optionale Varianten (Tag / Nacht) | Intensität |
+|---|---|---|---|---|---|
+| 1 | bedeckt | `overcast` | `overcast` | `overcast_sun` / `overcast_moon` | – |
+| 2 | leichte Schauer | `overcast_shower_1` | `overcast_shower_1` | `overcast_shower_1_sun` / `overcast_shower_1_moon` | 1 |
+| 3 | Schauer | `overcast_shower_2` | `overcast_shower_2` | `overcast_shower_2_sun` / `overcast_shower_2_moon` | 2 |
+| 4 | starke Schauer | `overcast_shower_3` | `overcast_shower_3` | `overcast_shower_3_sun` / `overcast_shower_3_moon` | 3 |
+| 5 | leichter Regen | `overcast_rain_1` | `overcast_rain_1` | `overcast_rain_1_sun` / `overcast_rain_1_moon` | 1 |
+| 6 | Regen | `overcast_rain_2` | `overcast_rain_2` | `overcast_rain_2_sun` / `overcast_rain_2_moon` | 2 |
+| 7 | Starkregen | `overcast_rain_3` | `overcast_rain_3` | `overcast_rain_3_sun` / `overcast_rain_3_moon` | 3 |
+| 8 | leichter Schneeregen | `overcast_sleet_1` | `overcast_sleet_1` | `overcast_sleet_1_sun` / `overcast_sleet_1_moon` | 1 |
+| 9 | Schneeregen | `overcast_sleet_2` | `overcast_sleet_2` | `overcast_sleet_2_sun` / `overcast_sleet_2_moon` | 2 |
+| 10 | starker Schneeregen | `overcast_sleet_3` | `overcast_sleet_3` | `overcast_sleet_3_sun` / `overcast_sleet_3_moon` | 3 |
+| 11 | leichter Schneefall | `overcast_snow_1` | `overcast_snow_1` | `overcast_snow_1_sun` / `overcast_snow_1_moon` | 1 |
+| 12 | Schneefall | `overcast_snow_2` | `overcast_snow_2` | `overcast_snow_2_sun` / `overcast_snow_2_moon` | 2 |
+| 13 | starker Schneefall | `overcast_snow_3` | `overcast_snow_3` | `overcast_snow_3_sun` / `overcast_snow_3_moon` | 3 |
+| 14 | leichter gefrierender Regen | `overcast_freezingrain_1` | `overcast_freezingrain_1` | `overcast_freezingrain_1_sun` / `overcast_freezingrain_1_moon` | 1 |
+| 15 | gefrierender Regen | `overcast_freezingrain_2` | `overcast_freezingrain_2` | `overcast_freezingrain_2_sun` / `overcast_freezingrain_2_moon` | 2 |
+| 16 | starker gefrierender Regen | `overcast_freezingrain_3` | `overcast_freezingrain_3` | `overcast_freezingrain_3_sun` / `overcast_freezingrain_3_moon` | 3 |
+| 17 | leichtes Gewitter | `overcast_thunderstorm_1` | `overcast_thunderstorm_1` | `overcast_thunderstorm_1_sun` / `overcast_thunderstorm_1_moon` | 1 |
+| 18 | Gewitter | `overcast_thunderstorm_2` | `overcast_thunderstorm_2` | `overcast_thunderstorm_2_sun` / `overcast_thunderstorm_2_moon` | 2 |
+| 19 | schweres Gewitter | `overcast_thunderstorm_3` | `overcast_thunderstorm_3` | `overcast_thunderstorm_3_sun` / `overcast_thunderstorm_3_moon` | 3 |
+| 20 | leichtes Schneegewitter | `overcast_snowthunderstorm_1` | `overcast_snowthunderstorm_1` | `overcast_snowthunderstorm_1_sun` / `overcast_snowthunderstorm_1_moon` | 1 |
+| 21 | Schneegewitter | `overcast_snowthunderstorm_2` | `overcast_snowthunderstorm_2` | `overcast_snowthunderstorm_2_sun` / `overcast_snowthunderstorm_2_moon` | 2 |
+| 22 | schweres Schneegewitter | `overcast_snowthunderstorm_3` | `overcast_snowthunderstorm_3` | `overcast_snowthunderstorm_3_sun` / `overcast_snowthunderstorm_3_moon` | 3 |
+| 23 | Nebel | `overcast_fog` | `overcast_fog` | `overcast_fog_sun` / `overcast_fog_moon` | – |
+| 24 | leichter Hagel | `overcast_hail_1` | `overcast_hail_1` | `overcast_hail_1_sun` / `overcast_hail_1_moon` | 1 |
+| 25 | Hagel | `overcast_hail_2` | `overcast_hail_2` | `overcast_hail_2_sun` / `overcast_hail_2_moon` | 2 |
+| 26 | schwerer Hagel | `overcast_hail_3` | `overcast_hail_3` | `overcast_hail_3_sun` / `overcast_hail_3_moon` | 3 |
+
+### 4.4 Mondphasen (Moon Phases)
+
+_Verwendung: Nachtsymbole für Bewölkungsgrade `clear`, `fair` und `cloudy`_
+
+> Mondphasen erlauben die Darstellung der aktuellen Mondphase im Nachtsymbol. Das Mondphasen-Suffix wird **nach** dem `_moon`-Suffix angehängt, z.B. `clear_moon_2q` oder `cloudy_rain_1_moon_4q`.
+
+| Kürzel | Bedeutung |
+|---|---|
+| `0q` | Neumond |
+| `1q` | Einviertel Mond (Erstes Viertel) |
+| `2q` | Halbmond |
+| `3q` | Dreiviertel Mond (Letztes Viertel) |
+| `4q` | Vollmond |
+
+**Regeln:**
+- Mondphasen existieren **nur** für Bewölkungsgrade `clear`, `fair` und `cloudy` – **nicht** für `overcast`.
+- Mondphasen gelten **nur** für Nachtsymbole (Suffix `_moon`).
+- Das Mondphasen-Suffix wird nach `_moon` angehängt: z.B. `clear_moon_0q`, `fair_moon_2q`, `cloudy_rain_1_moon_4q`.
+- Ein Symbol-Set MUSS eine der folgenden Varianten verwenden:
+  - **5 Mondphasen**: `0q`, `1q`, `2q`, `3q`, `4q` (Neumond, Erstes Viertel, Halbmond, Letztes Viertel, Vollmond)
+  - **3 Mondphasen**: `0q`, `2q`, `4q` (Neumond, Halbmond, Vollmond)
+  - **1 Mondphase**: `1q`, `2q` oder `4q` (eine repräsentative Phase)
+- Wenn ein Symbol-Set Mondphasen verwendet, dient das Basissymbol `_moon` (ohne Phasensuffix) als Fallback.
+
+**Beispiele:**
+
+| Symbolname | Bedeutung |
+|---|---|
+| `clear_moon_0q` | Klar, Neumond |
+| `clear_moon_2q` | Klar, Halbmond |
+| `clear_moon_4q` | Klar, Vollmond |
+| `fair_moon_0q` | Heiter, Neumond |
+| `cloudy_rain_1_moon_2q` | Bewölkt, leichter Regen, Halbmond |
+| `cloudy_thunderstorm_2_moon_4q` | Bewölkt, Gewitter, Vollmond |
 
 ---
 
@@ -428,11 +471,19 @@ Jedes Symbol-Set definiert ein JSON-Mapping, das seine Bilddateien den Symbolnam
   "mapping": {
     "clear_sun": "mein_set/sunny.svg",
     "clear_moon": "mein_set/clear_night.svg",
+    "clear_moon_0q": "mein_set/clear_night_newmoon.svg",
+    "clear_moon_2q": "mein_set/clear_night_halfmoon.svg",
+    "clear_moon_4q": "mein_set/clear_night_fullmoon.svg",
     "fair_sun": "mein_set/partly_cloudy_day.svg",
     "fair_moon": "mein_set/partly_cloudy_night.svg",
+    "fair_moon_0q": "mein_set/partly_cloudy_night_newmoon.svg",
+    "fair_moon_2q": "mein_set/partly_cloudy_night_halfmoon.svg",
+    "fair_moon_4q": "mein_set/partly_cloudy_night_fullmoon.svg",
     "cloudy_sun": "mein_set/cloudy_day.svg",
     "cloudy_moon": "mein_set/cloudy_night.svg",
     "overcast": "mein_set/overcast.svg",
+    "overcast_sun": "mein_set/overcast_day.svg",
+    "overcast_moon": "mein_set/overcast_night.svg",
     "overcast_shower_1": "mein_set/light_shower.svg",
     "overcast_shower_2": "mein_set/shower.svg",
     "overcast_shower_3": "mein_set/heavy_shower.svg",
@@ -450,7 +501,10 @@ Jedes Symbol-Set definiert ein JSON-Mapping, das seine Bilddateien den Symbolnam
 | Tag (`_sun`) | `clear_sun`, `fair_sun`, `cloudy_sun`, `cloudy_fog_sun`, `cloudy_shower_1_sun`, `cloudy_shower_2_sun`, `cloudy_rain_1_sun`, `cloudy_rain_2_sun`, `cloudy_sleet_1_sun`, `cloudy_sleet_2_sun`, `cloudy_snow_1_sun`, `cloudy_snow_2_sun`, `cloudy_freezingrain_1_sun`, `cloudy_freezingrain_2_sun`, `cloudy_thunderstorm_1_sun`, `cloudy_thunderstorm_2_sun`, `cloudy_snowthunderstorm_1_sun`, `cloudy_snowthunderstorm_2_sun` | 18 |
 | Nacht (`_moon`) | `clear_moon`, `fair_moon`, `cloudy_moon`, `cloudy_fog_moon`, `cloudy_shower_1_moon`, `cloudy_shower_2_moon`, `cloudy_rain_1_moon`, `cloudy_rain_2_moon`, `cloudy_sleet_1_moon`, `cloudy_sleet_2_moon`, `cloudy_snow_1_moon`, `cloudy_snow_2_moon`, `cloudy_freezingrain_1_moon`, `cloudy_freezingrain_2_moon`, `cloudy_thunderstorm_1_moon`, `cloudy_thunderstorm_2_moon`, `cloudy_snowthunderstorm_1_moon`, `cloudy_snowthunderstorm_2_moon` | 18 |
 | Neutral (overcast) | `overcast`, `overcast_fog`, `overcast_shower_1`, `overcast_shower_2`, `overcast_shower_3`, `overcast_rain_1`, `overcast_rain_2`, `overcast_rain_3`, `overcast_sleet_1`, `overcast_sleet_2`, `overcast_sleet_3`, `overcast_snow_1`, `overcast_snow_2`, `overcast_snow_3`, `overcast_freezingrain_1`, `overcast_freezingrain_2`, `overcast_freezingrain_3`, `overcast_thunderstorm_1`, `overcast_thunderstorm_2`, `overcast_thunderstorm_3`, `overcast_snowthunderstorm_1`, `overcast_snowthunderstorm_2`, `overcast_snowthunderstorm_3`, `overcast_hail_1`, `overcast_hail_2`, `overcast_hail_3` | 26 |
-| **Gesamt** | | **62** |
+| **Gesamt (Basis)** | | **62** |
+| Optionale overcast Tag-Varianten (`_sun`) | `overcast_sun`, `overcast_fog_sun`, `overcast_shower_1_sun` … `overcast_hail_3_sun` | 26 |
+| Optionale overcast Nacht-Varianten (`_moon`) | `overcast_moon`, `overcast_fog_moon`, `overcast_shower_1_moon` … `overcast_hail_3_moon` | 26 |
+| Optionale Mondphasen (5-Phasen-Set, 18 Nachtsymbole × 5) | `clear_moon_0q` … `cloudy_snowthunderstorm_2_moon_4q` | 90 |
 
 ---
 
@@ -463,12 +517,15 @@ Jedes Symbol-Set definiert ein JSON-Mapping, das seine Bilddateien den Symbolnam
 | 4 | `overcast` + Niederschlag | In aktuellem Wetter (`current`) UND Vorhersagen |
 | 5 | `current` + Niederschlag | Immer `overcast` (WetterOnline Tabelle 3), alle 3 Intensitäten |
 | 6 | `clear_day` ≠ `clear_night` | Unterschiedliche Erläuterung: "Sonnig" vs. "Klar" |
-| 7 | Tag/Nacht-Suffixe | `_sun` / `_moon` nur bei `clear`, `fair`, `cloudy` |
-| 8 | `overcast`-Symbole | Identisch für Tag und Nacht, kein Suffix |
+| 7 | Tag/Nacht-Suffixe (Pflicht) | `_sun` / `_moon` bei `clear`, `fair`, `cloudy` |
+| 8 | `overcast`-Symbole Tag/Nacht | Optionaler `_sun` / `_moon` Suffix für Tag/Nacht-Differenzierung |
 | 9 | Eindeutigkeit | Jeder Symbolname ist systemweit eindeutig |
 | 10 | Führendes System | WetterOnline; OWM und Loxone werden gemappt |
 | 11 | Nebel | Kein Intensitätsgrad; `cloudy_fog` und `overcast_fog` |
 | 12 | Hagel | Nur `overcast`, mit 3 Intensitäten |
+| 13 | Mondphasen | Nur für `clear`, `fair`, `cloudy` Nachtsymbole (`_moon`); Suffix nach `_moon` z.B. `_moon_2q` |
+| 14 | Mondphasen-Varianten | Ein Set verwendet 5 (0q–4q), 3 (0q, 2q, 4q) oder 1 Phase; `_moon` ohne Suffix dient als Fallback |
+| 15 | Mondphasen bei `overcast` | Mondphasen existieren **nicht** für `overcast`-Symbole |
 
 ---
 
@@ -481,7 +538,9 @@ Jedes Symbol-Set definiert ein JSON-Mapping, das seine Bilddateien den Symbolnam
 | WetterOnline Tabelle 1 (Tag) | 18 Symbole |
 | WetterOnline Tabelle 2 (Nacht) | 18 Symbole |
 | WetterOnline Tabelle 3 (Neutral) | 26 Symbole |
-| Unique Symbolnamen gesamt | 62 |
+| Unique Symbolnamen gesamt (Basis) | 62 |
+| Optionale overcast Tag/Nacht-Varianten | +52 |
+| Optionale Mondphasen-Varianten (max. 5 Phasen) | +90 |
 | Niederschlagsarten | 9 |
 | Intensitätsstufen | 3 |
 | Bewölkungsgrade | 4 |
