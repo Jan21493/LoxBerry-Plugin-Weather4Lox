@@ -53,8 +53,11 @@
   "hover_moon_phase": "Maanfase",
   "hover_filename": "Bestandsnaam",
   "weather_descriptions": {
-    "clear": "Helder",
+    "clear": "Zonnig, Helder",
+    "clear_day": "Zonnig",
+    "clear_night": "Helder",
     "fair": "Licht bewolkt",
+    "partly_cloudy": "Deels bewolkt",
     "cloudy": "Bewolkt",
     "overcast": "Zwaar bewolkt",
     "cloudy_shower_1": "Bewolkt, lichte buien",

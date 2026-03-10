@@ -53,8 +53,11 @@
   "hover_moon_phase": "Fáza mesiaca",
   "hover_filename": "Názov súboru",
   "weather_descriptions": {
-    "clear": "Jasno",
-    "fair": "Čiastočne oblačno",
+    "clear": "Slnečno, jasno",
+    "clear_day": "Slnečno",
+    "clear_night": "Jasno",
+    "fair": "Malá oblačnosť",
+    "partly_cloudy": "Polooblačno",
     "cloudy": "Oblačno",
     "overcast": "Zamračené",
     "cloudy_shower_1": "Oblačno, slabé prehánky",

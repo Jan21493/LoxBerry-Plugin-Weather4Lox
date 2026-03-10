@@ -124,7 +124,7 @@
     .codes-table td.nr { width: 2.5rem; text-align: center; color: #888; font-size: 0.8rem; }
     .codes-table td.code { font-family: monospace; font-size: 0.82rem; color: #0d4a8a; white-space: nowrap; }
     .codes-table td.desc { color: #444; }
-    .codes-table td.ctx { font-size: 0.78rem; color: #666; white-space: nowrap; }
+    .codes-table td.remarks { font-size: 0.78rem; color: #666; white-space: nowrap; }
 
     .icon-cell {
       display: flex;
@@ -244,7 +244,7 @@
       <option value="#28a745" data-key="bg_green">Green</option>
       <option value="#008080" data-key="bg_teal">Teal</option>
       <option value="#17a2b8" data-key="bg_cyan">Cyan</option>
-      <option value="#1565c0" data-key="bg_light_blue">Light Blue</option>
+      <option value="#90d0ff" data-key="bg_light_blue">Light Blue</option>
       <option value="#0074D9" data-key="bg_blue">Blue</option>
       <option value="#001f3f" data-key="bg_navy">Navy</option>
       <option value="#6f42c1" data-key="bg_purple">Purple</option>
@@ -282,73 +282,74 @@ const WEATHER_CODES = [
   // Cloud Cover
   [1,  'clear',                      'both'],
   [2,  'fair',                       'both'],
-  [3,  'cloudy',                     'both'],
-  [4,  'overcast',                   'both'],
+  [3,  'partly_cloudy',              'both'],
+  [4,  'cloudy',                     'both'],
+  [5,  'overcast',                   'both'],
   // Showers
-  [5,  'cloudy_shower_1',            'forecast'],
-  [6,  'cloudy_shower_2',            'forecast'],
-  [7,  'overcast_shower_1',          'both'],
-  [8,  'overcast_shower_2',          'both'],
-  [9,  'overcast_shower_3',          'both'],
+  [10,  'cloudy_shower_1',            'forecast'],
+  [11,  'cloudy_shower_2',            'forecast'],
+  [12,  'overcast_shower_1',          'both'],
+  [13,  'overcast_shower_2',          'both'],
+  [14,  'overcast_shower_3',          'both'],
   // Rain
-  [10, 'cloudy_rain_1',              'forecast'],
-  [11, 'cloudy_rain_2',              'forecast'],
-  [12, 'overcast_rain_1',            'both'],
-  [13, 'overcast_rain_2',            'both'],
-  [14, 'overcast_rain_3',            'both'],
+  [20, 'cloudy_rain_1',              'forecast'],
+  [21, 'cloudy_rain_2',              'forecast'],
+  [22, 'overcast_rain_1',            'both'],
+  [23, 'overcast_rain_2',            'both'],
+  [24, 'overcast_rain_3',            'both'],
   // Sleet
-  [15, 'cloudy_sleet_1',             'forecast'],
-  [16, 'cloudy_sleet_2',             'forecast'],
-  [17, 'overcast_sleet_1',           'both'],
-  [18, 'overcast_sleet_2',           'both'],
-  [19, 'overcast_sleet_3',           'both'],
+  [30, 'cloudy_sleet_1',             'forecast'],
+  [31, 'cloudy_sleet_2',             'forecast'],
+  [32, 'overcast_sleet_1',           'both'],
+  [33, 'overcast_sleet_2',           'both'],
+  [34, 'overcast_sleet_3',           'both'],
   // Snow
-  [20, 'cloudy_snow_1',              'forecast'],
-  [21, 'cloudy_snow_2',              'forecast'],
-  [22, 'overcast_snow_1',            'both'],
-  [23, 'overcast_snow_2',            'both'],
-  [24, 'overcast_snow_3',            'both'],
+  [40, 'cloudy_snow_1',              'forecast'],
+  [41, 'cloudy_snow_2',              'forecast'],
+  [42, 'overcast_snow_1',            'both'],
+  [43, 'overcast_snow_2',            'both'],
+  [44, 'overcast_snow_3',            'both'],
   // Freezing Rain
-  [25, 'cloudy_freezingrain_1',      'forecast'],
-  [26, 'cloudy_freezingrain_2',      'forecast'],
-  [27, 'overcast_freezingrain_1',    'both'],
-  [28, 'overcast_freezingrain_2',    'both'],
-  [29, 'overcast_freezingrain_3',    'both'],
+  [50, 'cloudy_freezingrain_1',      'forecast'],
+  [51, 'cloudy_freezingrain_2',      'forecast'],
+  [52, 'overcast_freezingrain_1',    'both'],
+  [53, 'overcast_freezingrain_2',    'both'],
+  [54, 'overcast_freezingrain_3',    'both'],
   // Thunderstorm
-  [30, 'cloudy_thunderstorm_1',      'forecast'],
-  [31, 'cloudy_thunderstorm_2',      'forecast'],
-  [32, 'overcast_thunderstorm_1',    'both'],
-  [33, 'overcast_thunderstorm_2',    'both'],
-  [34, 'overcast_thunderstorm_3',    'both'],
+  [60, 'cloudy_thunderstorm_1',      'forecast'],
+  [61, 'cloudy_thunderstorm_2',      'forecast'],
+  [62, 'overcast_thunderstorm_1',    'both'],
+  [63, 'overcast_thunderstorm_2',    'both'],
+  [64, 'overcast_thunderstorm_3',    'both'],
   // Snow Thunderstorm
-  [35, 'cloudy_snowthunderstorm_1',  'forecast'],
-  [36, 'cloudy_snowthunderstorm_2',  'forecast'],
-  [37, 'overcast_snowthunderstorm_1','both'],
-  [38, 'overcast_snowthunderstorm_2','both'],
-  [39, 'overcast_snowthunderstorm_3','both'],
+  [70, 'cloudy_snowthunderstorm_1',  'forecast'],
+  [71, 'cloudy_snowthunderstorm_2',  'forecast'],
+  [72, 'overcast_snowthunderstorm_1','both'],
+  [73, 'overcast_snowthunderstorm_2','both'],
+  [74, 'overcast_snowthunderstorm_3','both'],
   // Fog
-  [40, 'cloudy_fog',                 'both'],
-  [41, 'overcast_fog',               'both'],
+  [80, 'cloudy_fog',                 'both'],
+  [81, 'overcast_fog',               'both'],
   // Hail
-  [42, 'overcast_hail_1',            'both'],
-  [43, 'overcast_hail_2',            'both'],
-  [44, 'overcast_hail_3',            'both'],
+  [82, 'overcast_hail_1',            'both'],
+  [83, 'overcast_hail_2',            'both'],
+  [84, 'overcast_hail_3',            'both'],
   // Special
-  [45, 'no_data',                    'both'],
+  [99, 'no_data',                    'both'],
 ];
 
 const CATEGORIES = [
-  { key: '☁️ Cloud Cover',        codes: [1, 2, 3, 4] },
-  { key: '🌦️ Showers',            codes: [5, 6, 7, 8, 9] },
-  { key: '🌧️ Rain',                codes: [10, 11, 12, 13, 14] },
-  { key: '🌨️ Sleet',               codes: [15, 16, 17, 18, 19] },
-  { key: '❄️ Snow',                codes: [20, 21, 22, 23, 24] },
-  { key: '🌧️ Freezing Rain',       codes: [25, 26, 27, 28, 29] },
-  { key: '⛈️ Thunderstorm',        codes: [30, 31, 32, 33, 34] },
-  { key: '⛈️ Snow Thunderstorm',   codes: [35, 36, 37, 38, 39] },
-  { key: '🌫️ Fog',                 codes: [40, 41] },
-  { key: '🌨️ Hail',                codes: [42, 43, 44] },
-  { key: '❓ Special',             codes: [45] },
+  { key: 'cloud_cover',        codes: [1, 2, 3, 4, 5] },
+  { key: 'shower',            codes: [10, 11, 12, 13, 14] },
+  { key: 'rain',                codes: [20, 21, 22, 23, 24] },
+  { key: 'sleet',               codes: [30, 31, 32, 33, 34] },
+  { key: 'snow',                codes: [40, 41, 42, 43, 44] },
+  { key: 'freezing_rain',       codes: [50, 51, 52, 53, 54] },
+  { key: 'thunderstorm',        codes: [60, 61, 62, 63, 64] },
+  { key: 'snow_thunderstorm',   codes: [70, 71, 72, 73, 74] },
+  { key: 'fog',                 codes: [80, 81] },
+  { key: 'hail',                codes: [82, 83, 84] },
+  { key: 'special',             codes: [99] },
 ];
 
 // ---------------------------------------------------------------------------
@@ -415,6 +416,20 @@ function t(key) {
 function tDesc(code) {
   if (lang.weather_descriptions && lang.weather_descriptions[code]) {
     return lang.weather_descriptions[code];
+  }
+  return code;
+}
+
+function tRemark(code) {
+  if (lang.weather_remarks && lang.weather_remarks[code]) {
+    return lang.weather_remarks[code];
+  }
+  return code;
+}
+
+function tCategory(code) {
+  if (lang.weather_categories && lang.weather_categories[code]) {
+    return lang.weather_categories[code];
   }
   return code;
 }
@@ -557,7 +572,7 @@ function buildTable(codes) {
     <th>${t('col_code')}</th>
     <th>${t('col_description')}</th>
     <th>${t('col_icon_day')} / ${t('col_icon_night')}</th>
-    <th>${t('col_context')}</th>
+    <th>${t('col_remarks')}</th>
   </tr>`;
   table.appendChild(thead);
 
@@ -568,7 +583,7 @@ function buildTable(codes) {
   codes.forEach(function(nr) {
     const row = byNr[nr];
     if (!row) return;
-    const [rowNr, code, ctxKey] = row;
+    const [rowNr, code, remarksKey] = row;
 
     const tr = document.createElement('tr');
 
@@ -586,21 +601,22 @@ function buildTable(codes) {
 
     const tdIcon = renderIconCell(code);
 
-    const tdCtx = document.createElement('td');
-    tdCtx.className = 'ctx';
-    if (ctxKey === 'forecast') {
-      tdCtx.textContent = t('context_forecast');
-    } else if (ctxKey === 'current') {
-      tdCtx.textContent = t('context_current');
+    const tdRemarks = document.createElement('td');
+    tdRemarks.className = 'remarks';
+    tdRemarks.textContent = tRemark(code);
+    if (remarksKey === 'forecast') {
+      tdRemarks.textContent += ' (' + t('context_forecast') + ')';
+    } else if (remarksKey === 'current') {
+      tdRemarks.textContent += ' (' + t('context_current') + ')';
     } else {
-      tdCtx.textContent = t('context_both');
+      tdRemarks.textContent += ' (' + t('context_both') + ')';
     }
 
     tr.appendChild(tdNr);
     tr.appendChild(tdCode);
     tr.appendChild(tdDesc);
     tr.appendChild(tdIcon);
-    tr.appendChild(tdCtx);
+    tr.appendChild(tdRemarks);
 
     tbody.appendChild(tr);
   });
@@ -625,7 +641,7 @@ function render() {
     section.className = 'category-section';
 
     const h2 = document.createElement('h2');
-    h2.textContent = cat.key;
+    h2.textContent = tCategory(cat.key);
     section.appendChild(h2);
 
     section.appendChild(buildTable(cat.codes));

@@ -12,6 +12,11 @@
       "icon_night": "fair_night.png",
       "moon_phases": 5
     },
+    "partly_cloudy": {
+      "icon_day": "partly_cloudy_day.png",
+      "icon_night": "partly_cloudy_night.png",
+      "moon_phases": 5
+    },
     "cloudy": {
       "icon_day": "cloudy_day.png",
       "icon_night": "cloudy_night.png",

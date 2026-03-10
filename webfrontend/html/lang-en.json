@@ -53,8 +53,11 @@
   "hover_moon_phase": "Moon Phase",
   "hover_filename": "Filename",
   "weather_descriptions": {
-    "clear": "Clear",
-    "fair": "Partly Cloudy",
+    "clear": "Sunny, Clear",
+    "clear_day": "Sunny",
+    "clear_night": "Clear",
+    "fair": "Fair",
+    "partly_cloudy": "Partly Cloudy",
     "cloudy": "Cloudy",
     "overcast": "Overcast",
     "cloudy_shower_1": "Cloudy, light showers",
