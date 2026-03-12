@@ -45,7 +45,10 @@ Plans:
   1. datatoloxone.pl liest Wetterdaten aus current.json / daily.json statt aus .dat-Dateien
   2. Loxone Miniserver empfangt identische UDP/MQTT-Werte wie vor der Migration (keine Regression bei Sensorwerten)
   3. datatoloxone.pl schlagt mit einer klaren Fehlermeldung fehl wenn JSON-Dateien nicht vorhanden sind
-**Plans**: TBD
+**Plans:** 1 plan
+
+Plans:
+- [ ] 02-01-PLAN.md — Migrate datatoloxone.pl from .dat to JSON (load infrastructure + all sections + cleanup)
 
 ### Phase 3: CGI JSON Endpoint
 **Goal**: show.cgi stellt Wetterdaten als JSON uber HTTP bereit, sodass Browser-Clients die Daten per Fetch laden konnen
@@ -89,7 +92,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. JSON Schema & Grabber Migration | 3/3 | Complete   | 2026-03-12 |
-| 2. Delivery Layer Migration | 0/TBD | Not started | - |
+| 2. Delivery Layer Migration | 0/1 | Planning complete | - |
 | 3. CGI JSON Endpoint | 0/TBD | Not started | - |
 | 4. ocean-live Theme Grundgerust | 0/TBD | Not started | - |
 | 5. Datenanbindung & Vollstandigkeit | 0/TBD | Not started | - |
