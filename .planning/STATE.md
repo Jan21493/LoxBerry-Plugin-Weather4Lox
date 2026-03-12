@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 01-01-PLAN.md (grabber_utils.pl JSON schema foundation)
-last_updated: "2026-03-12T21:03:03.664Z"
-last_activity: 2026-03-12 — Phase 1 context gathered (JSON schema structure, supplementary grabber scope, error handling, documentation)
+stopped_at: Completed 01-03-PLAN.md (supplementary grabbers JSON integration)
+last_updated: "2026-03-12T21:07:37.350Z"
+last_activity: 2026-03-12 — Plan 01-03 complete (supplementary grabbers JSON integration)
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_plans: 3
+  percent: 100
 ---
 
 # Project State
@@ -26,28 +26,28 @@ See: .planning/PROJECT.md (updated 2026-03-12)
 ## Current Position
 
 Phase: 1 of 5 (JSON Schema & Grabber Migration)
-Plan: 1 of 3 in current phase
-Status: In progress — 01-01 complete
-Last activity: 2026-03-12 — Plan 01-01 complete (grabber_utils.pl JSON schema foundation)
+Plan: 3 of 3 in current phase — ALL PLANS COMPLETE
+Status: Phase 1 complete — all 3 plans done
+Last activity: 2026-03-12 — Plan 01-03 complete (supplementary grabbers JSON integration)
 
-Progress: [███░░░░░░░] 33%
+Progress: [███████████] 100% (Phase 1)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 3 min
-- Total execution time: 0.05 hours
+- Total plans completed: 3
+- Average duration: 2 min
+- Total execution time: 0.1 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| Phase 01 | 1/3 | 3 min | 3 min |
+| Phase 01 | 3/3 | 7 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 3min
-- Trend: Baseline established
+- Last 5 plans: 3min, 2min, 2min
+- Trend: Fast execution
 
 *Updated after each plan completion*
 
@@ -65,6 +65,8 @@ Recent decisions affecting current work:
 - [Phase 01]: write_current_json_aq() added as dedicated helper for OpenMeteo AQ grabber (cleaner API than extending write_current_json)
 - [Phase 01]: period field retained explicitly in daily/hourly JSON arrays (self-describing over implicit array index)
 - [Phase 01]: generated_at uses system localtime (grabber runtime), data.datetime uses observation epoch+tz_long
+- [Phase 01]: pollen_*: use today_max values from pollen_result hash as current pollen level fields in aq_values
+- [Phase 01]: Legacy airquality_pollen.json preserved; write_current_json_aq added after it (dual-write philosophy)
 
 ### Pending Todos
 
@@ -72,11 +74,10 @@ None yet.
 
 ### Blockers/Concerns
 
-- JSON-Schema Design benotigt Analyse der bestehenden .dat-Felder (42 current / 40 daily / 36 hourly) — vor Phase 1 Planung
 - Ocean-Theme CSS (ocean.main.html) sollte vor Phase 4 Planung analysiert werden
 
 ## Session Continuity
 
-Last session: 2026-03-12T21:03:03.658Z
-Stopped at: Completed 01-01-PLAN.md (grabber_utils.pl JSON schema foundation)
+Last session: 2026-03-12T21:07:37.343Z
+Stopped at: Completed 01-03-PLAN.md (supplementary grabbers JSON integration)
 Resume file: None
