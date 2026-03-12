@@ -1,6 +1,7 @@
 {
   "set_name": "svg",
   "format": "svg",
+  "version": "1.0",
   "icons": {
     "clear": {
       "icon_day": "clear.svg",
@@ -9,6 +10,10 @@
     "fair": {
       "icon_day": "mostlysunny.svg",
       "icon_night": "mostlysunny.svg"
+    },
+    "partly_cloudy": {
+      "icon_day": "cloudy.svg",
+      "icon_night": "cloudy.svg"
     },
     "cloudy": {
       "icon_day": "cloudy.svg",
@@ -179,7 +184,8 @@
       "icon_night": "sleet.svg"
     },
     "no_data": {
-      "icon_day": "no_data.svg"
+      "icon_day": "no_data.png",
+      "icon_night": "no_data.png"
     }
   }
 }
