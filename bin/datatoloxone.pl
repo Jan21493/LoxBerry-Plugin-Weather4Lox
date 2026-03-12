@@ -32,6 +32,7 @@ use Net::MQTT::Simple;
 #use Data::Dumper;
 use Config::Simple;
 use File::HomeDir;
+use JSON::PP ();
 
 ##########################################################################
 # Read settings
@@ -83,6 +84,42 @@ LOGSTART "Weather4Lox DATATOLOXONE process started";
 LOGDEB "This is $0 Version $version";
 
 ##########################################################################
+# JSON helper subroutines
+##########################################################################
+
+sub load_json_file {
+    my ($path) = @_;
+    unless (-f $path) {
+        LOGCRIT "Required JSON file not found: $path";
+        LOGEND;
+        exit 1;
+    }
+    local $/;
+    open(my $fh, '<:raw', $path) or do {
+        LOGCRIT "Cannot open $path: $!";
+        LOGEND;
+        exit 1;
+    };
+    flock($fh, 1);  # LOCK_SH — shared read lock
+    my $raw = <$fh>;
+    flock($fh, 8);  # LOCK_UN
+    close($fh);
+    my $decoded = eval { JSON::PP->new->utf8->decode($raw) };
+    if ($@ || !$decoded) {
+        LOGCRIT "JSON parse error in $path: $@";
+        LOGEND;
+        exit 1;
+    }
+    return $decoded;
+}
+
+# Null-safe value helper: return -9999 for undef (JSON null) where Loxone expects it
+sub _jval {
+    my ($v) = @_;
+    return defined($v) ? $v : -9999;
+}
+
+##########################################################################
 # Main program
 ##########################################################################
 
@@ -110,60 +147,94 @@ my $dateref = DateTime->new(
 # MQTT
 &mqttconnect();
 
+##########################################################################
+# Load all JSON files at script startup (fail-fast)
+##########################################################################
+
+LOGINF "Loading JSON data files...";
+my $cur_json = load_json_file("$lbplogdir/current.json");
+my $dfc_json = load_json_file("$lbplogdir/dailyforecast.json");
+my $hfc_json = load_json_file("$lbplogdir/hourlyforecast.json");
+
+my $cur  = $cur_json->{data};           # hashref
+my @dfc  = @{ $dfc_json->{data} };     # array of hashrefs, ordered by period
+my @hfc  = @{ $hfc_json->{data} };     # array of hashrefs, ordered by period
+
+LOGOK "JSON data files loaded successfully.";
+
 #
 # Print out current conditions
 #
 
-# Read data
-open(F,"<$lbplogdir/current.dat");
-  our $curdata = <F>;
-close(F);
-
-chomp $curdata;
-
-my @fields = split(/\|/,$curdata);
 our $sendqueue = 0;
 our $value;
 our $name;
 our $tmpudp;
 our $udp;
 
-# Check for empty data
-if (@fields[0] eq "") {
-  @fields[0] = 1230764400;
-  @fields[34] = 0;
-  @fields[35] = 0;
-  @fields[36] = 0;
-  @fields[37] = 0;
+# Check for empty/missing epoch
+if (!defined($cur->{epoch}) || $cur->{epoch} eq "") {
+  $cur->{epoch} = 1230764400;
 }
 
-# Correct Epoch by Timezone
-my $tzseconds = (@fields[4] / 100 * 3600);
+# Derive timezone offset from datetime ISO string for Loxone epoch correction
+# $cur->{datetime} = "2026-03-12T20:45:00+01:00"
+my $tzseconds = 0;
+if (defined($cur->{datetime}) && $cur->{datetime} =~ /([+-])(\d{2}):(\d{2})$/) {
+    my $sign = ($1 eq '+') ? 1 : -1;
+    $tzseconds = $sign * ($2 * 3600 + $3 * 60);
+}
 
 # EpochDate - Corrected by TZ
 our $epochdate = DateTime->from_epoch(
-      epoch      => @fields[0],
+      epoch      => $cur->{epoch},
 );
 $epochdate->add( seconds => $tzseconds );
 
 $name = "cur_date";
-$value = @fields[0] - $dateref->epoch() + (@fields[4] / 100 * 3600);
+$value = $cur->{epoch} - $dateref->epoch() + $tzseconds;
 &send;
 
+# Derive legacy timezone fields from JSON
+# cur_date_des: was RFC822, now ISO 8601
+my $cur_date_des = $cur->{datetime};
+
+# cur_date_tz_des: IANA timezone name
+my $cur_date_tz_des = $cur->{timezone};
+
+# cur_date_tz_des_sh: short tz abbreviation — derive via DateTime with tz
+my $cur_date_tz_des_sh = "";
+if (defined($cur->{timezone}) && defined($cur->{epoch})) {
+    eval {
+        my $dt_cur = DateTime->from_epoch(
+            epoch     => $cur->{epoch},
+            time_zone => $cur->{timezone},
+        );
+        $cur_date_tz_des_sh = $dt_cur->time_zone_short_name();
+    };
+    if ($@) { $cur_date_tz_des_sh = $cur->{timezone}; }
+}
+
+# cur_date_tz: numeric offset e.g. "+0100"
+my $cur_date_tz = "";
+if (defined($cur->{datetime}) && $cur->{datetime} =~ /([+-])(\d{2}):(\d{2})$/) {
+    $cur_date_tz = sprintf("%s%02d%02d", $1, $2, $3);
+}
+
 $name = "cur_date_des";
-$value = @fields[1];
+$value = $cur_date_des;
 &send;
 
 $name = "cur_date_tz_des_sh";
-$value = @fields[2];
+$value = $cur_date_tz_des_sh;
 &send;
 
 $name = "cur_date_tz_des";
-$value = @fields[3];
+$value = $cur_date_tz_des;
 &send;
 
 $name = "cur_date_tz";
-$value = @fields[4];
+$value = $cur_date_tz;
 &send;
 
 $name = "cur_day";
@@ -187,133 +258,138 @@ $value = $epochdate->minute;
 &send;
 
 $name = "cur_loc_n";
-$value = @fields[5];
+$value = $cur->{city};
 &send;
 
 $name = "cur_loc_c";
-$value = @fields[6];
+$value = $cur->{country};
 &send;
 
 $name = "cur_loc_ccode";
-$value = @fields[7];
+$value = $cur->{country_code};
 &send;
 
 $name = "cur_loc_lat";
-$value = @fields[8];
+$value = $cur->{latitude};
 &send;
 
 $name = "cur_loc_long";
-$value = @fields[9];
+$value = $cur->{longitude};
 &send;
 
 $name = "cur_loc_el";
-$value = @fields[10];
+$value = $cur->{elevation};
 &send;
 
 $name = "cur_tt";
-if (!$metric) {$value = @fields[11]*1.8+32} else {$value = @fields[11]};
+if (!$metric) {$value = $cur->{temperature}*1.8+32} else {$value = $cur->{temperature}};
 &send;
 
 $name = "cur_tt_fl";
-if (!$metric) {$value = @fields[12]*1.8+32} else {$value = @fields[12]};
+if (!$metric) {$value = $cur->{feelslike}*1.8+32} else {$value = $cur->{feelslike}};
 &send;
 
 $name = "cur_hu";
-$value = @fields[13];
+$value = $cur->{humidity};
 &send;
 
 $name = "cur_w_dirdes";
-$value = @fields[14];
+$value = $cur->{wind_direction_desc};
 &send;
 
 $name = "cur_w_dir";
-$value = @fields[15];
+$value = $cur->{wind_direction_deg};
 &send;
 
 $name = "cur_w_sp";
-if (!$metric) {$value = @fields[16]*0.621371192} else {$value = @fields[16]};
+if (!$metric) {$value = $cur->{wind_speed}*0.621371192} else {$value = $cur->{wind_speed}};
 &send;
 
 $name = "cur_w_gu";
-if (!$metric) {$value = @fields[17]*0.621371192} else {$value = @fields[17]};
+if (!$metric) {$value = $cur->{wind_gust}*0.621371192} else {$value = $cur->{wind_gust}};
 &send;
 
 $name = "cur_w_ch";
-if (!$metric) {$value = @fields[18]*1.8+32} else {$value = @fields[18]};
+if (!$metric) {$value = $cur->{windchill}*1.8+32} else {$value = $cur->{windchill}};
 &send;
 
 $name = "cur_pr";
-if (!$metric) {$value = @fields[19]*0.0295301} else {$value = @fields[19]};
+if (!$metric) {$value = $cur->{pressure}*0.0295301} else {$value = $cur->{pressure}};
 &send;
 
 $name = "cur_dp";
-if (!$metric) {$value = @fields[20]*1.8+32} else {$value = @fields[20]};
+if (!$metric) {$value = $cur->{dewpoint}*1.8+32} else {$value = $cur->{dewpoint}};
 &send;
 
 $name = "cur_vis";
-if (!$metric) {$value = @fields[21]*0.621371192} else {$value = @fields[21]};
+if (!$metric) {$value = $cur->{visibility}*0.621371192} else {$value = $cur->{visibility}};
 &send;
 
 $name = "cur_sr";
-$value = @fields[22];
+$value = $cur->{solar_radiation};
 &send;
 
 $name = "cur_hi";
-if (!$metric) {$value = @fields[23]*1.8+32} else {$value = @fields[23]};
+if (!$metric) {$value = $cur->{heat_index}*1.8+32} else {$value = $cur->{heat_index}};
 &send;
 
 $name = "cur_uvi";
-$value = @fields[24];
+$value = $cur->{uv_index};
 &send;
 
 $name = "cur_prec_today";
-if (!$metric) {$value = @fields[25]*0.0393700787} else {$value = @fields[25]};
+if (!$metric) {$value = $cur->{precip_today_mm}*0.0393700787} else {$value = $cur->{precip_today_mm}};
 &send;
 
 $name = "cur_prec_1hr";
-if (!$metric) {$value = @fields[26]*0.0393700787} else {$value = @fields[26]};
+if (!$metric) {$value = $cur->{precip_1hr_mm}*0.0393700787} else {$value = $cur->{precip_1hr_mm}};
 &send;
 
 $name = "cur_we_icon";
-$value = @fields[27];
+$value = $cur->{weather_icon};
 &send;
 
 $name = "cur_we_code";
-$value = @fields[28];
+$value = $cur->{weather_code};
 &send;
 
 $name = "cur_we_des";
-$value = @fields[29];
+$value = $cur->{weather_description};
 &send;
 
 $name = "cur_moon_p";
-$value = @fields[30];
+$value = $cur->{moon_percent};
 &send;
 
 $name = "cur_moon_a";
-$value = @fields[31];
+$value = $cur->{moon_age};
 &send;
 
 $name = "cur_moon_ph";
-$value = @fields[32];
+$value = $cur->{moon_phase};
 &send;
 
 $name = "cur_moon_h";
-$value = @fields[33];
+$value = $cur->{moon_hemisphere};
 &send;
 
 # Create Sunset/rise Date in Loxone Epoch Format (1.1.2009)
+# JSON delivers "HH:MM" string; split(':') to get hour and minute
 # Sunrise
+my ($sunr_h, $sunr_m) = defined($cur->{sunrise})
+    ? split(/:/, $cur->{sunrise})
+    : (undef, undef);
+
 my $sunrdate;
-if (@fields[34] < 24 && @fields[34] >=0 && @fields[35] < 60 && @fields[35] >= 0) {
+if (defined($sunr_h) && $sunr_h < 24 && $sunr_h >= 0
+    && defined($sunr_m) && $sunr_m < 60 && $sunr_m >= 0) {
 	$sunrdate = DateTime->new(
 	      year      => $epochdate -> year(),
 	      month     => $epochdate -> month(),
 	      day       => $epochdate -> day(),
-	      hour      => @fields[34],
-	      minute    => @fields[35],
+	      hour      => $sunr_h,
+	      minute    => $sunr_m,
 	);
-	#$sunrdate->add( seconds => $tzseconds );
 	$name = "cur_sun_r";
 	$value = $sunrdate->epoch() - $dateref->epoch();
 } else {
@@ -324,16 +400,20 @@ if (@fields[34] < 24 && @fields[34] >=0 && @fields[35] < 60 && @fields[35] >= 0)
 &send;
 
 # Sunset
+my ($suns_h, $suns_m) = defined($cur->{sunset})
+    ? split(/:/, $cur->{sunset})
+    : (undef, undef);
+
 my $sunsdate;
-if (@fields[36] < 24 && @fields[36] >=0 && @fields[37] < 60 && @fields[37] >= 0) {
+if (defined($suns_h) && $suns_h < 24 && $suns_h >= 0
+    && defined($suns_m) && $suns_m < 60 && $suns_m >= 0) {
 	$sunsdate = DateTime->new(
 	      year      => $epochdate -> year(),
 	      month     => $epochdate -> month(),
 	      day       => $epochdate -> day(),
-	      hour      => @fields[36],
-	      minute    => @fields[37],
+	      hour      => $suns_h,
+	      minute    => $suns_m,
 	);
-	#$sunsdate->add( seconds => $tzseconds );
 	$name = "cur_sun_s";
 	$value = $sunsdate->epoch() - $dateref->epoch();
 } else {
@@ -344,44 +424,36 @@ if (@fields[36] < 24 && @fields[36] >=0 && @fields[37] < 60 && @fields[37] >= 0)
 &send;
 
 $name = "cur_ozone";
-$value = @fields[38];
+$value = _jval($cur->{ozone});
 &send;
 
 $name = "cur_sky";
-$value = @fields[39];
+$value = _jval($cur->{cloud_cover});
 &send;
 
 $name = "cur_pop";
-$value = @fields[40];
+$value = _jval($cur->{precip_probability});
 &send;
 
 $name = "cur_snow";
-$value = @fields[41];
+$value = _jval($cur->{snow});
 $udp = 1; # Really send now in one run
 &send;
 
 # Send raw current observation data over MQTT
 #$name = "current";
-#$value = $curdata;
+#$value = $cur->{datetime};
 #&sendmqtt;
 
 #
 # Print out Daily Forecast
 #
 
-# Read data
-open(F,"<$lbplogdir/dailyforecast.dat");
-  our @dfcdata = <F>;
-close(F);
-
 $data = "";
 
-foreach (@dfcdata){
-  $data .= $_;
-  s/[\n\r]//g;
-  @fields = split(/\|/);
+foreach my $dfc_entry (@dfc) {
 
-  my $per = @fields[0];
+  my $per = $dfc_entry->{period};
 
   # Send values only if we should do so
   our $send = 0;
@@ -395,164 +467,168 @@ foreach (@dfcdata){
   }
 
   # DFC: Today is dfc0
-  $per = $per-1;
+  $per = $per - 1;
 
   # Check for empty data
-  if (@fields[1] eq "") {
-    @fields[1] = 1230764400;
+  if (!defined($dfc_entry->{epoch}) || $dfc_entry->{epoch} eq "") {
+    $dfc_entry->{epoch} = 1230764400;
   }
 
-  # Calculate Epoche Date
+  # Calculate Epoch Date for this forecast day
   my $epochdatedfc = DateTime->from_epoch(
-      epoch      => @fields[1],
+      epoch      => $dfc_entry->{epoch},
   );
   $epochdatedfc->add( seconds => $tzseconds );
-
 
   $name = "dfc$per\_per";
   $value = $per;
   &send;
 
   $name = "dfc$per\_date";
-  $value = @fields[1] - $dateref->epoch();
+  $value = $dfc_entry->{epoch} - $dateref->epoch();
   &send;
 
   $name = "dfc$per\_day";
-  $value = @fields[2];
+  $value = $epochdatedfc->day;
   &send;
 
   $name = "dfc$per\_month";
-  $value = @fields[3];
+  $value = $epochdatedfc->month;
   &send;
 
   $name = "dfc$per\_monthn";
-  $value = @fields[4];
+  $value = $epochdatedfc->month_name;
   &send;
 
   $name = "dfc$per\_monthn_sh";
-  $value = @fields[5];
+  $value = $epochdatedfc->month_abbr;
   &send;
 
   $name = "dfc$per\_year";
-  $value = @fields[6];
+  $value = $epochdatedfc->year;
   &send;
 
   $name = "dfc$per\_hour";
-  $value = @fields[7];
+  $value = $epochdatedfc->hour;
   &send;
 
   $name = "dfc$per\_min";
-  $value = @fields[8];
+  $value = $epochdatedfc->minute;
   &send;
 
   $name = "dfc$per\_wday";
-  $value = @fields[9];
+  $value = $epochdatedfc->day_name;
   &send;
 
   $name = "dfc$per\_wday_sh";
-  $value = @fields[10];
+  $value = $epochdatedfc->day_abbr;
   &send;
 
   $name = "dfc$per\_tt_h";
-  if (!$metric) {$value = @fields[11]*1.8+32} else {$value = @fields[11];}
+  if (!$metric) {$value = $dfc_entry->{high_temp}*1.8+32} else {$value = $dfc_entry->{high_temp};}
   &send;
 
   $name = "dfc$per\_tt_l";
-  if (!$metric) {$value = @fields[12]*1.8+32} else {$value = @fields[12];}
+  if (!$metric) {$value = $dfc_entry->{low_temp}*1.8+32} else {$value = $dfc_entry->{low_temp};}
   &send;
 
   $name = "dfc$per\_pop";
-  $value = @fields[13];
+  $value = $dfc_entry->{precip_probability};
   &send;
 
   $name = "dfc$per\_prec";
-  if (!$metric) {$value = @fields[14]*0.0393700787} else {$value = @fields[14];}
+  if (!$metric) {$value = $dfc_entry->{precip_mm}*0.0393700787} else {$value = $dfc_entry->{precip_mm};}
   &send;
 
   $name = "dfc$per\_snow";
-  if (!$metric) {$value = @fields[15]*0.393700787} else {$value = @fields[15];}
+  if (!$metric) {$value = $dfc_entry->{snow_cm}*0.393700787} else {$value = $dfc_entry->{snow_cm};}
   &send;
 
   $name = "dfc$per\_w_sp_h";
-  if (!$metric) {$value = @fields[16]*0.621} else {$value = @fields[16];}
+  if (!$metric) {$value = $dfc_entry->{wind_speed_max}*0.621} else {$value = $dfc_entry->{wind_speed_max};}
   &send;
 
   $name = "dfc$per\_w_dirdes_h";
-  $value = @fields[17];
+  $value = $dfc_entry->{wind_dir_max_desc};
   &send;
 
   $name = "dfc$per\_w_dir_h";
-  $value = @fields[18];
+  $value = $dfc_entry->{wind_dir_max_deg};
   &send;
 
   $name = "dfc$per\_w_sp_a";
-  if (!$metric) {$value = @fields[19]*0.621} else {$value = @fields[19];}
+  if (!$metric) {$value = $dfc_entry->{wind_speed_avg}*0.621} else {$value = $dfc_entry->{wind_speed_avg};}
   &send;
 
   $name = "dfc$per\_w_dirdes_a";
-  $value = @fields[20];
+  $value = $dfc_entry->{wind_dir_avg_desc};
   &send;
 
   $name = "dfc$per\_w_dir_a";
-  $value = @fields[21];
+  $value = $dfc_entry->{wind_dir_avg_deg};
   &send;
 
   $name = "dfc$per\_hu_a";
-  $value = @fields[22];
+  $value = $dfc_entry->{humidity_avg};
   &send;
 
   $name = "dfc$per\_hu_h";
-  $value = @fields[23];
+  $value = $dfc_entry->{humidity_max};
   &send;
 
   $name = "dfc$per\_hu_l";
-  $value = @fields[24];
+  $value = $dfc_entry->{humidity_min};
   &send;
 
   $name = "dfc$per\_we_icon";
-  $value = @fields[25];
+  $value = $dfc_entry->{weather_icon};
   &send;
 
   $name = "dfc$per\_we_code";
-  $value = @fields[26];
+  $value = $dfc_entry->{weather_code};
   &send;
 
   $name = "dfc$per\_we_des";
-  $value = @fields[27];
+  $value = $dfc_entry->{weather_description};
   &send;
 
   $name = "dfc$per\_ozone";
-  $value = @fields[28];
+  $value = _jval($dfc_entry->{ozone});
   &send;
 
   $name = "dfc$per\_moon_p";
-  $value = @fields[29];
+  $value = $dfc_entry->{moon_percent};
   &send;
 
   $name = "dfc$per\_dp";
-  if (!$metric) {$value = @fields[30]*1.8+32} else {$value = @fields[30];}
+  if (!$metric) {$value = $dfc_entry->{dewpoint}*1.8+32} else {$value = $dfc_entry->{dewpoint};}
   &send;
 
   $name = "dfc$per\_pr";
-  if (!$metric) {$value = @fields[31]*0.0295301} else {$value = @fields[31]};
+  if (!$metric) {$value = $dfc_entry->{pressure}*0.0295301} else {$value = $dfc_entry->{pressure}};
   &send;
 
   $name = "dfc$per\_uvi";
-  $value = @fields[32];
+  $value = $dfc_entry->{uv_index};
   &send;
 
   # Create Sunset/rise Date in Loxone Epoch Format (1.1.2009)
+  # Per Pitfall 4: use $epochdate (current conditions date) as base — preserving existing behavior
   # Sunrise
+  my ($dfc_sunr_h, $dfc_sunr_m) = defined($dfc_entry->{sunrise})
+      ? split(/:/, $dfc_entry->{sunrise})
+      : (undef, undef);
+
   my $sunrdate;
-  if (@fields[33] < 24 && @fields[33] >=0 && @fields[34] < 60 && @fields[34] >= 0) {
+  if (defined($dfc_sunr_h) && $dfc_sunr_h < 24 && $dfc_sunr_h >= 0
+      && defined($dfc_sunr_m) && $dfc_sunr_m < 60 && $dfc_sunr_m >= 0) {
 	$sunrdate = DateTime->new(
 	      year      => $epochdate -> year(),
 	      month     => $epochdate -> month(),
 	      day       => $epochdate -> day(),
-	      hour      => @fields[33],
-	      minute    => @fields[34],
+	      hour      => $dfc_sunr_h,
+	      minute    => $dfc_sunr_m,
 	);
-	#$sunrdate->add( seconds => $tzseconds );
 	$name = "dfc$per\_sun_r";
 	$value = $sunrdate->epoch() - $dateref->epoch();
   } else {
@@ -563,16 +639,20 @@ foreach (@dfcdata){
   &send;
 
   # Sunset
+  my ($dfc_suns_h, $dfc_suns_m) = defined($dfc_entry->{sunset})
+      ? split(/:/, $dfc_entry->{sunset})
+      : (undef, undef);
+
   my $sunsdate;
-  if (@fields[35] < 24 && @fields[35] >=0 && @fields[36] < 60 && @fields[36] >= 0) {
+  if (defined($dfc_suns_h) && $dfc_suns_h < 24 && $dfc_suns_h >= 0
+      && defined($dfc_suns_m) && $dfc_suns_m < 60 && $dfc_suns_m >= 0) {
 	$sunsdate = DateTime->new(
 	      year      => $epochdate -> year(),
 	      month     => $epochdate -> month(),
 	      day       => $epochdate -> day(),
-	      hour      => @fields[35],
-	      minute    => @fields[36],
+	      hour      => $dfc_suns_h,
+	      minute    => $dfc_suns_m,
 	);
-	#$sunsdate->add( seconds => $tzseconds );
   	$name = "dfc$per\_sun_s";
 	$value = $sunsdate->epoch() - $dateref->epoch();
   } else {
@@ -583,15 +663,15 @@ foreach (@dfcdata){
   &send;
 
   $name = "dfc$per\_vis";
-  $value = @fields[37];
+  $value = $dfc_entry->{visibility};
   &send;
 
   $name = "dfc$per\_moon_a";
-  $value = @fields[38];
+  $value = $dfc_entry->{moon_age};
   &send;
 
   $name = "dfc$per\_moon_ph";
-  $value = @fields[39];
+  $value = $dfc_entry->{moon_phase};
   $udp = 1; # Really send now in one run
   &send;
 }
@@ -605,19 +685,11 @@ foreach (@dfcdata){
 # Print out Hourly Forecast
 #
 
-# Read data
-open(F,"<$lbplogdir/hourlyforecast.dat");
-  our @hfcdata = <F>;
-close(F);
-
 $data = "";
 
-foreach (@hfcdata){
-  $data .= $_;
-  s/[\n\r]//g;
-  @fields = split(/\|/);
+foreach my $hfc_entry (@hfc) {
 
-  my $per = @fields[0];
+  my $per = $hfc_entry->{period};
 
   # Send values only if we should do so
   $send = 0;
@@ -631,153 +703,158 @@ foreach (@hfcdata){
   }
 
   # Check for empty data
-  if (@fields[1] eq "") {
-    @fields[1] = 1230764400;
+  if (!defined($hfc_entry->{epoch}) || $hfc_entry->{epoch} eq "") {
+    $hfc_entry->{epoch} = 1230764400;
   }
 
+  # Calculate Epoch Date for this hourly forecast entry
+  my $epochdatehfc = DateTime->from_epoch(
+      epoch      => $hfc_entry->{epoch},
+  );
+  $epochdatehfc->add( seconds => $tzseconds );
+
   $name = "hfc$per\_per";
-  $value = @fields[0];
+  $value = $hfc_entry->{period};
   &send;
 
   $name = "hfc$per\_date";
-  $value = @fields[1] - $dateref->epoch();
+  $value = $hfc_entry->{epoch} - $dateref->epoch();
   &send;
 
   $name = "hfc$per\_day";
-  $value = @fields[2];
+  $value = $epochdatehfc->day;
   &send;
 
   $name = "hfc$per\_month";
-  $value = @fields[3];
+  $value = $epochdatehfc->month;
   &send;
 
   $name = "hfc$per\_monthn";
-  $value = @fields[4];
+  $value = $epochdatehfc->month_name;
   &send;
 
   $name = "hfc$per\_monthn_sh";
-  $value = @fields[5];
+  $value = $epochdatehfc->month_abbr;
   &send;
 
   $name = "hfc$per\_year";
-  $value = @fields[6];
+  $value = $epochdatehfc->year;
   &send;
 
   $name = "hfc$per\_hour";
-  $value = @fields[7];
+  $value = $epochdatehfc->hour;
   &send;
 
   $name = "hfc$per\_min";
-  $value = @fields[8];
+  $value = $epochdatehfc->minute;
   &send;
 
   $name = "hfc$per\_wday";
-  $value = @fields[9];
+  $value = $epochdatehfc->day_name;
   &send;
 
   $name = "hfc$per\_wday_sh";
-  $value = @fields[10];
+  $value = $epochdatehfc->day_abbr;
   &send;
 
   $name = "hfc$per\_tt";
-  if (!$metric) {$value = @fields[11]*1.8+32} else {$value = @fields[11];}
+  if (!$metric) {$value = $hfc_entry->{temperature}*1.8+32} else {$value = $hfc_entry->{temperature};}
   &send;
 
   $name = "hfc$per\_tt_fl";
-  if (!$metric) {$value = @fields[12]*1.8+32} else {$value = @fields[12];}
+  if (!$metric) {$value = $hfc_entry->{feelslike}*1.8+32} else {$value = $hfc_entry->{feelslike};}
   &send;
 
   $name = "hfc$per\_hi";
-  if (!$metric) {$value = @fields[13]*1.8+32} else {$value = @fields[13];}
+  if (!$metric) {$value = $hfc_entry->{heat_index}*1.8+32} else {$value = $hfc_entry->{heat_index};}
   &send;
 
   $name = "hfc$per\_hu";
-  $value = @fields[14];
+  $value = $hfc_entry->{humidity};
   &send;
 
   $name = "hfc$per\_w_dirdes";
-  $value = @fields[15];
+  $value = $hfc_entry->{wind_direction_desc};
   &send;
 
   $name = "hfc$per\_w_dir";
-  $value = @fields[16];
+  $value = $hfc_entry->{wind_direction_deg};
   &send;
 
   $name = "hfc$per\_w_sp";
-  if (!$metric) {$value = @fields[17]*0.621} else {$value = @fields[17];}
+  if (!$metric) {$value = $hfc_entry->{wind_speed}*0.621} else {$value = $hfc_entry->{wind_speed};}
   &send;
 
   $name = "hfc$per\_w_ch";
-  if (!$metric) {$value = @fields[18]*1.8+32} else {$value = @fields[18]};
+  if (!$metric) {$value = $hfc_entry->{windchill}*1.8+32} else {$value = $hfc_entry->{windchill}};
   &send;
 
   $name = "hfc$per\_pr";
-  $value = @fields[19];
+  $value = $hfc_entry->{pressure};
   &send;
 
   $name = "hfc$per\_dp";
-  $value = @fields[20];
+  $value = $hfc_entry->{dewpoint};
   &send;
 
   $name = "hfc$per\_sky";
-  $value = @fields[21];
+  $value = $hfc_entry->{sky_percent};
   &send;
 
   $name = "hfc$per\_sky\_des";
-  $value = @fields[22];
+  $value = $hfc_entry->{sky_description};
   &send;
 
   $name = "hfc$per\_uvi";
-  $value = @fields[23];
+  $value = $hfc_entry->{uv_index};
   &send;
 
   $name = "hfc$per\_prec";
-  if (!$metric) {$value = @fields[24]*0.0393700787} else {$value = @fields[24];}
+  if (!$metric) {$value = $hfc_entry->{precip_mm}*0.0393700787} else {$value = $hfc_entry->{precip_mm};}
   &send;
 
   $name = "hfc$per\_snow";
-  if (!$metric) {$value = @fields[25]*0.393700787} else {$value = @fields[25];}
+  if (!$metric) {$value = $hfc_entry->{snow_cm}*0.393700787} else {$value = $hfc_entry->{snow_cm};}
   &send;
 
   $name = "hfc$per\_pop";
-  $value = @fields[26];
+  $value = $hfc_entry->{precip_probability};
   &send;
 
   $name = "hfc$per\_we_code";
-  $value = @fields[28];
+  $value = $hfc_entry->{weather_code};
   &send;
 
   $name = "hfc$per\_we_icon";
-  $value = @fields[27];
+  $value = $hfc_entry->{weather_icon};
   &send;
 
-
   $name = "hfc$per\_we_des";
-  $value = @fields[29];
+  $value = $hfc_entry->{weather_description};
   &send;
 
   $name = "hfc$per\_ozone";
-  $value = @fields[30];
+  $value = _jval($hfc_entry->{ozone});
   &send;
 
   $name = "hfc$per\_sr";
-  $value = @fields[31];
+  $value = $hfc_entry->{solar_radiation};
   &send;
 
   $name = "hfc$per\_vis";
-  $value = @fields[32];
+  $value = $hfc_entry->{visibility};
   &send;
 
   $name = "hfc$per\_moon_p";
-  $value = @fields[33];
+  $value = $hfc_entry->{moon_percent};
   &send;
 
   $name = "hfc$per\_moon_a";
-  $value = @fields[34];
+  $value = $hfc_entry->{moon_age};
   &send;
 
   $name = "hfc$per\_moon_ph";
-  $value = @fields[35];
+  $value = $hfc_entry->{moon_phase};
   $udp = 1; # Really send now in one run
   &send;
 }
@@ -879,125 +956,179 @@ my $tmppopmax32 = 0;
 my $tmppopmax40 = 0;
 my $tmppopmax48 = 0;
 
-foreach (@hfcdata){
-  s/[\n\r]//g;
-  @fields = split(/\|/);
+foreach my $hfc_entry (@hfc) {
 
-  # Default values for min/max
-  if ( @fields[0] == 1 ) {
-      $tmpttmax4 = @fields[11];
-      $tmpttmin4 = @fields[11];
-      $tmpttmax8 = @fields[11];
-      $tmpttmin8 = @fields[11];
-      $tmpttmax12 = @fields[11];
-      $tmpttmin12 = @fields[11];
-      $tmpttmax16 = @fields[11];
-      $tmpttmin16 = @fields[11];
-      $tmpttmax24 = @fields[11];
-      $tmpttmin24 = @fields[11];
-      $tmpttmax32 = @fields[11];
-      $tmpttmin32 = @fields[11];
-      $tmpttmax40 = @fields[11];
-      $tmpttmin40 = @fields[11];
-      $tmpttmax48 = @fields[11];
-      $tmpttmin48 = @fields[11];
+  # Default values for min/max (use period 1 as baseline)
+  if ( $hfc_entry->{period} == 1 ) {
+      $tmpttmax4 = $hfc_entry->{temperature};
+      $tmpttmin4 = $hfc_entry->{temperature};
+      $tmpttmax8 = $hfc_entry->{temperature};
+      $tmpttmin8 = $hfc_entry->{temperature};
+      $tmpttmax12 = $hfc_entry->{temperature};
+      $tmpttmin12 = $hfc_entry->{temperature};
+      $tmpttmax16 = $hfc_entry->{temperature};
+      $tmpttmin16 = $hfc_entry->{temperature};
+      $tmpttmax24 = $hfc_entry->{temperature};
+      $tmpttmin24 = $hfc_entry->{temperature};
+      $tmpttmax32 = $hfc_entry->{temperature};
+      $tmpttmin32 = $hfc_entry->{temperature};
+      $tmpttmax40 = $hfc_entry->{temperature};
+      $tmpttmin40 = $hfc_entry->{temperature};
+      $tmpttmax48 = $hfc_entry->{temperature};
+      $tmpttmin48 = $hfc_entry->{temperature};
 
-      $tmppopmax4 = @fields[26];
-      $tmppopmin4 = @fields[26];
-      $tmppopmax8 = @fields[26];
-      $tmppopmin8 = @fields[26];
-      $tmppopmax12 = @fields[26];
-      $tmppopmin12 = @fields[26];
-      $tmppopmax16 = @fields[26];
-      $tmppopmin16 = @fields[26];
-      $tmppopmax24 = @fields[26];
-      $tmppopmin24 = @fields[26];
-      $tmppopmax32 = @fields[26];
-      $tmppopmin32 = @fields[26];
-      $tmppopmax40 = @fields[26];
-      $tmppopmin40 = @fields[26];
-      $tmppopmax48 = @fields[26];
-      $tmppopmin48 = @fields[26];
+      $tmppopmax4 = $hfc_entry->{precip_probability};
+      $tmppopmin4 = $hfc_entry->{precip_probability};
+      $tmppopmax8 = $hfc_entry->{precip_probability};
+      $tmppopmin8 = $hfc_entry->{precip_probability};
+      $tmppopmax12 = $hfc_entry->{precip_probability};
+      $tmppopmin12 = $hfc_entry->{precip_probability};
+      $tmppopmax16 = $hfc_entry->{precip_probability};
+      $tmppopmin16 = $hfc_entry->{precip_probability};
+      $tmppopmax24 = $hfc_entry->{precip_probability};
+      $tmppopmin24 = $hfc_entry->{precip_probability};
+      $tmppopmax32 = $hfc_entry->{precip_probability};
+      $tmppopmin32 = $hfc_entry->{precip_probability};
+      $tmppopmax40 = $hfc_entry->{precip_probability};
+      $tmppopmin40 = $hfc_entry->{precip_probability};
+      $tmppopmax48 = $hfc_entry->{precip_probability};
+      $tmppopmin48 = $hfc_entry->{precip_probability};
   }
-  if ( @fields[0] <= 4 ) {
-    $tmpprec4 = $tmpprec4 + @fields[24] if @fields[24] > 0;
-    $tmpsnow4 = $tmpsnow4 + @fields[25] if @fields[25] > 0;
-    $tmpsr4 = $tmpsr4 + @fields[31] if @fields[31] > 0;
-    if ( $tmpttmin4 > @fields[11] ) { $tmpttmin4 = @fields[11]; }
-    if ( $tmpttmax4 < @fields[11] ) { $tmpttmax4 = @fields[11]; }
-    if ( $tmppopmin4 > @fields[26] ) { $tmppopmin4 = @fields[26]; }
-    if ( $tmppopmax4 < @fields[26] ) { $tmppopmax4 = @fields[26]; }
-    push(@tmpttmean4, @fields[11]) if @fields[11] ne "-9999";
+  if ( $hfc_entry->{period} <= 4 ) {
+    $tmpprec4 = $tmpprec4 + $hfc_entry->{precip_mm}
+        if defined($hfc_entry->{precip_mm}) && $hfc_entry->{precip_mm} > 0;
+    $tmpsnow4 = $tmpsnow4 + $hfc_entry->{snow_cm}
+        if defined($hfc_entry->{snow_cm}) && $hfc_entry->{snow_cm} > 0;
+    $tmpsr4 = $tmpsr4 + $hfc_entry->{solar_radiation}
+        if defined($hfc_entry->{solar_radiation}) && $hfc_entry->{solar_radiation} > 0;
+    if (defined($hfc_entry->{temperature})) {
+        if ( $tmpttmin4 > $hfc_entry->{temperature} ) { $tmpttmin4 = $hfc_entry->{temperature}; }
+        if ( $tmpttmax4 < $hfc_entry->{temperature} ) { $tmpttmax4 = $hfc_entry->{temperature}; }
+    }
+    if (defined($hfc_entry->{precip_probability})) {
+        if ( $tmppopmin4 > $hfc_entry->{precip_probability} ) { $tmppopmin4 = $hfc_entry->{precip_probability}; }
+        if ( $tmppopmax4 < $hfc_entry->{precip_probability} ) { $tmppopmax4 = $hfc_entry->{precip_probability}; }
+    }
+    push(@tmpttmean4, $hfc_entry->{temperature}) if defined($hfc_entry->{temperature});
   }
-  if ( @fields[0] <= 8 ) {
-    $tmpprec8 = $tmpprec8 + @fields[24] if @fields[24] > 0;
-    $tmpsnow8 = $tmpsnow8 + @fields[25] if @fields[25] > 0;
-    $tmpsr8 = $tmpsr8 + @fields[31] if @fields[31] > 0;
-    if ( $tmpttmin8 > @fields[11] ) { $tmpttmin8 = @fields[11]; }
-    if ( $tmpttmax8 < @fields[11] ) { $tmpttmax8 = @fields[11]; }
-    if ( $tmppopmin8 > @fields[26] ) { $tmppopmin8 = @fields[26]; }
-    if ( $tmppopmax8 < @fields[26] ) { $tmppopmax8 = @fields[26]; }
-    push(@tmpttmean8, @fields[11]) if @fields[11] ne "-9999";
+  if ( $hfc_entry->{period} <= 8 ) {
+    $tmpprec8 = $tmpprec8 + $hfc_entry->{precip_mm}
+        if defined($hfc_entry->{precip_mm}) && $hfc_entry->{precip_mm} > 0;
+    $tmpsnow8 = $tmpsnow8 + $hfc_entry->{snow_cm}
+        if defined($hfc_entry->{snow_cm}) && $hfc_entry->{snow_cm} > 0;
+    $tmpsr8 = $tmpsr8 + $hfc_entry->{solar_radiation}
+        if defined($hfc_entry->{solar_radiation}) && $hfc_entry->{solar_radiation} > 0;
+    if (defined($hfc_entry->{temperature})) {
+        if ( $tmpttmin8 > $hfc_entry->{temperature} ) { $tmpttmin8 = $hfc_entry->{temperature}; }
+        if ( $tmpttmax8 < $hfc_entry->{temperature} ) { $tmpttmax8 = $hfc_entry->{temperature}; }
+    }
+    if (defined($hfc_entry->{precip_probability})) {
+        if ( $tmppopmin8 > $hfc_entry->{precip_probability} ) { $tmppopmin8 = $hfc_entry->{precip_probability}; }
+        if ( $tmppopmax8 < $hfc_entry->{precip_probability} ) { $tmppopmax8 = $hfc_entry->{precip_probability}; }
+    }
+    push(@tmpttmean8, $hfc_entry->{temperature}) if defined($hfc_entry->{temperature});
   }
-  if ( @fields[0] <= 12 ) {
-    $tmpprec12 = $tmpprec12 + @fields[24] if @fields[24] > 0;
-    $tmpsnow12 = $tmpsnow12 + @fields[25] if @fields[25] > 0;
-    $tmpsr12 = $tmpsr12 + @fields[31] if @fields[31] > 0;
-    if ( $tmpttmin12 > @fields[11] ) { $tmpttmin12 = @fields[11]; }
-    if ( $tmpttmax12 < @fields[11] ) { $tmpttmax12 = @fields[11]; }
-    if ( $tmppopmin12 > @fields[26] ) { $tmppopmin12 = @fields[26]; }
-    if ( $tmppopmax12 < @fields[26] ) { $tmppopmax12 = @fields[26]; }
-    push(@tmpttmean12, @fields[11]) if @fields[11] ne "-9999";
+  if ( $hfc_entry->{period} <= 12 ) {
+    $tmpprec12 = $tmpprec12 + $hfc_entry->{precip_mm}
+        if defined($hfc_entry->{precip_mm}) && $hfc_entry->{precip_mm} > 0;
+    $tmpsnow12 = $tmpsnow12 + $hfc_entry->{snow_cm}
+        if defined($hfc_entry->{snow_cm}) && $hfc_entry->{snow_cm} > 0;
+    $tmpsr12 = $tmpsr12 + $hfc_entry->{solar_radiation}
+        if defined($hfc_entry->{solar_radiation}) && $hfc_entry->{solar_radiation} > 0;
+    if (defined($hfc_entry->{temperature})) {
+        if ( $tmpttmin12 > $hfc_entry->{temperature} ) { $tmpttmin12 = $hfc_entry->{temperature}; }
+        if ( $tmpttmax12 < $hfc_entry->{temperature} ) { $tmpttmax12 = $hfc_entry->{temperature}; }
+    }
+    if (defined($hfc_entry->{precip_probability})) {
+        if ( $tmppopmin12 > $hfc_entry->{precip_probability} ) { $tmppopmin12 = $hfc_entry->{precip_probability}; }
+        if ( $tmppopmax12 < $hfc_entry->{precip_probability} ) { $tmppopmax12 = $hfc_entry->{precip_probability}; }
+    }
+    push(@tmpttmean12, $hfc_entry->{temperature}) if defined($hfc_entry->{temperature});
   }
-  if ( @fields[0] <= 16 ) {
-    $tmpprec16 = $tmpprec16 + @fields[24] if @fields[24] > 0;
-    $tmpsnow16 = $tmpsnow16 + @fields[25] if @fields[25] > 0;
-    $tmpsr16 = $tmpsr16 + @fields[31] if @fields[31] > 0;
-    if ( $tmpttmin16 > @fields[11] ) { $tmpttmin16 = @fields[11]; }
-    if ( $tmpttmax16 < @fields[11] ) { $tmpttmax16 = @fields[11]; }
-    if ( $tmppopmin16 > @fields[26] ) { $tmppopmin16 = @fields[26]; }
-    if ( $tmppopmax16 < @fields[26] ) { $tmppopmax16 = @fields[26]; }
-    push(@tmpttmean16, @fields[11]) if @fields[11] ne "-9999";
+  if ( $hfc_entry->{period} <= 16 ) {
+    $tmpprec16 = $tmpprec16 + $hfc_entry->{precip_mm}
+        if defined($hfc_entry->{precip_mm}) && $hfc_entry->{precip_mm} > 0;
+    $tmpsnow16 = $tmpsnow16 + $hfc_entry->{snow_cm}
+        if defined($hfc_entry->{snow_cm}) && $hfc_entry->{snow_cm} > 0;
+    $tmpsr16 = $tmpsr16 + $hfc_entry->{solar_radiation}
+        if defined($hfc_entry->{solar_radiation}) && $hfc_entry->{solar_radiation} > 0;
+    if (defined($hfc_entry->{temperature})) {
+        if ( $tmpttmin16 > $hfc_entry->{temperature} ) { $tmpttmin16 = $hfc_entry->{temperature}; }
+        if ( $tmpttmax16 < $hfc_entry->{temperature} ) { $tmpttmax16 = $hfc_entry->{temperature}; }
+    }
+    if (defined($hfc_entry->{precip_probability})) {
+        if ( $tmppopmin16 > $hfc_entry->{precip_probability} ) { $tmppopmin16 = $hfc_entry->{precip_probability}; }
+        if ( $tmppopmax16 < $hfc_entry->{precip_probability} ) { $tmppopmax16 = $hfc_entry->{precip_probability}; }
+    }
+    push(@tmpttmean16, $hfc_entry->{temperature}) if defined($hfc_entry->{temperature});
   }
-  if ( @fields[0] <= 24 ) {
-    $tmpprec24 = $tmpprec24 + @fields[24] if @fields[24] > 0;
-    $tmpsnow24 = $tmpsnow24 + @fields[25] if @fields[25] > 0;
-    $tmpsr24 = $tmpsr24 + @fields[31] if @fields[31] > 0;
-    if ( $tmpttmin24 > @fields[11] ) { $tmpttmin24 = @fields[11]; }
-    if ( $tmpttmax24 < @fields[11] ) { $tmpttmax24 = @fields[11]; }
-    if ( $tmppopmin24 > @fields[26] ) { $tmppopmin24 = @fields[26]; }
-    if ( $tmppopmax24 < @fields[26] ) { $tmppopmax24 = @fields[26]; }
-    push(@tmpttmean24, @fields[11]) if @fields[11] ne "-9999";
+  if ( $hfc_entry->{period} <= 24 ) {
+    $tmpprec24 = $tmpprec24 + $hfc_entry->{precip_mm}
+        if defined($hfc_entry->{precip_mm}) && $hfc_entry->{precip_mm} > 0;
+    $tmpsnow24 = $tmpsnow24 + $hfc_entry->{snow_cm}
+        if defined($hfc_entry->{snow_cm}) && $hfc_entry->{snow_cm} > 0;
+    $tmpsr24 = $tmpsr24 + $hfc_entry->{solar_radiation}
+        if defined($hfc_entry->{solar_radiation}) && $hfc_entry->{solar_radiation} > 0;
+    if (defined($hfc_entry->{temperature})) {
+        if ( $tmpttmin24 > $hfc_entry->{temperature} ) { $tmpttmin24 = $hfc_entry->{temperature}; }
+        if ( $tmpttmax24 < $hfc_entry->{temperature} ) { $tmpttmax24 = $hfc_entry->{temperature}; }
+    }
+    if (defined($hfc_entry->{precip_probability})) {
+        if ( $tmppopmin24 > $hfc_entry->{precip_probability} ) { $tmppopmin24 = $hfc_entry->{precip_probability}; }
+        if ( $tmppopmax24 < $hfc_entry->{precip_probability} ) { $tmppopmax24 = $hfc_entry->{precip_probability}; }
+    }
+    push(@tmpttmean24, $hfc_entry->{temperature}) if defined($hfc_entry->{temperature});
   }
-  if ( @fields[0] <= 32 ) {
-    $tmpprec32 = $tmpprec32 + @fields[24] if @fields[24] > 0;
-    $tmpsnow32 = $tmpsnow32 + @fields[25] if @fields[25] > 0;
-    $tmpsr32 = $tmpsr32 + @fields[31] if @fields[31] > 0;
-    if ( $tmpttmin32 > @fields[11] ) { $tmpttmin32 = @fields[11]; }
-    if ( $tmpttmax32 < @fields[11] ) { $tmpttmax32 = @fields[11]; }
-    if ( $tmppopmin32 > @fields[26] ) { $tmppopmin32 = @fields[26]; }
-    if ( $tmppopmax32 < @fields[26] ) { $tmppopmax32 = @fields[26]; }
-    push(@tmpttmean32, @fields[11]) if @fields[11] ne "-9999";
+  if ( $hfc_entry->{period} <= 32 ) {
+    $tmpprec32 = $tmpprec32 + $hfc_entry->{precip_mm}
+        if defined($hfc_entry->{precip_mm}) && $hfc_entry->{precip_mm} > 0;
+    $tmpsnow32 = $tmpsnow32 + $hfc_entry->{snow_cm}
+        if defined($hfc_entry->{snow_cm}) && $hfc_entry->{snow_cm} > 0;
+    $tmpsr32 = $tmpsr32 + $hfc_entry->{solar_radiation}
+        if defined($hfc_entry->{solar_radiation}) && $hfc_entry->{solar_radiation} > 0;
+    if (defined($hfc_entry->{temperature})) {
+        if ( $tmpttmin32 > $hfc_entry->{temperature} ) { $tmpttmin32 = $hfc_entry->{temperature}; }
+        if ( $tmpttmax32 < $hfc_entry->{temperature} ) { $tmpttmax32 = $hfc_entry->{temperature}; }
+    }
+    if (defined($hfc_entry->{precip_probability})) {
+        if ( $tmppopmin32 > $hfc_entry->{precip_probability} ) { $tmppopmin32 = $hfc_entry->{precip_probability}; }
+        if ( $tmppopmax32 < $hfc_entry->{precip_probability} ) { $tmppopmax32 = $hfc_entry->{precip_probability}; }
+    }
+    push(@tmpttmean32, $hfc_entry->{temperature}) if defined($hfc_entry->{temperature});
   }
-  if ( @fields[0] <= 40 ) {
-    $tmpprec40 = $tmpprec40 + @fields[24] if @fields[24] > 0;
-    $tmpsnow40 = $tmpsnow40 + @fields[25] if @fields[25] > 0;
-    $tmpsr40 = $tmpsr40 + @fields[31] if @fields[31] > 0;
-    if ( $tmpttmin40 > @fields[11] ) { $tmpttmin40 = @fields[11]; }
-    if ( $tmpttmax40 < @fields[11] ) { $tmpttmax40 = @fields[11]; }
-    if ( $tmppopmin40 > @fields[26] ) { $tmppopmin40 = @fields[26]; }
-    if ( $tmppopmax40 < @fields[26] ) { $tmppopmax40 = @fields[26]; }
-    push(@tmpttmean40, @fields[11]) if @fields[11] ne "-9999";
+  if ( $hfc_entry->{period} <= 40 ) {
+    $tmpprec40 = $tmpprec40 + $hfc_entry->{precip_mm}
+        if defined($hfc_entry->{precip_mm}) && $hfc_entry->{precip_mm} > 0;
+    $tmpsnow40 = $tmpsnow40 + $hfc_entry->{snow_cm}
+        if defined($hfc_entry->{snow_cm}) && $hfc_entry->{snow_cm} > 0;
+    $tmpsr40 = $tmpsr40 + $hfc_entry->{solar_radiation}
+        if defined($hfc_entry->{solar_radiation}) && $hfc_entry->{solar_radiation} > 0;
+    if (defined($hfc_entry->{temperature})) {
+        if ( $tmpttmin40 > $hfc_entry->{temperature} ) { $tmpttmin40 = $hfc_entry->{temperature}; }
+        if ( $tmpttmax40 < $hfc_entry->{temperature} ) { $tmpttmax40 = $hfc_entry->{temperature}; }
+    }
+    if (defined($hfc_entry->{precip_probability})) {
+        if ( $tmppopmin40 > $hfc_entry->{precip_probability} ) { $tmppopmin40 = $hfc_entry->{precip_probability}; }
+        if ( $tmppopmax40 < $hfc_entry->{precip_probability} ) { $tmppopmax40 = $hfc_entry->{precip_probability}; }
+    }
+    push(@tmpttmean40, $hfc_entry->{temperature}) if defined($hfc_entry->{temperature});
   }
-  if ( @fields[0] <= 48 ) {
-    $tmpprec48 = $tmpprec48 + @fields[24] if @fields[24] > 0;
-    $tmpsnow48 = $tmpsnow48 + @fields[25] if @fields[25] > 0;
-    $tmpsr48 = $tmpsr48 + @fields[31] if @fields[31] > 0;
-    if ( $tmpttmin48 > @fields[11] ) { $tmpttmin48 = @fields[11]; }
-    if ( $tmpttmax48 < @fields[11] ) { $tmpttmax48 = @fields[11]; }
-    if ( $tmppopmin48 > @fields[26] ) { $tmppopmin48 = @fields[26]; }
-    if ( $tmppopmax48 < @fields[26] ) { $tmppopmax48 = @fields[26]; }
-    push(@tmpttmean48, @fields[11]) if @fields[11] ne "-9999";
+  if ( $hfc_entry->{period} <= 48 ) {
+    $tmpprec48 = $tmpprec48 + $hfc_entry->{precip_mm}
+        if defined($hfc_entry->{precip_mm}) && $hfc_entry->{precip_mm} > 0;
+    $tmpsnow48 = $tmpsnow48 + $hfc_entry->{snow_cm}
+        if defined($hfc_entry->{snow_cm}) && $hfc_entry->{snow_cm} > 0;
+    $tmpsr48 = $tmpsr48 + $hfc_entry->{solar_radiation}
+        if defined($hfc_entry->{solar_radiation}) && $hfc_entry->{solar_radiation} > 0;
+    if (defined($hfc_entry->{temperature})) {
+        if ( $tmpttmin48 > $hfc_entry->{temperature} ) { $tmpttmin48 = $hfc_entry->{temperature}; }
+        if ( $tmpttmax48 < $hfc_entry->{temperature} ) { $tmpttmax48 = $hfc_entry->{temperature}; }
+    }
+    if (defined($hfc_entry->{precip_probability})) {
+        if ( $tmppopmin48 > $hfc_entry->{precip_probability} ) { $tmppopmin48 = $hfc_entry->{precip_probability}; }
+        if ( $tmppopmax48 < $hfc_entry->{precip_probability} ) { $tmppopmax48 = $hfc_entry->{precip_probability}; }
+    }
+    push(@tmpttmean48, $hfc_entry->{temperature}) if defined($hfc_entry->{temperature});
   }
 
 }
@@ -1290,71 +1421,66 @@ if (!$newstyle) {
 # Daily Forecast
 #############################################
 
-# Read data
-#open(F,"<$home/data/plugins/$psubfolder/dailyforecast.dat") || die "Cannot open $home/data/plugins/$psubfolder/dailyforecast.dat";
-#  our @dfcdata = <F>;
-#close(F);
+our $per;
 
-foreach (@dfcdata){
-  s/[\n\r]//g;
-  @fields = split(/\|/);
+foreach my $dfc_entry (@dfc) {
 
-  $per = @fields[0] - 1;
+  $per = $dfc_entry->{period} - 1;
 
-  ${dfc.$per._per} = @fields[0] - 1;
-  ${dfc.$per._date} = @fields[1];
-  ${dfc.$per._day} = @fields[2];
-  ${dfc.$per._month} = @fields[3];
-  ${dfc.$per._monthn} = @fields[4];
-  ${dfc.$per._monthn_sh} = @fields[5];
-  ${dfc.$per._year} = @fields[6];
-  ${dfc.$per._hour} = @fields[7];
-  ${dfc.$per._min} = @fields[8];
-  ${dfc.$per._wday} = @fields[9];
-  ${dfc.$per._wday_sh} = @fields[10];
-  ${dfc.$per._pop} = @fields[13];
-  ${dfc.$per._w_dirdes_h} = @fields[17];
-  ${dfc.$per._w_dir_h} = @fields[18];
-  ${dfc.$per._w_dirdes_a} = @fields[20];
-  ${dfc.$per._w_dir_a} = @fields[21];
-  ${dfc.$per._hu_a} = @fields[22];
-  ${dfc.$per._hu_h} = @fields[23];
-  ${dfc.$per._hu_l} = @fields[24];
-  ${dfc.$per._we_icon} = @fields[25];
-  ${dfc.$per._we_code} = @fields[26];
-  ${dfc.$per._we_des} = @fields[27];
+  ${dfc.$per._per} = $dfc_entry->{period} - 1;
+  ${dfc.$per._date} = $dfc_entry->{epoch};
+
+  # Derive date components from epoch
+  my $epochdatedfc_tpl = DateTime->from_epoch(epoch => $dfc_entry->{epoch});
+  $epochdatedfc_tpl->add(seconds => $tzseconds);
+
+  ${dfc.$per._day}        = $epochdatedfc_tpl->day;
+  ${dfc.$per._month}      = $epochdatedfc_tpl->month;
+  ${dfc.$per._monthn}     = $epochdatedfc_tpl->month_name;
+  ${dfc.$per._monthn_sh}  = $epochdatedfc_tpl->month_abbr;
+  ${dfc.$per._year}       = $epochdatedfc_tpl->year;
+  ${dfc.$per._hour}       = $epochdatedfc_tpl->hour;
+  ${dfc.$per._min}        = $epochdatedfc_tpl->minute;
+  ${dfc.$per._wday}       = $epochdatedfc_tpl->day_name;
+  ${dfc.$per._wday_sh}    = $epochdatedfc_tpl->day_abbr;
+  ${dfc.$per._pop}        = $dfc_entry->{precip_probability};
+  ${dfc.$per._w_dirdes_h} = $dfc_entry->{wind_dir_max_desc};
+  ${dfc.$per._w_dir_h}    = $dfc_entry->{wind_dir_max_deg};
+  ${dfc.$per._w_dirdes_a} = $dfc_entry->{wind_dir_avg_desc};
+  ${dfc.$per._w_dir_a}    = $dfc_entry->{wind_dir_avg_deg};
+  ${dfc.$per._hu_a}       = $dfc_entry->{humidity_avg};
+  ${dfc.$per._hu_h}       = $dfc_entry->{humidity_max};
+  ${dfc.$per._hu_l}       = $dfc_entry->{humidity_min};
+  ${dfc.$per._we_icon}    = $dfc_entry->{weather_icon};
+  ${dfc.$per._we_code}    = $dfc_entry->{weather_code};
+  ${dfc.$per._we_des}     = $dfc_entry->{weather_description};
   if (!$metric) {
-  ${dfc.$per._tt_h} = @fields[11]*1.8+32;
-  ${dfc.$per._tt_l} = @fields[12]*1.8+32;
-  ${dfc.$per._prec} = @fields[14]*0.0393700787;
-  ${dfc.$per._snow} = @fields[15]*0.393700787;
-  ${dfc.$per._w_sp_h} = @fields[16]*0.621;
-  ${dfc.$per._w_sp_a} = @fields[19]*0.621;
-  ${dfc.$per._pr} = @fields[31]*0.0295301;
-  ${dfc.$per._dp} = @fields[30]*1.8+32;
+  ${dfc.$per._tt_h} = $dfc_entry->{high_temp}*1.8+32;
+  ${dfc.$per._tt_l} = $dfc_entry->{low_temp}*1.8+32;
+  ${dfc.$per._prec} = $dfc_entry->{precip_mm}*0.0393700787;
+  ${dfc.$per._snow} = $dfc_entry->{snow_cm}*0.393700787;
+  ${dfc.$per._w_sp_h} = $dfc_entry->{wind_speed_max}*0.621;
+  ${dfc.$per._w_sp_a} = $dfc_entry->{wind_speed_avg}*0.621;
+  ${dfc.$per._pr} = $dfc_entry->{pressure}*0.0295301;
+  ${dfc.$per._dp} = $dfc_entry->{dewpoint}*1.8+32;
   } else {
-  ${dfc.$per._tt_h} = @fields[11];
-  ${dfc.$per._tt_l} = @fields[12];
-  ${dfc.$per._prec} = @fields[14];
-  ${dfc.$per._snow} = @fields[15];
-  ${dfc.$per._w_sp_h} = @fields[16];
-  ${dfc.$per._w_sp_a} = @fields[19];
-  ${dfc.$per._pr} = @fields[31];
-  ${dfc.$per._dp} = @fields[30];
+  ${dfc.$per._tt_h} = $dfc_entry->{high_temp};
+  ${dfc.$per._tt_l} = $dfc_entry->{low_temp};
+  ${dfc.$per._prec} = $dfc_entry->{precip_mm};
+  ${dfc.$per._snow} = $dfc_entry->{snow_cm};
+  ${dfc.$per._w_sp_h} = $dfc_entry->{wind_speed_max};
+  ${dfc.$per._w_sp_a} = $dfc_entry->{wind_speed_avg};
+  ${dfc.$per._pr} = $dfc_entry->{pressure};
+  ${dfc.$per._dp} = $dfc_entry->{dewpoint};
   }
-  ${dfc.$per._sun_r} = "@fields[34]:@fields[35]";
-  ${dfc.$per._sun_s} = "@fields[36]:@fields[37]";
-  ${dfc.$per._ozone} = @fields[28];
-  ${dfc.$per._moon_p} = @fields[29];
-  ${dfc.$per._moon_ph} = @fields[39];
-  ${dfc.$per._moon_a} = @fields[38];
-  ${dfc.$per._uvi} = @fields[32];
-  # Use night icons between sunset and sunrise
-  #if (${dfc.$per._hour} > $hour_sun_s || ${dfc.$per._hour} < $hour_sun_r) {
-  #  ${dfc.$per._dayornight} = "n";
-  #} else {
-  #  ${dfc.$per._dayornight} = "d";
-  #}
+  # Sunrise/sunset as "HH:MM" strings for template display
+  ${dfc.$per._sun_r} = defined($dfc_entry->{sunrise}) ? $dfc_entry->{sunrise} : "";
+  ${dfc.$per._sun_s} = defined($dfc_entry->{sunset})  ? $dfc_entry->{sunset}  : "";
+  ${dfc.$per._ozone}   = _jval($dfc_entry->{ozone});
+  ${dfc.$per._moon_p}  = $dfc_entry->{moon_percent};
+  ${dfc.$per._moon_ph} = $dfc_entry->{moon_phase};
+  ${dfc.$per._moon_a}  = $dfc_entry->{moon_age};
+  ${dfc.$per._uvi}     = $dfc_entry->{uv_index};
 
 }
 
@@ -1380,60 +1506,57 @@ if (!$newstyle) {
 # Hourly Forecast
 #############################################
 
-# Read data
-#open(F,"<$home/data/plugins/$psubfolder/hourlyforecast.dat") || die "Cannot open $home/data/plugins/$psubfolder/hourlyforecast.dat";
-#  our @hfcdata = <F>;
-#close(F);
+foreach my $hfc_entry (@hfc) {
 
-foreach (@hfcdata){
-  s/[\n\r]//g;
-  my @fields = split(/\|/);
+  $per = $hfc_entry->{period};
 
-  $per = @fields[0];
+  # Derive date/time components from epoch
+  my $epochdatehfc_tpl = DateTime->from_epoch(epoch => $hfc_entry->{epoch});
+  $epochdatehfc_tpl->add(seconds => $tzseconds);
 
-  ${hfc.$per._per} = @fields[0];
-  ${hfc.$per._date} = @fields[1];
-  ${hfc.$per._day} = @fields[2];
-  ${hfc.$per._month} = @fields[3];
-  ${hfc.$per._monthn} = @fields[4];
-  ${hfc.$per._monthn_sh} = @fields[5];
-  ${hfc.$per._year} = @fields[6];
-  ${hfc.$per._hour} = @fields[7];
-  ${hfc.$per._min} = @fields[8];
-  ${hfc.$per._wday} = @fields[9];
-  ${hfc.$per._wday_sh} = @fields[10];
-  ${hfc.$per._hu} = @fields[14];
-  ${hfc.$per._w_dirdes} = @fields[15];
-  ${hfc.$per._w_dir} = @fields[16];
-  ${hfc.$per._pr} = @fields[19];
-  ${hfc.$per._dp} = @fields[20];
-  ${hfc.$per._sky} = @fields[21];
-  ${hfc.$per._sky._des} = @fields[22];
-  ${hfc.$per._uvi} = @fields[23];
-  ${hfc.$per._pop} = @fields[26];
-  ${hfc.$per._we_code} = @fields[28];
-  ${hfc.$per._we_icon} = @fields[27];
-  ${hfc.$per._we_des} = @fields[29];
-  ${hfc.$per._ozone} = @fields[30];
-  ${hfc.$per._moon_p} = @fields[33];
-  ${hfc.$per._moon_ph} = @fields[35];
-  ${hfc.$per._moon_a} = @fields[34];
+  ${hfc.$per._per}        = $hfc_entry->{period};
+  ${hfc.$per._date}       = $hfc_entry->{epoch};
+  ${hfc.$per._day}        = $epochdatehfc_tpl->day;
+  ${hfc.$per._month}      = $epochdatehfc_tpl->month;
+  ${hfc.$per._monthn}     = $epochdatehfc_tpl->month_name;
+  ${hfc.$per._monthn_sh}  = $epochdatehfc_tpl->month_abbr;
+  ${hfc.$per._year}       = $epochdatehfc_tpl->year;
+  ${hfc.$per._hour}       = $epochdatehfc_tpl->hour;
+  ${hfc.$per._min}        = $epochdatehfc_tpl->minute;
+  ${hfc.$per._wday}       = $epochdatehfc_tpl->day_name;
+  ${hfc.$per._wday_sh}    = $epochdatehfc_tpl->day_abbr;
+  ${hfc.$per._hu}         = $hfc_entry->{humidity};
+  ${hfc.$per._w_dirdes}   = $hfc_entry->{wind_direction_desc};
+  ${hfc.$per._w_dir}      = $hfc_entry->{wind_direction_deg};
+  ${hfc.$per._pr}         = $hfc_entry->{pressure};
+  ${hfc.$per._dp}         = $hfc_entry->{dewpoint};
+  ${hfc.$per._sky}        = $hfc_entry->{sky_percent};
+  ${hfc.$per._sky._des}   = $hfc_entry->{sky_description};
+  ${hfc.$per._uvi}        = $hfc_entry->{uv_index};
+  ${hfc.$per._pop}        = $hfc_entry->{precip_probability};
+  ${hfc.$per._we_code}    = $hfc_entry->{weather_code};
+  ${hfc.$per._we_icon}    = $hfc_entry->{weather_icon};
+  ${hfc.$per._we_des}     = $hfc_entry->{weather_description};
+  ${hfc.$per._ozone}      = _jval($hfc_entry->{ozone});
+  ${hfc.$per._moon_p}     = $hfc_entry->{moon_percent};
+  ${hfc.$per._moon_ph}    = $hfc_entry->{moon_phase};
+  ${hfc.$per._moon_a}     = $hfc_entry->{moon_age};
   if (!$metric) {
-  ${hfc.$per._tt} = @fields[11]*1.8+32;
-  ${hfc.$per._tt_fl} = @fields[12]*1.8+32;
-  ${hfc.$per._hi} = @fields[13]*1.8+32;
-  ${hfc.$per._w_sp} = @fields[17]*0.621;
-  ${hfc.$per._w_ch} = @fields[18]*1.8+32;
-  ${hfc.$per._prec} = @fields[24]*0.0393700787;
-  ${hfc.$per._snow} = @fields[25]*0.393700787;
+  ${hfc.$per._tt}    = $hfc_entry->{temperature}*1.8+32;
+  ${hfc.$per._tt_fl} = $hfc_entry->{feelslike}*1.8+32;
+  ${hfc.$per._hi}    = $hfc_entry->{heat_index}*1.8+32;
+  ${hfc.$per._w_sp}  = $hfc_entry->{wind_speed}*0.621;
+  ${hfc.$per._w_ch}  = $hfc_entry->{windchill}*1.8+32;
+  ${hfc.$per._prec}  = $hfc_entry->{precip_mm}*0.0393700787;
+  ${hfc.$per._snow}  = $hfc_entry->{snow_cm}*0.393700787;
   } else {
-  ${hfc.$per._tt} = @fields[11];
-  ${hfc.$per._tt_fl} = @fields[12];
-  ${hfc.$per._hi} = @fields[13];
-  ${hfc.$per._w_sp} = @fields[17];
-  ${hfc.$per._w_ch} = @fields[18];
-  ${hfc.$per._prec} = @fields[24];
-  ${hfc.$per._snow} = @fields[25];
+  ${hfc.$per._tt}    = $hfc_entry->{temperature};
+  ${hfc.$per._tt_fl} = $hfc_entry->{feelslike};
+  ${hfc.$per._hi}    = $hfc_entry->{heat_index};
+  ${hfc.$per._w_sp}  = $hfc_entry->{wind_speed};
+  ${hfc.$per._w_ch}  = $hfc_entry->{windchill};
+  ${hfc.$per._prec}  = $hfc_entry->{precip_mm};
+  ${hfc.$per._snow}  = $hfc_entry->{snow_cm};
   }
   # Use night icons between sunset and sunrise
   if (${hfc.$per._hour} > $hour_sun_s || ${hfc.$per._hour} < $hour_sun_r) {
@@ -1467,85 +1590,73 @@ if (!$newstyle) {
 # CURRENT CONDITIONS
 #############################################
 
-# Get current weather data from database
-#open(F,"<$home/data/plugins/$psubfolder/current.dat") || die "Cannot open $home/data/plugins/$psubfolder/current.dat";
-#  our $curdata = <F>;
-#close(F);
-
-#chomp $curdata;
-
-@fields = split(/\|/,$curdata);
-
-our $cur_date = @fields[0];
-our $cur_date_des = @fields[1];
-our $cur_date_tz_des_sh = @fields[2];
-our $cur_date_tz_des = @fields[3];
-our $cur_date_tz = @fields[4];
-
-#our $epochdate = DateTime->from_epoch(
-#      epoch      => @fields[0],
-#      time_zone => 'local',
-#);
+our $cur_date     = $cur->{epoch};
+our $cur_date_des_var = $cur->{datetime};
+our $cur_date_tz_des_sh_var = $cur_date_tz_des_sh;
+our $cur_date_tz_des_var = $cur->{timezone};
+our $cur_date_tz_var = $cur_date_tz;
 
 our $cur_day        = sprintf("%02d", $epochdate->day);
 our $cur_month      = sprintf("%02d", $epochdate->month);
 our $cur_hour       = sprintf("%02d", $epochdate->hour);
 our $cur_min        = sprintf("%02d", $epochdate->minute);
 our $cur_year       = $epochdate->year;
-our $cur_loc_n      = @fields[5];
-our $cur_loc_c      = @fields[6];
-our $cur_loc_ccode  = @fields[7];
-our $cur_loc_lat    = @fields[8];
-our $cur_loc_long   = @fields[9];
-our $cur_loc_el     = @fields[10];
-our $cur_hu         = @fields[13];
-our $cur_w_dirdes   = @fields[14];
-our $cur_w_dir      = @fields[15];
-our $cur_sr         = @fields[22];
-our $cur_uvi        = @fields[24];
-our $cur_we_icon    = @fields[27];
-our $cur_we_code    = @fields[28];
-our $cur_we_des     = @fields[29];
-our $cur_moon_p     = @fields[30];
-our $cur_moon_a     = @fields[31];
-our $cur_moon_ph    = @fields[32];
-our $cur_moon_h     = @fields[33];
+our $cur_loc_n      = $cur->{city};
+our $cur_loc_c      = $cur->{country};
+our $cur_loc_ccode  = $cur->{country_code};
+our $cur_loc_lat    = $cur->{latitude};
+our $cur_loc_long   = $cur->{longitude};
+our $cur_loc_el     = $cur->{elevation};
+our $cur_hu         = $cur->{humidity};
+our $cur_w_dirdes   = $cur->{wind_direction_desc};
+our $cur_w_dir      = $cur->{wind_direction_deg};
+our $cur_sr         = $cur->{solar_radiation};
+our $cur_uvi        = $cur->{uv_index};
+our $cur_we_icon    = $cur->{weather_icon};
+our $cur_we_code    = $cur->{weather_code};
+our $cur_we_des     = $cur->{weather_description};
+our $cur_moon_p     = $cur->{moon_percent};
+our $cur_moon_a     = $cur->{moon_age};
+our $cur_moon_ph    = $cur->{moon_phase};
+our $cur_moon_h     = $cur->{moon_hemisphere};
 
 if (!$metric) {
-our $cur_tt         = @fields[11]*1.8+32;
-our $cur_tt_fl      = @fields[12]*1.8+32;
-our $cur_w_sp       = @fields[16]*0.621371192;
-our $cur_w_gu       = @fields[17]*0.621371192;
-our $cur_w_ch       = @fields[18]*1.8+32;
-our $cur_pr         = @fields[19]*0.0295301;
-our $cur_dp         = @fields[20]*1.8+32;
-our $cur_vis        = @fields[21]*0.621371192;
-our $cur_hi         = @fields[23]*1.8+32;
-our $cur_prec_today = @fields[25]*0.0393700787;
-our $cur_prec_1hr   = @fields[26]*0.0393700787;
+our $cur_tt         = $cur->{temperature}*1.8+32;
+our $cur_tt_fl      = $cur->{feelslike}*1.8+32;
+our $cur_w_sp       = $cur->{wind_speed}*0.621371192;
+our $cur_w_gu       = $cur->{wind_gust}*0.621371192;
+our $cur_w_ch       = $cur->{windchill}*1.8+32;
+our $cur_pr         = $cur->{pressure}*0.0295301;
+our $cur_dp         = $cur->{dewpoint}*1.8+32;
+our $cur_vis        = $cur->{visibility}*0.621371192;
+our $cur_hi         = $cur->{heat_index}*1.8+32;
+our $cur_prec_today = $cur->{precip_today_mm}*0.0393700787;
+our $cur_prec_1hr   = $cur->{precip_1hr_mm}*0.0393700787;
 } else {
-our $cur_tt         = @fields[11];
-our $cur_tt_fl      = @fields[12];
-our $cur_w_sp       = @fields[16];
-our $cur_w_gu       = @fields[17];
-our $cur_w_ch       = @fields[18];
-our $cur_pr         = @fields[19];
-our $cur_dp         = @fields[20];
-our $cur_vis        = @fields[21];
-our $cur_hi         = @fields[23];
-our $cur_prec_today = @fields[25];
-our $cur_prec_1hr   = @fields[26];
+our $cur_tt         = $cur->{temperature};
+our $cur_tt_fl      = $cur->{feelslike};
+our $cur_w_sp       = $cur->{wind_speed};
+our $cur_w_gu       = $cur->{wind_gust};
+our $cur_w_ch       = $cur->{windchill};
+our $cur_pr         = $cur->{pressure};
+our $cur_dp         = $cur->{dewpoint};
+our $cur_vis        = $cur->{visibility};
+our $cur_hi         = $cur->{heat_index};
+our $cur_prec_today = $cur->{precip_today_mm};
+our $cur_prec_1hr   = $cur->{precip_1hr_mm};
 }
 
-our $cur_sun_r = "@fields[34]:@fields[35]";
-our $cur_sun_s = "@fields[36]:@fields[37]";
-our $cur_ozone = @fields[38];
-our $cur_sky = @fields[39];
-our $cur_pop = @fields[40];
+# Sunrise/sunset as "HH:MM" strings for template display
+our $cur_sun_r = defined($cur->{sunrise}) ? $cur->{sunrise} : "";
+our $cur_sun_s = defined($cur->{sunset})  ? $cur->{sunset}  : "";
+our $cur_ozone = _jval($cur->{ozone});
+our $cur_sky   = _jval($cur->{cloud_cover});
+our $cur_pop   = _jval($cur->{precip_probability});
 
 # Use night icons between sunset and sunrise
-our $hour_sun_r = @fields[34];
-our $hour_sun_s = @fields[36];
+# Extract hours from "HH:MM" sunrise/sunset strings
+our $hour_sun_r = defined($sunr_h) ? $sunr_h : 0;
+our $hour_sun_s = defined($suns_h) ? $suns_h : 24;
 if ($cur_hour > $hour_sun_s || $cur_hour < $hour_sun_r) {
 our  $cur_dayornight = "n";
 } else {
@@ -1618,7 +1729,7 @@ my %lox_to_emu = (
 # 28 = leichter Schneeregenschauer
 # 29 = kräftiger Schneeregenschauer
 
-# Used weather symbols in Loxone Weather Emulator (by testing, not documented by Loxone): 
+# Used weather symbols in Loxone Weather Emulator (by testing, not documented by Loxone):
 #  1 - wolkenlos
 #  2 - heiter
 #  3 - heiter
@@ -1680,15 +1791,15 @@ if ($emu) {
   # Original file has 169 entrys, but always starts at 0:00 today or 12:00 yesterday. We alsways start with current data
   # (we don't have historical data) and offer 168 hourly forcast datasets. This seems to be ok for the miniserver.
 
-  # Get current weather data from database
-
-  #open(F,"<$home/data/plugins/$psubfolder/current.dat") || die "Cannot open $home/data/plugins/$psubfolder/current.dat";
-  #  $curdata = <F>;
-  #close(F);
-
-  #chomp $curdata;
-
-  @fields = split(/\|/,$curdata);
+  # Derive timezone offset string for emulator header (e.g. "UTC+1.00")
+  my $emu_tz_str = "UTC+0.00";
+  if (defined($cur->{datetime}) && $cur->{datetime} =~ /([+-])(\d{2}):(\d{2})$/) {
+    my $sign = $1;
+    my $h    = int($2);
+    my $m    = int($3);
+    my $frac = $h + $m/60;
+    $emu_tz_str = sprintf("UTC%s%.2f", $sign, $frac);
+  }
 
   open(F,">$lbplogdir/index.txt");
     flock(F,2);
@@ -1698,43 +1809,43 @@ if ($emu) {
     print F "</mb_metadata>\n";
     print F "<valid_until>" . (($datenow->year)+5) . "-12-31</valid_until>\n";
     print F "<station>\n";
-    print F ";@fields[5];@fields[9];@fields[8];@fields[10];@fields[6];@fields[2];UTC" . substr (@fields[4], 0, 3) . "." . substr (@fields[4], 3, 2);
-    print F ";@fields[34]:@fields[35];@fields[36]:@fields[37];\n";
+    print F ";" . $cur->{city} . ";" . $cur->{longitude} . ";" . $cur->{latitude} . ";" . $cur->{elevation} . ";" . $cur->{country} . ";" . $cur_date_tz_des_sh . ";" . $emu_tz_str;
+    print F ";" . (defined($cur->{sunrise}) ? $cur->{sunrise} : "") . ";" . (defined($cur->{sunset}) ? $cur->{sunset} : "") . ";\n";
     print F $epochdate->dmy('.') . ";\t";
     print F $epochdate->day_abbr() . ";\t";
     printf ( F "%02d",$epochdate->hour() );
     print F ";\t";
-    printf ( F "%1.2f", @fields[11]);
+    printf ( F "%1.2f", $cur->{temperature});
     print F ";\t";
-    printf ( F "%1.1f", @fields[12]);
+    printf ( F "%1.1f", $cur->{feelslike});
     print F ";\t";
-    printf ( F "%1d", @fields[16]);
+    printf ( F "%1d", $cur->{wind_speed});
     print F ";\t";
-    printf ( F "%1d", @fields[15]);
+    printf ( F "%1d", $cur->{wind_direction_deg});
     print F ";\t";
-    printf ( F "%1d", @fields[17]);
-    print F ";\t";
-    printf ( F "%1d", 0);
+    printf ( F "%1d", $cur->{wind_gust});
     print F ";\t";
     printf ( F "%1d", 0);
     print F ";\t";
     printf ( F "%1d", 0);
     print F ";\t";
-    printf ( F "%1.1f", @fields[26]);
+    printf ( F "%1d", 0);
+    print F ";\t";
+    printf ( F "%1.1f", $cur->{precip_1hr_mm});
     print F ";\t";
     printf ( F "%1d", 0);
     print F ";\t";
     printf ( F "%1.1f", 0);
     print F ";\t";
-    printf ( F "%1d", @fields[19]);
+    printf ( F "%1d", $cur->{pressure});
     print F ";\t";
-    printf ( F "%1d", @fields[13]);
+    printf ( F "%1d", $cur->{humidity});
     print F ";\t";
     printf ( F "%1d", 0);
     print F ";\t";
-    printf ( F "%1d", $lox_to_emu{int($fields[28])} // int($fields[28]));
+    printf ( F "%1d", $lox_to_emu{int($cur->{weather_code})} // int($cur->{weather_code}));
     print F ";\t";
-    printf ( F "%1.2f", $fields[22]);
+    printf ( F "%1.2f", $cur->{solar_radiation});
     print F ";\n";
   flock(F,8);
   close(F);
@@ -1742,11 +1853,6 @@ if ($emu) {
   #############################################
   # HOURLY FORECAST
   #############################################
-
-  # Get current weather data from database
-  #open(F,"<$home/data/plugins/$psubfolder/hourlyforecast.dat") || die "Cannot open $home/data/plugins/$psubfolder/hourlyforecast.dat";
-  #  $hfcdata = <F>;
-  #close(F);
 
   # Original file has 169 entrys, but always starts at 0:00 today or 12:00 yesterday. We alsways start with current data
   # 7 days * 24 hours = 168 datasets. It is unclear why the ms needs 7 days, because the emulator only displays 'today', 'tomorrow' and 'day after tomorrow'.
@@ -1757,60 +1863,51 @@ if ($emu) {
   open(F,">>$lbplogdir/index.txt");
   flock(F,2);
 
-    foreach (@hfcdata) {
+    foreach my $hfc_entry (@hfc) {
 
-      @fields = split(/\|/,$_);
-
-      $hfcdate = DateTime->new(
-            year      => @fields[6],
-            month     => @fields[3],
-            day       => @fields[2],
-            hour      => @fields[7],
-            minute    => @fields[8],
-      );
+      # Construct hfcdate from epoch (per Research Pattern 7)
+      $hfcdate = DateTime->from_epoch(epoch => $hfc_entry->{epoch});
 
       if ( DateTime->compare($epochdate, $hfcdate) == 1 ) { next; } # Exclude already past forecasts
 
       if ( $i >= 168 ) { last; } # Stop after 168 datasets
-
-      #chomp $_;
 
       # "local date;weekday;local time;temperature(C);feeledTemperature(C);windspeed(km/h);winddirection(degr);wind gust(km/h);low clouds(%);medium clouds(%);high clouds(%);precipitation(mm);probability of Precip(%);snowFraction;sea level pressure(hPa);relative humidity(%);CAPE;picto-code;radiation (W/m2);\n";
       print F $hfcdate->dmy('.') . ";\t";
       print F $hfcdate->day_abbr() . ";\t";
       printf ( F "%02d",$hfcdate->hour() );
       print F ";\t";
-      printf ( F "%1.2f", @fields[11]);
+      printf ( F "%1.2f", $hfc_entry->{temperature});
       print F ";\t";
-      printf ( F "%1.2f", @fields[12]);
+      printf ( F "%1.2f", $hfc_entry->{feelslike});
       print F ";\t";
-      printf ( F "%1d", @fields[17]);
+      printf ( F "%1d", $hfc_entry->{wind_speed});
       print F ";\t";
-      printf ( F "%1d", @fields[16]);
+      printf ( F "%1d", $hfc_entry->{wind_direction_deg});
       print F ";\t";
-      printf ( F "%1d", @fields[17]);
+      printf ( F "%1d", $hfc_entry->{wind_speed});
       print F ";\t";
-      printf ( F "%1d", @fields[21]);
+      printf ( F "%1d", $hfc_entry->{sky_percent});
       print F ";\t";
-      printf ( F "%1d", @fields[21]);
+      printf ( F "%1d", $hfc_entry->{sky_percent});
       print F ";\t";
-      printf ( F "%1d", @fields[21]);
+      printf ( F "%1d", $hfc_entry->{sky_percent});
       print F ";\t";
-      printf ( F "%1.1f", @fields[24]);
+      printf ( F "%1.1f", $hfc_entry->{precip_mm});
       print F ";\t";
-      printf ( F "%1d", @fields[26]);
+      printf ( F "%1d", $hfc_entry->{precip_probability});
       print F ";\t";
       printf ( F "%1.1f", 0);
       print F ";\t";
-      printf ( F "%1d", @fields[19]);
+      printf ( F "%1d", $hfc_entry->{pressure});
       print F ";\t";
-      printf ( F "%1d", @fields[14]);
+      printf ( F "%1d", $hfc_entry->{humidity});
       print F ";\t";
       printf ( F "%1d", 0);
       print F ";\t";
-      printf ( F "%1d", $lox_to_emu{int($fields[28])} // int($fields[28]));
+      printf ( F "%1d", $lox_to_emu{int($hfc_entry->{weather_code})} // int($hfc_entry->{weather_code}));
       print F ";\t";
-      printf ( F "%1.2f", $fields[31]);
+      printf ( F "%1.2f", $hfc_entry->{solar_radiation});
       print F ";\n";
 
       $i++;
@@ -1906,7 +2003,7 @@ sub mqttconnect
 	} else {
 		$sendmqtt = 1;
 	}
-	
+
 	# Connect
 	eval {
 		LOGINF "Connecting to MQTT Broker";
