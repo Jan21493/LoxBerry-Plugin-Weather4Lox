@@ -7,11 +7,11 @@
 
 ### JSON Datenformat
 
-- [ ] **JSON-01**: JSON-Schema für current, hourly und daily Wetterdaten definiert und dokumentiert
+- [x] **JSON-01**: JSON-Schema für current, hourly und daily Wetterdaten definiert und dokumentiert
 - [ ] **JSON-02**: Alle Grabber (OpenWeather, VisualCrossing, WeatherFlow, WetterOnline, wttr.in) schreiben JSON-Dateien parallel zu .dat (Dual-Write)
-- [ ] **JSON-03**: JSON-Dateien werden atomar geschrieben (.tmp + rename) mit File-Locking
-- [ ] **JSON-04**: JSON-Encoding ist konsistent UTF-8 mit korrektem Umlaut-Handling (ä, ö, ü, ß)
-- [ ] **JSON-05**: Dezimalzahlen nutzen Punkt als Trennzeichen unabhängig vom System-Locale
+- [x] **JSON-03**: JSON-Dateien werden atomar geschrieben (.tmp + rename) mit File-Locking
+- [x] **JSON-04**: JSON-Encoding ist konsistent UTF-8 mit korrektem Umlaut-Handling (ä, ö, ü, ß)
+- [x] **JSON-05**: Dezimalzahlen nutzen Punkt als Trennzeichen unabhängig vom System-Locale
 - [ ] **JSON-06**: Supplementary Grabber (WU, FOSHK, PWSCatchUpload, Loxone, OpenMeteo AQ) schreiben ebenfalls JSON
 - [ ] **JSON-07**: datatoloxone.pl liest JSON statt .dat für UDP/MQTT Delivery an Loxone
 - [ ] **JSON-08**: datatoloxone.pl erzeugt identische UDP/MQTT-Werte wie zuvor (keine Regression)
@@ -93,11 +93,11 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| JSON-01 | Phase 1 | Pending |
+| JSON-01 | Phase 1 | Complete |
 | JSON-02 | Phase 1 | Pending |
-| JSON-03 | Phase 1 | Pending |
-| JSON-04 | Phase 1 | Pending |
-| JSON-05 | Phase 1 | Pending |
+| JSON-03 | Phase 1 | Complete |
+| JSON-04 | Phase 1 | Complete |
+| JSON-05 | Phase 1 | Complete |
 | JSON-06 | Phase 1 | Pending |
 | JSON-07 | Phase 2 | Pending |
 | JSON-08 | Phase 2 | Pending |

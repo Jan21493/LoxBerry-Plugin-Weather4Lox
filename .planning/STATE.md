@@ -1,3 +1,19 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: planning
+stopped_at: Completed 01-01-PLAN.md (grabber_utils.pl JSON schema foundation)
+last_updated: "2026-03-12T21:03:03.664Z"
+last_activity: 2026-03-12 — Phase 1 context gathered (JSON schema structure, supplementary grabber scope, error handling, documentation)
+progress:
+  total_phases: 5
+  completed_phases: 0
+  total_plans: 3
+  completed_plans: 1
+  percent: 33
+---
+
 # Project State
 
 ## Project Reference
@@ -10,28 +26,28 @@ See: .planning/PROJECT.md (updated 2026-03-12)
 ## Current Position
 
 Phase: 1 of 5 (JSON Schema & Grabber Migration)
-Plan: 0 of TBD in current phase
-Status: Context gathered, ready to plan
-Last activity: 2026-03-12 — Phase 1 context gathered (JSON schema structure, supplementary grabber scope, error handling, documentation)
+Plan: 1 of 3 in current phase
+Status: In progress — 01-01 complete
+Last activity: 2026-03-12 — Plan 01-01 complete (grabber_utils.pl JSON schema foundation)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 3 min
+- Total execution time: 0.05 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| Phase 01 | 1/3 | 3 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: -
-- Trend: -
+- Last 5 plans: 3min
+- Trend: Baseline established
 
 *Updated after each plan completion*
 
@@ -46,6 +62,9 @@ Recent decisions affecting current work:
 - Dual-Write (JSON + .dat parallel) — altes System bleibt funktionsfahig bis Testphase abgeschlossen
 - datatoloxone.pl und alte Themes weiterhin .dat-kompatibel (keine Breaking Changes)
 - ocean-live als Einzeldatei in webfrontend/html/ (direkter Zugriff ohne CGI-Umweg)
+- [Phase 01]: write_current_json_aq() added as dedicated helper for OpenMeteo AQ grabber (cleaner API than extending write_current_json)
+- [Phase 01]: period field retained explicitly in daily/hourly JSON arrays (self-describing over implicit array index)
+- [Phase 01]: generated_at uses system localtime (grabber runtime), data.datetime uses observation epoch+tz_long
 
 ### Pending Todos
 
@@ -58,6 +77,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-12
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-json-schema-grabber-migration/01-CONTEXT.md
+Last session: 2026-03-12T21:03:03.658Z
+Stopped at: Completed 01-01-PLAN.md (grabber_utils.pl JSON schema foundation)
+Resume file: None
