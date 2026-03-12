@@ -12,7 +12,7 @@ Die Modernisierung erfolgt in funf Phasen: Zuerst wird das JSON-Schema definiert
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: JSON Schema & Grabber Migration** - JSON-Schema definiert, alle Grabber schreiben JSON parallel zu .dat (Dual-Write)
+- [x] **Phase 1: JSON Schema & Grabber Migration** - JSON-Schema definiert, alle Grabber schreiben JSON parallel zu .dat (Dual-Write) (completed 2026-03-12)
 - [ ] **Phase 2: Delivery Layer Migration** - datatoloxone.pl liest JSON statt .dat, UDP/MQTT Delivery unverandert
 - [ ] **Phase 3: CGI JSON Endpoint** - show.cgi liefert JSON-Wetterdaten mit korrekten HTTP-Headers
 - [ ] **Phase 4: ocean-live Theme Grundgerust** - Einzelne HTML-Datei mit Ocean-Design, Tabs, Hero-Bereich und 7-Tage-Ubersicht
@@ -30,7 +30,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Die JSON-Dateien enthalten korrekte UTF-8-Umlaute (a, o, u, ss) und Dezimalpunkte statt Kommas
   4. Alle funf Haupt-Grabber (OpenWeather, VisualCrossing, WeatherFlow, WetterOnline, wttr.in) sowie supplementary Grabber schreiben JSON
   5. Die bestehenden .dat-Dateien existieren unverandert nach dem Grabber-Lauf (kein Regression im alten System)
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 01-01-PLAN.md — Upgrade write_*_json() in grabber_utils.pl (meta/data envelope, atomic write, AQ fields)
@@ -88,7 +88,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. JSON Schema & Grabber Migration | 2/3 | In Progress|  |
+| 1. JSON Schema & Grabber Migration | 3/3 | Complete   | 2026-03-12 |
 | 2. Delivery Layer Migration | 0/TBD | Not started | - |
 | 3. CGI JSON Endpoint | 0/TBD | Not started | - |
 | 4. ocean-live Theme Grundgerust | 0/TBD | Not started | - |
