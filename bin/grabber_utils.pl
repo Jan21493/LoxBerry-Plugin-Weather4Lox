@@ -457,7 +457,10 @@ sub write_current_json_aq {
 # ── write_daily_json ────────────────────────────────────────────────
 
 sub write_daily_json {
-    my ($logdir) = @_;
+    my ($logdir, %opts) = @_;
+    my $source  = $opts{source}  // '';
+    my $grabber = $opts{grabber} // '';
+
     my $dat = "$logdir/dailyforecast.dat";
     return unless -f $dat;
     my @lines = _read_dat_lines($dat);
@@ -485,18 +488,42 @@ sub write_daily_json {
         push @records, \%rec;
     }
 
+    my $generated_at = strftime("%Y-%m-%dT%H:%M:%S%z", localtime(time));
+    $generated_at =~ s/(\d{2})(\d{2})$/$1:$2/;
+
+    my %envelope = (
+        meta => {
+            schema_version => "1.0",
+            source         => $source,
+            grabber        => $grabber,
+            generated_at   => $generated_at,
+        },
+        data => \@records,
+    );
+
     my $json_obj = JSON::PP->new->pretty->canonical->utf8;
     my $out = "$logdir/dailyforecast.json";
-    open my $fh, '>:raw', $out or do { LOGWARN "Cannot write $out: $!"; return; };
-    print $fh $json_obj->encode(\@records);
-    close $fh;
+    my $tmp = "$out.tmp";
+    eval {
+        open my $fh, '>:raw', $tmp or die "Cannot open $tmp: $!";
+        print $fh $json_obj->encode(\%envelope);
+        close $fh;
+        File::Copy::move($tmp, $out) or die "Cannot rename $tmp to $out: $!";
+    };
+    if ($@) {
+        LOGWARN "JSON write failed for $out: $@";
+        return;
+    }
     LOGOK "Saved daily forecast data as JSON to $out";
 }
 
 # ── write_hourly_json ───────────────────────────────────────────────
 
 sub write_hourly_json {
-    my ($logdir) = @_;
+    my ($logdir, %opts) = @_;
+    my $source  = $opts{source}  // '';
+    my $grabber = $opts{grabber} // '';
+
     my $dat = "$logdir/hourlyforecast.dat";
     return unless -f $dat;
     my @lines = _read_dat_lines($dat);
@@ -522,11 +549,32 @@ sub write_hourly_json {
         push @records, \%rec;
     }
 
+    my $generated_at = strftime("%Y-%m-%dT%H:%M:%S%z", localtime(time));
+    $generated_at =~ s/(\d{2})(\d{2})$/$1:$2/;
+
+    my %envelope = (
+        meta => {
+            schema_version => "1.0",
+            source         => $source,
+            grabber        => $grabber,
+            generated_at   => $generated_at,
+        },
+        data => \@records,
+    );
+
     my $json_obj = JSON::PP->new->pretty->canonical->utf8;
     my $out = "$logdir/hourlyforecast.json";
-    open my $fh, '>:raw', $out or do { LOGWARN "Cannot write $out: $!"; return; };
-    print $fh $json_obj->encode(\@records);
-    close $fh;
+    my $tmp = "$out.tmp";
+    eval {
+        open my $fh, '>:raw', $tmp or die "Cannot open $tmp: $!";
+        print $fh $json_obj->encode(\%envelope);
+        close $fh;
+        File::Copy::move($tmp, $out) or die "Cannot rename $tmp to $out: $!";
+    };
+    if ($@) {
+        LOGWARN "JSON write failed for $out: $@";
+        return;
+    }
     LOGOK "Saved hourly forecast data as JSON to $out";
 }
 
