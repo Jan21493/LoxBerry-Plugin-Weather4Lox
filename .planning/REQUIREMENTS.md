@@ -93,46 +93,46 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| JSON-01 | — | Pending |
-| JSON-02 | — | Pending |
-| JSON-03 | — | Pending |
-| JSON-04 | — | Pending |
-| JSON-05 | — | Pending |
-| JSON-06 | — | Pending |
-| JSON-07 | — | Pending |
-| JSON-08 | — | Pending |
-| CGI-01 | — | Pending |
-| CGI-02 | — | Pending |
-| CGI-03 | — | Pending |
-| THEME-01 | — | Pending |
-| THEME-02 | — | Pending |
-| THEME-03 | — | Pending |
-| THEME-04 | — | Pending |
-| HERO-01 | — | Pending |
-| HERO-02 | — | Pending |
-| HERO-03 | — | Pending |
-| HERO-04 | — | Pending |
-| HERO-05 | — | Pending |
-| HERO-06 | — | Pending |
-| TAGE-01 | — | Pending |
-| TAGE-02 | — | Pending |
-| DATA-01 | — | Pending |
-| DATA-02 | — | Pending |
-| DATA-03 | — | Pending |
-| DATA-04 | — | Pending |
-| DATA-05 | — | Pending |
-| DATA-06 | — | Pending |
-| LANG-01 | — | Pending |
-| LANG-02 | — | Pending |
-| LANG-03 | — | Pending |
-| EXTRA-01 | — | Pending |
-| EXTRA-02 | — | Pending |
+| JSON-01 | Phase 1 | Pending |
+| JSON-02 | Phase 1 | Pending |
+| JSON-03 | Phase 1 | Pending |
+| JSON-04 | Phase 1 | Pending |
+| JSON-05 | Phase 1 | Pending |
+| JSON-06 | Phase 1 | Pending |
+| JSON-07 | Phase 2 | Pending |
+| JSON-08 | Phase 2 | Pending |
+| CGI-01 | Phase 3 | Pending |
+| CGI-02 | Phase 3 | Pending |
+| CGI-03 | Phase 3 | Pending |
+| THEME-01 | Phase 4 | Pending |
+| THEME-02 | Phase 4 | Pending |
+| THEME-03 | Phase 4 | Pending |
+| THEME-04 | Phase 4 | Pending |
+| HERO-01 | Phase 4 | Pending |
+| HERO-02 | Phase 4 | Pending |
+| HERO-03 | Phase 4 | Pending |
+| HERO-04 | Phase 4 | Pending |
+| HERO-05 | Phase 4 | Pending |
+| HERO-06 | Phase 4 | Pending |
+| TAGE-01 | Phase 4 | Pending |
+| TAGE-02 | Phase 4 | Pending |
+| EXTRA-02 | Phase 4 | Pending |
+| DATA-01 | Phase 5 | Pending |
+| DATA-02 | Phase 5 | Pending |
+| DATA-03 | Phase 5 | Pending |
+| DATA-04 | Phase 5 | Pending |
+| DATA-05 | Phase 5 | Pending |
+| DATA-06 | Phase 5 | Pending |
+| LANG-01 | Phase 5 | Pending |
+| LANG-02 | Phase 5 | Pending |
+| LANG-03 | Phase 5 | Pending |
+| EXTRA-01 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 34 total
-- Mapped to phases: 0
-- Unmapped: 34
+- Mapped to phases: 34
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-12*
-*Last updated: 2026-03-12 after initial definition*
+*Last updated: 2026-03-12 after roadmap creation — all requirements mapped*
