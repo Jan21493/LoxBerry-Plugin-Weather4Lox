@@ -13,8 +13,8 @@
 - [x] **JSON-04**: JSON-Encoding ist konsistent UTF-8 mit korrektem Umlaut-Handling (ä, ö, ü, ß)
 - [x] **JSON-05**: Dezimalzahlen nutzen Punkt als Trennzeichen unabhängig vom System-Locale
 - [x] **JSON-06**: Supplementary Grabber (WU, FOSHK, PWSCatchUpload, Loxone, OpenMeteo AQ) schreiben ebenfalls JSON
-- [ ] **JSON-07**: datatoloxone.pl liest JSON statt .dat für UDP/MQTT Delivery an Loxone
-- [ ] **JSON-08**: datatoloxone.pl erzeugt identische UDP/MQTT-Werte wie zuvor (keine Regression)
+- [x] **JSON-07**: datatoloxone.pl liest JSON statt .dat für UDP/MQTT Delivery an Loxone
+- [x] **JSON-08**: datatoloxone.pl erzeugt identische UDP/MQTT-Werte wie zuvor (keine Regression)
 
 ### CGI Endpoint
 
@@ -99,8 +99,8 @@
 | JSON-04 | Phase 1 | Complete |
 | JSON-05 | Phase 1 | Complete |
 | JSON-06 | Phase 1 | Complete |
-| JSON-07 | Phase 2 | Pending |
-| JSON-08 | Phase 2 | Pending |
+| JSON-07 | Phase 2 | Complete |
+| JSON-08 | Phase 2 | Complete |
 | CGI-01 | Phase 3 | Pending |
 | CGI-02 | Phase 3 | Pending |
 | CGI-03 | Phase 3 | Pending |
