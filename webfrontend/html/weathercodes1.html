@@ -1,23 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Weather4Lox Codes</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    /* Prevent horizontal scrollbar */
-    html, body {
-      overflow-x: hidden;
-    }
-
-    :root {
-      /* tweak these values to change base column sizing */
-      --code-col-width: 140px;         /* width for Weather4Lox Code column */
-      --remarks-col-width: calc(var(--code-col-width) * 2); /* Remarks ≈ 2× code */
-      --desc-min-width: 220px;         /* minimum for description column */
-    }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -84,11 +72,9 @@
       min-width: 3rem;
     }
 
-    /* Make the main container span the full window width */
     .container {
-      max-width: none;
-      width: 100%;
-      margin: 0;
+      max-width: 1400px;
+      margin: 0 auto;
       padding: 1.5rem 1rem;
     }
 
@@ -107,7 +93,6 @@
       margin-bottom: 0.5rem;
     }
 
-    /* Table */
     .codes-table {
       width: 100%;
       border-collapse: collapse;
@@ -116,9 +101,6 @@
       overflow: hidden;
       box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       font-size: 0.88rem;
-      table-layout: auto; /* allow columns to size naturally but respect min-widths */
-      word-break: break-word;
-      overflow-wrap: anywhere;
     }
 
     .codes-table thead th {
@@ -137,36 +119,12 @@
       padding: 0.55rem 0.75rem;
       vertical-align: middle;
       border-bottom: 1px solid #eee;
-      white-space: normal; /* allow wrapping */
     }
 
     .codes-table td.nr { width: 2.5rem; text-align: center; color: #888; font-size: 0.8rem; }
-
-    /* enforce sensible min/target widths so columns don't shrink too hard */
-    th.col-code, td.col-code {
-      min-width: var(--code-col-width);
-      width: var(--code-col-width);
-      font-family: monospace;
-      font-size: 0.82rem;
-      color: #0d4a8a;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    th.col-desc, td.col-desc {
-      min-width: var(--desc-min-width);
-      /* flexible width */
-    }
-
-    th.col-remarks, td.col-remarks {
-      min-width: var(--remarks-col-width);
-      width: var(--remarks-col-width);
-      color: #666;
-    }
-
+    .codes-table td.code { font-family: monospace; font-size: 0.82rem; color: #0d4a8a; white-space: nowrap; }
     .codes-table td.desc { color: #444; }
-    .codes-table td.remarks { color: #666; }
+    .codes-table td.remarks { font-size: 0.78rem; color: #666; white-space: nowrap; }
 
     .icon-cell {
       display: flex;
@@ -235,78 +193,9 @@
       display: block;
     }
 
-    /* Expand button & details row */
-    .expand-btn {
-      background: transparent;
-      border: 1px solid #cfdcf0;
-      padding: 0.25rem 0.4rem;
-      border-radius: 4px;
-      cursor: pointer;
-      color: #1a3a5c;
-      font-weight: 600;
-    }
-    .expand-btn[aria-expanded="true"] {
-      background: #e8f1ff;
-    }
-    .row-details {
-      display: none;
-      background: #ffffff;
-    }
-    .row-details td {
-      padding: 0.75rem 1rem;
-      border-bottom: 1px solid #eee;
-      background: #fbfdff;
-    }
-
-    /* Column visibility for responsive collapse
-       - <=900px: hide icon column (so icons don't force very wide rows)
-       - <=600px: also hide description and remarks to avoid extreme shrinking;
-                 user can use expand to see hidden content.
-    */
-
-    /* default: hide expand control */
-    .col-expand, th.col-expand {
-      display: none;
-      width: 2.5rem;
-      text-align: center;
-    }
-
-    @media (max-width: 900px) {
-      /* remove only icon column at this breakpoint */
-      .col-icon, th.col-icon {
-        display: none;
-      }
-      .col-expand, th.col-expand {
-        display: table-cell;
-      }
-
-      /* Give code/desc/remarks more breathing room - don't allow them to shrink below min-widths */
-      th.col-code, td.col-code { min-width: calc(var(--code-col-width) - 10px); }
-      th.col-desc, td.col-desc { min-width: calc(var(--desc-min-width) - 40px); }
-      th.col-remarks, td.col-remarks { min-width: calc(var(--remarks-col-width) - 30px); }
-    }
-
-    @media (max-width: 600px) {
-      /* hide description & remarks only on very narrow viewports */
-      .col-desc, th.col-desc, .col-remarks, th.col-remarks {
-        display: none;
-      }
-      .col-expand, th.col-expand {
-        display: table-cell;
-      }
-      /* keep code column still readable */
-      th.col-code, td.col-code {
-        min-width: calc(var(--code-col-width) - 30px);
-      }
-    }
-
-    @media (max-width: 480px) {
-      /* on very small devices reduce some padding to avoid overflow */
-      .codes-table thead th, .codes-table td { padding: 0.4rem 0.5rem; }
-    }
-
     @media (max-width: 768px) {
       .codes-table { font-size: 0.78rem; }
+      .codes-table td { padding: 0.4rem 0.5rem; }
       .controls { padding: 0.5rem 1rem; gap: 1rem; }
     }
   </style>
@@ -344,16 +233,6 @@
       <option value="#666666" data-key="bg_gray">Gray</option>
       <option value="#404040" data-key="bg_dark_gray">Dark Gray</option>
       <option value="#000000" data-key="bg_black">Black</option>
-      <option value="#e6f7ff" data-key="bg_sky_pale">Pale Sky</option>
-      <option value="#cfeeff" data-key="bg_sky_soft">Soft Sky</option>
-      <option value="#90d0ff" data-key="bg_sky_light">Light Blue</option>
-      <option value="#63c8ff" data-key="bg_sky_day">Day Sky</option>
-      <option value="#39a9ff" data-key="bg_sky_bright">Bright Sky</option>
-      <option value="#2196f3" data-key="bg_sky_noon">Noon Sky</option>
-      <option value="#1976d2" data-key="bg_sky_azure">Azure Deep</option>
-      <option value="#0d47a1" data-key="bg_sky_deep">Deep Sky</option>
-      <option value="#6a8fbf" data-key="bg_sky_twilight">Twilight Sky</option>
-      <option value="#37474f" data-key="bg_sky_storm">Stormy Sky</option>
       <option value="#800000" data-key="bg_maroon">Maroon</option>
       <option value="#dc3545" data-key="bg_red">Red</option>
       <option value="#795548" data-key="bg_brown">Brown</option>
@@ -399,51 +278,63 @@
 // ---------------------------------------------------------------------------
 
 const WEATHER_CODES = [
+  // [nr, code, context_key]
+  // Cloud Cover
   [1,  'clear',                      'both'],
   [2,  'fair',                       'both'],
   [3,  'partly_cloudy',              'both'],
   [4,  'cloudy',                     'both'],
   [5,  'overcast',                   'both'],
+  // Showers
   [10,  'cloudy_shower_1',            'forecast'],
   [11,  'cloudy_shower_2',            'forecast'],
   [12,  'overcast_shower_1',          'both'],
   [13,  'overcast_shower_2',          'both'],
   [14,  'overcast_shower_3',          'both'],
+  // Rain
   [20, 'cloudy_rain_1',              'forecast'],
   [21, 'cloudy_rain_2',              'forecast'],
   [22, 'overcast_rain_1',            'both'],
   [23, 'overcast_rain_2',            'both'],
   [24, 'overcast_rain_3',            'both'],
+  // Sleet
   [30, 'cloudy_sleet_1',             'forecast'],
   [31, 'cloudy_sleet_2',             'forecast'],
   [32, 'overcast_sleet_1',           'both'],
   [33, 'overcast_sleet_2',           'both'],
   [34, 'overcast_sleet_3',           'both'],
+  // Snow
   [40, 'cloudy_snow_1',              'forecast'],
   [41, 'cloudy_snow_2',              'forecast'],
   [42, 'overcast_snow_1',            'both'],
   [43, 'overcast_snow_2',            'both'],
   [44, 'overcast_snow_3',            'both'],
+  // Freezing Rain
   [50, 'cloudy_freezingrain_1',      'forecast'],
   [51, 'cloudy_freezingrain_2',      'forecast'],
   [52, 'overcast_freezingrain_1',    'both'],
   [53, 'overcast_freezingrain_2',    'both'],
   [54, 'overcast_freezingrain_3',    'both'],
+  // Thunderstorm
   [60, 'cloudy_thunderstorm_1',      'forecast'],
   [61, 'cloudy_thunderstorm_2',      'forecast'],
   [62, 'overcast_thunderstorm_1',    'both'],
   [63, 'overcast_thunderstorm_2',    'both'],
   [64, 'overcast_thunderstorm_3',    'both'],
+  // Snow Thunderstorm
   [70, 'cloudy_snowthunderstorm_1',  'forecast'],
   [71, 'cloudy_snowthunderstorm_2',  'forecast'],
   [72, 'overcast_snowthunderstorm_1','both'],
   [73, 'overcast_snowthunderstorm_2','both'],
   [74, 'overcast_snowthunderstorm_3','both'],
+  // Fog
   [80, 'cloudy_fog',                 'both'],
   [81, 'overcast_fog',               'both'],
+  // Hail
   [82, 'overcast_hail_1',            'both'],
   [83, 'overcast_hail_2',            'both'],
   [84, 'overcast_hail_3',            'both'],
+  // Special
   [99, 'no_data',                    'both'],
 ];
 
@@ -458,8 +349,7 @@ const CATEGORIES = [
   { key: 'snow_thunderstorm',   codes: [70, 71, 72, 73, 74] },
   { key: 'fog',                 codes: [80, 81] },
   { key: 'hail',                codes: [82, 83, 84] },
-  { key: 'special',             codes: [99] }, 
-  { key: 'statistics',          codes: [] },
+  { key: 'special',             codes: [99] },
 ];
 
 // ---------------------------------------------------------------------------
@@ -470,8 +360,7 @@ let lang = {};
 let iconMapping = null;
 let iconSize = 48;
 let iconsetPath = '';
-
-let pendingIconSetInfo = null;
+let bgColor = '#ffffff';
 
 // ---------------------------------------------------------------------------
 // Plugin base path detection
@@ -500,41 +389,8 @@ function sanitizeParam(val, fallback) {
   return /^[a-zA-Z0-9_-]+$/.test(val) ? val : fallback;
 }
 
-// Validate hex color (with or without leading '#', and allowing 3,4,6,8 digit formats)
-function isValidHexColor(val) {
-  if (!val || typeof val !== 'string') return false;
-  const s = val.trim().toLowerCase();
-  // erlaubt: #RGB, #RRGGBB, #RGBA, #RRGGBBAA oder ohne führendes '#'
-  return /^#?([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/.test(s);
-}
-function normalizeHex(val, fallback = '#e6f7ff') {
-  if (!isValidHexColor(val)) return fallback;
-  let s = val.trim().toLowerCase();
-  if (s[0] !== '#') s = '#' + s;
-  return s;
-}
-
 const urlLang = sanitizeParam((urlParams.get('lang') || 'en').toLowerCase(), 'en');
 const urlIconset = sanitizeParam(urlParams.get('iconset'), 'naturalistic');
-let bgColor = normalizeHex('#' +urlParams.get('background'), '#e6f7ff');
-
-
-// Parse numeric "size" parameter (optional) and clamp/align to step
-let urlSize = null;
-(function() {
-  const raw = urlParams.get('size');
-  if (raw && /^[0-9]+$/.test(raw)) {
-    let v = parseInt(raw, 10);
-    const MIN = 32, MAX = 1024, STEP = 8;
-    if (isFinite(v)) {
-      if (v < MIN) v = MIN;
-      if (v > MAX) v = MAX;
-      // Align to step (8)
-      v = Math.round(v / STEP) * STEP;
-      urlSize = v;
-    }
-  }
-})();
 
 // ---------------------------------------------------------------------------
 // Load language JSON
@@ -584,91 +440,6 @@ function tMoonPhase(phaseIdx) {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers for icon set info extraction and display
-// ---------------------------------------------------------------------------
-
-function computeIconSetInfo(iconMapping) {
-  if (!iconMapping || !iconMapping.icons) return null;
-  const icons = iconMapping.icons;
-  const keys = Object.keys(icons);
-
-  let symbolsDay = 0;
-  let symbolsNight = 0;
-
-  const fileSet = new Set();
-
-  const ext = '.' + (iconMapping.format || 'png');
-
-  keys.forEach(function(k) {
-    const e = icons[k] || {};
-    if (e.icon_day) {
-      fileSet.add(e.icon_day);
-      symbolsDay++;
-    }
-    if (e.icon_night) {
-      let moonPhases = e.moon_phases || 0;
-      if (![0, 3, 5].includes(moonPhases)) {
-        console.warn('Unexpected moon_phases value for code ' + k + ': ' + moonPhases);
-        moonPhases = 0;
-      }
-      
-      if (moonPhases === 0) {
-        fileSet.add(e.icon_night);
-        symbolsNight++;
-      } else {
-        for (let i = 0; i < moonPhases; i++) {
-          const pchar = moonPhases === 3 ? 'h' : 'q'; // 'h' for half phases, 'q' for quarter phases
-          fileSet.add(phaseFilename(e.icon_night, i, pchar, ext));
-          symbolsNight++; 
-        }
-      }
-    }
-  });
-
-  const uniqueFileCount = fileSet.size;
-  const format = iconMapping.format || 'png';
-  const version = iconMapping.version || 'unknown';
-
-  return {
-    version,
-    format,
-    total_symbols: symbolsDay +  symbolsNight,
-    symbols_day: symbolsDay,
-    symbols_night: symbolsNight,
-    unique_files: uniqueFileCount
-  };
-}
-
-function displayIconSetInfo(info) {
-    console.warn('B DISPLAY unique Files: ' + info.unique_files + ', symbolsDay: ' + info.symbols_day + ', symbolsNight: ' + info.symbols_night);
-  // Prüfen, ob die Ziel-Elemente vorhanden sind
-  const elVersion = document.getElementById('statistics-version');
-  if (!elVersion) {
-    // DOM noch nicht vorhanden → merken und später zeigen
-    pendingIconSetInfo = info;
-    return;
-  }
-
-  if (!info) {
-    elVersion.textContent = '—';
-    document.getElementById('statistics-format').textContent = '—';
-    document.getElementById('statistics-total_symbols').textContent = '—';
-    document.getElementById('statistics-symbols_day').textContent = '—';
-    document.getElementById('statistics-symbols_night').textContent = '—';
-    document.getElementById('statistics-unique_files').textContent = '—';
-    return;
-  }
-  elVersion.textContent = info.version;
-  document.getElementById('statistics-format').textContent = info.format;
-  document.getElementById('statistics-total_symbols').textContent = info.total_symbols;
-  document.getElementById('statistics-symbols_day').textContent = info.symbols_day;
-  document.getElementById('statistics-symbols_night').textContent = info.symbols_night;
-  document.getElementById('statistics-unique_files').textContent = info.unique_files;
-  
-  console.warn('E DISPLAY unique Files: ' + info.unique_files + ', symbolsDay: ' + info.symbols_day + ', symbolsNight: ' + info.symbols_night);
-}
-
-// ---------------------------------------------------------------------------
 // Load icon mapping
 // ---------------------------------------------------------------------------
 
@@ -684,18 +455,6 @@ async function loadIconMapping(iconset) {
   return false;
 }
 
-async function loadIconMappingAndUpdate(iconset) {
-  const ok = await loadIconMapping(iconset);
-  if (ok && iconMapping) {
-    // compute + display
-    const info = computeIconSetInfo(iconMapping);
-    console.warn('LOAD Loaded icon mapping for set "' + iconset + '": version ' + info.version + ', format ' + info.format + ', total symbols: ' + info.total_symbols);
-    pendingIconSetInfo = info;
-  } else {
-    pendingIconSetInfo = null;
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Icon building
 // ---------------------------------------------------------------------------
@@ -704,9 +463,10 @@ function buildIconPath(filename) {
   return iconsetPath + filename;
 }
 
-function phaseFilename(baseFilename, phaseIdx, pchar, ext) {
+function phaseFilename(baseFilename, phaseIdx, ext) {
+  // e.g. "clear_moon.png" + phase 0 → "clear_moon_0q.png"
   const base = baseFilename.slice(0, -ext.length);
-  return base + '_' + phaseIdx + pchar + ext;
+  return base + '_' + phaseIdx + 'q' + ext;
 }
 
 function makeIcon(filename, tooltipLines) {
@@ -714,6 +474,7 @@ function makeIcon(filename, tooltipLines) {
   wrapper.className = 'icon-wrapper';
   wrapper.style.background = bgColor;
 
+  // Tooltip
   const tooltip = document.createElement('div');
   tooltip.className = 'tooltip';
   tooltip.innerHTML = tooltipLines.join('<br>');
@@ -739,13 +500,17 @@ function makeIcon(filename, tooltipLines) {
   return wrapper;
 }
 
-function renderIconContainer(code) {
+function renderIconCell(code) {
+  const cell = document.createElement('td');
+  cell.className = 'icon-cell-td';
+
   const container = document.createElement('div');
   container.className = 'icon-cell';
+  cell.appendChild(container);
 
   if (!iconMapping) {
     container.textContent = '–';
-    return container;
+    return cell;
   }
 
   const ext = '.' + (iconMapping.format || 'png');
@@ -753,8 +518,10 @@ function renderIconContainer(code) {
 
   if (!codeEntry) {
     container.textContent = '–';
-    return container;
+    return cell;
   }
+
+  const moonPhases = codeEntry.moon_phases || 0;
 
   // Day icon
   if (codeEntry.icon_day) {
@@ -767,12 +534,10 @@ function renderIconContainer(code) {
 
   // Night icon(s)
   if (codeEntry.icon_night) {
-
-    const moonPhases = codeEntry.moon_phases || 0;
     if (moonPhases > 0) {
+      // Show phase variants
       for (let i = 0; i < moonPhases; i++) {
-        const pchar = moonPhases === 3 ? 'h' : 'q'; // 'h' for half phases, 'q' for quarter phases
-        const phaseFile = phaseFilename(codeEntry.icon_night, i, pchar, ext);
+        const phaseFile = phaseFilename(codeEntry.icon_night, i, ext);
         const tooltip = [
           '<b>' + t('hover_night') + '</b>',
           t('hover_moon_phase') + ': ' + tMoonPhase(i),
@@ -781,6 +546,7 @@ function renderIconContainer(code) {
         container.appendChild(makeIcon(phaseFile, tooltip));
       }
     } else {
+      // Single night icon
       const tooltip = [
         '<b>' + t('hover_night') + '</b>',
         t('hover_filename') + ': ' + codeEntry.icon_night
@@ -789,18 +555,11 @@ function renderIconContainer(code) {
     }
   }
 
-  return container;
-}
-
-function renderIconCell(code) {
-  const cell = document.createElement('td');
-  cell.className = 'col-icon';
-  cell.appendChild(renderIconContainer(code));
   return cell;
 }
 
 // ---------------------------------------------------------------------------
-// Table building with responsive collapse support
+// Table building
 // ---------------------------------------------------------------------------
 
 function buildTable(codes) {
@@ -809,12 +568,11 @@ function buildTable(codes) {
 
   const thead = document.createElement('thead');
   thead.innerHTML = `<tr>
-    <th class="col-expand" aria-hidden="true"></th>
-    <th class="col-nr">${t('col_no')}</th>
-    <th class="col-code">${t('col_code')}</th>
-    <th class="col-desc">${t('col_description')}</th>
-    <th class="col-icon">${t('col_icon_day')} / ${t('col_icon_night')}</th>
-    <th class="col-remarks">${t('col_remarks')}</th>
+    <th class="nr">Nr</th>
+    <th>${t('col_code')}</th>
+    <th>${t('col_description')}</th>
+    <th>${t('col_icon_day')} / ${t('col_icon_night')}</th>
+    <th>${t('col_remarks')}</th>
   </tr>`;
   table.appendChild(thead);
 
@@ -827,36 +585,24 @@ function buildTable(codes) {
     if (!row) return;
     const [rowNr, code, remarksKey] = row;
 
-    // Main row
     const tr = document.createElement('tr');
 
-    // Expand control cell (visible only on small screens)
-    const tdExpand = document.createElement('td');
-    tdExpand.className = 'col-expand';
-    const btn = document.createElement('button');
-    btn.className = 'expand-btn';
-    btn.type = 'button';
-    btn.setAttribute('aria-expanded', 'false');
-    btn.title = 'Details anzeigen';
-    btn.textContent = '+';
-    tdExpand.appendChild(btn);
-
     const tdNr = document.createElement('td');
-    tdNr.className = 'col-nr';
+    tdNr.className = 'nr';
     tdNr.textContent = rowNr;
 
     const tdCode = document.createElement('td');
-    tdCode.className = 'col-code code';
+    tdCode.className = 'code';
     tdCode.textContent = code;
 
     const tdDesc = document.createElement('td');
-    tdDesc.className = 'col-desc desc';
+    tdDesc.className = 'desc';
     tdDesc.textContent = tDesc(code);
 
     const tdIcon = renderIconCell(code);
 
     const tdRemarks = document.createElement('td');
-    tdRemarks.className = 'col-remarks remarks';
+    tdRemarks.className = 'remarks';
     tdRemarks.textContent = tRemark(code);
     if (remarksKey === 'forecast') {
       tdRemarks.textContent += ' (' + t('context_forecast') + ')';
@@ -866,7 +612,6 @@ function buildTable(codes) {
       tdRemarks.textContent += ' (' + t('context_both') + ')';
     }
 
-    tr.appendChild(tdExpand);
     tr.appendChild(tdNr);
     tr.appendChild(tdCode);
     tr.appendChild(tdDesc);
@@ -874,91 +619,7 @@ function buildTable(codes) {
     tr.appendChild(tdRemarks);
 
     tbody.appendChild(tr);
-
-    // Details row (hidden by default) that will be shown on small screens when user toggles
-    const trDetails = document.createElement('tr');
-    trDetails.className = 'row-details';
-    const tdDetails = document.createElement('td');
-    tdDetails.colSpan = 6;
-
-    // Compose content: description, icons, remarks
-    const detailsContainer = document.createElement('div');
-    detailsContainer.style.display = 'flex';
-    detailsContainer.style.flexWrap = 'wrap';
-    detailsContainer.style.gap = '0.75rem';
-    detailsContainer.style.alignItems = 'center';
-
-    const descDiv = document.createElement('div');
-    descDiv.style.flex = '1 1 200px';
-    descDiv.innerHTML = `<strong>${t('col_description')}:</strong><div>${tDesc(code)}</div>`;
-
-    const iconsDiv = document.createElement('div');
-    iconsDiv.style.flex = '0 0 auto';
-    iconsDiv.innerHTML = `<strong>${t('col_icon_day')} / ${t('col_icon_night')}:</strong>`;
-    iconsDiv.appendChild(renderIconContainer(code));
-
-    const remarksDiv = document.createElement('div');
-    remarksDiv.style.flex = '1 1 200px';
-    remarksDiv.innerHTML = `<strong>${t('col_remarks')}:</strong><div>${tRemark(code)}${(remarksKey === 'forecast' ? ' (' + t('context_forecast') + ')' : (remarksKey === 'current' ? ' (' + t('context_current') + ')' : ' (' + t('context_both') + ')'))}</div>`;
-
-    detailsContainer.appendChild(descDiv);
-    detailsContainer.appendChild(iconsDiv);
-    detailsContainer.appendChild(remarksDiv);
-
-    tdDetails.appendChild(detailsContainer);
-    trDetails.appendChild(tdDetails);
-    tbody.appendChild(trDetails);
-
-    // Toggle behavior
-    btn.addEventListener('click', function() {
-      const expanded = this.getAttribute('aria-expanded') === 'true';
-      this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-      this.textContent = expanded ? '+' : '−';
-      trDetails.style.display = expanded ? 'none' : 'table-row';
-    });
   });
-
-  table.appendChild(tbody);
-  return table;
-}
-
-function buildStatisticsRow(label, value) {
-  const tr = document.createElement('tr');
-
-  const tdLabel = document.createElement('td');
-  tdLabel.className = 'col-code code';
-  tdLabel.textContent = `${t('label_' + label)}`;
-
-  const tdValue = document.createElement('td');
-  tdValue.className = 'col-desc desc';
-  tdValue.id = 'statistics-' + label;
-  tdValue.textContent = value;
-
-  tr.appendChild(tdLabel);
-  tr.appendChild(tdValue);
-  return tr;
-}
-
-function buildStatisticsTable() {
-  const table = document.createElement('table');
-  table.className = 'codes-table';
-
-  const thead = document.createElement('thead');
-  thead.innerHTML = `<tr>
-    <th class="col-expand" aria-hidden="true"></th>
-    <th class="col-code">${t('col_params')}</th>
-    <th class="col-desc">${t('col_values')}</th>
-  </tr>`;
-  table.appendChild(thead);
-
-  const tbody = document.createElement('tbody');
- 
-  tbody.appendChild(buildStatisticsRow('version', '-'));
-  tbody.appendChild(buildStatisticsRow('format', '-'));
-  tbody.appendChild(buildStatisticsRow('total_symbols', '-'));
-  tbody.appendChild(buildStatisticsRow('symbols_day', '-'));
-  tbody.appendChild(buildStatisticsRow('symbols_night', '-'));
-  tbody.appendChild(buildStatisticsRow('unique_files', '-'));
 
   table.appendChild(tbody);
   return table;
@@ -983,22 +644,9 @@ function render() {
     h2.textContent = tCategory(cat.key);
     section.appendChild(h2);
 
-    if (cat.codes.length > 0) {
-      section.appendChild(buildTable(cat.codes));
-    } else {
-      section.appendChild(buildStatisticsTable());
-    }
+    section.appendChild(buildTable(cat.codes));
     content.appendChild(section);
   });
-
-   // If Iconset info is available, display it now
-  if (pendingIconSetInfo) {
-    displayIconSetInfo(pendingIconSetInfo);
-  }
-
-  // After render, ensure icons have correct size/background
-  updateIconSizes();
-  updateBgColors();
 }
 
 function applyTranslations() {
@@ -1042,7 +690,6 @@ function updateBgColors() {
 // ---------------------------------------------------------------------------
 
 async function init() {
-
   // Set UI from URL params
   const iconsetSel = document.getElementById('iconset-select');
   iconsetSel.value = urlIconset;
@@ -1052,14 +699,6 @@ async function init() {
   langSel.value = urlLang;
   if (!langSel.value) langSel.value = 'en';
 
-  // If a "size" parameter was present in the URL, use it as initial icon size
-  if (urlSize !== null) {
-    iconSize = urlSize;
-    const slider = document.getElementById('size-slider');
-    slider.value = iconSize;
-    document.getElementById('size-display').textContent = iconSize + 'px';
-  }
-
   // Load language
   await loadLang(langSel.value);
   applyTranslations();
@@ -1067,17 +706,15 @@ async function init() {
   // Load icon mapping
   const currentIconset = iconsetSel.value;
   iconsetPath = pluginBase + '/icons/' + currentIconset + '/';
-  await loadIconMappingAndUpdate(currentIconset);
+  await loadIconMapping(currentIconset);
 
   render();
 
   // Event listeners
   iconsetSel.addEventListener('change', async function() {
-    console.warn('CHANGE');
-    pendingIconSetInfo = null;
     const sel = this.value;
     iconsetPath = pluginBase + '/icons/' + sel + '/';
-    await loadIconMappingAndUpdate(sel);
+    await loadIconMapping(sel);
     render();
   });
 
@@ -1095,19 +732,6 @@ async function init() {
     await loadLang(this.value);
     applyTranslations();
     render();
-  });
-
-  // Accessibility: close any details rows when window is resized larger than collapse breakpoints
-  window.addEventListener('resize', function() {
-    // If columns are visible the details rows should be hidden
-    const showDetails = window.matchMedia('(max-width: 600px)').matches || window.matchMedia('(max-width: 900px)').matches;
-    document.querySelectorAll('.row-details').forEach(function(r) {
-      r.style.display = 'none';
-    });
-    document.querySelectorAll('.expand-btn').forEach(function(b) {
-      b.setAttribute('aria-expanded', 'false');
-      b.textContent = '+';
-    });
   });
 }
 

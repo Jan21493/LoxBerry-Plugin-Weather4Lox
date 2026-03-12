@@ -1015,7 +1015,7 @@ if ($R::form eq "1" || !$R::form) {
         'green' => "Green Set (42 icons, PNG format, 150x150)",
         'silver' => "Silver Set (42 icons, SVG format, scalable)",
         'realistic' => "Realistic Set (26 icons, PNG format, 150x150)",
-        'naturalistic' => "Naturalistic Set (162 icons, PNG format, 600x600)",
+        'naturalistic' => "Naturalistic Set (168 icons, PNG format, 600x600)",
         'custom' => "Custom Set",
     );
   my $iconset = $cgi->popup_menu(
