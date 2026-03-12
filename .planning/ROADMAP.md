@@ -30,7 +30,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Die JSON-Dateien enthalten korrekte UTF-8-Umlaute (a, o, u, ss) und Dezimalpunkte statt Kommas
   4. Alle funf Haupt-Grabber (OpenWeather, VisualCrossing, WeatherFlow, WetterOnline, wttr.in) sowie supplementary Grabber schreiben JSON
   5. Die bestehenden .dat-Dateien existieren unverandert nach dem Grabber-Lauf (kein Regression im alten System)
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Upgrade write_*_json() in grabber_utils.pl (meta/data envelope, atomic write, AQ fields)
+- [ ] 01-02-PLAN.md — Update 5 main grabbers with source/grabber params + create schema documentation
+- [ ] 01-03-PLAN.md — Wire 5 supplementary grabbers to write current.json
 
 ### Phase 2: Delivery Layer Migration
 **Goal**: datatoloxone.pl liest JSON statt .dat und sendet identische UDP/MQTT-Pakete an Loxone wie zuvor
@@ -79,11 +84,11 @@ Decimal phases appear between their surrounding integers in numeric order.
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. JSON Schema & Grabber Migration | 0/TBD | Not started | - |
+| 1. JSON Schema & Grabber Migration | 0/3 | Planned | - |
 | 2. Delivery Layer Migration | 0/TBD | Not started | - |
 | 3. CGI JSON Endpoint | 0/TBD | Not started | - |
 | 4. ocean-live Theme Grundgerust | 0/TBD | Not started | - |
