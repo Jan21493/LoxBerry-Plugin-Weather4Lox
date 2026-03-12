@@ -14,9 +14,11 @@
 
     :root {
       /* tweak these values to change base column sizing */
-      --code-col-width: 140px;         /* width for Weather4Lox Code column */
-      --remarks-col-width: calc(var(--code-col-width) * 2); /* Remarks ≈ 2× code */
-      --desc-min-width: 220px;         /* minimum for description column */
+      --num-col-width: 50px;         /* width for Weather4Lox number column */
+      --code-col-width: 120px;         /* width for Weather4Lox Code column */
+      --desc-col-width: 200px; 
+      --icon-col-width: calc(var(--icon-size) * 3); 
+      --remarks-col-width: calc(var(--desc-col-width) * 2); 
     }
 
     body {
@@ -143,6 +145,11 @@
     .codes-table td.nr { width: 2.5rem; text-align: center; color: #888; font-size: 0.8rem; }
 
     /* enforce sensible min/target widths so columns don't shrink too hard */
+    th.col-num, td.col-num {
+      min-width: var(--num-col-width);
+      width: var(--num-col-width);
+    }
+
     th.col-code, td.col-code {
       min-width: var(--code-col-width);
       width: var(--code-col-width);
@@ -155,12 +162,14 @@
     }
 
     th.col-desc, td.col-desc {
-      min-width: var(--desc-min-width);
-      /* flexible width */
+      width: var(--desc-col-width);
+    }
+
+   th.col-icon, td.col-icon {
+      width: var(--icon-col-width);
     }
 
     th.col-remarks, td.col-remarks {
-      min-width: var(--remarks-col-width);
       width: var(--remarks-col-width);
       color: #666;
     }
@@ -198,7 +207,7 @@
       border: 1px dashed #ccc;
       border-radius: 4px;
       color: #bbb;
-      font-size: 0.6rem;
+      font-size: clamp(8px, calc(var(--icon-size) * 0.5), 400px);
       text-align: center;
     }
 
@@ -229,6 +238,7 @@
       transform: translateX(-50%);
       border: 5px solid transparent;
       border-top-color: rgba(20,40,70,0.95);
+      --icon-size: 48px; /* Default fallback */
     }
 
     .icon-wrapper:hover .tooltip {
@@ -282,8 +292,8 @@
 
       /* Give code/desc/remarks more breathing room - don't allow them to shrink below min-widths */
       th.col-code, td.col-code { min-width: calc(var(--code-col-width) - 10px); }
-      th.col-desc, td.col-desc { min-width: calc(var(--desc-min-width) - 40px); }
-      th.col-remarks, td.col-remarks { min-width: calc(var(--remarks-col-width) - 30px); }
+      th.col-desc, td.col-desc { width: calc(var(--desc-col-width) - 40px); }
+      th.col-remarks, td.col-remarks { width: calc(var(--remarks-col-width) - 30px); }
     }
 
     @media (max-width: 600px) {
@@ -344,16 +354,16 @@
       <option value="#666666" data-key="bg_gray">Gray</option>
       <option value="#404040" data-key="bg_dark_gray">Dark Gray</option>
       <option value="#000000" data-key="bg_black">Black</option>
-      <option value="#e6f7ff" data-key="bg_sky_pale">Pale Sky</option>
-      <option value="#cfeeff" data-key="bg_sky_soft">Soft Sky</option>
-      <option value="#90d0ff" data-key="bg_sky_light">Light Blue</option>
-      <option value="#63c8ff" data-key="bg_sky_day">Day Sky</option>
-      <option value="#39a9ff" data-key="bg_sky_bright">Bright Sky</option>
-      <option value="#2196f3" data-key="bg_sky_noon">Noon Sky</option>
-      <option value="#1976d2" data-key="bg_sky_azure">Azure Deep</option>
-      <option value="#0d47a1" data-key="bg_sky_deep">Deep Sky</option>
-      <option value="#6a8fbf" data-key="bg_sky_twilight">Twilight Sky</option>
-      <option value="#37474f" data-key="bg_sky_storm">Stormy Sky</option>
+      <option value="#b1cfdf" data-key="bg_sky_pale">Pale Sky</option>
+      <option value="#8dbde0" data-key="bg_sky_soft">Soft Sky</option>
+      <option value="#add9f9" data-key="bg_sky_light">Light Blue</option>
+      <option value="#d2ecfa" data-key="bg_sky_day">Day Sky</option>
+      <option value="#e6f7ff" data-key="bg_sky_bright">Bright Sky</option>
+      <option value="#7dc5ff" data-key="bg_sky_noon">Noon Sky</option>
+      <option value="#007fff" data-key="bg_sky_azure">Azure Deep</option>
+      <option value="#2059af" data-key="bg_sky_deep">Deep Sky</option>
+      <option value="#6981a0" data-key="bg_sky_twilight">Twilight Sky</option>
+      <option value="#387fa2" data-key="bg_sky_storm">Stormy Sky</option>
       <option value="#800000" data-key="bg_maroon">Maroon</option>
       <option value="#dc3545" data-key="bg_red">Red</option>
       <option value="#795548" data-key="bg_brown">Brown</option>
@@ -587,7 +597,43 @@ function tMoonPhase(phaseIdx) {
 // Helpers for icon set info extraction and display
 // ---------------------------------------------------------------------------
 
-function computeIconSetInfo(iconMapping) {
+// Check with HEAD if a URL exists (with timeout)
+async function urlExists(url, timeoutMs = 3000) {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const resp = await fetch(url, { method: 'HEAD', signal: controller.signal });
+    clearTimeout(timer);
+    return resp.ok;
+  } catch (e) {
+    // Network error, CORS, timeout → treat as "not found"
+    return false;
+  }
+}
+
+// Helper function: map with limited concurrency
+async function mapWithConcurrency(items, fn, concurrency = 8) {
+  const results = new Array(items.length);
+  let i = 0;
+  async function worker() {
+    while (true) {
+      const idx = i++;
+      if (idx >= items.length) return;
+      results[idx] = await fn(items[idx]);
+    }
+  }
+  const workers = [];
+  const n = Math.min(concurrency, items.length);
+  for (let w = 0; w < n; w++) workers.push(worker());
+  await Promise.all(workers);
+  return results;
+}
+
+// Cache for already checked URLs (avoids duplicate requests)
+const _iconUrlExistenceCache = new Map();
+
+// Async: calculates icon set info AND checks if the referenced files exist
+async function computeIconSetInfo(iconMapping) {
   if (!iconMapping || !iconMapping.icons) return null;
   const icons = iconMapping.icons;
   const keys = Object.keys(icons);
@@ -595,14 +641,15 @@ function computeIconSetInfo(iconMapping) {
   let symbolsDay = 0;
   let symbolsNight = 0;
 
-  const fileSet = new Set();
-
+  const filesToCheck = []; // absolute URLs
   const ext = '.' + (iconMapping.format || 'png');
+  const basePath = iconsetPath || ''; // sollte gesetzt sein vor Aufruf
 
   keys.forEach(function(k) {
     const e = icons[k] || {};
     if (e.icon_day) {
-      fileSet.add(e.icon_day);
+      const url = basePath + e.icon_day;
+      filesToCheck.push(url);
       symbolsDay++;
     }
     if (e.icon_night) {
@@ -613,19 +660,41 @@ function computeIconSetInfo(iconMapping) {
       }
       
       if (moonPhases === 0) {
-        fileSet.add(e.icon_night);
+        const url = basePath + e.icon_night;
+        filesToCheck.push(url);
         symbolsNight++;
       } else {
         for (let i = 0; i < moonPhases; i++) {
           const pchar = moonPhases === 3 ? 'h' : 'q'; // 'h' for half phases, 'q' for quarter phases
-          fileSet.add(phaseFilename(e.icon_night, i, pchar, ext));
+          const fname = phaseFilename(e.icon_night, i, pchar, ext);
+          const url = basePath + fname;
+          filesToCheck.push(url);
           symbolsNight++; 
         }
       }
     }
   });
 
-  const uniqueFileCount = fileSet.size;
+  // remove duplicates to minimize number of URL checks (icons can be shared between codes)
+  const uniqueUrls = Array.from(new Set(filesToCheck));
+
+  // check function with cache
+  async function checkUrl(url) {
+    if (_iconUrlExistenceCache.has(url)) return _iconUrlExistenceCache.get(url);
+    const ok = await urlExists(url, 2500);
+    _iconUrlExistenceCache.set(url, ok);
+    return ok;
+  }
+
+  // Check URLs with limited concurrency
+  const existenceResults = await mapWithConcurrency(uniqueUrls, checkUrl, 10);
+
+  // Count only existing files in uniqueFileCount
+  let uniqueFileCount = 0;
+  for (let i = 0; i < uniqueUrls.length; i++) {
+    if (existenceResults[i]) uniqueFileCount++;
+  }
+
   const format = iconMapping.format || 'png';
   const version = iconMapping.version || 'unknown';
 
@@ -640,11 +709,10 @@ function computeIconSetInfo(iconMapping) {
 }
 
 function displayIconSetInfo(info) {
-    console.warn('B DISPLAY unique Files: ' + info.unique_files + ', symbolsDay: ' + info.symbols_day + ', symbolsNight: ' + info.symbols_night);
-  // Prüfen, ob die Ziel-Elemente vorhanden sind
+  // Check if the target elements are present
   const elVersion = document.getElementById('statistics-version');
   if (!elVersion) {
-    // DOM noch nicht vorhanden → merken und später zeigen
+    // DOM not yet available → remember and show later
     pendingIconSetInfo = info;
     return;
   }
@@ -664,8 +732,6 @@ function displayIconSetInfo(info) {
   document.getElementById('statistics-symbols_day').textContent = info.symbols_day;
   document.getElementById('statistics-symbols_night').textContent = info.symbols_night;
   document.getElementById('statistics-unique_files').textContent = info.unique_files;
-  
-  console.warn('E DISPLAY unique Files: ' + info.unique_files + ', symbolsDay: ' + info.symbols_day + ', symbolsNight: ' + info.symbols_night);
 }
 
 // ---------------------------------------------------------------------------
@@ -688,8 +754,7 @@ async function loadIconMappingAndUpdate(iconset) {
   const ok = await loadIconMapping(iconset);
   if (ok && iconMapping) {
     // compute + display
-    const info = computeIconSetInfo(iconMapping);
-    console.warn('LOAD Loaded icon mapping for set "' + iconset + '": version ' + info.version + ', format ' + info.format + ', total symbols: ' + info.total_symbols);
+    const info = await computeIconSetInfo(iconMapping);
     pendingIconSetInfo = info;
   } else {
     pendingIconSetInfo = null;
@@ -713,6 +778,7 @@ function makeIcon(filename, tooltipLines) {
   const wrapper = document.createElement('div');
   wrapper.className = 'icon-wrapper';
   wrapper.style.background = bgColor;
+  wrapper.style.setProperty('--icon-size', iconSize + 'px');
 
   const tooltip = document.createElement('div');
   tooltip.className = 'tooltip';
@@ -727,6 +793,8 @@ function makeIcon(filename, tooltipLines) {
   img.src = buildIconPath(filename);
   img.alt = filename;
   img.onerror = function() {
+    console.warn('Icon not found:', img.src);
+    img.onerror = null; // prevent to call handler multiple times
     const missing = document.createElement('div');
     missing.className = 'icon-missing';
     missing.style.width = iconSize + 'px';
@@ -810,7 +878,7 @@ function buildTable(codes) {
   const thead = document.createElement('thead');
   thead.innerHTML = `<tr>
     <th class="col-expand" aria-hidden="true"></th>
-    <th class="col-nr">${t('col_no')}</th>
+    <th class="col-num">${t('col_no')}</th>
     <th class="col-code">${t('col_code')}</th>
     <th class="col-desc">${t('col_description')}</th>
     <th class="col-icon">${t('col_icon_day')} / ${t('col_icon_night')}</th>
@@ -1018,6 +1086,11 @@ function applyTranslations() {
 }
 
 function updateIconSizes() {
+    // set icon size variable and adjust values
+  document.documentElement.style.setProperty('--icon-size', iconSize + 'px');
+  document.querySelectorAll('.icon-wrapper').forEach(function(wrapper) {
+    wrapper.style.setProperty('--icon-size', iconSize + 'px');
+  });
   document.querySelectorAll('.icon-wrapper img').forEach(function(img) {
     img.style.width = iconSize + 'px';
     img.style.height = iconSize + 'px';
@@ -1073,7 +1146,6 @@ async function init() {
 
   // Event listeners
   iconsetSel.addEventListener('change', async function() {
-    console.warn('CHANGE');
     pendingIconSetInfo = null;
     const sel = this.value;
     iconsetPath = pluginBase + '/icons/' + sel + '/';

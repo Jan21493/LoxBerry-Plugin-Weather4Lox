@@ -988,12 +988,12 @@ if ($R::form eq "1" || !$R::form) {
   # Theme
   @values = ('dark', 'light', 'fresh', 'arctic', 'ocean', 'custom' );
   %labels = (
-        'dark' => "Dark Theme",
-        'light' => "Light Theme",
-        'fresh' => "Fresh Theme",
-		'arctic' => "Arctic Mist Theme",
-		'ocean' => "Deep Ocean Theme",
-        'custom' => "Custom Theme",
+        'dark' => "Dark Theme (Classic)",
+        'light' => "Light Theme (Classic)",
+        'fresh' => "Fresh Theme (New Style)",
+		'arctic' => "Arctic Mist Theme (New Style)",
+		'ocean' => "Deep Ocean Theme (New Style)",
+        'custom' => "Custom Theme (your own)",
     );
   my $theme = $cgi->popup_menu(
         -name    => 'theme',
