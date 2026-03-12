@@ -33,6 +33,8 @@ use File::Copy;
 use Getopt::Long;
 use Time::Piece;
 
+require "$lbpbindir/grabber_utils.pl";
+
 ##########################################################################
 # Read Settings
 ##########################################################################
@@ -190,6 +192,12 @@ if ($currentsize > 100) {
 
 # Give OK status to client.
 LOGOK "Current Data saved successfully.";
+
+# Write current.json alongside current.dat
+eval { write_current_json($lbplogdir,
+    source  => "Loxone",
+    grabber => "grabber_loxone.pl") };
+LOGWARN "JSON write failed: $@" if $@;
 
 # Exit
 exit;

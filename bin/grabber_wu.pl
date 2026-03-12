@@ -225,6 +225,12 @@ if ($currentsize > 100) {
 # Give OK status to client.
 LOGOK "Current Data saved successfully.";
 
+# Write current.json alongside current.dat
+eval { write_current_json($lbplogdir,
+    source  => "WeatherUnderground",
+    grabber => "grabber_wu.pl") };
+LOGWARN "JSON write failed: $@" if $@;
+
 # Exit
 exit;
 
