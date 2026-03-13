@@ -49,18 +49,18 @@
 - [ ] **DATA-02**: Theme lädt Sprachdaten per Fetch aus lang-*.json
 - [ ] **DATA-03**: Theme lädt Icon-Mapping per Fetch aus icons/{iconset}/icon_mapping.json
 - [ ] **DATA-04**: Auto-Refresh lädt Daten periodisch nach (Intervall ≥ 5 Minuten)
-- [ ] **DATA-05**: Ladeanzeige während AJAX-Requests
-- [ ] **DATA-06**: Fehlermeldung wenn Daten nicht geladen werden können
+- [x] **DATA-05**: Ladeanzeige während AJAX-Requests
+- [x] **DATA-06**: Fehlermeldung wenn Daten nicht geladen werden können
 
 ### Mehrsprachigkeit
 
-- [ ] **LANG-01**: Alle UI-Texte (Tab-Labels, Einheiten, Beschreibungen) kommen aus lang-*.json
-- [ ] **LANG-02**: Unterstützte Sprachen: DE, EN, ES, NL, SK
+- [x] **LANG-01**: Alle UI-Texte (Tab-Labels, Einheiten, Beschreibungen) kommen aus lang-*.json
+- [x] **LANG-02**: Unterstützte Sprachen: DE, EN, ES, NL, SK
 - [ ] **LANG-03**: Sprache wird per URL-Parameter oder Konfiguration gesetzt
 
 ### Zusatz-Features
 
-- [ ] **EXTRA-01**: Sonnenauf- und Sonnenuntergang im Hero-Bereich angezeigt
+- [x] **EXTRA-01**: Sonnenauf- und Sonnenuntergang im Hero-Bereich angezeigt
 - [x] **EXTRA-02**: Smooth CSS-Transitions bei Tab-Wechsel und Hero-Aktualisierung
 
 ## v2 Requirements
@@ -121,12 +121,12 @@
 | DATA-02 | Phase 5 | Pending |
 | DATA-03 | Phase 5 | Pending |
 | DATA-04 | Phase 5 | Pending |
-| DATA-05 | Phase 5 | Pending |
-| DATA-06 | Phase 5 | Pending |
-| LANG-01 | Phase 5 | Pending |
-| LANG-02 | Phase 5 | Pending |
+| DATA-05 | Phase 5 | Complete |
+| DATA-06 | Phase 5 | Complete |
+| LANG-01 | Phase 5 | Complete |
+| LANG-02 | Phase 5 | Complete |
 | LANG-03 | Phase 5 | Pending |
-| EXTRA-01 | Phase 5 | Pending |
+| EXTRA-01 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 34 total
