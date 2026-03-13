@@ -89,6 +89,12 @@ Plans:
   3. Wahrenddessen eine Ladeanzeige zu sehen ist; bei Fehler erscheint eine verstandliche Fehlermeldung
   4. Das Theme aktualisiert die Daten automatisch alle 5+ Minuten ohne Seiten-Reload
   5. Sonnenaufgang und Sonnenuntergang sind im Hero-Bereich sichtbar
+**Plans:** 3 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Extend lang files with new theme keys + add DOM infrastructure (data-i18n, IDs, loading/error UI)
+- [ ] 05-02-PLAN.md — Replace mock data with AJAX loading (loadAllData, icon mapping, i18n, auto-refresh)
+- [ ] 05-03-PLAN.md — Human verification of complete live theme
 
 ## Progress
 
@@ -101,4 +107,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 2. Delivery Layer Migration | 0/1 | Planning complete | - |
 | 3. CGI JSON Endpoint | 1/1 | Complete   | 2026-03-13 |
 | 4. ocean-live Theme Grundgerust | 1/1 | Complete   | 2026-03-13 |
-| 5. Datenanbindung & Vollstandigkeit | 0/TBD | Not started | - |
+| 5. Datenanbindung & Vollstandigkeit | 0/3 | Planning complete | - |
