@@ -45,10 +45,10 @@
 
 ### Datenanbindung
 
-- [ ] **DATA-01**: Theme lädt Wetterdaten per Fetch API von show.cgi JSON-Endpoint
-- [ ] **DATA-02**: Theme lädt Sprachdaten per Fetch aus lang-*.json
-- [ ] **DATA-03**: Theme lädt Icon-Mapping per Fetch aus icons/{iconset}/icon_mapping.json
-- [ ] **DATA-04**: Auto-Refresh lädt Daten periodisch nach (Intervall ≥ 5 Minuten)
+- [x] **DATA-01**: Theme lädt Wetterdaten per Fetch API von show.cgi JSON-Endpoint
+- [x] **DATA-02**: Theme lädt Sprachdaten per Fetch aus lang-*.json
+- [x] **DATA-03**: Theme lädt Icon-Mapping per Fetch aus icons/{iconset}/icon_mapping.json
+- [x] **DATA-04**: Auto-Refresh lädt Daten periodisch nach (Intervall ≥ 5 Minuten)
 - [x] **DATA-05**: Ladeanzeige während AJAX-Requests
 - [x] **DATA-06**: Fehlermeldung wenn Daten nicht geladen werden können
 
@@ -56,7 +56,7 @@
 
 - [x] **LANG-01**: Alle UI-Texte (Tab-Labels, Einheiten, Beschreibungen) kommen aus lang-*.json
 - [x] **LANG-02**: Unterstützte Sprachen: DE, EN, ES, NL, SK
-- [ ] **LANG-03**: Sprache wird per URL-Parameter oder Konfiguration gesetzt
+- [x] **LANG-03**: Sprache wird per URL-Parameter oder Konfiguration gesetzt
 
 ### Zusatz-Features
 
@@ -117,15 +117,15 @@
 | TAGE-01 | Phase 4 | Complete |
 | TAGE-02 | Phase 4 | Complete |
 | EXTRA-02 | Phase 4 | Complete |
-| DATA-01 | Phase 5 | Pending |
-| DATA-02 | Phase 5 | Pending |
-| DATA-03 | Phase 5 | Pending |
-| DATA-04 | Phase 5 | Pending |
+| DATA-01 | Phase 5 | Complete |
+| DATA-02 | Phase 5 | Complete |
+| DATA-03 | Phase 5 | Complete |
+| DATA-04 | Phase 5 | Complete |
 | DATA-05 | Phase 5 | Complete |
 | DATA-06 | Phase 5 | Complete |
 | LANG-01 | Phase 5 | Complete |
 | LANG-02 | Phase 5 | Complete |
-| LANG-03 | Phase 5 | Pending |
+| LANG-03 | Phase 5 | Complete |
 | EXTRA-01 | Phase 5 | Complete |
 
 **Coverage:**
