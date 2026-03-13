@@ -193,8 +193,23 @@ if ($currentsize > 100) {
 # Give OK status to client.
 LOGOK "Current Data saved successfully.";
 
-# Write current.json alongside current.dat
+# Write current.json directly from Miniserver data (not via .dat roundabout)
+my %current_data = (
+    temperature        => $lox_response{w4l_cur_tt},
+    feelslike          => $lox_response{w4l_cur_tt_fl},
+    humidity           => $lox_response{w4l_cur_hu},
+    wind_direction_desc => wind_direction_text($lox_response{w4l_cur_w_dir}, \%L),
+    wind_direction_deg => $lox_response{w4l_cur_w_dir},
+    wind_speed         => $lox_response{w4l_cur_w_sp},
+    wind_gust          => $lox_response{w4l_cur_w_gu},
+    windchill          => $lox_response{w4l_cur_w_ch},
+    pressure           => $lox_response{w4l_cur_pr},
+    dewpoint           => $lox_response{w4l_cur_dp},
+    solar_radiation    => $lox_response{w4l_cur_sr},
+    weather_code       => $lox_response{w4l_cur_we_code},
+);
 eval { write_current_json($lbplogdir,
+    data    => \%current_data,
     source  => "Loxone",
     grabber => "grabber_loxone.pl") };
 LOGWARN "JSON write failed: $@" if $@;
