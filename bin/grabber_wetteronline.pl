@@ -77,6 +77,9 @@ $json = $json->allow_barekey(1);
 # Read language phrases
 my %L = LoxBerry::System::readlanguage("language.ini");
 
+# export to main:: so utils can use \%main::L
+%main::L = %L;
+
 # Create a logging object
 my $log = LoxBerry::Log->new (
 	package => 'weather4lox',

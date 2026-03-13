@@ -310,9 +310,10 @@ sub get_wind_direction_info {
     # calculate section on eight‑point compass rose
     my $wdir = $dirs[int((($deg + 22.5) / 45)) % 8];
 
-    # take localized labels from provided hashref
-    return ($wdir, undef) unless $Lref;
-    my $L = $Lref;
+    # take localized labels (either from provided hashref or from global %L)
+    my $L = $Lref // \%main::L;
+    $L = {} unless defined $L && ref $L eq 'HASH';
+    
     my %dir_labels = (
         N  => $L->{'GRABBER.LABEL_N'},
         NO => $L->{'GRABBER.LABEL_NE'},
