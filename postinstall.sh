@@ -76,6 +76,9 @@ ln -s $LBPLOG/REPLACELBPPLUGINDIR/webpage.dfc.html $LBHOMEDIR/webfrontend/html/p
 ln -s $LBPLOG/REPLACELBPPLUGINDIR/webpage.hfc.html $LBHOMEDIR/webfrontend/html/plugins/REPLACELBPPLUGINDIR/webpage.hfc.html > /dev/null 2>&1
 ln -s $LBPLOG/REPLACELBPPLUGINDIR/weatherdata.html $LBHOMEDIR/webfrontend/html/plugins/REPLACELBPPLUGINDIR/weatherdata.html > /dev/null 2>&1
 ln -s $LBPLOG/REPLACELBPPLUGINDIR/index.txt $LBHOMEDIR/webfrontend/html/plugins/REPLACELBPPLUGINDIR/emu/forecast/index.txt > /dev/null 2>&1
+ln -s $LBPLOG/REPLACELBPPLUGINDIR/current.json $LBHOMEDIR/webfrontend/html/plugins/REPLACELBPPLUGINDIR/current.json > /dev/null 2>&1
+ln -s $LBPLOG/REPLACELBPPLUGINDIR/dailyforecast.json $LBHOMEDIR/webfrontend/html/plugins/REPLACELBPPLUGINDIR/dailyforecast.json > /dev/null 2>&1
+ln -s $LBPLOG/REPLACELBPPLUGINDIR/hourlyforecast.json $LBHOMEDIR/webfrontend/html/plugins/REPLACELBPPLUGINDIR/hourlyforecast.json > /dev/null 2>&1
 
 ### TEMPORARY workaround since old cronjobs are not deleted by LoxBerry V3
 # if [ -e $ARGV5/system/cron/cron.01min/$ARGV3 ]; then
