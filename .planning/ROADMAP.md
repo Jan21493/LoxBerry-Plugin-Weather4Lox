@@ -74,7 +74,10 @@ Plans:
   3. Der Hero-Bereich zeigt Temperatur, Wetter-Icon, Beschreibung, Wind und Feuchtigkeit gross an
   4. Eine horizontale Stundenleiste ist sichtbar; Klick auf eine Stunde aktualisiert den Hero-Bereich mit den Werten dieser Stunde
   5. Der Tage-Tab zeigt eine 7-Tage-Ubersicht mit Icon, Hoch/Tief-Temperatur und Niederschlagswahrscheinlichkeit pro Tag
-**Plans**: TBD
+**Plans:** 1 plan
+
+Plans:
+- [ ] 04-01-PLAN.md — Create complete ocean-live.html with Ocean design, tabs, hero, hour strip, 7-day overview (mock data)
 
 ### Phase 5: Datenanbindung & Vollstandigkeit
 **Goal**: Das ocean-live Theme ladt Wetterdaten und Sprachstrings live per AJAX, aktualisiert sich automatisch und behandelt Fehler sauber — vollstandig produktionsreif
@@ -97,5 +100,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 1. JSON Schema & Grabber Migration | 3/3 | Complete   | 2026-03-12 |
 | 2. Delivery Layer Migration | 0/1 | Planning complete | - |
 | 3. CGI JSON Endpoint | 1/1 | Complete   | 2026-03-13 |
-| 4. ocean-live Theme Grundgerust | 0/TBD | Not started | - |
+| 4. ocean-live Theme Grundgerust | 0/1 | Planning complete | - |
 | 5. Datenanbindung & Vollstandigkeit | 0/TBD | Not started | - |
