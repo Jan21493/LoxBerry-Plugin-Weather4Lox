@@ -554,6 +554,11 @@ sub write_current_json {
         for my $k (keys %$data) {
             $rec{$k} = _val($data->{$k});
         }
+        # Ensure datetime exists — derive from epoch if missing
+        if (!defined $rec{datetime} && defined $rec{epoch}) {
+            my $tz = $rec{timezone} || _system_timezone();
+            $rec{datetime} = _epoch_to_iso($rec{epoch}, $tz);
+        }
     } else {
         # Legacy path: read from .dat file
         my $dat = "$logdir/current.dat";
@@ -727,6 +732,11 @@ sub write_daily_json {
             for my $k (keys %$entry) {
                 $rec{$k} = _val($entry->{$k});
             }
+            # Ensure datetime exists — derive from epoch if missing
+            if (!defined $rec{datetime} && defined $rec{epoch}) {
+                my $tz = $rec{timezone} || _system_timezone();
+                $rec{datetime} = _epoch_to_iso($rec{epoch}, $tz);
+            }
             _enrich_weather_id(\%rec);
             push @records, \%rec;
         }
@@ -804,6 +814,11 @@ sub write_hourly_json {
             my %rec;
             for my $k (keys %$entry) {
                 $rec{$k} = _val($entry->{$k});
+            }
+            # Ensure datetime exists — derive from epoch if missing
+            if (!defined $rec{datetime} && defined $rec{epoch}) {
+                my $tz = $rec{timezone} || _system_timezone();
+                $rec{datetime} = _epoch_to_iso($rec{epoch}, $tz);
             }
             _enrich_weather_id(\%rec);
             push @records, \%rec;
