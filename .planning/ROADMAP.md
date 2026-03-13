@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: JSON Schema & Grabber Migration** - JSON-Schema definiert, alle Grabber schreiben JSON parallel zu .dat (Dual-Write) (completed 2026-03-12)
 - [ ] **Phase 2: Delivery Layer Migration** - datatoloxone.pl liest JSON statt .dat, UDP/MQTT Delivery unverandert
 - [x] **Phase 3: CGI JSON Endpoint** - show.cgi liefert JSON-Wetterdaten mit korrekten HTTP-Headers (completed 2026-03-13)
-- [ ] **Phase 4: ocean-live Theme Grundgerust** - Einzelne HTML-Datei mit Ocean-Design, Tabs, Hero-Bereich und 7-Tage-Ubersicht
+- [x] **Phase 4: ocean-live Theme Grundgerust** - Einzelne HTML-Datei mit Ocean-Design, Tabs, Hero-Bereich und 7-Tage-Ubersicht (completed 2026-03-13)
 - [ ] **Phase 5: Datenanbindung & Vollstandigkeit** - AJAX-Datenladen, Mehrsprachigkeit, Auto-Refresh, Fehlerbehandlung
 
 ## Phase Details
@@ -74,7 +74,7 @@ Plans:
   3. Der Hero-Bereich zeigt Temperatur, Wetter-Icon, Beschreibung, Wind und Feuchtigkeit gross an
   4. Eine horizontale Stundenleiste ist sichtbar; Klick auf eine Stunde aktualisiert den Hero-Bereich mit den Werten dieser Stunde
   5. Der Tage-Tab zeigt eine 7-Tage-Ubersicht mit Icon, Hoch/Tief-Temperatur und Niederschlagswahrscheinlichkeit pro Tag
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 04-01-PLAN.md — Create complete ocean-live.html with Ocean design, tabs, hero, hour strip, 7-day overview (mock data)
@@ -100,5 +100,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 1. JSON Schema & Grabber Migration | 3/3 | Complete   | 2026-03-12 |
 | 2. Delivery Layer Migration | 0/1 | Planning complete | - |
 | 3. CGI JSON Endpoint | 1/1 | Complete   | 2026-03-13 |
-| 4. ocean-live Theme Grundgerust | 0/1 | Planning complete | - |
+| 4. ocean-live Theme Grundgerust | 1/1 | Complete   | 2026-03-13 |
 | 5. Datenanbindung & Vollstandigkeit | 0/TBD | Not started | - |
