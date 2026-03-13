@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta id="meta-theme" name="theme-color" content="#0f172a">
+  <title>Weather4Lox — <!--$cur_loc_n--></title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    * { font-family: 'Outfit', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* ===== THEME VARIABLES ===== */
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: rgba(255,255,255,0.03);
+      --bg-card-hover: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.15);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --shadow: 0 4px 24px -6px rgba(0,0,0,0.3);
+      --shadow-hover: 0 12px 32px -8px rgba(0,0,0,0.4);
+      --sky: #38bdf8;
+      --amber: #fbbf24;
+      --emerald: #10b981;
+      --violet: #8b5cf6;
+      --indigo: #6366f1;
+      --orange: #f97316;
+      --rose: #f43f5e;
+      --accent-from: rgba(56,189,248,0.15);
+      --accent-to: rgba(139,92,246,0.15);
+      --tab-from: rgba(56,189,248,0.2);
+      --tab-to: rgba(139,92,246,0.2);
+      --tab-border: rgba(56,189,248,0.4);
+      --glow: 0 0 40px rgba(56,189,248,0.35);
+      --temp-bar-bg: rgba(51,65,85,0.5);
+      --grain-opacity: 0.025;
+    }
+
+    html.light {
+      --bg-primary: #f0f4f8;
+      --bg-secondary: #e2e8f0;
+      --bg-card: rgba(255,255,255,0.7);
+      --bg-card-hover: rgba(255,255,255,0.85);
+      --border: rgba(0,0,0,0.08);
+      --border-hover: rgba(0,0,0,0.14);
+      --text-primary: #1e293b;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --shadow: 0 4px 24px -6px rgba(0,0,0,0.08);
+      --shadow-hover: 0 12px 32px -8px rgba(0,0,0,0.12);
+      --glow: 0 0 40px rgba(56,189,248,0.15);
+      --accent-from: rgba(56,189,248,0.1);
+      --accent-to: rgba(139,92,246,0.08);
+      --tab-from: rgba(56,189,248,0.12);
+      --tab-to: rgba(139,92,246,0.1);
+      --tab-border: rgba(56,189,248,0.3);
+      --temp-bar-bg: rgba(100,116,139,0.18);
+      --grain-opacity: 0.012;
+    }
+
+    body {
+      background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary), var(--bg-primary));
+      color: var(--text-primary); min-height: 100vh; padding: 12px;
+      transition: background 0.4s, color 0.4s;
+    }
+
+    .grain {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      opacity: var(--grain-opacity);
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .page { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+
+    /* Glass */
+    .glass {
+      background: var(--bg-card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border); box-shadow: var(--shadow); border-radius: 20px;
+      transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+    }
+    .glass:hover { background: var(--bg-card-hover); border-color: var(--border-hover); }
+    .accent-bg { background: linear-gradient(135deg, var(--accent-from), var(--accent-to)); }
+
+    /* ===== HEADER ===== */
+    .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 12px; }
+    .hdr-left { display: flex; flex-direction: column; gap: 4px; }
+    .hdr-brand { display: flex; align-items: center; gap: 10px; }
+    .hdr-logo { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .hdr-title { font-size: 1.3rem; font-weight: 600; letter-spacing: -0.02em; }
+    .hdr-meta { font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--emerald); display: inline-block; }
+
+    /* Controls */
+    .controls { display: flex; align-items: center; gap: 8px; }
+
+    /* Theme toggle */
+    .theme-btn {
+      width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--bg-card); color: var(--text-secondary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.3s; backdrop-filter: blur(12px);
+    }
+    .theme-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 4px; padding: 5px; }
+    .tab {
+      padding: 8px 18px; border-radius: 12px; border: 1px solid transparent;
+      background: transparent; color: var(--text-muted); font-size: 0.82rem;
+      font-weight: 500; cursor: pointer; transition: all 0.3s; font-family: inherit;
+    }
+    .tab:hover { color: var(--text-primary); }
+    .tab.active {
+      background: linear-gradient(135deg, var(--tab-from), var(--tab-to));
+      border-color: var(--tab-border); color: var(--sky);
+    }
+    .tab-panel { display: none; } .tab-panel.active { display: block; }
+
+    /* ===== CURRENT TAB — LOXONE STYLE ===== */
+    /* Top: selected hour detail, Bottom: hour strip */
+
+    .cur-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+
+    /* Hero card */
+    .hero { padding: 28px; }
+    .hero-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .hero-temp { font-size: 4.5rem; font-weight: 300; line-height: 1; letter-spacing: -0.04em; text-shadow: var(--glow); }
+    .hero-temp sup { font-size: 1.8rem; font-weight: 400; opacity: 0.5; vertical-align: super; }
+    .hero-desc { font-size: 1.1rem; color: var(--text-secondary); margin-top: 6px; }
+    .hero-feels { color: var(--text-muted); font-size: 0.85rem; }
+    .hero-icon-box {
+      width: 130px; height: 130px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      animation: bobble 6s ease-in-out infinite;
+    }
+    .hero-icon { width: 100px; height: 100px; filter: drop-shadow(0 6px 24px rgba(56,189,248,0.2)); }
+    @keyframes bobble { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+    /* Sun/Moon compact */
+    .astro-row {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 12px;
+      margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);
+    }
+    .astro-item { display: flex; align-items: center; gap: 10px; }
+    .astro-emoji { font-size: 1.3rem; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .astro-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+    .astro-val { font-size: 0.95rem; font-weight: 500; }
+
+    /* Side stats */
+    .side-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: start; }
+    .stat { padding: 16px; }
+    .stat-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 6px; }
+    .stat-val { font-size: 1.35rem; font-weight: 600; }
+    .stat-sub { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
+
+    /* Extra stats row */
+    .extra-row { display: grid; grid-template-columns: repeat(6,1fr); gap: 10px; margin-top: 16px; }
+    .extra { padding: 14px; text-align: center; }
+    .extra .stat-val { font-size: 1.1rem; }
+
+    /* ===== HOURLY STRIP (Loxone style — bottom section) ===== */
+    .hour-strip-wrap { margin-top: 16px; }
+    .hour-strip-title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; padding-left: 4px; }
+    .hour-strip {
+      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+    .hour-strip::-webkit-scrollbar { height: 6px; }
+    .hour-strip::-webkit-scrollbar-track { background: transparent; }
+    .hour-strip::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .hcard {
+      min-width: 88px; padding: 12px 8px; text-align: center; border-radius: 14px;
+      flex-shrink: 0; cursor: pointer; transition: all 0.2s;
+    }
+    .hcard.selected { background: linear-gradient(135deg, var(--tab-from), var(--tab-to)); border-color: var(--tab-border); }
+    .hcard-time { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; }
+    .hcard-icon { width: 32px; height: 32px; margin: 0 auto 6px; }
+    .hcard-temp { font-size: 1.1rem; font-weight: 600; }
+    .hcard-pop { font-size: 0.68rem; color: var(--sky); margin-top: 2px; }
+
+    /* ===== SVG TEMP CHART ===== */
+    .chart-wrap {
+      margin-top: 16px; overflow-x: auto; padding-bottom: 4px;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+    .chart-wrap::-webkit-scrollbar { height: 6px; }
+    .chart-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ===== HOURLY TAB ===== */
+    .hourly-detail { padding: 24px; }
+    .hourly-detail h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; }
+    .hourly-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px,1fr)); gap: 8px; }
+    .hg-card { padding: 14px 8px; text-align: center; border-radius: 14px; }
+    .hg-time { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; }
+    .hg-icon { width: 36px; height: 36px; margin: 0 auto 6px; }
+    .hg-temp { font-size: 1.15rem; font-weight: 600; }
+    .hg-pop { font-size: 0.68rem; color: var(--sky); }
+    .hg-wind { font-size: 0.68rem; color: var(--text-muted); }
+
+    /* ===== DAILY TAB ===== */
+    .daily-wrap { padding: 24px; }
+    .daily-wrap h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; }
+    .drow {
+      display: grid; grid-template-columns: 70px 48px 1fr 70px 1fr;
+      align-items: center; gap: 10px; padding: 14px 16px; border-radius: 14px; margin-bottom: 6px;
+    }
+    .drow.today { border-color: var(--tab-border); background: linear-gradient(135deg, var(--tab-from), var(--tab-to)); }
+    .drow-day { font-weight: 600; font-size: 0.9rem; }
+    .drow-date { font-size: 0.75rem; color: var(--text-muted); }
+    .drow-icon { width: 40px; height: 40px; }
+    .drow-desc { font-size: 0.8rem; color: var(--text-secondary); }
+    .drow-pop { font-size: 0.75rem; color: var(--sky); text-align: center; }
+    .drow-temps { display: flex; align-items: center; gap: 6px; }
+    .drow-lo { color: var(--sky); font-weight: 500; min-width: 30px; text-align: right; font-size: 0.85rem; }
+    .drow-hi { color: var(--amber); font-weight: 500; min-width: 30px; font-size: 0.85rem; }
+    .drow-bar { flex: 1; height: 5px; border-radius: 3px; background: var(--temp-bar-bg); position: relative; overflow: hidden; }
+    .drow-fill { position: absolute; top: 0; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--sky), var(--amber)); }
+
+    .footer { text-align: center; color: var(--text-muted); font-size: 0.75rem; margin-top: 24px; padding: 12px; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .cur-layout { grid-template-columns: 1fr; }
+      .extra-row { grid-template-columns: repeat(3,1fr); }
+      .astro-row { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 600px) {
+      body { padding: 6px; }
+      .hero-temp { font-size: 3.5rem; }
+      .hero-icon-box { width: 100px; height: 100px; }
+      .hero-icon { width: 76px; height: 76px; }
+      .extra-row { grid-template-columns: repeat(2,1fr); }
+      .drow { grid-template-columns: 56px 40px 1fr; }
+      .drow-desc, .drow-pop { display: none; }
+      .tabs { flex-wrap: wrap; }
+      .tab { padding: 7px 12px; font-size: 0.78rem; }
+      .side-stats { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="page">
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="hdr-left">
+      <div class="hdr-brand">
+        <div class="hdr-logo accent-bg">
+          <svg width="18" height="18" fill="none" stroke="var(--sky)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+        </div>
+        <span class="hdr-title">Weather4Lox</span>
+      </div>
+      <div class="hdr-meta">
+        <span class="dot"></span>
+        <span class="mono"><!--$cur_hour-->:<!--$cur_min--></span>
+        <span>•</span>
+        <span><!--$cur_loc_n--></span>
+        <span>•</span>
+        <span class="mono" style="font-size:0.7rem"><!--$cur_day-->.<!--$cur_month-->.<!--$cur_year--></span>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="theme-btn" id="themeBtn" title="Dark/Light" onclick="toggleTheme()">
+        <svg id="ic-sun" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg id="ic-moon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <div class="tabs glass">
+        <button class="tab active" data-tab="current">Aktuell</button>
+        <button class="tab" data-tab="hourly">Stündlich</button>
+        <button class="tab" data-tab="daily">Tage</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================================================== -->
+  <!-- TAB: CURRENT — Loxone-Style (detail top + strip bottom) -->
+  <!-- ===================================================== -->
+  <div id="panel-current" class="tab-panel active">
+
+    <div class="cur-layout">
+      <!-- Main hero -->
+      <div class="glass hero accent-bg">
+        <div class="hero-row">
+          <div>
+            <div class="hero-temp" id="heroTemp"><!--$cur_tt--><sup>°C</sup></div>
+            <div class="hero-feels" id="heroFeels">Gefühlt <!--$cur_tt_fl--> °C</div>
+            <div class="hero-desc" id="heroDesc"><!--$cur_we_des--></div>
+          </div>
+          <div class="hero-icon-box accent-bg" id="heroIconBox">
+            <img class="hero-icon" id="heroIcon"
+                 src="<!--$webpath-->/icons/<!--$iconset-->/<!--$cur_dayornight-->/<!--$cur_we_icon-->.png"
+                 alt="<!--$cur_we_des-->">
+          </div>
+        </div>
+
+        <!-- Astro row -->
+        <div class="astro-row">
+          <div class="astro-item">
+            <div class="astro-emoji" style="background:rgba(251,191,36,0.1)">
+              <svg
+                id="ic-sunrise" width="24" height="24" viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="m 11.75,2.73 v 2" stroke="#fbbf24" />
+                <path d="m 5.5,4.75 1.4,1.4" stroke="#fbbf24" />
+                <path d="m 2.75,11 h 2" stroke="#fbbf24" />
+                <path d="m 18.5,11 h 2" stroke="#fbbf24" />
+                <path d="m 18.15,5 -1.4,1.4" stroke="#fbbf24" />
+                <path d="m 11.75,7.73 c -2,0 -4,1.3 -4,4 H 15.75 C 15.75,9 13.75,7.73 11.75,7.73 Z" />
+                <path d="M 11.75 7.73 C 9.75 7.73 7.75 9 7.75 11.73 L 15.75 11.725 C 15.75 9 13.75 7.73 11.75 7.73 z" style="fill:#fbbf24;stroke:#fbbf24" />
+                <path d="M 20.75,14.73 H 2.75" />
+                <path d="M 12 17 L 8 21 L 16 21 L 12 17 z M 8 21 L 16 21 L 8 21 z " style="fill:currentColor" />
+              </svg>
+            </div>
+            <div><div class="astro-label">Sonnenaufgang</div><div class="astro-val mono"><!--$cur_sun_r--></div></div>
+          </div>
+          <div class="astro-item">
+            <div class="astro-emoji" style="background:rgba(249,115,22,0.1)">
+              <svg
+                id="ic-sunrise" width="24" height="24" viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="m 11.75,2.73 v 2" stroke="#fbbf24" />
+                <path d="m 5.5,4.75 1.4,1.4" stroke="#fbbf24" />
+                <path d="m 2.75,11 h 2" stroke="#fbbf24" />
+                <path d="m 18.5,11 h 2" stroke="#fbbf24" />
+                <path d="m 18.15,5 -1.4,1.4" stroke="#fbbf24" />
+                <path d="m 11.75,7.73 c -2,0 -4,1.3 -4,4 H 15.75 C 15.75,9 13.75,7.73 11.75,7.73 Z" />
+                <path d="M 11.75 7.73 C 9.75 7.73 7.75 9 7.75 11.73 L 15.75 11.725 C 15.75 9 13.75 7.73 11.75 7.73 z" style="fill:#fbbf24;stroke:#fbbf24" />
+                <path d="M 20.75,14.73 H 2.75" />
+                <path d="m 12,22 4,-4 H 8 Z" style="fill:currentColor" />
+              </svg>
+            </div>
+            <div><div class="astro-label">Sonnenuntergang</div><div class="astro-val mono"><!--$cur_sun_s--></div></div>
+          </div>
+          <div class="astro-item">
+            <div class="astro-emoji" style="background:rgba(139,92,246,0.1)">🌙</div>
+            <div>
+              <div class="astro-label">Mondlicht</div>
+              <div class="astro-val mono"><!--$cur_moon_p-->%</div>
+            </div>
+          </div>
+          <div class="astro-item">
+            <div class="astro-emoji" style="background:rgba(99,102,241,0.1)">🌓</div>
+            <div><div class="astro-label">Mondphase</div><div class="astro-val" style="font-size:0.82rem"><!--$cur_moon_ph--></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Side stats -->
+      <div class="side-stats">
+        <div class="glass stat">
+          <div class="stat-label">Luftfeuchte</div>
+          <div class="stat-val"><!--$cur_hu-->%</div>
+        </div>
+        <div class="glass stat">
+          <div class="stat-label">Wind</div>
+          <div class="stat-val"><!--$cur_w_sp--> km/h</div>
+          <div class="stat-sub"><!--$cur_w_dirdes--></div>
+        </div>
+        <div class="glass stat">
+          <div class="stat-label">Luftdruck</div>
+          <div class="stat-val"><!--$cur_pr--> <small style="color:var(--text-muted)">hPa</small></div>
+        </div>
+        <div class="glass stat">
+          <div class="stat-label">Sichtweite</div>
+          <div class="stat-val"><!--$cur_vis--> <small style="color:var(--text-muted)">km</small></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Extra stats -->
+    <div class="extra-row">
+      <div class="glass extra"><div class="stat-label">Taupunkt</div><div class="stat-val mono"><!--$cur_dp-->°</div></div>
+      <div class="glass extra"><div class="stat-label">Niederschlag</div><div class="stat-val mono"><!--$cur_prec_today--> mm</div></div>
+      <div class="glass extra"><div class="stat-label">UV-Index</div><div class="stat-val mono"><!--$cur_uvi--></div></div>
+      <div class="glass extra"><div class="stat-label">Bewölkung</div><div class="stat-val mono"><!--$cur_sky-->%</div></div>
+      <div class="glass extra"><div class="stat-label">Böen</div><div class="stat-val mono"><!--$cur_w_gu--> km/h</div></div>
+      <div class="glass extra"><div class="stat-label">Gefühlt</div><div class="stat-val mono"><!--$cur_tt_fl-->°</div></div>
+    </div>
+
+    <!-- ===== HOURLY STRIP (Loxone-Style bottom) ===== -->
+    <div class="hour-strip-wrap">
+      <div class="hour-strip-title">Stündliche Vorhersage — klicke für Details</div>
+      <div class="hour-strip" id="hourStrip">
+        <!--HFC1--><div class="hcard glass selected" data-idx="1" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc1_hour-->:<!--$hfc1_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc1_dayornight-->/<!--$hfc1_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc1_tt-->°</div><div class="hcard-pop"><!--$hfc1_pop-->%</div></div>
+        <!--HFC2--><div class="hcard glass" data-idx="2" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc2_hour-->:<!--$hfc2_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc2_dayornight-->/<!--$hfc2_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc2_tt-->°</div><div class="hcard-pop"><!--$hfc2_pop-->%</div></div>
+        <!--HFC3--><div class="hcard glass" data-idx="3" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc3_hour-->:<!--$hfc3_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc3_dayornight-->/<!--$hfc3_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc3_tt-->°</div><div class="hcard-pop"><!--$hfc3_pop-->%</div></div>
+        <!--HFC4--><div class="hcard glass" data-idx="4" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc4_hour-->:<!--$hfc4_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc4_dayornight-->/<!--$hfc4_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc4_tt-->°</div><div class="hcard-pop"><!--$hfc4_pop-->%</div></div>
+        <!--HFC5--><div class="hcard glass" data-idx="5" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc5_hour-->:<!--$hfc5_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc5_dayornight-->/<!--$hfc5_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc5_tt-->°</div><div class="hcard-pop"><!--$hfc5_pop-->%</div></div>
+        <!--HFC6--><div class="hcard glass" data-idx="6" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc6_hour-->:<!--$hfc6_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc6_dayornight-->/<!--$hfc6_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc6_tt-->°</div><div class="hcard-pop"><!--$hfc6_pop-->%</div></div>
+        <!--HFC7--><div class="hcard glass" data-idx="7" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc7_hour-->:<!--$hfc7_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc7_dayornight-->/<!--$hfc7_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc7_tt-->°</div><div class="hcard-pop"><!--$hfc7_pop-->%</div></div>
+        <!--HFC8--><div class="hcard glass" data-idx="8" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc8_hour-->:<!--$hfc8_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc8_dayornight-->/<!--$hfc8_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc8_tt-->°</div><div class="hcard-pop"><!--$hfc8_pop-->%</div></div>
+        <!--HFC9--><div class="hcard glass" data-idx="9" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc9_hour-->:<!--$hfc9_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc9_dayornight-->/<!--$hfc9_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc9_tt-->°</div><div class="hcard-pop"><!--$hfc9_pop-->%</div></div>
+        <!--HFC10--><div class="hcard glass" data-idx="10" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc10_hour-->:<!--$hfc10_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc10_dayornight-->/<!--$hfc10_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc10_tt-->°</div><div class="hcard-pop"><!--$hfc10_pop-->%</div></div>
+        <!--HFC11--><div class="hcard glass" data-idx="11" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc11_hour-->:<!--$hfc11_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc11_dayornight-->/<!--$hfc11_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc11_tt-->°</div><div class="hcard-pop"><!--$hfc11_pop-->%</div></div>
+        <!--HFC12--><div class="hcard glass" data-idx="12" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc12_hour-->:<!--$hfc12_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc12_dayornight-->/<!--$hfc12_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc12_tt-->°</div><div class="hcard-pop"><!--$hfc12_pop-->%</div></div>
+        <!--HFC13--><div class="hcard glass" data-idx="13" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc13_hour-->:<!--$hfc13_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc13_dayornight-->/<!--$hfc13_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc13_tt-->°</div><div class="hcard-pop"><!--$hfc13_pop-->%</div></div>
+        <!--HFC14--><div class="hcard glass" data-idx="14" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc14_hour-->:<!--$hfc14_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc14_dayornight-->/<!--$hfc14_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc14_tt-->°</div><div class="hcard-pop"><!--$hfc14_pop-->%</div></div>
+        <!--HFC15--><div class="hcard glass" data-idx="15" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc15_hour-->:<!--$hfc15_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc15_dayornight-->/<!--$hfc15_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc15_tt-->°</div><div class="hcard-pop"><!--$hfc15_pop-->%</div></div>
+        <!--HFC16--><div class="hcard glass" data-idx="16" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc16_hour-->:<!--$hfc16_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc16_dayornight-->/<!--$hfc16_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc16_tt-->°</div><div class="hcard-pop"><!--$hfc16_pop-->%</div></div>
+        <!--HFC17--><div class="hcard glass" data-idx="17" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc17_hour-->:<!--$hfc17_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc17_dayornight-->/<!--$hfc17_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc17_tt-->°</div><div class="hcard-pop"><!--$hfc17_pop-->%</div></div>
+        <!--HFC18--><div class="hcard glass" data-idx="18" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc18_hour-->:<!--$hfc18_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc18_dayornight-->/<!--$hfc18_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc18_tt-->°</div><div class="hcard-pop"><!--$hfc18_pop-->%</div></div>
+        <!--HFC19--><div class="hcard glass" data-idx="19" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc19_hour-->:<!--$hfc19_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc19_dayornight-->/<!--$hfc19_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc19_tt-->°</div><div class="hcard-pop"><!--$hfc19_pop-->%</div></div>
+        <!--HFC20--><div class="hcard glass" data-idx="20" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc20_hour-->:<!--$hfc20_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc20_dayornight-->/<!--$hfc20_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc20_tt-->°</div><div class="hcard-pop"><!--$hfc20_pop-->%</div></div>
+        <!--HFC21--><div class="hcard glass" data-idx="21" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc21_hour-->:<!--$hfc21_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc21_dayornight-->/<!--$hfc21_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc21_tt-->°</div><div class="hcard-pop"><!--$hfc21_pop-->%</div></div>
+        <!--HFC22--><div class="hcard glass" data-idx="22" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc22_hour-->:<!--$hfc22_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc22_dayornight-->/<!--$hfc22_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc22_tt-->°</div><div class="hcard-pop"><!--$hfc22_pop-->%</div></div>
+        <!--HFC23--><div class="hcard glass" data-idx="23" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc23_hour-->:<!--$hfc23_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc23_dayornight-->/<!--$hfc23_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc23_tt-->°</div><div class="hcard-pop"><!--$hfc23_pop-->%</div></div>
+        <!--HFC24--><div class="hcard glass" data-idx="24" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc24_hour-->:<!--$hfc24_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc24_dayornight-->/<!--$hfc24_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc24_tt-->°</div><div class="hcard-pop"><!--$hfc24_pop-->%</div></div>
+      </div>
+    </div>
+
+    <!-- SVG Temperature chart -->
+    <div class="chart-wrap" id="chartWrap">
+      <svg id="tempChart" height="140" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+  </div>
+
+  <!-- ===================================================== -->
+  <!-- TAB: HOURLY (full grid hfc1-36)                        -->
+  <!-- ===================================================== -->
+  <div id="panel-hourly" class="tab-panel">
+    <div class="glass hourly-detail">
+      <h2>36-Stunden Vorhersage</h2>
+      <div class="hourly-grid">
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc1_hour-->:<!--$hfc1_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc1_dayornight-->/<!--$hfc1_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc1_tt-->°</div><div class="hg-pop">💧<!--$hfc1_pop-->%</div><div class="hg-wind"><!--$hfc1_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc2_hour-->:<!--$hfc2_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc2_dayornight-->/<!--$hfc2_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc2_tt-->°</div><div class="hg-pop">💧<!--$hfc2_pop-->%</div><div class="hg-wind"><!--$hfc2_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc3_hour-->:<!--$hfc3_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc3_dayornight-->/<!--$hfc3_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc3_tt-->°</div><div class="hg-pop">💧<!--$hfc3_pop-->%</div><div class="hg-wind"><!--$hfc3_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc4_hour-->:<!--$hfc4_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc4_dayornight-->/<!--$hfc4_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc4_tt-->°</div><div class="hg-pop">💧<!--$hfc4_pop-->%</div><div class="hg-wind"><!--$hfc4_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc5_hour-->:<!--$hfc5_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc5_dayornight-->/<!--$hfc5_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc5_tt-->°</div><div class="hg-pop">💧<!--$hfc5_pop-->%</div><div class="hg-wind"><!--$hfc5_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc6_hour-->:<!--$hfc6_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc6_dayornight-->/<!--$hfc6_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc6_tt-->°</div><div class="hg-pop">💧<!--$hfc6_pop-->%</div><div class="hg-wind"><!--$hfc6_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc7_hour-->:<!--$hfc7_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc7_dayornight-->/<!--$hfc7_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc7_tt-->°</div><div class="hg-pop">💧<!--$hfc7_pop-->%</div><div class="hg-wind"><!--$hfc7_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc8_hour-->:<!--$hfc8_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc8_dayornight-->/<!--$hfc8_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc8_tt-->°</div><div class="hg-pop">💧<!--$hfc8_pop-->%</div><div class="hg-wind"><!--$hfc8_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc9_hour-->:<!--$hfc9_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc9_dayornight-->/<!--$hfc9_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc9_tt-->°</div><div class="hg-pop">💧<!--$hfc9_pop-->%</div><div class="hg-wind"><!--$hfc9_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc10_hour-->:<!--$hfc10_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc10_dayornight-->/<!--$hfc10_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc10_tt-->°</div><div class="hg-pop">💧<!--$hfc10_pop-->%</div><div class="hg-wind"><!--$hfc10_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc11_hour-->:<!--$hfc11_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc11_dayornight-->/<!--$hfc11_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc11_tt-->°</div><div class="hg-pop">💧<!--$hfc11_pop-->%</div><div class="hg-wind"><!--$hfc11_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc12_hour-->:<!--$hfc12_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc12_dayornight-->/<!--$hfc12_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc12_tt-->°</div><div class="hg-pop">💧<!--$hfc12_pop-->%</div><div class="hg-wind"><!--$hfc12_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc13_hour-->:<!--$hfc13_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc13_dayornight-->/<!--$hfc13_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc13_tt-->°</div><div class="hg-pop">💧<!--$hfc13_pop-->%</div><div class="hg-wind"><!--$hfc13_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc14_hour-->:<!--$hfc14_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc14_dayornight-->/<!--$hfc14_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc14_tt-->°</div><div class="hg-pop">💧<!--$hfc14_pop-->%</div><div class="hg-wind"><!--$hfc14_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc15_hour-->:<!--$hfc15_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc15_dayornight-->/<!--$hfc15_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc15_tt-->°</div><div class="hg-pop">💧<!--$hfc15_pop-->%</div><div class="hg-wind"><!--$hfc15_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc16_hour-->:<!--$hfc16_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc16_dayornight-->/<!--$hfc16_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc16_tt-->°</div><div class="hg-pop">💧<!--$hfc16_pop-->%</div><div class="hg-wind"><!--$hfc16_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc17_hour-->:<!--$hfc17_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc17_dayornight-->/<!--$hfc17_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc17_tt-->°</div><div class="hg-pop">💧<!--$hfc17_pop-->%</div><div class="hg-wind"><!--$hfc17_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc18_hour-->:<!--$hfc18_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc18_dayornight-->/<!--$hfc18_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc18_tt-->°</div><div class="hg-pop">💧<!--$hfc18_pop-->%</div><div class="hg-wind"><!--$hfc18_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc19_hour-->:<!--$hfc19_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc19_dayornight-->/<!--$hfc19_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc19_tt-->°</div><div class="hg-pop">💧<!--$hfc19_pop-->%</div><div class="hg-wind"><!--$hfc19_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc20_hour-->:<!--$hfc20_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc20_dayornight-->/<!--$hfc20_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc20_tt-->°</div><div class="hg-pop">💧<!--$hfc20_pop-->%</div><div class="hg-wind"><!--$hfc20_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc21_hour-->:<!--$hfc21_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc21_dayornight-->/<!--$hfc21_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc21_tt-->°</div><div class="hg-pop">💧<!--$hfc21_pop-->%</div><div class="hg-wind"><!--$hfc21_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc22_hour-->:<!--$hfc22_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc22_dayornight-->/<!--$hfc22_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc22_tt-->°</div><div class="hg-pop">💧<!--$hfc22_pop-->%</div><div class="hg-wind"><!--$hfc22_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc23_hour-->:<!--$hfc23_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc23_dayornight-->/<!--$hfc23_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc23_tt-->°</div><div class="hg-pop">💧<!--$hfc23_pop-->%</div><div class="hg-wind"><!--$hfc23_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc24_hour-->:<!--$hfc24_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc24_dayornight-->/<!--$hfc24_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc24_tt-->°</div><div class="hg-pop">💧<!--$hfc24_pop-->%</div><div class="hg-wind"><!--$hfc24_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc25_hour-->:<!--$hfc25_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc25_dayornight-->/<!--$hfc25_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc25_tt-->°</div><div class="hg-pop">💧<!--$hfc25_pop-->%</div><div class="hg-wind"><!--$hfc25_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc26_hour-->:<!--$hfc26_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc26_dayornight-->/<!--$hfc26_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc26_tt-->°</div><div class="hg-pop">💧<!--$hfc26_pop-->%</div><div class="hg-wind"><!--$hfc26_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc27_hour-->:<!--$hfc27_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc27_dayornight-->/<!--$hfc27_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc27_tt-->°</div><div class="hg-pop">💧<!--$hfc27_pop-->%</div><div class="hg-wind"><!--$hfc27_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc28_hour-->:<!--$hfc28_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc28_dayornight-->/<!--$hfc28_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc28_tt-->°</div><div class="hg-pop">💧<!--$hfc28_pop-->%</div><div class="hg-wind"><!--$hfc28_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc29_hour-->:<!--$hfc29_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc29_dayornight-->/<!--$hfc29_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc29_tt-->°</div><div class="hg-pop">💧<!--$hfc29_pop-->%</div><div class="hg-wind"><!--$hfc29_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc30_hour-->:<!--$hfc30_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc30_dayornight-->/<!--$hfc30_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc30_tt-->°</div><div class="hg-pop">💧<!--$hfc30_pop-->%</div><div class="hg-wind"><!--$hfc30_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc31_hour-->:<!--$hfc31_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc31_dayornight-->/<!--$hfc31_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc31_tt-->°</div><div class="hg-pop">💧<!--$hfc31_pop-->%</div><div class="hg-wind"><!--$hfc31_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc32_hour-->:<!--$hfc32_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc32_dayornight-->/<!--$hfc32_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc32_tt-->°</div><div class="hg-pop">💧<!--$hfc32_pop-->%</div><div class="hg-wind"><!--$hfc32_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc33_hour-->:<!--$hfc33_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc33_dayornight-->/<!--$hfc33_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc33_tt-->°</div><div class="hg-pop">💧<!--$hfc33_pop-->%</div><div class="hg-wind"><!--$hfc33_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc34_hour-->:<!--$hfc34_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc34_dayornight-->/<!--$hfc34_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc34_tt-->°</div><div class="hg-pop">💧<!--$hfc34_pop-->%</div><div class="hg-wind"><!--$hfc34_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc35_hour-->:<!--$hfc35_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc35_dayornight-->/<!--$hfc35_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc35_tt-->°</div><div class="hg-pop">💧<!--$hfc35_pop-->%</div><div class="hg-wind"><!--$hfc35_w_sp--> km/h</div></div>
+        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc36_hour-->:<!--$hfc36_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc36_dayornight-->/<!--$hfc36_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc36_tt-->°</div><div class="hg-pop">💧<!--$hfc36_pop-->%</div><div class="hg-wind"><!--$hfc36_w_sp--> km/h</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================== -->
+  <!-- TAB: DAILY (dfc0-3)                                    -->
+  <!-- ===================================================== -->
+  <div id="panel-daily" class="tab-panel">
+    <div class="glass daily-wrap">
+      <h2>4-Tage Vorhersage</h2>
+      <div class="drow glass today"><div><div class="drow-day"><!--$dfc0_wday_sh--></div><div class="drow-date mono"><!--$dfc0_day-->.<!--$dfc0_month--></div></div><img class="drow-icon" src="<!--$webpath-->/icons/<!--$iconset-->/d/<!--$dfc0_we_icon-->.png" alt=""><div class="drow-desc"><!--$dfc0_we_des--></div><div class="drow-pop">💧<!--$dfc0_pop-->%</div><div class="drow-temps"><span class="drow-lo mono"><!--$dfc0_tt_l-->°</span><div class="drow-bar"><div class="drow-fill" id="bar0"></div></div><span class="drow-hi mono"><!--$dfc0_tt_h-->°</span></div></div>
+      <div class="drow glass"><div><div class="drow-day"><!--$dfc1_wday_sh--></div><div class="drow-date mono"><!--$dfc1_day-->.<!--$dfc1_month--></div></div><img class="drow-icon" src="<!--$webpath-->/icons/<!--$iconset-->/d/<!--$dfc1_we_icon-->.png" alt=""><div class="drow-desc"><!--$dfc1_we_des--></div><div class="drow-pop">💧<!--$dfc1_pop-->%</div><div class="drow-temps"><span class="drow-lo mono"><!--$dfc1_tt_l-->°</span><div class="drow-bar"><div class="drow-fill" id="bar1"></div></div><span class="drow-hi mono"><!--$dfc1_tt_h-->°</span></div></div>
+      <div class="drow glass"><div><div class="drow-day"><!--$dfc2_wday_sh--></div><div class="drow-date mono"><!--$dfc2_day-->.<!--$dfc2_month--></div></div><img class="drow-icon" src="<!--$webpath-->/icons/<!--$iconset-->/d/<!--$dfc2_we_icon-->.png" alt=""><div class="drow-desc"><!--$dfc2_we_des--></div><div class="drow-pop">💧<!--$dfc2_pop-->%</div><div class="drow-temps"><span class="drow-lo mono"><!--$dfc2_tt_l-->°</span><div class="drow-bar"><div class="drow-fill" id="bar2"></div></div><span class="drow-hi mono"><!--$dfc2_tt_h-->°</span></div></div>
+      <div class="drow glass"><div><div class="drow-day"><!--$dfc3_wday_sh--></div><div class="drow-date mono"><!--$dfc3_day-->.<!--$dfc3_month--></div></div><img class="drow-icon" src="<!--$webpath-->/icons/<!--$iconset-->/d/<!--$dfc3_we_icon-->.png" alt=""><div class="drow-desc"><!--$dfc3_we_des--></div><div class="drow-pop">💧<!--$dfc3_pop-->%</div><div class="drow-temps"><span class="drow-lo mono"><!--$dfc3_tt_l-->°</span><div class="drow-bar"><div class="drow-fill" id="bar3"></div></div><span class="drow-hi mono"><!--$dfc3_tt_h-->°</span></div></div>
+    </div>
+  </div>
+
+  <footer class="footer">Weather4Lox Dashboard • Powered by LoxBerry</footer>
+</div>
+
+<script>
+// ===== HOURLY DATA (embedded by show.cgi) =====
+var HFC = [
+  {h:"<!--$hfc1_hour-->",m:"<!--$hfc1_min-->",t:<!--$hfc1_tt-->,pop:<!--$hfc1_pop-->,w:<!--$hfc1_w_sp-->,icon:"<!--$hfc1_we_icon-->",dn:"<!--$hfc1_dayornight-->",des:"<!--$hfc1_we_des-->"},
+  {h:"<!--$hfc2_hour-->",m:"<!--$hfc2_min-->",t:<!--$hfc2_tt-->,pop:<!--$hfc2_pop-->,w:<!--$hfc2_w_sp-->,icon:"<!--$hfc2_we_icon-->",dn:"<!--$hfc2_dayornight-->",des:"<!--$hfc2_we_des-->"},
+  {h:"<!--$hfc3_hour-->",m:"<!--$hfc3_min-->",t:<!--$hfc3_tt-->,pop:<!--$hfc3_pop-->,w:<!--$hfc3_w_sp-->,icon:"<!--$hfc3_we_icon-->",dn:"<!--$hfc3_dayornight-->",des:"<!--$hfc3_we_des-->"},
+  {h:"<!--$hfc4_hour-->",m:"<!--$hfc4_min-->",t:<!--$hfc4_tt-->,pop:<!--$hfc4_pop-->,w:<!--$hfc4_w_sp-->,icon:"<!--$hfc4_we_icon-->",dn:"<!--$hfc4_dayornight-->",des:"<!--$hfc4_we_des-->"},
+  {h:"<!--$hfc5_hour-->",m:"<!--$hfc5_min-->",t:<!--$hfc5_tt-->,pop:<!--$hfc5_pop-->,w:<!--$hfc5_w_sp-->,icon:"<!--$hfc5_we_icon-->",dn:"<!--$hfc5_dayornight-->",des:"<!--$hfc5_we_des-->"},
+  {h:"<!--$hfc6_hour-->",m:"<!--$hfc6_min-->",t:<!--$hfc6_tt-->,pop:<!--$hfc6_pop-->,w:<!--$hfc6_w_sp-->,icon:"<!--$hfc6_we_icon-->",dn:"<!--$hfc6_dayornight-->",des:"<!--$hfc6_we_des-->"},
+  {h:"<!--$hfc7_hour-->",m:"<!--$hfc7_min-->",t:<!--$hfc7_tt-->,pop:<!--$hfc7_pop-->,w:<!--$hfc7_w_sp-->,icon:"<!--$hfc7_we_icon-->",dn:"<!--$hfc7_dayornight-->",des:"<!--$hfc7_we_des-->"},
+  {h:"<!--$hfc8_hour-->",m:"<!--$hfc8_min-->",t:<!--$hfc8_tt-->,pop:<!--$hfc8_pop-->,w:<!--$hfc8_w_sp-->,icon:"<!--$hfc8_we_icon-->",dn:"<!--$hfc8_dayornight-->",des:"<!--$hfc8_we_des-->"},
+  {h:"<!--$hfc9_hour-->",m:"<!--$hfc9_min-->",t:<!--$hfc9_tt-->,pop:<!--$hfc9_pop-->,w:<!--$hfc9_w_sp-->,icon:"<!--$hfc9_we_icon-->",dn:"<!--$hfc9_dayornight-->",des:"<!--$hfc9_we_des-->"},
+  {h:"<!--$hfc10_hour-->",m:"<!--$hfc10_min-->",t:<!--$hfc10_tt-->,pop:<!--$hfc10_pop-->,w:<!--$hfc10_w_sp-->,icon:"<!--$hfc10_we_icon-->",dn:"<!--$hfc10_dayornight-->",des:"<!--$hfc10_we_des-->"},
+  {h:"<!--$hfc11_hour-->",m:"<!--$hfc11_min-->",t:<!--$hfc11_tt-->,pop:<!--$hfc11_pop-->,w:<!--$hfc11_w_sp-->,icon:"<!--$hfc11_we_icon-->",dn:"<!--$hfc11_dayornight-->",des:"<!--$hfc11_we_des-->"},
+  {h:"<!--$hfc12_hour-->",m:"<!--$hfc12_min-->",t:<!--$hfc12_tt-->,pop:<!--$hfc12_pop-->,w:<!--$hfc12_w_sp-->,icon:"<!--$hfc12_we_icon-->",dn:"<!--$hfc12_dayornight-->",des:"<!--$hfc12_we_des-->"},
+  {h:"<!--$hfc13_hour-->",m:"<!--$hfc13_min-->",t:<!--$hfc13_tt-->,pop:<!--$hfc13_pop-->,w:<!--$hfc13_w_sp-->,icon:"<!--$hfc13_we_icon-->",dn:"<!--$hfc13_dayornight-->",des:"<!--$hfc13_we_des-->"},
+  {h:"<!--$hfc14_hour-->",m:"<!--$hfc14_min-->",t:<!--$hfc14_tt-->,pop:<!--$hfc14_pop-->,w:<!--$hfc14_w_sp-->,icon:"<!--$hfc14_we_icon-->",dn:"<!--$hfc14_dayornight-->",des:"<!--$hfc14_we_des-->"},
+  {h:"<!--$hfc15_hour-->",m:"<!--$hfc15_min-->",t:<!--$hfc15_tt-->,pop:<!--$hfc15_pop-->,w:<!--$hfc15_w_sp-->,icon:"<!--$hfc15_we_icon-->",dn:"<!--$hfc15_dayornight-->",des:"<!--$hfc15_we_des-->"},
+  {h:"<!--$hfc16_hour-->",m:"<!--$hfc16_min-->",t:<!--$hfc16_tt-->,pop:<!--$hfc16_pop-->,w:<!--$hfc16_w_sp-->,icon:"<!--$hfc16_we_icon-->",dn:"<!--$hfc16_dayornight-->",des:"<!--$hfc16_we_des-->"},
+  {h:"<!--$hfc17_hour-->",m:"<!--$hfc17_min-->",t:<!--$hfc17_tt-->,pop:<!--$hfc17_pop-->,w:<!--$hfc17_w_sp-->,icon:"<!--$hfc17_we_icon-->",dn:"<!--$hfc17_dayornight-->",des:"<!--$hfc17_we_des-->"},
+  {h:"<!--$hfc18_hour-->",m:"<!--$hfc18_min-->",t:<!--$hfc18_tt-->,pop:<!--$hfc18_pop-->,w:<!--$hfc18_w_sp-->,icon:"<!--$hfc18_we_icon-->",dn:"<!--$hfc18_dayornight-->",des:"<!--$hfc18_we_des-->"},
+  {h:"<!--$hfc19_hour-->",m:"<!--$hfc19_min-->",t:<!--$hfc19_tt-->,pop:<!--$hfc19_pop-->,w:<!--$hfc19_w_sp-->,icon:"<!--$hfc19_we_icon-->",dn:"<!--$hfc19_dayornight-->",des:"<!--$hfc19_we_des-->"},
+  {h:"<!--$hfc20_hour-->",m:"<!--$hfc20_min-->",t:<!--$hfc20_tt-->,pop:<!--$hfc20_pop-->,w:<!--$hfc20_w_sp-->,icon:"<!--$hfc20_we_icon-->",dn:"<!--$hfc20_dayornight-->",des:"<!--$hfc20_we_des-->"},
+  {h:"<!--$hfc21_hour-->",m:"<!--$hfc21_min-->",t:<!--$hfc21_tt-->,pop:<!--$hfc21_pop-->,w:<!--$hfc21_w_sp-->,icon:"<!--$hfc21_we_icon-->",dn:"<!--$hfc21_dayornight-->",des:"<!--$hfc21_we_des-->"},
+  {h:"<!--$hfc22_hour-->",m:"<!--$hfc22_min-->",t:<!--$hfc22_tt-->,pop:<!--$hfc22_pop-->,w:<!--$hfc22_w_sp-->,icon:"<!--$hfc22_we_icon-->",dn:"<!--$hfc22_dayornight-->",des:"<!--$hfc22_we_des-->"},
+  {h:"<!--$hfc23_hour-->",m:"<!--$hfc23_min-->",t:<!--$hfc23_tt-->,pop:<!--$hfc23_pop-->,w:<!--$hfc23_w_sp-->,icon:"<!--$hfc23_we_icon-->",dn:"<!--$hfc23_dayornight-->",des:"<!--$hfc23_we_des-->"},
+  {h:"<!--$hfc24_hour-->",m:"<!--$hfc24_min-->",t:<!--$hfc24_tt-->,pop:<!--$hfc24_pop-->,w:<!--$hfc24_w_sp-->,icon:"<!--$hfc24_we_icon-->",dn:"<!--$hfc24_dayornight-->",des:"<!--$hfc24_we_des-->"}
+];
+var ICONSET = "<!--$iconset-->";
+var WEBPATH = "<!--$webpath-->";
+
+// ===== THEME (dark/light/auto) via URL param =====
+function getUrlParam(name) {
+  var m = location.search.match(new RegExp('[?&]' + name + '=([^&]*)'));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+var modeParam = getUrlParam('mode'); // dark, light, auto, or null
+
+function getTheme() {
+  if (modeParam === 'dark') return 'dark';
+  if (modeParam === 'light') return 'light';
+  // auto or null: use system preference
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
+function applyTheme(theme) {
+  var html = document.documentElement;
+  if (theme === 'light') {
+    html.classList.add('light');
+    document.getElementById('meta-theme').content = '#f0f4f8';
+    document.getElementById('ic-sun').style.display = 'none';
+    document.getElementById('ic-moon').style.display = 'block';
+  } else {
+    html.classList.remove('light');
+    document.getElementById('meta-theme').content = '#0f172a';
+    document.getElementById('ic-sun').style.display = 'block';
+    document.getElementById('ic-moon').style.display = 'none';
+  }
+}
+
+var currentTheme = getTheme();
+applyTheme(currentTheme);
+
+// Only show toggle when mode=auto or not set
+var themeBtn = document.getElementById('themeBtn');
+if (modeParam === 'dark' || modeParam === 'light') {
+  themeBtn.style.display = 'none';
+}
+
+function toggleTheme() {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  applyTheme(currentTheme);
+}
+
+// System preference change (only in auto mode)
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e) {
+  if (!modeParam || modeParam === 'auto') {
+    currentTheme = e.matches ? 'light' : 'dark';
+    applyTheme(currentTheme);
+  }
+});
+
+// ===== TAB NAVIGATION =====
+document.querySelectorAll('.tab').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.getAttribute('data-tab')).classList.add('active');
+  });
+});
+
+// ===== HOUR SELECTION (Loxone-Style: click hour → update hero) =====
+function selectHour(el) {
+  document.querySelectorAll('.hcard').forEach(function(c) { c.classList.remove('selected'); });
+  el.classList.add('selected');
+
+  var idx = parseInt(el.getAttribute('data-idx')) - 1;
+  if (idx < 0 || idx >= HFC.length) return;
+  var d = HFC[idx];
+
+  document.getElementById('heroTemp').innerHTML = Math.round(d.t) + '<sup>°C</sup>';
+  document.getElementById('heroFeels').textContent = d.h + ':' + d.m;
+  document.getElementById('heroDesc').textContent = d.des;
+  document.getElementById('heroIcon').src = WEBPATH + '/icons/' + ICONSET + '/' + d.dn + '/' + d.icon + '.png';
+
+  // Highlight chart point
+  highlightChartPoint(idx);
+}
+
+// ===== TEMPERATURE CHART (SVG, compressed X-axis) =====
+function renderChart() {
+  var svg = document.getElementById('tempChart');
+  var n = HFC.length;
+  if (!n) return;
+
+  var temps = HFC.map(function(d) { return d.t; });
+  var minT = Math.min.apply(null, temps);
+  var maxT = Math.max.apply(null, temps);
+  var range = Math.max(1, maxT - minT);
+
+  var H = 140, step = 32, padL = 24, padR = 16;
+  var yTop = 32, yBot = H - 28;
+  var chartH = yBot - yTop;
+  var W = padL + padR + (n - 1) * step;
+
+  svg.setAttribute('width', W);
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+
+  function x(i) { return padL + i * step; }
+  function y(t) { return yBot - ((t - minT) / range) * chartH; }
+
+  var pts = [];
+  for (var i = 0; i < n; i++) pts.push(x(i) + ',' + y(temps[i]));
+
+  var area = padL + ',' + yBot + ' ' + pts.join(' ') + ' ' + x(n-1) + ',' + yBot;
+
+  var labels = '', dots = '', gridLines = '';
+  var cs = getComputedStyle(document.documentElement);
+  var gridC = cs.getPropertyValue('--border').trim();
+  var labelC = cs.getPropertyValue('--text-muted').trim();
+
+  for (var i = 0; i < n; i++) {
+    if (i % 3 === 0) {
+      gridLines += '<line x1="'+x(i)+'" y1="'+yTop+'" x2="'+x(i)+'" y2="'+yBot+'" stroke="'+gridC+'" />';
+      labels += '<text x="'+x(i)+'" y="14" text-anchor="middle" font-size="9" fill="'+labelC+'" font-family="JetBrains Mono,monospace">'+HFC[i].h+'</text>';
+      labels += '<text x="'+x(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9" fill="'+labelC+'" font-family="JetBrains Mono,monospace">'+Math.round(temps[i])+'°</text>';
+    }
+    dots += '<circle cx="'+x(i)+'" cy="'+y(temps[i])+'" r="3" fill="var(--sky)" stroke="rgba(255,255,255,0.2)" stroke-width="1" class="chart-dot" data-idx="'+i+'" />';
+  }
+
+  svg.innerHTML =
+    '<defs><linearGradient id="areaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--sky)" stop-opacity="0.2"/><stop offset="100%" stop-color="var(--sky)" stop-opacity="0"/></linearGradient></defs>' +
+    gridLines +
+    '<line x1="'+padL+'" y1="'+yBot+'" x2="'+(W-padR)+'" y2="'+yBot+'" stroke="'+gridC+'" />' +
+    '<path d="M '+area+'" fill="url(#areaG)" />' +
+    '<polyline points="'+pts.join(' ')+'" fill="none" stroke="var(--sky)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' +
+    dots + labels +
+    '<circle id="chartHighlight" cx="'+x(0)+'" cy="'+y(temps[0])+'" r="6" fill="var(--sky)" stroke="var(--text-primary)" stroke-width="2" opacity="0.9" />';
+}
+
+function highlightChartPoint(idx) {
+  var hl = document.getElementById('chartHighlight');
+  if (!hl || idx >= HFC.length) return;
+  var temps = HFC.map(function(d) { return d.t; });
+  var minT = Math.min.apply(null, temps), maxT = Math.max.apply(null, temps), range = Math.max(1, maxT - minT);
+  var H = 140, step = 32, padL = 24, yTop = 32, yBot = H - 28, chartH = yBot - yTop;
+  hl.setAttribute('cx', padL + idx * step);
+  hl.setAttribute('cy', yBot - ((temps[idx] - minT) / range) * chartH);
+
+  // Sync-scroll chart to selected hour
+  var wrap = document.getElementById('chartWrap');
+  if (wrap) wrap.scrollLeft = Math.max(0, (padL + idx * step) - wrap.clientWidth / 2);
+}
+
+renderChart();
+lucide.createIcons();
+
+// ===== DAILY TEMP BARS =====
+(function() {
+  var lo = [<!--$dfc0_tt_l-->,<!--$dfc1_tt_l-->,<!--$dfc2_tt_l-->,<!--$dfc3_tt_l-->];
+  var hi = [<!--$dfc0_tt_h-->,<!--$dfc1_tt_h-->,<!--$dfc2_tt_h-->,<!--$dfc3_tt_h-->];
+  var all = lo.concat(hi);
+  var mn = Math.min.apply(null, all), mx = Math.max.apply(null, all), rng = Math.max(1, mx - mn);
+  for (var i = 0; i < 4; i++) {
+    var b = document.getElementById('bar' + i);
+    if (!b) continue;
+    b.style.left = (Math.max(0, (lo[i] - mn) / rng) * 100) + '%';
+    b.style.width = (Math.max(2, (hi[i] - lo[i]) / rng) * 100) + '%';
+  }
+})();
+
+// ===== DRAG SCROLL for hour strip =====
+(function() {
+  var el = document.getElementById('hourStrip');
+  if (!el) return;
+  var down = false, sx = 0, sl = 0;
+  el.style.cursor = 'grab';
+  el.addEventListener('pointerdown', function(e) { if (e.button !== 0) return; down = true; sx = e.clientX; sl = el.scrollLeft; el.style.cursor = 'grabbing'; });
+  el.addEventListener('pointermove', function(e) { if (!down) return; el.scrollLeft = sl - (e.clientX - sx); });
+  var end = function() { down = false; el.style.cursor = 'grab'; };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+  el.addEventListener('mouseleave', end);
+  el.addEventListener('wheel', function(e) { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { el.scrollLeft += e.deltaY; e.preventDefault(); } }, {passive:false});
+})();
+</script>
+</body>
+</html>
