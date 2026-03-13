@@ -264,7 +264,7 @@
 
 <script>
 // ===== CONFIGURATION =====
-var CGI_BASE = 'htmlauth/show.cgi';
+var LOG_BASE = '/log/plugins/weather4lox';
 var SUPPORTED_LANGS = ['de', 'en', 'es', 'nl', 'sk'];
 var REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -322,9 +322,9 @@ function showError(msg) {
 function loadAllData() {
   showLoading();
   return Promise.all([
-    fetch(CGI_BASE + '?format=json&type=current').then(checkOk).then(function(r) { return r.json(); }),
-    fetch(CGI_BASE + '?format=json&type=hourly').then(checkOk).then(function(r) { return r.json(); }),
-    fetch(CGI_BASE + '?format=json&type=daily').then(checkOk).then(function(r) { return r.json(); }),
+    fetch(LOG_BASE + '/current.json').then(checkOk).then(function(r) { return r.json(); }),
+    fetch(LOG_BASE + '/hourlyforecast.json').then(checkOk).then(function(r) { return r.json(); }),
+    fetch(LOG_BASE + '/dailyforecast.json').then(checkOk).then(function(r) { return r.json(); }),
     fetch('lang-' + currentLang + '.json').then(checkOk).then(function(r) { return r.json(); }),
     fetch('icons/' + ICONSET + '/icon_mapping.json').then(checkOk).then(function(r) { return r.json(); })
   ]).then(function(results) {
