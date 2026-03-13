@@ -333,8 +333,12 @@ function loadAllData() {
     liveData.lang = results[3];
     liveData.iconMapping = (results[4] && results[4].icons) || {};
 
+    // Derive datetime from epoch if missing
+    if (!liveData.current.datetime && liveData.current.epoch) {
+      liveData.current.datetime = new Date(liveData.current.epoch * 1000).toISOString();
+    }
     if (!liveData.current.datetime) {
-      throw new Error('current.json: kein datetime-Feld gefunden');
+      liveData.current.datetime = new Date().toISOString();
     }
 
     // Split hourly into today/tomorrow using datetime from current.json as reference
@@ -347,15 +351,21 @@ function loadAllData() {
 
     var hourlyRaw = (results[1] && results[1].data) || results[1] || [];
     if (!Array.isArray(hourlyRaw)) hourlyRaw = [];
+    hourlyRaw.forEach(function(h) {
+      if (!h.datetime && h.epoch) h.datetime = new Date(h.epoch * 1000).toISOString();
+    });
     liveData.hourlyToday = hourlyRaw.filter(function(h) { return h.datetime && h.datetime.slice(0, 10) === todayStr; });
     liveData.hourlyTomorrow = hourlyRaw.filter(function(h) { return h.datetime && h.datetime.slice(0, 10) === tomorrowStr; });
 
     // Transform daily data
     var dailyRaw = (results[2] && results[2].data) || results[2] || [];
     if (!Array.isArray(dailyRaw)) dailyRaw = [];
+    dailyRaw.forEach(function(d) {
+      if (!d.datetime && d.epoch) d.datetime = new Date(d.epoch * 1000).toISOString().slice(0, 10);
+    });
     var weekdaysShort = (liveData.lang && liveData.lang.theme && liveData.lang.theme.weekdays_short) || ['So','Mo','Di','Mi','Do','Fr','Sa'];
     liveData.daily = dailyRaw.map(function(d) {
-      var dt = new Date(d.datetime);
+      var dt = new Date(d.datetime || new Date());
       return {
         day: weekdaysShort[dt.getDay()],
         date: pad2(dt.getDate()) + '.' + pad2(dt.getMonth() + 1) + '.',
