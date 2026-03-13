@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: JSON Schema & Grabber Migration** - JSON-Schema definiert, alle Grabber schreiben JSON parallel zu .dat (Dual-Write) (completed 2026-03-12)
 - [ ] **Phase 2: Delivery Layer Migration** - datatoloxone.pl liest JSON statt .dat, UDP/MQTT Delivery unverandert
-- [ ] **Phase 3: CGI JSON Endpoint** - show.cgi liefert JSON-Wetterdaten mit korrekten HTTP-Headers
+- [x] **Phase 3: CGI JSON Endpoint** - show.cgi liefert JSON-Wetterdaten mit korrekten HTTP-Headers (completed 2026-03-13)
 - [ ] **Phase 4: ocean-live Theme Grundgerust** - Einzelne HTML-Datei mit Ocean-Design, Tabs, Hero-Bereich und 7-Tage-Ubersicht
 - [ ] **Phase 5: Datenanbindung & Vollstandigkeit** - AJAX-Datenladen, Mehrsprachigkeit, Auto-Refresh, Fehlerbehandlung
 
@@ -59,7 +59,7 @@ Plans:
   2. Ein Browser-Aufruf mit type=hourly bzw. type=daily gibt die jeweiligen JSON-Daten zuruck
   3. Die HTTP-Response enthalt Cache-Control: no-cache Header
   4. Der Endpoint gibt die JSON-Daten aus den auf der RAM-Disk liegenden JSON-Dateien zuruck
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 03-01-PLAN.md — Insert JSON API endpoint into show.cgi (format=json&type=current|hourly|daily with error handling)
@@ -96,6 +96,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. JSON Schema & Grabber Migration | 3/3 | Complete   | 2026-03-12 |
 | 2. Delivery Layer Migration | 0/1 | Planning complete | - |
-| 3. CGI JSON Endpoint | 0/1 | Planning complete | - |
+| 3. CGI JSON Endpoint | 1/1 | Complete   | 2026-03-13 |
 | 4. ocean-live Theme Grundgerust | 0/TBD | Not started | - |
 | 5. Datenanbindung & Vollstandigkeit | 0/TBD | Not started | - |

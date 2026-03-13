@@ -18,9 +18,9 @@
 
 ### CGI Endpoint
 
-- [ ] **CGI-01**: show.cgi liefert JSON-Wetterdaten mit Content-Type: application/json; charset=utf-8
-- [ ] **CGI-02**: show.cgi setzt Cache-Control: no-cache Headers für JSON-Responses
-- [ ] **CGI-03**: show.cgi unterstützt Parameter format=json mit type=current|hourly|daily
+- [x] **CGI-01**: show.cgi liefert JSON-Wetterdaten mit Content-Type: application/json; charset=utf-8
+- [x] **CGI-02**: show.cgi setzt Cache-Control: no-cache Headers für JSON-Responses
+- [x] **CGI-03**: show.cgi unterstützt Parameter format=json mit type=current|hourly|daily
 
 ### Theme Struktur
 
@@ -101,9 +101,9 @@
 | JSON-06 | Phase 1 | Complete |
 | JSON-07 | Phase 2 | Complete |
 | JSON-08 | Phase 2 | Complete |
-| CGI-01 | Phase 3 | Pending |
-| CGI-02 | Phase 3 | Pending |
-| CGI-03 | Phase 3 | Pending |
+| CGI-01 | Phase 3 | Complete |
+| CGI-02 | Phase 3 | Complete |
+| CGI-03 | Phase 3 | Complete |
 | THEME-01 | Phase 4 | Pending |
 | THEME-02 | Phase 4 | Pending |
 | THEME-03 | Phase 4 | Pending |
