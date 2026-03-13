@@ -29,6 +29,7 @@
 
 use strict;
 use warnings;
+use Scalar::Util qw(looks_like_number);
 
 my $useragent        = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
 
@@ -231,6 +232,202 @@ my %DROP_FORECAST = map { $_ => 1 } qw(
 );
 
 # ── Helpers ─────────────────────────────────────────────────────────
+
+# safely navigate nested data structures (hashes and arrays) without risking "Can't use string as hashref/arrayref" errors
+sub get_value {
+    my ($root, @path) = @_;
+    my $cur = $root;
+    for my $p (@path) {
+        return undef unless defined $cur;
+        if (ref $cur eq 'ARRAY') {
+            return undef unless defined $cur->[$p];
+            $cur = $cur->[$p];
+        } elsif (ref $cur eq 'HASH') {
+            return undef unless exists $cur->{$p};
+            $cur = $cur->{$p};
+        } else {
+            return undef;
+        }
+    }
+    return $cur;
+}
+
+# Get value via safe_path, format with sprintf($fmt).
+sub get_formatted {
+    my ($fmt, $root, @path) = @_;
+
+    my $v = get_value($root, @path);
+    return undef unless defined $v;
+  
+    # Trim leading/trailing whitespace (only scalar strings)
+    if (!ref $v) {
+        $v =~ s/^\s+|\s+$//g;
+    }
+    # Only accept numerical values
+    return undef unless looks_like_number($v);
+    return undef if $v =~ /^(?:nan|inf|infinity)$/i;  # just in case
+
+    my $s = sprintf($fmt, $v);
+    return $s + 0; # return as number
+}
+
+# Return a percentage value by calling get_formatted and multiplying the result by 100.
+# Parameters:
+#   $fmt   - sprintf format used by get_formatted (e.g. '%.2f')
+#   $root  - root data structure (same as for get_formatted)
+#   @path  - path elements passed to get_formatted
+# Returns:
+#   numeric percentage (e.g. 46) or undef if value missing/invalid
+sub get_percentage {
+    my ($fmt, $root, @path) = @_;
+
+    my $v = get_formatted($fmt, $root, @path);
+    return undef unless defined $v;
+
+    return $v * 100;
+}
+
+# Returns (short label, description) for a wind direction in degrees
+# Parameters:
+#   $deg  - wind direction in degrees (number)
+#   $Lref - optional hashref to localization hash (e.g. \%L)
+# Return:
+#   ($short_label, $description) or (undef, undef) on invalid input
+sub get_wind_direction_info {
+    my ($deg, $Lref) = @_;
+
+    # validate/normalize input
+    return (undef, undef) unless defined $deg;
+    $deg =~ s/^\s+|\s+$//g if !ref $deg;
+    return (undef, undef) unless $deg =~ /^-?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
+
+    $deg += 0;                              # numericify
+    $deg = ($deg % 360 + 360) % 360;        # 0..359.999...
+
+    # wind direction labels
+    my @dirs = qw(N NO O SO S SW W NW);                                                                                       # wind direction labels
+
+    # calculate section on eight‑point compass rose
+    my $wdir = $dirs[int((($deg + 22.5) / 45)) % 8];
+
+    # take localized labels (either from provided hashref or from global %L)
+    my $L = $Lref // \%L;  # \%L if global exists
+    my %dir_labels = (
+        N  => $L->{'GRABBER.LABEL_N'},
+        NO => $L->{'GRABBER.LABEL_NE'},
+        O  => $L->{'GRABBER.LABEL_E'},
+        SO => $L->{'GRABBER.LABEL_SE'},
+        S  => $L->{'GRABBER.LABEL_S'},
+        SW => $L->{'GRABBER.LABEL_SW'},
+        W  => $L->{'GRABBER.LABEL_W'},
+        NW => $L->{'GRABBER.LABEL_NW'},
+    );
+
+    # cur_w_dirdes, wind direction description, e.g. "South",
+    my $desc = $dir_labels{$wdir};
+    $desc = defined $desc ? Encode::decode("UTF-8", $desc) : undef;
+
+    return ($wdir, $desc);
+}
+
+# get_coverage($w4l_code) -> returns estimated sky cover percentage (0..100) or undef
+# get_metar_code($w4l_code) -> returns METAR cloud code ('SKC','FEW','SCT','BKN','OVC') or undef
+#
+# Both functions normalize the icon name (trim, lowercase) and strip intensity suffixes
+# like "_1", "_2", "_3" before lookup. If the icon is not found in the compact mapping,
+# a small pattern-based fallback is applied.
+
+my %W4L_COVERAGE_MAP = (
+    clear                      => [  0, 'SKC' ],
+    fair                       => [ 10, 'FEW' ],
+    partly_cloudy              => [ 40, 'SCT' ],
+    cloudy                     => [ 70, 'BKN' ],
+    overcast                   => [100, 'OVC' ],
+
+    cloudy_shower              => [ 65, 'BKN' ],
+    overcast_shower            => [ 95, 'OVC' ],
+
+    cloudy_rain                => [ 75, 'BKN' ],
+    overcast_rain              => [ 95, 'OVC' ],
+
+    cloudy_sleet               => [ 75, 'BKN' ],
+    overcast_sleet             => [ 95, 'OVC' ],
+
+    cloudy_snow                => [ 75, 'BKN' ],
+    overcast_snow              => [ 95, 'OVC' ],
+
+    cloudy_freezingrain        => [ 80, 'BKN' ],
+    overcast_freezingrain      => [ 95, 'OVC' ],
+
+    cloudy_thunderstorm        => [ 85, 'OVC' ],
+    overcast_thunderstorm      => [ 95, 'OVC' ],
+
+    cloudy_snowthunderstorm    => [ 90, 'OVC' ],
+    overcast_snowthunderstorm  => [100, 'OVC' ],
+
+    cloudy_fog                 => [ 90, 'OVC' ],
+    overcast_fog               => [100, 'OVC' ],
+
+    overcast_hail              => [ 98, 'OVC' ],
+
+    no_data                    => [ undef, undef ],
+);
+
+sub _normalize_icon {
+    my ($w4l_code) = @_;
+    return undef unless defined $w4l_code;
+    $w4l_code =~ s/^\s+|\s+$//g;
+    $w4l_code = lc $w4l_code;
+    $w4l_code =~ s/_[1-3]$//;    # strip intensity suffix like _1, _2, _3
+    return $w4l_code;
+}
+
+sub _fallback_map {
+    my ($w4l_code) = @_;
+    return (100, 'OVC') if $w4l_code =~ /overcast|ovc|overcast_/;
+    return (90,  'OVC') if $w4l_code =~ /thunder|storm/;
+    return (90,  'OVC') if $w4l_code =~ /fog|mist|smog|haze/;
+    return (80,  'BKN') if $w4l_code =~ /snow|sleet|graupel/;
+    return (85,  'OVC') if $w4l_code =~ /freezingrain|freezing/;
+    return (75,  'BKN') if $w4l_code =~ /rain|shower|drizzle/;
+    return (40,  'SCT') if $w4l_code =~ /partly|partly_cloudy/;
+    return (70,  'BKN') if $w4l_code =~ /cloudy|cloud/;
+    return (10,  'FEW') if $w4l_code =~ /fair/;
+    return (0,   'SKC') if $w4l_code =~ /clear|sun/;
+    return (undef, undef);
+}
+
+# Public: returns sky cover percentage (0..100) or undef
+sub get_coverage {
+    my ($w4l_code) = @_;
+    my $w4l_short_code = _normalize_icon($w4l_code);
+    return undef unless defined $w4l_short_code;
+
+    if (exists $W4L_COVERAGE_MAP{$w4l_short_code}) {
+        return $W4L_COVERAGE_MAP{$w4l_short_code}[0];
+    }
+
+    my ($pct, $metar) = _fallback_map($w4l_short_code);
+    return $pct;
+}
+
+# Public: returns METAR cloud code (SKC, FEW, SCT, BKN, OVC) or undef
+sub get_metar_code {
+    my ($w4l_code) = @_;
+    my $w4l_short_code = _normalize_icon($w4l_code);
+    return undef unless defined $w4l_short_code;
+
+    if (exists $W4L_COVERAGE_MAP{$w4l_short_code}) {
+        return $W4L_COVERAGE_MAP{$w4l_short_code}[1];
+    }
+
+    my ($pct, $metar) = _fallback_map($w4l_short_code);
+    return $metar;
+}
+
+# Example usage:
+# my $cover = get_coverage('cloudy_rain_1');   # -> e.g. 75
+# my $metar = get_metar_code('cloudy_rain_1');# -> e.g. 'BKN'
 
 sub _read_dat_lines {
     my ($dat_file) = @_;
@@ -452,6 +649,42 @@ sub write_current_json_aq {
         return;
     }
     LOGOK "Saved current weather data (with AQ) as JSON to $out";
+}
+
+# ── write_json_file ────────────────────────────────────────────
+
+
+sub write_json_file {
+    my ($logdir, %opts) = @_;               # directory to store the JSON file
+    my $grabber = $opts{grabber} // '';     # name of grabber
+    my $source  = $opts{source}  // '';     # origin of weather data
+    my $type    = $opts{type}    // '';     # 'current', 'dailyforecast, or 'hourlyforecast'
+    my %data    = %{ $opts{data} // {} };   # data structure
+
+    my $generated_at = strftime("%Y-%m-%dT%H:%M:%S%z", localtime(time));
+    $generated_at =~ s/(\d{2})(\d{2})$/$1:$2/;
+    my %envelope = (
+        meta => { schema_version => "1.0", 
+                  source => $source,
+                  grabber => $grabber, 
+                  generated_at => $generated_at },
+        data => \%data,
+    );
+
+    my $json_obj = JSON::PP->new->pretty->canonical->utf8;
+    my $out = "$logdir/$source.json";
+    my $tmp = "$out.tmp";
+    eval {
+        open my $fh, '>:raw', $tmp or die "Cannot open $tmp: $!";
+        print $fh $json_obj->encode(\%envelope);
+        close $fh;
+        File::Copy::move($tmp, $out) or die "Cannot rename $tmp to $out: $!";
+    };
+    if ($@) {
+        LOGWARN "JSON write failed for $out: $@";
+        return;
+    }
+    LOGOK "Saved $source weather data as JSON to $out";
 }
 
 # ── write_daily_json ────────────────────────────────────────────────
