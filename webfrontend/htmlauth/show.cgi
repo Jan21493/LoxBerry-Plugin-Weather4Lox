@@ -249,9 +249,9 @@ if ($dfc) {
     }
     # Use night icons between sunset and sunrise
     #if (${dfc.$per._hour} > $hour_sun_s || ${dfc.$per._hour} < $hour_sun_r) {
-    #  ${dfc.$per._dayornight} = "n";
+    #  ${dfc.$per._dayornight} = "night";
     #} else {
-    #  ${dfc.$per._dayornight} = "d";
+    #  ${dfc.$per._dayornight} = "day";
     #}
 
   }
@@ -339,9 +339,9 @@ if ($hfc) {
     }
     # Use night icons between sunset and sunrise
     if (${hfc.$per._hour} > $hour_sun_s || ${hfc.$per._hour} < $hour_sun_r) {
-      ${hfc.$per._dayornight} = "n";
+      ${hfc.$per._dayornight} = "night";
     } else {
-      ${hfc.$per._dayornight} = "d";
+      ${hfc.$per._dayornight} = "day";
     }
 
   }
@@ -441,9 +441,9 @@ $cur_sun_s = "@fields[36]:@fields[37]";
 $hour_sun_r = @fields[34];
 $hour_sun_s = @fields[36];
 if ($cur_hour > $hour_sun_s || $cur_hour < $hour_sun_r) {
-  $cur_dayornight = "n";
+  $cur_dayornight = "night";
 } else {
-  $cur_dayornight = "d";
+  $cur_dayornight = "day";
 }
 
 # Output Theme to Browser
