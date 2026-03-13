@@ -59,7 +59,10 @@ Plans:
   2. Ein Browser-Aufruf mit type=hourly bzw. type=daily gibt die jeweiligen JSON-Daten zuruck
   3. Die HTTP-Response enthalt Cache-Control: no-cache Header
   4. Der Endpoint gibt die JSON-Daten aus den auf der RAM-Disk liegenden JSON-Dateien zuruck
-**Plans**: TBD
+**Plans:** 1 plan
+
+Plans:
+- [ ] 03-01-PLAN.md — Insert JSON API endpoint into show.cgi (format=json&type=current|hourly|daily with error handling)
 
 ### Phase 4: ocean-live Theme Grundgerust
 **Goal**: Eine einzelne HTML-Datei in webfrontend/html/ mit dem vollstandigen Ocean-Design, 3 Tabs, Hero-Bereich und 7-Tage-Ubersicht — visuell vollstandig, noch ohne Live-Daten
@@ -93,6 +96,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. JSON Schema & Grabber Migration | 3/3 | Complete   | 2026-03-12 |
 | 2. Delivery Layer Migration | 0/1 | Planning complete | - |
-| 3. CGI JSON Endpoint | 0/TBD | Not started | - |
+| 3. CGI JSON Endpoint | 0/1 | Planning complete | - |
 | 4. ocean-live Theme Grundgerust | 0/TBD | Not started | - |
 | 5. Datenanbindung & Vollstandigkeit | 0/TBD | Not started | - |
