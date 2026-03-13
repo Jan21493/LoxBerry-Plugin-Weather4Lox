@@ -590,17 +590,140 @@ if ( $hourly ) {
 	}
 }
 
-# Write JSON files from the .dat files
+# Write JSON files directly from API data (not from .dat files)
 if ($current) {
-    eval { write_current_json($lbplogdir, source => "VisualCrossing", grabber => "grabber_visualcrossing.pl") };
+    eval {
+        my $cur = $decoded_json->{currentConditions};
+        my $t_sr = localtime($cur->{sunriseEpoch});
+        my $t_ss = localtime($cur->{sunsetEpoch});
+        my $wdeg = $cur->{winddir};
+        my ($c, $ic) = vc_to_lox($cur->{icon});
+        my ($mp, $mi, $ma) = (phase())[0,1,2];
+        my %current_data = (
+            epoch              => $cur->{datetimeEpoch},
+            datetime           => _epoch_to_iso($cur->{datetimeEpoch}, $decoded_json->{timezone}),
+            timezone           => $decoded_json->{timezone},
+            city               => $city,
+            country            => $country,
+            latitude           => $decoded_json->{latitude},
+            longitude          => $decoded_json->{longitude},
+            temperature        => sprintf("%.1f", $cur->{temp}),
+            feelslike          => sprintf("%.1f", $cur->{feelslike}),
+            humidity           => _val($cur->{humidity}),
+            wind_direction_desc => wind_direction_text($wdeg, \%L),
+            wind_direction_deg => _val($wdeg),
+            wind_speed         => sprintf("%.1f", $cur->{windspeed}),
+            wind_gust          => $cur->{windgust} ? sprintf("%.1f", $cur->{windgust}) : 0,
+            windchill          => sprintf("%.1f", $cur->{feelslike}),
+            pressure           => sprintf("%.0f", $cur->{pressure}),
+            dewpoint           => _val($cur->{dew}),
+            visibility         => sprintf("%.1f", $cur->{visibility}),
+            solar_radiation    => sprintf("%.1f", $cur->{solarradiation}),
+            uv_index           => sprintf("%.2f", $cur->{uvindex}),
+            precip_1hr_mm      => $cur->{precip} ? sprintf("%.2f", $cur->{precip}) : 0,
+            weather_icon       => $ic,
+            weather_code       => $c,
+            weather_description => $cur->{conditions},
+            moon_percent       => sprintf("%.2f", $mi * 100),
+            moon_age           => sprintf("%.2f", $ma),
+            moon_phase         => sprintf("%.2f", $mp * 100),
+            sunrise            => _hhmm($t_sr->hour, $t_sr->min),
+            sunset             => _hhmm($t_ss->hour, $t_ss->min),
+            cloud_cover        => _val($cur->{cloudcover}),
+            precip_probability => _val($cur->{precipprob}),
+            snow               => sprintf("%.2f", $cur->{snow}),
+        );
+        write_current_json($lbplogdir, data => \%current_data, source => "VisualCrossing", grabber => "grabber_visualcrossing.pl");
+    };
     LOGWARN "JSON write failed: $@" if $@;
 }
 if ($daily) {
-    eval { write_daily_json($lbplogdir, source => "VisualCrossing", grabber => "grabber_visualcrossing.pl") };
+    eval {
+        my @daily_data;
+        my $di = 1;
+        for my $results (@{$decoded_json->{days}}) {
+            my $wdeg = $results->{winddir};
+            my ($c, $ic) = vc_to_lox($results->{icon});
+            my ($mp, $mi, $ma) = (phase($results->{datetimeEpoch}))[0,1,2];
+            my $t_sr = localtime($results->{sunriseEpoch});
+            my $t_ss = localtime($results->{sunsetEpoch});
+            push @daily_data, {
+                period             => $di++,
+                epoch              => $results->{datetimeEpoch},
+                datetime           => _epoch_to_iso($results->{datetimeEpoch}, $decoded_json->{timezone}),
+                high_temp          => sprintf("%.1f", $results->{tempmax}),
+                low_temp           => sprintf("%.1f", $results->{tempmin}),
+                precip_probability => sprintf("%.1f", $results->{precipprob}),
+                precip_mm          => sprintf("%.2f", $results->{precip}),
+                snow_cm            => sprintf("%.2f", $results->{snow}),
+                wind_gust          => sprintf("%.2f", $results->{windgust}),
+                wind_speed_avg     => sprintf("%.1f", $results->{windspeed}),
+                wind_dir_avg_desc  => wind_direction_text($wdeg, \%L),
+                wind_dir_avg_deg   => _val($wdeg),
+                humidity_avg       => _val($results->{humidity}),
+                weather_icon       => $ic,
+                weather_code       => $c,
+                weather_description => $results->{description},
+                moon_percent       => sprintf("%.2f", $mi * 100),
+                dewpoint           => sprintf("%.1f", $results->{dew}),
+                pressure           => sprintf("%.1f", $results->{pressure}),
+                uv_index           => sprintf("%.1f", $results->{uvindex}),
+                sunrise            => _hhmm($t_sr->hour, $t_sr->min),
+                sunset             => _hhmm($t_ss->hour, $t_ss->min),
+                visibility         => sprintf("%.1f", $results->{visibility}),
+                moon_age           => sprintf("%.2f", $ma),
+                moon_phase         => sprintf("%.2f", $mp * 100),
+            };
+        }
+        write_daily_json($lbplogdir, data => \@daily_data, source => "VisualCrossing", grabber => "grabber_visualcrossing.pl");
+    };
     LOGWARN "JSON write failed: $@" if $@;
 }
 if ($hourly) {
-    eval { write_hourly_json($lbplogdir, source => "VisualCrossing", grabber => "grabber_visualcrossing.pl") };
+    eval {
+        my @hourly_data;
+        my $hi = 1;
+        for my $resultsdays (@{$decoded_json->{days}}) {
+            for my $h (@{$resultsdays->{hours}}) {
+                # Skip past hours (same logic as .dat code)
+                my $now = localtime - ONE_HOUR;
+                my $hfctime = localtime($h->{datetimeEpoch});
+                next if $now->epoch > $hfctime->epoch;
+
+                my $wdeg = $h->{winddir};
+                my ($c, $ic) = vc_to_lox($h->{icon});
+                my ($mp, $mi, $ma) = (phase($h->{datetimeEpoch}))[0,1,2];
+                push @hourly_data, {
+                    period             => $hi++,
+                    epoch              => $h->{datetimeEpoch},
+                    datetime           => _epoch_to_iso($h->{datetimeEpoch}, $decoded_json->{timezone}),
+                    temperature        => sprintf("%.1f", $h->{temp}),
+                    feelslike          => sprintf("%.1f", $h->{feelslike}),
+                    humidity           => _val($h->{humidity}),
+                    wind_direction_desc => wind_direction_text($wdeg, \%L),
+                    wind_direction_deg => _val($wdeg),
+                    wind_speed         => sprintf("%.1f", $h->{windspeed}),
+                    windchill          => sprintf("%.1f", $h->{feelslike}),
+                    pressure           => sprintf("%.1f", $h->{pressure}),
+                    dewpoint           => sprintf("%.1f", $h->{dew}),
+                    sky_percent        => sprintf("%.0f", $h->{cloudcover}),
+                    uv_index           => sprintf("%.1f", $h->{uvindex}),
+                    precip_mm          => sprintf("%.2f", $h->{precip}),
+                    snow_cm            => sprintf("%.2f", $h->{snow}),
+                    precip_probability => sprintf("%.1f", $h->{precipprob}),
+                    weather_icon       => $ic,
+                    weather_code       => $c,
+                    weather_description => $h->{conditions},
+                    solar_radiation    => sprintf("%.1f", $h->{solarradiation}),
+                    visibility         => sprintf("%.1f", $h->{visibility}),
+                    moon_percent       => sprintf("%.2f", $mi * 100),
+                    moon_age           => sprintf("%.2f", $ma),
+                    moon_phase         => sprintf("%.2f", $mp * 100),
+                };
+            }
+        }
+        write_hourly_json($lbplogdir, data => \@hourly_data, source => "VisualCrossing", grabber => "grabber_visualcrossing.pl");
+    };
     LOGWARN "JSON write failed: $@" if $@;
 }
 

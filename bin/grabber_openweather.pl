@@ -816,17 +816,135 @@ if ($hourlysize > 100) {
 
 }
 
-# Write JSON files from the .dat files
+# Write JSON files directly from API data (not from .dat files)
 if ($current) {
-    eval { write_current_json($lbplogdir, source => "OpenWeatherMap", grabber => "grabber_openweather.pl") };
+    eval {
+        my $cur = $decoded_json->{current};
+        my $t_sr = localtime($cur->{sunrise});
+        my $t_ss = localtime($cur->{sunset});
+        my $wdeg = $cur->{wind_deg};
+        my ($c, $ic) = owm_to_lox($cur->{weather}->[0]->{id});
+        my ($mp, $mi, $ma) = (phase())[0,1,2];
+        my %current_data = (
+            epoch              => $cur->{dt},
+            datetime           => _epoch_to_iso($cur->{dt}, $decoded_json->{timezone}),
+            timezone           => $decoded_json->{timezone},
+            city               => Encode::decode("UTF-8", $city),
+            country            => Encode::decode("UTF-8", $country),
+            latitude           => $decoded_json->{lat},
+            longitude          => $decoded_json->{lon},
+            temperature        => sprintf("%.1f", $cur->{temp}),
+            feelslike          => sprintf("%.1f", $cur->{feels_like}),
+            humidity           => $cur->{humidity},
+            wind_direction_desc => wind_direction_text($wdeg, \%L),
+            wind_direction_deg => $wdeg,
+            wind_speed         => sprintf("%.1f", $cur->{wind_speed} * 3.6),
+            wind_gust          => sprintf("%.1f", $cur->{wind_speed} * 3.6),
+            windchill          => sprintf("%.1f", $cur->{feels_like}),
+            pressure           => sprintf("%.0f", $cur->{pressure}),
+            dewpoint           => $cur->{dew_point},
+            visibility         => sprintf("%.0f", $cur->{visibility} / 1000),
+            uv_index           => sprintf("%.2f", $cur->{uvi}),
+            precip_1hr_mm      => $cur->{rain}->{'1h'} ? sprintf("%.2f", $cur->{rain}->{'1h'}) : 0,
+            weather_icon       => $ic,
+            weather_code       => $c,
+            weather_description => $cur->{weather}->[0]->{description},
+            moon_percent       => sprintf("%.2f", $mi * 100),
+            moon_age           => sprintf("%.2f", $ma),
+            moon_phase         => sprintf("%.2f", $mp * 100),
+            sunrise            => sprintf("%02d:%02d", $t_sr->hour, $t_sr->min),
+            sunset             => sprintf("%02d:%02d", $t_ss->hour, $t_ss->min),
+            cloud_cover        => $cur->{clouds},
+            precip_probability => $decoded_json->{hourly}->[0]->{pop} ? sprintf("%.0f", $decoded_json->{hourly}->[0]->{pop} * 100) : 0,
+            snow               => $cur->{snow}->{'1h'} ? sprintf("%.2f", $cur->{snow}->{'1h'} / 10) : 0,
+        );
+        write_current_json($lbplogdir, data => \%current_data, source => "OpenWeatherMap", grabber => "grabber_openweather.pl");
+    };
     LOGWARN "JSON write failed: $@" if $@;
 }
 if ($daily) {
-    eval { write_daily_json($lbplogdir, source => "OpenWeatherMap", grabber => "grabber_openweather.pl") };
+    eval {
+        my @daily_data;
+        my $di = 1;
+        for my $d (@{$decoded_json->{daily}}) {
+            my $t_d = localtime($d->{dt});
+            my $wdeg = $d->{wind_deg};
+            my ($c, $ic) = owm_to_lox($d->{weather}->[0]->{id});
+            my ($mp, $mi, $ma) = (phase($d->{dt}))[0,1,2];
+            my $t_sr = localtime($d->{sunrise});
+            my $t_ss = localtime($d->{sunset});
+            push @daily_data, {
+                period             => $di++,
+                epoch              => $d->{dt},
+                datetime           => _epoch_to_iso($d->{dt}, $decoded_json->{timezone}),
+                high_temp          => sprintf("%.1f", $d->{temp}->{max}),
+                low_temp           => sprintf("%.1f", $d->{temp}->{min}),
+                precip_probability => $d->{pop} ? sprintf("%.0f", $d->{pop} * 100) : 0,
+                precip_mm          => $d->{rain} ? sprintf("%.2f", $d->{rain}) : 0,
+                snow_cm            => $d->{snow} ? sprintf("%.2f", $d->{snow} / 10) : 0,
+                wind_speed_max     => sprintf("%.1f", $d->{wind_speed} * 3.6),
+                wind_dir_max_desc  => wind_direction_text($wdeg, \%L),
+                wind_dir_max_deg   => $wdeg,
+                wind_speed_avg     => sprintf("%.1f", $d->{wind_speed} * 3.6),
+                wind_dir_avg_desc  => wind_direction_text($wdeg, \%L),
+                wind_dir_avg_deg   => $wdeg,
+                humidity_avg       => $d->{humidity},
+                weather_icon       => $ic,
+                weather_code       => $c,
+                weather_description => $d->{weather}->[0]->{description},
+                moon_percent       => sprintf("%.2f", $mi * 100),
+                dewpoint           => sprintf("%.1f", $d->{dew_point}),
+                pressure           => sprintf("%.0f", $d->{pressure}),
+                uv_index           => sprintf("%.1f", $d->{uvi}),
+                sunrise            => sprintf("%02d:%02d", $t_sr->hour, $t_sr->min),
+                sunset             => sprintf("%02d:%02d", $t_ss->hour, $t_ss->min),
+                moon_age           => sprintf("%.2f", $ma),
+                moon_phase         => sprintf("%.2f", $mp * 100),
+            };
+        }
+        write_daily_json($lbplogdir, data => \@daily_data, source => "OpenWeatherMap", grabber => "grabber_openweather.pl");
+    };
     LOGWARN "JSON write failed: $@" if $@;
 }
 if ($hourly) {
-    eval { write_hourly_json($lbplogdir, source => "OpenWeatherMap", grabber => "grabber_openweather.pl") };
+    eval {
+        my @hourly_data;
+        my $hi = 1;
+        for my $h (@{$decoded_json->{hourly}}) {
+            my $wdeg = $h->{wind_deg};
+            my ($c, $ic) = owm_to_lox($h->{weather}->[0]->{id});
+            my ($mp, $mi, $ma) = (phase($h->{dt}))[0,1,2];
+            push @hourly_data, {
+                period             => $hi++,
+                epoch              => $h->{dt},
+                datetime           => _epoch_to_iso($h->{dt}, $decoded_json->{timezone}),
+                temperature        => sprintf("%.1f", $h->{temp}),
+                feelslike          => sprintf("%.1f", $h->{feels_like}),
+                humidity           => $h->{humidity},
+                wind_direction_desc => wind_direction_text($wdeg, \%L),
+                wind_direction_deg => $wdeg,
+                wind_speed         => sprintf("%.1f", $h->{wind_speed} * 3.6),
+                windchill          => sprintf("%.1f", $h->{feels_like}),
+                pressure           => sprintf("%.0f", $h->{pressure}),
+                dewpoint           => sprintf("%.1f", $h->{dew_point}),
+                sky_percent        => $h->{clouds},
+                uv_index           => sprintf("%.2f", $h->{uvi}),
+                precip_mm          => $h->{rain}->{'1h'} ? sprintf("%.2f", $h->{rain}->{'1h'}) : 0,
+                snow_cm            => $h->{snow}->{'1h'} ? sprintf("%.2f", $h->{snow}->{'1h'} / 10) : 0,
+                precip_probability => $h->{pop} ? sprintf("%.0f", $h->{pop} * 100) : 0,
+                weather_code       => $c,
+                weather_icon       => $ic,
+                weather_description => $h->{weather}->[0]->{description},
+                visibility         => sprintf("%.0f", $h->{visibility} / 1000),
+                moon_percent       => sprintf("%.2f", $mi * 100),
+                moon_age           => sprintf("%.2f", $ma),
+                moon_phase         => sprintf("%.2f", $mp * 100),
+            };
+        }
+        # Note: The 3-hourly interpolated data from the second API call is only
+        # added to the .dat file. JSON contains the native hourly data from OneCall API.
+        write_hourly_json($lbplogdir, data => \@hourly_data, source => "OpenWeatherMap", grabber => "grabber_openweather.pl");
+    };
     LOGWARN "JSON write failed: $@" if $@;
 }
 
