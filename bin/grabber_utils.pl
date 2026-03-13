@@ -320,7 +320,10 @@ sub _enrich_weather_id {
 # ── write_current_json ──────────────────────────────────────────────
 
 sub write_current_json {
-    my ($logdir) = @_;
+    my ($logdir, %opts) = @_;
+    my $source  = $opts{source}  // '';
+    my $grabber = $opts{grabber} // '';
+
     my $dat = "$logdir/current.dat";
     return unless -f $dat;
     my @lines = _read_dat_lines($dat);
@@ -348,20 +351,116 @@ sub write_current_json {
         $rec{$f} = _val($raw{$f});
     }
 
+    # AQ fields default to null (set by OpenMeteo AQ grabber only)
+    for my $aqf (qw(aqi_eu aqi_us pm10 pm25
+                    pollen_alder pollen_birch pollen_grass pollen_mugwort
+                    pollen_olive pollen_ragweed
+                    pollen_overall_today pollen_overall_tomorrow)) {
+        $rec{$aqf} //= undef;
+    }
+
     _enrich_weather_id(\%rec);
+
+    my $generated_at = strftime("%Y-%m-%dT%H:%M:%S%z", localtime(time));
+    $generated_at =~ s/(\d{2})(\d{2})$/$1:$2/;  # insert colon in tz offset
+
+    my %envelope = (
+        meta => {
+            schema_version => "1.0",
+            source         => $source,
+            grabber        => $grabber,
+            generated_at   => $generated_at,
+        },
+        data => \%rec,
+    );
 
     my $json_obj = JSON::PP->new->pretty->canonical->utf8;
     my $out = "$logdir/current.json";
-    open my $fh, '>:raw', $out or do { LOGWARN "Cannot write $out: $!"; return; };
-    print $fh $json_obj->encode(\%rec);
-    close $fh;
+    my $tmp = "$out.tmp";
+    eval {
+        open my $fh, '>:raw', $tmp or die "Cannot open $tmp: $!";
+        print $fh $json_obj->encode(\%envelope);
+        close $fh;
+        File::Copy::move($tmp, $out) or die "Cannot rename $tmp to $out: $!";
+    };
+    if ($@) {
+        LOGWARN "JSON write failed for $out: $@";
+        return;
+    }
     LOGOK "Saved current weather data as JSON to $out";
+}
+
+# ── write_current_json_aq ────────────────────────────────────────────
+# For the OpenMeteo AQ grabber: reads current.dat, merges AQ values,
+# writes current.json with the full schema including AQ fields populated.
+
+sub write_current_json_aq {
+    my ($logdir, %opts) = @_;
+    my $source  = $opts{source}  // '';
+    my $grabber = $opts{grabber} // '';
+    my %aq_data = %{ $opts{aq_data} // {} };
+
+    my $dat = "$logdir/current.dat";
+    return unless -f $dat;
+    my @lines = _read_dat_lines($dat);
+    return unless @lines;
+
+    # Build same record as write_current_json
+    my %raw = _line_to_hash($lines[0], \@CURRENT_RAW);
+    my $tz  = $raw{tz_long} || _system_timezone();
+    my %rec;
+    $rec{datetime} = _epoch_to_iso($raw{epoch}, $tz);
+    $rec{epoch}    = _val($raw{epoch});
+    $rec{timezone} = $tz;
+    $rec{sunrise}  = _hhmm($raw{sunrise_hour}, $raw{sunrise_min});
+    $rec{sunset}   = _hhmm($raw{sunset_hour},  $raw{sunset_min});
+    for my $f (@CURRENT_RAW) {
+        next if $DROP_CURRENT{$f};
+        next if $f eq 'epoch';
+        $rec{$f} = _val($raw{$f});
+    }
+
+    # AQ fields: defaults to null, override with provided data
+    for my $aqf (qw(aqi_eu aqi_us pm10 pm25
+                    pollen_alder pollen_birch pollen_grass pollen_mugwort
+                    pollen_olive pollen_ragweed
+                    pollen_overall_today pollen_overall_tomorrow)) {
+        $rec{$aqf} = exists $aq_data{$aqf} ? _val($aq_data{$aqf}) : undef;
+    }
+
+    _enrich_weather_id(\%rec);
+
+    my $generated_at = strftime("%Y-%m-%dT%H:%M:%S%z", localtime(time));
+    $generated_at =~ s/(\d{2})(\d{2})$/$1:$2/;
+    my %envelope = (
+        meta => { schema_version => "1.0", source => $source,
+                  grabber => $grabber, generated_at => $generated_at },
+        data => \%rec,
+    );
+
+    my $json_obj = JSON::PP->new->pretty->canonical->utf8;
+    my $out = "$logdir/current.json";
+    my $tmp = "$out.tmp";
+    eval {
+        open my $fh, '>:raw', $tmp or die "Cannot open $tmp: $!";
+        print $fh $json_obj->encode(\%envelope);
+        close $fh;
+        File::Copy::move($tmp, $out) or die "Cannot rename $tmp to $out: $!";
+    };
+    if ($@) {
+        LOGWARN "JSON write failed for $out: $@";
+        return;
+    }
+    LOGOK "Saved current weather data (with AQ) as JSON to $out";
 }
 
 # ── write_daily_json ────────────────────────────────────────────────
 
 sub write_daily_json {
-    my ($logdir) = @_;
+    my ($logdir, %opts) = @_;
+    my $source  = $opts{source}  // '';
+    my $grabber = $opts{grabber} // '';
+
     my $dat = "$logdir/dailyforecast.dat";
     return unless -f $dat;
     my @lines = _read_dat_lines($dat);
@@ -389,18 +488,42 @@ sub write_daily_json {
         push @records, \%rec;
     }
 
+    my $generated_at = strftime("%Y-%m-%dT%H:%M:%S%z", localtime(time));
+    $generated_at =~ s/(\d{2})(\d{2})$/$1:$2/;
+
+    my %envelope = (
+        meta => {
+            schema_version => "1.0",
+            source         => $source,
+            grabber        => $grabber,
+            generated_at   => $generated_at,
+        },
+        data => \@records,
+    );
+
     my $json_obj = JSON::PP->new->pretty->canonical->utf8;
     my $out = "$logdir/dailyforecast.json";
-    open my $fh, '>:raw', $out or do { LOGWARN "Cannot write $out: $!"; return; };
-    print $fh $json_obj->encode(\@records);
-    close $fh;
+    my $tmp = "$out.tmp";
+    eval {
+        open my $fh, '>:raw', $tmp or die "Cannot open $tmp: $!";
+        print $fh $json_obj->encode(\%envelope);
+        close $fh;
+        File::Copy::move($tmp, $out) or die "Cannot rename $tmp to $out: $!";
+    };
+    if ($@) {
+        LOGWARN "JSON write failed for $out: $@";
+        return;
+    }
     LOGOK "Saved daily forecast data as JSON to $out";
 }
 
 # ── write_hourly_json ───────────────────────────────────────────────
 
 sub write_hourly_json {
-    my ($logdir) = @_;
+    my ($logdir, %opts) = @_;
+    my $source  = $opts{source}  // '';
+    my $grabber = $opts{grabber} // '';
+
     my $dat = "$logdir/hourlyforecast.dat";
     return unless -f $dat;
     my @lines = _read_dat_lines($dat);
@@ -426,11 +549,32 @@ sub write_hourly_json {
         push @records, \%rec;
     }
 
+    my $generated_at = strftime("%Y-%m-%dT%H:%M:%S%z", localtime(time));
+    $generated_at =~ s/(\d{2})(\d{2})$/$1:$2/;
+
+    my %envelope = (
+        meta => {
+            schema_version => "1.0",
+            source         => $source,
+            grabber        => $grabber,
+            generated_at   => $generated_at,
+        },
+        data => \@records,
+    );
+
     my $json_obj = JSON::PP->new->pretty->canonical->utf8;
     my $out = "$logdir/hourlyforecast.json";
-    open my $fh, '>:raw', $out or do { LOGWARN "Cannot write $out: $!"; return; };
-    print $fh $json_obj->encode(\@records);
-    close $fh;
+    my $tmp = "$out.tmp";
+    eval {
+        open my $fh, '>:raw', $tmp or die "Cannot open $tmp: $!";
+        print $fh $json_obj->encode(\%envelope);
+        close $fh;
+        File::Copy::move($tmp, $out) or die "Cannot rename $tmp to $out: $!";
+    };
+    if ($@) {
+        LOGWARN "JSON write failed for $out: $@";
+        return;
+    }
     LOGOK "Saved hourly forecast data as JSON to $out";
 }
 

@@ -1542,9 +1542,18 @@ if ( $hourly ) {
 }
 
 # Write JSON files from the .dat files
-write_current_json($lbplogdir) if $current;
-write_daily_json($lbplogdir) if $daily;
-write_hourly_json($lbplogdir) if $hourly;
+if ($current) {
+    eval { write_current_json($lbplogdir, source => "WetterOnline", grabber => "grabber_wetteronline.pl") };
+    LOGWARN "JSON write failed: $@" if $@;
+}
+if ($daily) {
+    eval { write_daily_json($lbplogdir, source => "WetterOnline", grabber => "grabber_wetteronline.pl") };
+    LOGWARN "JSON write failed: $@" if $@;
+}
+if ($hourly) {
+    eval { write_hourly_json($lbplogdir, source => "WetterOnline", grabber => "grabber_wetteronline.pl") };
+    LOGWARN "JSON write failed: $@" if $@;
+}
 
 # Give OK status to client.
 LOGOK "Current Data and Forecasts saved successfully.";
