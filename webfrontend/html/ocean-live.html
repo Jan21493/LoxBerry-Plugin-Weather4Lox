@@ -308,6 +308,25 @@ var MOCK_DAILY = [
 ];
 
 var ICON_BASE = "icons/color/";
+
+// Map mock icon codes to actual filenames in icons/color/
+var ICON_MAP = {
+  "clear":         { day: "clear_day.png",         night: "clear_night.png" },
+  "fair":          { day: "mostlysunny_day.png",    night: "mostlysunny_night.png" },
+  "partly-cloudy": { day: "cloudy_day.png",         night: "cloudy_night.png" },
+  "overcast":      { day: "overcast_day.png",       night: "overcast_night.png" },
+  "drizzle":       { day: "chancerain_day.png",     night: "chancerain_night.png" },
+  "rain":          { day: "rain_day.png",            night: "rain_night.png" },
+  "thunderstorm":  { day: "tstorms_day.png",         night: "tstorms_night.png" },
+  "snow":          { day: "snow_day.png",            night: "snow_night.png" },
+  "fog":           { day: "fog_day.png",             night: "fog_night.png" },
+  "sleet":         { day: "sleet_day.png",           night: "sleet_night.png" }
+};
+function resolveIcon(code, dn) {
+  var entry = ICON_MAP[code];
+  if (entry) return ICON_BASE + entry[dn] || entry["day"];
+  return ICON_BASE + code + "_" + dn + ".png";
+}
 </script>
 
 <div class="grain"></div>
@@ -356,7 +375,7 @@ var ICON_BASE = "icons/color/";
             <div class="hero-feels" id="heroWind" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">-- km/h</div>
           </div>
           <div class="hero-icon-box accent-bg">
-            <img class="hero-icon" id="heroIcon" src="icons/color/partly-cloudy_day.png" alt="">
+            <img class="hero-icon" id="heroIcon" src="icons/color/cloudy_day.png" alt="">
           </div>
         </div>
 
@@ -540,7 +559,7 @@ function renderHourStrip(containerId, dataArray) {
     })(card, dataArray);
     card.innerHTML =
       '<div class="hcard-time mono">' + d.hour + ':00</div>' +
-      '<img class="hcard-icon" src="' + ICON_BASE + d.icon + '_' + d.dn + '.png" alt="">' +
+      '<img class="hcard-icon" src="' + resolveIcon(d.icon, d.dn) + '" alt="">' +
       '<div class="hcard-temp">' + Math.round(d.temp) + '&deg;</div>' +
       '<div class="hcard-pop">' + d.pop + '%</div>';
     container.appendChild(card);
@@ -558,7 +577,7 @@ function renderDaily(containerId, dataArray) {
     row.className = 'drow glass' + (i === 0 ? ' today' : '');
     row.innerHTML =
       '<div><div class="drow-day">' + d.day + '</div><div class="drow-date mono">' + d.date + '</div></div>' +
-      '<img class="drow-icon" src="' + ICON_BASE + d.icon + '_day.png" alt="">' +
+      '<img class="drow-icon" src="' + resolveIcon(d.icon, "day") + '" alt="">' +
       '<div class="drow-desc">' + d.desc + '</div>' +
       '<div class="drow-pop">' + d.pop + '%</div>' +
       '<div class="drow-temps"><span class="drow-lo mono">' + Math.round(d.low) + '&deg;</span><div class="drow-bar"><div class="drow-fill" id="bar' + i + '"></div></div><span class="drow-hi mono">' + Math.round(d.high) + '&deg;</span></div>';
@@ -596,7 +615,7 @@ function selectHour(el, dataArray) {
   document.getElementById('heroDesc').textContent = d.desc;
   document.getElementById('heroWind').textContent = d.wind + ' km/h ' + d.wind_dir;
   document.getElementById('heroHumidity').textContent = d.humidity + '%';
-  document.getElementById('heroIcon').src = ICON_BASE + d.icon + '_' + d.dn + '.png';
+  document.getElementById('heroIcon').src = resolveIcon(d.icon, d.dn);
 }
 
 // ===== PRESELECT HOUR =====
