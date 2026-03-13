@@ -227,6 +227,28 @@
       .tab { padding: 7px 12px; font-size: 0.78rem; }
       .side-stats { grid-template-columns: 1fr 1fr; }
     }
+
+    /* ===== LOADING OVERLAY ===== */
+    .loading-overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.6);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    }
+    html.light .loading-overlay { background: rgba(240,244,248,0.6); }
+    .loading-spinner {
+      width: 48px; height: 48px; border-radius: 50%;
+      border: 3px solid rgba(56,189,248,0.3);
+      border-top-color: var(--sky);
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-banner {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(244,63,94,0.15); border: 1px solid var(--rose);
+      color: var(--text-primary); padding: 12px 24px; border-radius: 12px;
+      z-index: 101; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      font-size: 0.9rem; max-width: 90%;
+    }
   </style>
 </head>
 <body>
@@ -345,7 +367,7 @@ function resolveIcon(code, dn) {
         <span class="dot"></span>
         <span id="hdrTime" class="mono">--:--</span>
         <span>&bull;</span>
-        <span>Live Dashboard</span>
+        <span data-i18n="theme.live_dashboard">Live Dashboard</span>
         <span>&bull;</span>
         <span class="mono" style="font-size:0.7rem" id="hdrDate">--.--.----</span>
       </div>
@@ -356,9 +378,9 @@ function resolveIcon(code, dn) {
         <svg id="ic-moon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
       <div class="tabs glass">
-        <button class="tab active" data-tab="heute">Heute</button>
-        <button class="tab" data-tab="morgen">Morgen</button>
-        <button class="tab" data-tab="tage">Tage</button>
+        <button class="tab active" data-tab="heute" data-i18n="theme.tab_today">Heute</button>
+        <button class="tab" data-tab="morgen" data-i18n="theme.tab_tomorrow">Morgen</button>
+        <button class="tab" data-tab="tage" data-i18n="theme.tab_days">Tage</button>
       </div>
     </div>
   </header>
@@ -394,7 +416,7 @@ function resolveIcon(code, dn) {
                 <path d="M 12 17 L 8 21 L 16 21 L 12 17 z" style="fill:currentColor" />
               </svg>
             </div>
-            <div><div class="astro-label">Sonnenaufgang</div><div class="astro-val mono">06:23</div></div>
+            <div><div class="astro-label" data-i18n="theme.sunrise">Sonnenaufgang</div><div class="astro-val mono" id="heroSunrise">06:23</div></div>
           </div>
           <div class="astro-item">
             <div class="astro-emoji" style="background:rgba(249,115,22,0.1)">
@@ -409,18 +431,18 @@ function resolveIcon(code, dn) {
                 <path d="m 12,22 4,-4 H 8 Z" style="fill:currentColor" />
               </svg>
             </div>
-            <div><div class="astro-label">Sonnenuntergang</div><div class="astro-val mono">18:05</div></div>
+            <div><div class="astro-label" data-i18n="theme.sunset">Sonnenuntergang</div><div class="astro-val mono" id="heroSunset">18:05</div></div>
           </div>
           <div class="astro-item">
             <div class="astro-emoji" style="background:rgba(139,92,246,0.1)">&nbsp;&#x1F319;</div>
             <div>
-              <div class="astro-label">Luftfeuchte</div>
+              <div class="astro-label" data-i18n="theme.humidity">Luftfeuchte</div>
               <div class="astro-val mono" id="heroHumidity">--%</div>
             </div>
           </div>
           <div class="astro-item">
             <div class="astro-emoji" style="background:rgba(99,102,241,0.1)">&nbsp;&#x1F321;</div>
-            <div><div class="astro-label">Gefuehlt</div><div class="astro-val mono">9.1&deg;</div></div>
+            <div><div class="astro-label" data-i18n="theme.feels_like">Gefuehlt</div><div class="astro-val mono" id="heroFeelslike">9.1&deg;</div></div>
           </div>
         </div>
       </div>
@@ -428,40 +450,40 @@ function resolveIcon(code, dn) {
       <!-- Side stats -->
       <div class="side-stats">
         <div class="glass stat">
-          <div class="stat-label">Luftfeuchte</div>
-          <div class="stat-val">68%</div>
+          <div class="stat-label" data-i18n="theme.humidity">Luftfeuchte</div>
+          <div class="stat-val" id="statHumidity">68%</div>
         </div>
         <div class="glass stat">
-          <div class="stat-label">Wind</div>
-          <div class="stat-val">18 km/h</div>
-          <div class="stat-sub">NW</div>
+          <div class="stat-label" data-i18n="theme.wind">Wind</div>
+          <div class="stat-val" id="statWind">18 km/h</div>
+          <div class="stat-sub" id="statWindDir">NW</div>
         </div>
         <div class="glass stat">
-          <div class="stat-label">Luftdruck</div>
-          <div class="stat-val">1013 <small style="color:var(--text-muted)">hPa</small></div>
+          <div class="stat-label" data-i18n="theme.pressure">Luftdruck</div>
+          <div class="stat-val" id="statPressure">1013 <small style="color:var(--text-muted)">hPa</small></div>
         </div>
         <div class="glass stat">
-          <div class="stat-label">Sichtweite</div>
-          <div class="stat-val">14 <small style="color:var(--text-muted)">km</small></div>
+          <div class="stat-label" data-i18n="theme.visibility">Sichtweite</div>
+          <div class="stat-val" id="statVisibility">14 <small style="color:var(--text-muted)">km</small></div>
         </div>
       </div>
     </div>
 
     <!-- Extra stats -->
     <div class="extra-row">
-      <div class="glass extra"><div class="stat-label">Taupunkt</div><div class="stat-val mono">6&deg;</div></div>
-      <div class="glass extra"><div class="stat-label">Niederschlag</div><div class="stat-val mono">0.2 mm</div></div>
-      <div class="glass extra"><div class="stat-label">UV-Index</div><div class="stat-val mono">3</div></div>
-      <div class="glass extra"><div class="stat-label">Bewoelkung</div><div class="stat-val mono">45%</div></div>
-      <div class="glass extra"><div class="stat-label">Boen</div><div class="stat-val mono">28 km/h</div></div>
-      <div class="glass extra"><div class="stat-label">Gefuehlt</div><div class="stat-val mono">9.1&deg;</div></div>
+      <div class="glass extra"><div class="stat-label" data-i18n="theme.dew_point">Taupunkt</div><div class="stat-val mono" id="statDewpoint">6&deg;</div></div>
+      <div class="glass extra"><div class="stat-label" data-i18n="theme.precipitation">Niederschlag</div><div class="stat-val mono" id="statPrecip">0.2 mm</div></div>
+      <div class="glass extra"><div class="stat-label" data-i18n="theme.uv_index">UV-Index</div><div class="stat-val mono" id="statUVI">3</div></div>
+      <div class="glass extra"><div class="stat-label" data-i18n="theme.cloud_cover">Bewoelkung</div><div class="stat-val mono" id="statClouds">45%</div></div>
+      <div class="glass extra"><div class="stat-label" data-i18n="theme.gusts">Boen</div><div class="stat-val mono" id="statGusts">28 km/h</div></div>
+      <div class="glass extra"><div class="stat-label" data-i18n="theme.feels_like">Gefuehlt</div><div class="stat-val mono" id="statFeelslike">9.1&deg;</div></div>
     </div>
   </div>
 
   <!-- ===== TAB PANEL: HEUTE ===== -->
   <div id="panel-heute" class="tab-panel active">
     <div class="hour-strip-wrap">
-      <div class="hour-strip-title">Heutige Stunden &mdash; Stunde anklicken fuer Details</div>
+      <div class="hour-strip-title"><span data-i18n="theme.hours_today">Heutige Stunden</span> &mdash; <span data-i18n="theme.click_hour_detail">Stunde anklicken fuer Details</span></div>
       <div class="hour-strip" id="hourStripHeute"></div>
     </div>
   </div>
@@ -469,7 +491,7 @@ function resolveIcon(code, dn) {
   <!-- ===== TAB PANEL: MORGEN ===== -->
   <div id="panel-morgen" class="tab-panel">
     <div class="hour-strip-wrap">
-      <div class="hour-strip-title">Morgige Stunden &mdash; Stunde anklicken fuer Details</div>
+      <div class="hour-strip-title"><span data-i18n="theme.hours_tomorrow">Morgige Stunden</span> &mdash; <span data-i18n="theme.click_hour_detail">Stunde anklicken fuer Details</span></div>
       <div class="hour-strip" id="hourStripMorgen"></div>
     </div>
   </div>
@@ -477,12 +499,19 @@ function resolveIcon(code, dn) {
   <!-- ===== TAB PANEL: TAGE ===== -->
   <div id="panel-tage" class="tab-panel">
     <div class="glass daily-wrap">
-      <h2>7-Tage Vorhersage</h2>
+      <h2 data-i18n="theme.forecast_7day">7-Tage Vorhersage</h2>
       <div id="dailyWrap"></div>
     </div>
   </div>
 
   <footer class="footer">Weather4Lox Dashboard &bull; Powered by LoxBerry</footer>
+</div>
+
+<div id="loadingOverlay" class="loading-overlay" style="display:none">
+  <div class="loading-spinner"></div>
+</div>
+<div id="errorBanner" class="error-banner" style="display:none">
+  <span id="errorMsg"></span>
 </div>
 
 <script>
