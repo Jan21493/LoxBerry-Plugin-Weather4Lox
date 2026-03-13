@@ -254,100 +254,218 @@
 <body>
 
 <script>
-// ===== MOCK DATA -- replace with Fetch in Phase 5 =====
+// ===== CONFIGURATION =====
+var CGI_BASE = '../../htmlauth/show.cgi';
+var SUPPORTED_LANGS = ['de', 'en', 'es', 'nl', 'sk'];
+var REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
-var MOCK_CURRENT = {
-  temperature: 12.4, feelslike: 9.1, humidity: 68,
-  wind_speed: 18, wind_direction_desc: "NW",
-  weather_icon: "partly-cloudy", weather_description: "Teilweise bewoelkt",
-  sunrise: "06:23", sunset: "18:05",
-  pressure: 1013, visibility: 14, dew_point: 6, uvi: 3,
-  cloud_cover: 45, gusts: 28, precipitation: 0.2, moon_phase: "Zunehmend"
-};
+// getUrlParam is needed here; defined again in second script block as well
+// Use a self-contained version to avoid ordering issues
+function getUrlParam(name) {
+  var m = location.search.match(new RegExp('[?&]' + name + '=([^&]*)'));
+  return m ? decodeURIComponent(m[1]) : null;
+}
 
-var MOCK_HOURLY_TODAY = [
-  { hour: "00", temp: 7.1, pop: 5,  wind: 12, wind_dir: "N",  humidity: 82, icon: "partly-cloudy", dn: "night", desc: "Leicht bewoelkt" },
-  { hour: "01", temp: 6.8, pop: 5,  wind: 11, wind_dir: "N",  humidity: 83, icon: "partly-cloudy", dn: "night", desc: "Leicht bewoelkt" },
-  { hour: "02", temp: 6.5, pop: 8,  wind: 10, wind_dir: "NW", humidity: 84, icon: "overcast",       dn: "night", desc: "Bewoelkt" },
-  { hour: "03", temp: 6.2, pop: 10, wind: 10, wind_dir: "NW", humidity: 85, icon: "overcast",       dn: "night", desc: "Bewoelkt" },
-  { hour: "04", temp: 6.0, pop: 12, wind: 11, wind_dir: "NW", humidity: 86, icon: "overcast",       dn: "night", desc: "Bewoelkt" },
-  { hour: "05", temp: 5.8, pop: 10, wind: 12, wind_dir: "NW", humidity: 85, icon: "partly-cloudy", dn: "night", desc: "Leicht bewoelkt" },
-  { hour: "06", temp: 5.6, pop: 8,  wind: 13, wind_dir: "NW", humidity: 84, icon: "partly-cloudy", dn: "day",   desc: "Leicht bewoelkt" },
-  { hour: "07", temp: 6.8, pop: 5,  wind: 14, wind_dir: "NW", humidity: 80, icon: "partly-cloudy", dn: "day",   desc: "Leicht bewoelkt" },
-  { hour: "08", temp: 8.2, pop: 5,  wind: 15, wind_dir: "NW", humidity: 75, icon: "fair",           dn: "day",   desc: "Heiter" },
-  { hour: "09", temp: 9.6, pop: 3,  wind: 16, wind_dir: "NW", humidity: 70, icon: "fair",           dn: "day",   desc: "Heiter" },
-  { hour: "10", temp: 11.0, pop: 2, wind: 17, wind_dir: "W",  humidity: 66, icon: "clear",          dn: "day",   desc: "Sonnig" },
-  { hour: "11", temp: 12.1, pop: 2, wind: 18, wind_dir: "W",  humidity: 63, icon: "clear",          dn: "day",   desc: "Sonnig" },
-  { hour: "12", temp: 13.2, pop: 3, wind: 20, wind_dir: "W",  humidity: 60, icon: "clear",          dn: "day",   desc: "Sonnig" },
-  { hour: "13", temp: 14.0, pop: 5, wind: 21, wind_dir: "W",  humidity: 58, icon: "fair",           dn: "day",   desc: "Heiter" },
-  { hour: "14", temp: 14.5, pop: 5, wind: 22, wind_dir: "SW", humidity: 57, icon: "fair",           dn: "day",   desc: "Heiter" },
-  { hour: "15", temp: 14.2, pop: 8, wind: 20, wind_dir: "SW", humidity: 59, icon: "partly-cloudy", dn: "day",   desc: "Leicht bewoelkt" },
-  { hour: "16", temp: 13.5, pop: 10, wind: 19, wind_dir: "SW", humidity: 62, icon: "partly-cloudy", dn: "day",   desc: "Leicht bewoelkt" },
-  { hour: "17", temp: 12.4, pop: 8, wind: 18, wind_dir: "W",  humidity: 65, icon: "partly-cloudy", dn: "day",   desc: "Leicht bewoelkt" },
-  { hour: "18", temp: 11.0, pop: 5, wind: 16, wind_dir: "W",  humidity: 68, icon: "fair",           dn: "day",   desc: "Heiter" },
-  { hour: "19", temp: 9.8,  pop: 5, wind: 14, wind_dir: "NW", humidity: 71, icon: "partly-cloudy", dn: "night", desc: "Leicht bewoelkt" },
-  { hour: "20", temp: 8.9,  pop: 8, wind: 13, wind_dir: "NW", humidity: 74, icon: "partly-cloudy", dn: "night", desc: "Leicht bewoelkt" },
-  { hour: "21", temp: 8.2,  pop: 10, wind: 13, wind_dir: "NW", humidity: 77, icon: "overcast",      dn: "night", desc: "Bewoelkt" },
-  { hour: "22", temp: 7.7,  pop: 12, wind: 12, wind_dir: "N",  humidity: 79, icon: "overcast",      dn: "night", desc: "Bewoelkt" },
-  { hour: "23", temp: 7.3,  pop: 10, wind: 12, wind_dir: "N",  humidity: 81, icon: "partly-cloudy", dn: "night", desc: "Leicht bewoelkt" }
-];
+var ICONSET = getUrlParam('iconset') || 'color';
+var currentLang = (function() {
+  var p = getUrlParam('lang');
+  return (p && SUPPORTED_LANGS.indexOf(p) !== -1) ? p : 'de';
+})();
 
-var MOCK_HOURLY_TOMORROW = [
-  { hour: "00", temp: 6.8, pop: 15, wind: 14, wind_dir: "N",  humidity: 85, icon: "overcast",       dn: "night", desc: "Bewoelkt" },
-  { hour: "01", temp: 6.4, pop: 20, wind: 14, wind_dir: "N",  humidity: 87, icon: "drizzle",        dn: "night", desc: "Nieselregen" },
-  { hour: "02", temp: 6.0, pop: 25, wind: 15, wind_dir: "NE", humidity: 89, icon: "drizzle",        dn: "night", desc: "Nieselregen" },
-  { hour: "03", temp: 5.7, pop: 30, wind: 15, wind_dir: "NE", humidity: 90, icon: "rain",           dn: "night", desc: "Leichter Regen" },
-  { hour: "04", temp: 5.5, pop: 35, wind: 16, wind_dir: "NE", humidity: 91, icon: "rain",           dn: "night", desc: "Leichter Regen" },
-  { hour: "05", temp: 5.3, pop: 30, wind: 15, wind_dir: "NE", humidity: 90, icon: "drizzle",        dn: "night", desc: "Nieselregen" },
-  { hour: "06", temp: 5.2, pop: 25, wind: 14, wind_dir: "N",  humidity: 89, icon: "overcast",       dn: "day",   desc: "Bewoelkt" },
-  { hour: "07", temp: 6.0, pop: 20, wind: 13, wind_dir: "N",  humidity: 86, icon: "overcast",       dn: "day",   desc: "Bewoelkt" },
-  { hour: "08", temp: 7.2, pop: 15, wind: 13, wind_dir: "NW", humidity: 82, icon: "partly-cloudy", dn: "day",   desc: "Leicht bewoelkt" },
-  { hour: "09", temp: 8.8, pop: 10, wind: 14, wind_dir: "NW", humidity: 77, icon: "partly-cloudy", dn: "day",   desc: "Leicht bewoelkt" },
-  { hour: "10", temp: 10.3, pop: 8, wind: 16, wind_dir: "NW", humidity: 72, icon: "fair",           dn: "day",   desc: "Heiter" },
-  { hour: "11", temp: 11.5, pop: 5, wind: 17, wind_dir: "W",  humidity: 68, icon: "fair",           dn: "day",   desc: "Heiter" },
-  { hour: "12", temp: 12.4, pop: 5, wind: 18, wind_dir: "W",  humidity: 65, icon: "partly-cloudy", dn: "day",   desc: "Leicht bewoelkt" },
-  { hour: "13", temp: 13.1, pop: 8, wind: 19, wind_dir: "W",  humidity: 63, icon: "partly-cloudy", dn: "day",   desc: "Leicht bewoelkt" },
-  { hour: "14", temp: 13.6, pop: 10, wind: 20, wind_dir: "SW", humidity: 62, icon: "overcast",      dn: "day",   desc: "Bewoelkt" },
-  { hour: "15", temp: 13.2, pop: 15, wind: 19, wind_dir: "SW", humidity: 64, icon: "overcast",      dn: "day",   desc: "Bewoelkt" },
-  { hour: "16", temp: 12.5, pop: 20, wind: 18, wind_dir: "SW", humidity: 67, icon: "drizzle",       dn: "day",   desc: "Nieselregen" },
-  { hour: "17", temp: 11.4, pop: 18, wind: 17, wind_dir: "W",  humidity: 70, icon: "drizzle",       dn: "day",   desc: "Nieselregen" },
-  { hour: "18", temp: 10.2, pop: 15, wind: 15, wind_dir: "W",  humidity: 73, icon: "overcast",      dn: "day",   desc: "Bewoelkt" },
-  { hour: "19", temp: 9.2,  pop: 12, wind: 14, wind_dir: "NW", humidity: 76, icon: "overcast",      dn: "night", desc: "Bewoelkt" },
-  { hour: "20", temp: 8.5,  pop: 10, wind: 13, wind_dir: "NW", humidity: 79, icon: "partly-cloudy", dn: "night", desc: "Leicht bewoelkt" },
-  { hour: "21", temp: 7.9,  pop: 8,  wind: 12, wind_dir: "N",  humidity: 81, icon: "partly-cloudy", dn: "night", desc: "Leicht bewoelkt" },
-  { hour: "22", temp: 7.5,  pop: 5,  wind: 11, wind_dir: "N",  humidity: 83, icon: "partly-cloudy", dn: "night", desc: "Leicht bewoelkt" },
-  { hour: "23", temp: 7.1,  pop: 5,  wind: 11, wind_dir: "N",  humidity: 84, icon: "fair",          dn: "night", desc: "Klar" }
-];
+// Global state
+var liveData = { current: null, hourlyToday: [], hourlyTomorrow: [], daily: [], lang: null, iconMapping: null };
 
-var MOCK_DAILY = [
-  { day: "Mo", date: "17.03.", icon: "partly-cloudy", high: 14.5, low: 5.6, pop: 5,  desc: "Leicht bewoelkt" },
-  { day: "Di", date: "18.03.", icon: "drizzle",       high: 13.6, low: 5.2, pop: 35, desc: "Nieselregen" },
-  { day: "Mi", date: "19.03.", icon: "rain",          high: 11.2, low: 4.8, pop: 70, desc: "Regen" },
-  { day: "Do", date: "20.03.", icon: "overcast",      high: 9.8,  low: 3.5, pop: 40, desc: "Bewoelkt" },
-  { day: "Fr", date: "21.03.", icon: "fair",          high: 12.4, low: 4.2, pop: 10, desc: "Heiter" },
-  { day: "Sa", date: "22.03.", icon: "clear",         high: 15.8, low: 6.1, pop: 3,  desc: "Sonnig" },
-  { day: "So", date: "23.03.", icon: "clear",         high: 17.2, low: 7.3, pop: 2,  desc: "Sonnig" }
-];
+// Rendered hourly arrays for preselectHour
+var hourlyTodayRendered = [];
+var hourlyTomorrowRendered = [];
 
-var ICON_BASE = "icons/color/";
+// ===== FETCH HELPERS =====
+function checkOk(response) {
+  if (!response.ok) throw new Error('HTTP ' + response.status + ' bei ' + response.url);
+  return response;
+}
 
-// Map mock icon codes to actual filenames in icons/color/
-var ICON_MAP = {
-  "clear":         { day: "clear_day.png",         night: "clear_night.png" },
-  "fair":          { day: "mostlysunny_day.png",    night: "mostlysunny_night.png" },
-  "partly-cloudy": { day: "cloudy_day.png",         night: "cloudy_night.png" },
-  "overcast":      { day: "overcast_day.png",       night: "overcast_night.png" },
-  "drizzle":       { day: "chancerain_day.png",     night: "chancerain_night.png" },
-  "rain":          { day: "rain_day.png",            night: "rain_night.png" },
-  "thunderstorm":  { day: "tstorms_day.png",         night: "tstorms_night.png" },
-  "snow":          { day: "snow_day.png",            night: "snow_night.png" },
-  "fog":           { day: "fog_day.png",             night: "fog_night.png" },
-  "sleet":         { day: "sleet_day.png",           night: "sleet_night.png" }
-};
+function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
+function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+function showError(msg) {
+  var b = document.getElementById('errorBanner');
+  var m = document.getElementById('errorMsg');
+  m.textContent = msg || (liveData.lang ? liveData.lang.theme.error_loading : 'Daten konnten nicht geladen werden.');
+  b.style.display = 'block';
+  setTimeout(function() { b.style.display = 'none'; }, 8000);
+}
+
+// ===== DATA LOADING =====
+function loadAllData() {
+  showLoading();
+  return Promise.all([
+    fetch(CGI_BASE + '?format=json&type=current').then(checkOk).then(function(r) { return r.json(); }),
+    fetch(CGI_BASE + '?format=json&type=hourly').then(checkOk).then(function(r) { return r.json(); }),
+    fetch(CGI_BASE + '?format=json&type=daily').then(checkOk).then(function(r) { return r.json(); }),
+    fetch('lang-' + currentLang + '.json').then(checkOk).then(function(r) { return r.json(); }),
+    fetch('icons/' + ICONSET + '/icon_mapping.json').then(checkOk).then(function(r) { return r.json(); })
+  ]).then(function(results) {
+    hideLoading();
+    liveData.current = results[0].data;
+    liveData.lang = results[3];
+    liveData.iconMapping = results[4].icons;
+
+    // Split hourly into today/tomorrow using datetime from current.json as reference
+    var todayStr = liveData.current.datetime.slice(0, 10);
+    var todayDate = new Date(todayStr + 'T00:00:00');
+    var tomorrowDate = new Date(todayDate);
+    tomorrowDate.setDate(todayDate.getDate() + 1);
+    var pad2 = function(n) { return n < 10 ? '0' + n : '' + n; };
+    var tomorrowStr = tomorrowDate.getFullYear() + '-' + pad2(tomorrowDate.getMonth() + 1) + '-' + pad2(tomorrowDate.getDate());
+
+    var hourlyRaw = results[1].data;
+    liveData.hourlyToday = hourlyRaw.filter(function(h) { return h.datetime.slice(0, 10) === todayStr; });
+    liveData.hourlyTomorrow = hourlyRaw.filter(function(h) { return h.datetime.slice(0, 10) === tomorrowStr; });
+
+    // Transform daily data
+    var dailyRaw = results[2].data;
+    var weekdaysShort = liveData.lang.theme.weekdays_short;
+    liveData.daily = dailyRaw.map(function(d) {
+      var dt = new Date(d.datetime);
+      return {
+        day: weekdaysShort[dt.getDay()],
+        date: pad2(dt.getDate()) + '.' + pad2(dt.getMonth() + 1) + '.',
+        icon: d.weather_icon,
+        high: d.high_temp,
+        low: d.low_temp,
+        pop: d.precip_probability,
+        desc: d.weather_description
+      };
+    });
+
+    renderAll();
+    return liveData;
+  }).catch(function(err) {
+    hideLoading();
+    showError(err.message);
+    throw err;
+  });
+}
+
+// ===== ICON RESOLUTION via icon_mapping.json =====
+function isDaytime(datetimeStr, sunriseStr, sunsetStr) {
+  var h = parseInt(datetimeStr.slice(11, 13));
+  var sr = parseInt((sunriseStr || '06:00').split(':')[0]);
+  var ss = parseInt((sunsetStr || '20:00').split(':')[0]);
+  return h >= sr && h < ss;
+}
+
 function resolveIcon(code, dn) {
-  var entry = ICON_MAP[code];
-  if (entry) return ICON_BASE + entry[dn] || entry["day"];
-  return ICON_BASE + code + "_" + dn + ".png";
+  if (liveData.iconMapping) {
+    var key = code.replace(/-/g, '_');
+    var entry = liveData.iconMapping[key];
+    if (entry) {
+      var field = (dn === 'day') ? 'icon_day' : 'icon_night';
+      return 'icons/' + ICONSET + '/' + entry[field];
+    }
+  }
+  return 'icons/' + ICONSET + '/' + code + '_' + (dn || 'day') + '.png';
+}
+
+// ===== TRANSFORM HOURLY for renderHourStrip =====
+function transformHourly(hourlyArray, sunriseStr, sunsetStr) {
+  return hourlyArray.map(function(h) {
+    var hourStr = h.datetime.slice(11, 13);
+    var dn = isDaytime(h.datetime, sunriseStr, sunsetStr) ? 'day' : 'night';
+    return {
+      hour: hourStr,
+      temp: h.temperature,
+      pop: h.precip_probability,
+      wind: h.wind_speed,
+      wind_dir: h.wind_direction_desc,
+      humidity: h.humidity,
+      icon: h.weather_icon,
+      dn: dn,
+      desc: h.weather_description
+    };
+  });
+}
+
+// ===== i18n =====
+function applyLang(strings) {
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n');
+    var parts = key.split('.');
+    var val = strings;
+    for (var i = 0; i < parts.length; i++) {
+      val = val && val[parts[i]];
+    }
+    if (val && typeof val === 'string') el.textContent = val;
+  });
+}
+
+// ===== RENDER ALL =====
+function renderAll() {
+  var c = liveData.current;
+  var sunrise = c.sunrise || '--:--';
+  var sunset = c.sunset || '--:--';
+  var pad2 = function(n) { return n < 10 ? '0' + n : '' + n; };
+
+  // Transform hourly arrays
+  hourlyTodayRendered = transformHourly(liveData.hourlyToday, sunrise, sunset);
+  hourlyTomorrowRendered = transformHourly(liveData.hourlyTomorrow, sunrise, sunset);
+
+  // Render hour strips (handle empty tomorrow gracefully)
+  renderHourStrip('hourStripHeute', hourlyTodayRendered);
+  if (hourlyTomorrowRendered.length > 0) {
+    renderHourStrip('hourStripMorgen', hourlyTomorrowRendered);
+  } else {
+    var morgenStrip = document.getElementById('hourStripMorgen');
+    if (morgenStrip) morgenStrip.innerHTML = '<div style="color:var(--text-muted);padding:16px;font-size:0.85rem;">' + (liveData.lang ? liveData.lang.theme.loading : 'Keine Daten') + '</div>';
+  }
+  renderDaily('dailyWrap', liveData.daily);
+
+  // Update hero with current data
+  document.getElementById('heroTemp').innerHTML = Math.round(c.temperature) + '<sup>\u00b0C</sup>';
+  document.getElementById('heroDesc').textContent = c.weather_description || '--';
+  document.getElementById('heroWind').textContent = (c.wind_speed != null ? c.wind_speed : '--') + ' km/h ' + (c.wind_direction_desc || '');
+  document.getElementById('heroHumidity').textContent = (c.humidity != null ? c.humidity : '--') + '%';
+  var curDn = isDaytime(c.datetime, sunrise, sunset) ? 'day' : 'night';
+  document.getElementById('heroIcon').src = resolveIcon(c.weather_icon, curDn);
+
+  // Sunrise/Sunset
+  document.getElementById('heroSunrise').textContent = sunrise;
+  document.getElementById('heroSunset').textContent = sunset;
+  document.getElementById('heroFeelslike').textContent = (c.feelslike != null ? c.feelslike : '--') + '\u00b0';
+
+  // Side stats
+  document.getElementById('statHumidity').textContent = (c.humidity != null ? c.humidity : '--') + '%';
+  document.getElementById('statWind').textContent = (c.wind_speed != null ? c.wind_speed : '--') + ' km/h';
+  document.getElementById('statWindDir').textContent = c.wind_direction_desc || '--';
+  document.getElementById('statPressure').innerHTML = (c.pressure != null ? c.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
+  document.getElementById('statVisibility').innerHTML = (c.visibility != null ? c.visibility : '--') + ' <small style="color:var(--text-muted)">km</small>';
+
+  // Extra stats
+  document.getElementById('statDewpoint').textContent = (c.dewpoint != null ? c.dewpoint : '--') + '\u00b0';
+  document.getElementById('statPrecip').textContent = (c.precip_today_mm != null ? c.precip_today_mm : 0) + ' mm';
+  document.getElementById('statUVI').textContent = c.uv_index != null ? c.uv_index : '--';
+  document.getElementById('statClouds').textContent = (c.cloud_cover != null ? c.cloud_cover : '--') + '%';
+  document.getElementById('statGusts').textContent = (c.wind_gust != null ? c.wind_gust : '--') + ' km/h';
+  document.getElementById('statFeelslike').textContent = (c.feelslike != null ? c.feelslike : '--') + '\u00b0';
+
+  // Apply i18n
+  if (liveData.lang) applyLang(liveData.lang);
+
+  // Preselect current hour in heute strip
+  preselectHour('heute');
+
+  // Drag scroll
+  makeDragScroll(document.getElementById('hourStripHeute'));
+  makeDragScroll(document.getElementById('hourStripMorgen'));
+}
+
+// ===== AUTO-REFRESH =====
+function scheduleRefresh() {
+  setTimeout(function() {
+    loadAllData()
+      .then(function() { scheduleRefresh(); })
+      .catch(function() { scheduleRefresh(); });
+  }, REFRESH_INTERVAL_MS);
 }
 </script>
 
@@ -651,7 +769,8 @@ function selectHour(el, dataArray) {
 function preselectHour(tabName) {
   if (tabName === 'tage') return;
   var stripId = (tabName === 'heute') ? 'hourStripHeute' : 'hourStripMorgen';
-  var dataArray = (tabName === 'heute') ? MOCK_HOURLY_TODAY : MOCK_HOURLY_TOMORROW;
+  var dataArray = (tabName === 'heute') ? hourlyTodayRendered : hourlyTomorrowRendered;
+  if (!dataArray || dataArray.length === 0) return;
   var cards = document.getElementById(stripId).querySelectorAll('.hcard');
   var targetIdx = 0;
   if (tabName === 'heute') {
@@ -726,15 +845,16 @@ function makeDragScroll(el) {
   }, {passive: false});
 }
 
-// ===== INITIALIZE =====
-renderHourStrip('hourStripHeute', MOCK_HOURLY_TODAY);
-renderHourStrip('hourStripMorgen', MOCK_HOURLY_TOMORROW);
-renderDaily('dailyWrap', MOCK_DAILY);
-preselectHour('heute');
-makeDragScroll(document.getElementById('hourStripHeute'));
-makeDragScroll(document.getElementById('hourStripMorgen'));
-lucide.createIcons();
+// ===== BOOT =====
 document.querySelector('.tab-panel.active').classList.add('fade-in');
+lucide.createIcons();
+loadAllData()
+  .then(function() {
+    scheduleRefresh();
+  })
+  .catch(function(err) {
+    console.error('Initial load failed:', err);
+  });
 </script>
 </body>
 </html>
