@@ -225,8 +225,28 @@ if ($currentsize > 100) {
 # Give OK status to client.
 LOGOK "Current Data saved successfully.";
 
-# Write current.json alongside current.dat
+# Write current.json directly from API data (not via .dat roundabout)
+my $obs = $decoded_json->{observations}->[0];
+my $obs_m = $obs->{metric} // {};
+my %current_data = (
+    epoch              => $obs->{epoch},
+    temperature        => sprintf("%.1f", $obs_m->{temp}),
+    feelslike          => sprintf("%.1f", $obs_m->{windChill}),
+    humidity           => $obs->{humidity},
+    wind_direction_desc => wind_direction_text($obs->{winddir}, \%L),
+    wind_direction_deg => $obs->{winddir},
+    wind_speed         => $obs_m->{windSpeed},
+    wind_gust          => $obs_m->{windGust},
+    windchill          => sprintf("%.1f", $obs_m->{windChill}),
+    pressure           => $obs_m->{pressure},
+    dewpoint           => $obs_m->{dewpt},
+    solar_radiation    => sprintf("%.0f", $obs->{solarRadiation} // 0),
+    uv_index           => $obs->{uv},
+    precip_today_mm    => $obs_m->{precipTotal},
+    precip_1hr_mm      => $obs_m->{precipRate},
+);
 eval { write_current_json($lbplogdir,
+    data    => \%current_data,
     source  => "WeatherUnderground",
     grabber => "grabber_wu.pl") };
 LOGWARN "JSON write failed: $@" if $@;

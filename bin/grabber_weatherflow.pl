@@ -113,6 +113,7 @@ my $wdirdes;
 my @filecontent;
 my $i;
 my $error;
+my $current_observation_json;
 
 # Mapping: WeatherFlow Icon => [Loxone Code, Weather4Lox Icon Name]
 # https://weatherflow.github.io/Tempest/api/swagger/#/forecast/getBetterForecast
@@ -167,7 +168,7 @@ if ( $current ) { # Start current
 	# Get current station observation from Weatherflow Server
 	# API : https://weatherflow.github.io/Tempest/api/swagger/#!/observations/getStationObservation
 	# Docs: https://apidocs.tempestwx.com/reference/get_better-forecast-1
-    my $current_observation_json = api_call(
+    $current_observation_json = api_call(
         url => "$url\/observations/station/$stationid?token=$apikey",
         maskkeys => $maskkeys,
         keyparam => 'token',
@@ -573,17 +574,119 @@ if ($hourlysize > 100) {
 
 }
 
-# Write JSON files from the .dat files
+# Write JSON files directly from API data
 if ($current) {
-    eval { write_current_json($lbplogdir, source => "WeatherFlow", grabber => "grabber_weatherflow.pl") };
+    eval {
+        my $cur   = $current_observation_json->{obs}->[0];
+        my $cc    = $forecast_json->{current_conditions};
+        my $tz    = $forecast_json->{timezone};
+        my ($c, $ic) = weatherflow_to_lox($cc->{icon});
+        my ($mp, $mi, $ma) = (phase())[0,1,2];
+        my $t_sr = localtime($forecast_json->{forecast}->{daily}->[0]->{sunrise});
+        my $t_ss = localtime($forecast_json->{forecast}->{daily}->[0]->{sunset});
+
+        my %current_data = (
+            epoch               => $cc->{time},
+            datetime            => _epoch_to_iso($cc->{time}, $tz),
+            timezone            => $tz,
+            city                => Encode::decode("UTF-8", $city),
+            country             => Encode::decode("UTF-8", $country),
+            latitude            => $forecast_json->{latitude},
+            longitude           => $forecast_json->{longitude},
+            elevation           => $current_observation_json->{elevation},
+            temperature         => sprintf("%.1f", $cur->{air_temperature}),
+            feelslike           => sprintf("%.1f", $cur->{feels_like}),
+            humidity            => $cur->{relative_humidity},
+            wind_direction_desc => wind_direction_text($cur->{wind_direction}, \%L),
+            wind_direction_deg  => $cur->{wind_direction},
+            wind_speed          => sprintf("%.1f", $cur->{wind_avg} * 3.6),
+            wind_gust           => sprintf("%.1f", $cur->{wind_gust} * 3.6),
+            windchill           => sprintf("%.0f", $cur->{wind_chill}),
+            pressure            => $cur->{sea_level_pressure},
+            dewpoint            => sprintf("%.1f", $cur->{dew_point}),
+            solar_radiation     => $cur->{solar_radiation},
+            heat_index          => $cur->{heat_index},
+            uv_index            => $cur->{uv},
+            precip_today_mm     => sprintf("%.3f", $cur->{precip_accum_local_day}),
+            precip_1hr_mm       => sprintf("%.3f", $forecast_json->{forecast}->{hourly}->[0]->{precip}),
+            weather_icon        => $ic,
+            weather_code        => $c,
+            weather_description => $cc->{conditions},
+            moon_percent        => sprintf("%.2f", $mi * 100),
+            moon_age            => sprintf("%.2f", $ma),
+            moon_phase          => sprintf("%.2f", $mp * 100),
+            sunrise             => sprintf("%02d:%02d", $t_sr->hour, $t_sr->min),
+            sunset              => sprintf("%02d:%02d", $t_ss->hour, $t_ss->min),
+            precip_probability  => sprintf("%.0f", $forecast_json->{forecast}->{daily}->[0]->{precip_probability} * 100),
+        );
+        write_current_json($lbplogdir, data => \%current_data, source => "WeatherFlow", grabber => "grabber_weatherflow.pl");
+    };
     LOGWARN "JSON write failed: $@" if $@;
 }
 if ($daily) {
-    eval { write_daily_json($lbplogdir, source => "WeatherFlow", grabber => "grabber_weatherflow.pl") };
+    eval {
+        my @daily_data;
+        my $di = 1;
+        my $tz = $forecast_json->{timezone};
+        for my $d (@{$forecast_json->{forecast}->{daily}}) {
+            my ($c, $ic) = weatherflow_to_lox($d->{icon});
+            my ($mp, $mi, $ma) = (phase($d->{day_start_local}))[0,1,2];
+            my $t_sr = localtime($d->{sunrise});
+            my $t_ss = localtime($d->{sunset});
+            push @daily_data, {
+                period              => $di++,
+                epoch               => $d->{day_start_local},
+                datetime            => _epoch_to_iso($d->{day_start_local}, $tz),
+                high_temp           => sprintf("%.1f", $d->{air_temp_high}),
+                low_temp            => sprintf("%.1f", $d->{air_temp_low}),
+                precip_probability  => $d->{precip_probability},
+                weather_icon        => $ic,
+                weather_code        => $c,
+                weather_description => $d->{conditions},
+                moon_percent        => sprintf("%.2f", $mi * 100),
+                sunrise             => sprintf("%02d:%02d", $t_sr->hour, $t_sr->min),
+                sunset              => sprintf("%02d:%02d", $t_ss->hour, $t_ss->min),
+                moon_age            => sprintf("%.2f", $ma),
+                moon_phase          => sprintf("%.2f", $mp * 100),
+            };
+        }
+        write_daily_json($lbplogdir, data => \@daily_data, source => "WeatherFlow", grabber => "grabber_weatherflow.pl");
+    };
     LOGWARN "JSON write failed: $@" if $@;
 }
 if ($hourly) {
-    eval { write_hourly_json($lbplogdir, source => "WeatherFlow", grabber => "grabber_weatherflow.pl") };
+    eval {
+        my @hourly_data;
+        my $hi = 1;
+        my $tz = $forecast_json->{timezone};
+        for my $h (@{$forecast_json->{forecast}->{hourly}}) {
+            my ($c, $ic) = weatherflow_to_lox($h->{icon});
+            my ($mp, $mi, $ma) = (phase($h->{time}))[0,1,2];
+            push @hourly_data, {
+                period              => $hi++,
+                epoch               => $h->{time},
+                datetime            => _epoch_to_iso($h->{time}, $tz),
+                temperature         => sprintf("%.1f", $h->{air_temperature}),
+                feelslike           => sprintf("%.1f", $h->{feels_like}),
+                humidity            => $h->{relative_humidity},
+                wind_direction_desc => wind_direction_text($h->{wind_direction}, \%L),
+                wind_direction_deg  => $h->{wind_direction},
+                wind_speed          => sprintf("%.1f", $h->{wind_avg} * 3.6),
+                windchill           => sprintf("%.1f", $h->{feels_like}),
+                pressure            => $h->{sea_level_pressure},
+                uv_index            => $h->{uv},
+                precip_mm           => $h->{precip},
+                precip_probability  => $h->{precip_probability},
+                weather_icon        => $ic,
+                weather_code        => $c,
+                weather_description => $h->{conditions},
+                moon_percent        => sprintf("%.2f", $mi * 100),
+                moon_age            => sprintf("%.2f", $ma),
+                moon_phase          => sprintf("%.2f", $mp * 100),
+            };
+        }
+        write_hourly_json($lbplogdir, data => \@hourly_data, source => "WeatherFlow", grabber => "grabber_weatherflow.pl");
+    };
     LOGWARN "JSON write failed: $@" if $@;
 }
 

@@ -75,6 +75,60 @@ foreach $var ("theme","lang","map","iconset","dfc","hfc") {
   }
 }
 
+#############################################
+# JSON API ENDPOINT
+#############################################
+
+if ($query{format} && $query{format} eq 'json') {
+
+    # Validate type parameter
+    my $type = $query{type} // '';
+    my %type_map = (
+        'current' => 'current.json',
+        'hourly'  => 'hourlyforecast.json',
+        'daily'   => 'dailyforecast.json',
+    );
+
+    unless ($type_map{$type}) {
+        print "Status: 400 Bad Request\n";
+        print "Content-type: application/json; charset=utf-8\n";
+        print "Cache-Control: no-cache\n";
+        print "\n";
+        print '{"error": "Invalid or missing type parameter. Use type=current|hourly|daily", "code": 400}', "\n";
+        exit;
+    }
+
+    my $json_path = "$home/log/plugins/$psubfolder/$type_map{$type}";
+
+    if (!-e $json_path) {
+        print "Status: 404 Not Found\n";
+        print "Content-type: application/json; charset=utf-8\n";
+        print "Cache-Control: no-cache\n";
+        print "\n";
+        print '{"error": "Weather data not available", "code": 404}', "\n";
+        exit;
+    }
+
+    if (!open(my $fh, "<:raw", $json_path)) {
+        print "Status: 500 Internal Server Error\n";
+        print "Content-type: application/json; charset=utf-8\n";
+        print "Cache-Control: no-cache\n";
+        print "\n";
+        print '{"error": "Internal server error", "code": 500}', "\n";
+        exit;
+    } else {
+        local $/;
+        my $json_content = <$fh>;
+        close($fh);
+
+        print "Content-type: application/json; charset=utf-8\n";
+        print "Cache-Control: no-cache\n";
+        print "\n";
+        print $json_content;
+        exit;
+    }
+}
+
 # If it is not set, use defaults from config
 if (!$theme) {
   $theme = $stdtheme;

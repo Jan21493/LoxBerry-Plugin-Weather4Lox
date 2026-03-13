@@ -18,50 +18,50 @@
 
 ### CGI Endpoint
 
-- [ ] **CGI-01**: show.cgi liefert JSON-Wetterdaten mit Content-Type: application/json; charset=utf-8
-- [ ] **CGI-02**: show.cgi setzt Cache-Control: no-cache Headers für JSON-Responses
-- [ ] **CGI-03**: show.cgi unterstützt Parameter format=json mit type=current|hourly|daily
+- [x] **CGI-01**: show.cgi liefert JSON-Wetterdaten mit Content-Type: application/json; charset=utf-8
+- [x] **CGI-02**: show.cgi setzt Cache-Control: no-cache Headers für JSON-Responses
+- [x] **CGI-03**: show.cgi unterstützt Parameter format=json mit type=current|hourly|daily
 
 ### Theme Struktur
 
-- [ ] **THEME-01**: ocean-live.html als einzelne Datei in webfrontend/html/ abgelegt
-- [ ] **THEME-02**: Theme hat 3 Tab-Buttons: Heute | Morgen | Tage
-- [ ] **THEME-03**: Tab-Wechsel zeigt/versteckt zugehörige Inhalte mit CSS-Transitions
-- [ ] **THEME-04**: Visuelles Design orientiert sich am bestehenden Ocean-Theme (Farbschema, Typografie, Layout)
+- [x] **THEME-01**: ocean-live.html als einzelne Datei in webfrontend/html/ abgelegt
+- [x] **THEME-02**: Theme hat 3 Tab-Buttons: Heute | Morgen | Tage
+- [x] **THEME-03**: Tab-Wechsel zeigt/versteckt zugehörige Inhalte mit CSS-Transitions
+- [x] **THEME-04**: Visuelles Design orientiert sich am bestehenden Ocean-Theme (Farbschema, Typografie, Layout)
 
 ### Hero & Stundenansicht
 
-- [ ] **HERO-01**: Hero-Bereich zeigt ausgewählte Stunde groß an (Temperatur, Icon, Beschreibung, Wind, Feuchtigkeit)
-- [ ] **HERO-02**: Horizontale Stundenleiste unter dem Hero zeigt alle Stunden des Tages
-- [ ] **HERO-03**: Klick auf Stunde in der Leiste aktualisiert den Hero-Bereich
-- [ ] **HERO-04**: Heute-Tab zeigt Stunden des heutigen Tages
-- [ ] **HERO-05**: Morgen-Tab zeigt Stunden des morgigen Tages
-- [ ] **HERO-06**: Aktuelle Stunde (Heute) bzw. erste Stunde (Morgen) ist bei Tab-Wechsel vorausgewählt
+- [x] **HERO-01**: Hero-Bereich zeigt ausgewählte Stunde groß an (Temperatur, Icon, Beschreibung, Wind, Feuchtigkeit)
+- [x] **HERO-02**: Horizontale Stundenleiste unter dem Hero zeigt alle Stunden des Tages
+- [x] **HERO-03**: Klick auf Stunde in der Leiste aktualisiert den Hero-Bereich
+- [x] **HERO-04**: Heute-Tab zeigt Stunden des heutigen Tages
+- [x] **HERO-05**: Morgen-Tab zeigt Stunden des morgigen Tages
+- [x] **HERO-06**: Aktuelle Stunde (Heute) bzw. erste Stunde (Morgen) ist bei Tab-Wechsel vorausgewählt
 
 ### Tage-Tab
 
-- [ ] **TAGE-01**: Tage-Tab zeigt 7-Tage-Vorhersage als Übersicht
-- [ ] **TAGE-02**: Pro Tag: Wetter-Icon, Hoch/Tief-Temperatur, Niederschlagswahrscheinlichkeit
+- [x] **TAGE-01**: Tage-Tab zeigt 7-Tage-Vorhersage als Übersicht
+- [x] **TAGE-02**: Pro Tag: Wetter-Icon, Hoch/Tief-Temperatur, Niederschlagswahrscheinlichkeit
 
 ### Datenanbindung
 
-- [ ] **DATA-01**: Theme lädt Wetterdaten per Fetch API von show.cgi JSON-Endpoint
-- [ ] **DATA-02**: Theme lädt Sprachdaten per Fetch aus lang-*.json
-- [ ] **DATA-03**: Theme lädt Icon-Mapping per Fetch aus icons/{iconset}/icon_mapping.json
-- [ ] **DATA-04**: Auto-Refresh lädt Daten periodisch nach (Intervall ≥ 5 Minuten)
-- [ ] **DATA-05**: Ladeanzeige während AJAX-Requests
-- [ ] **DATA-06**: Fehlermeldung wenn Daten nicht geladen werden können
+- [x] **DATA-01**: Theme lädt Wetterdaten per Fetch API von show.cgi JSON-Endpoint
+- [x] **DATA-02**: Theme lädt Sprachdaten per Fetch aus lang-*.json
+- [x] **DATA-03**: Theme lädt Icon-Mapping per Fetch aus icons/{iconset}/icon_mapping.json
+- [x] **DATA-04**: Auto-Refresh lädt Daten periodisch nach (Intervall ≥ 5 Minuten)
+- [x] **DATA-05**: Ladeanzeige während AJAX-Requests
+- [x] **DATA-06**: Fehlermeldung wenn Daten nicht geladen werden können
 
 ### Mehrsprachigkeit
 
-- [ ] **LANG-01**: Alle UI-Texte (Tab-Labels, Einheiten, Beschreibungen) kommen aus lang-*.json
-- [ ] **LANG-02**: Unterstützte Sprachen: DE, EN, ES, NL, SK
-- [ ] **LANG-03**: Sprache wird per URL-Parameter oder Konfiguration gesetzt
+- [x] **LANG-01**: Alle UI-Texte (Tab-Labels, Einheiten, Beschreibungen) kommen aus lang-*.json
+- [x] **LANG-02**: Unterstützte Sprachen: DE, EN, ES, NL, SK
+- [x] **LANG-03**: Sprache wird per URL-Parameter oder Konfiguration gesetzt
 
 ### Zusatz-Features
 
-- [ ] **EXTRA-01**: Sonnenauf- und Sonnenuntergang im Hero-Bereich angezeigt
-- [ ] **EXTRA-02**: Smooth CSS-Transitions bei Tab-Wechsel und Hero-Aktualisierung
+- [x] **EXTRA-01**: Sonnenauf- und Sonnenuntergang im Hero-Bereich angezeigt
+- [x] **EXTRA-02**: Smooth CSS-Transitions bei Tab-Wechsel und Hero-Aktualisierung
 
 ## v2 Requirements
 
@@ -101,32 +101,32 @@
 | JSON-06 | Phase 1 | Complete |
 | JSON-07 | Phase 2 | Complete |
 | JSON-08 | Phase 2 | Complete |
-| CGI-01 | Phase 3 | Pending |
-| CGI-02 | Phase 3 | Pending |
-| CGI-03 | Phase 3 | Pending |
-| THEME-01 | Phase 4 | Pending |
-| THEME-02 | Phase 4 | Pending |
-| THEME-03 | Phase 4 | Pending |
-| THEME-04 | Phase 4 | Pending |
-| HERO-01 | Phase 4 | Pending |
-| HERO-02 | Phase 4 | Pending |
-| HERO-03 | Phase 4 | Pending |
-| HERO-04 | Phase 4 | Pending |
-| HERO-05 | Phase 4 | Pending |
-| HERO-06 | Phase 4 | Pending |
-| TAGE-01 | Phase 4 | Pending |
-| TAGE-02 | Phase 4 | Pending |
-| EXTRA-02 | Phase 4 | Pending |
-| DATA-01 | Phase 5 | Pending |
-| DATA-02 | Phase 5 | Pending |
-| DATA-03 | Phase 5 | Pending |
-| DATA-04 | Phase 5 | Pending |
-| DATA-05 | Phase 5 | Pending |
-| DATA-06 | Phase 5 | Pending |
-| LANG-01 | Phase 5 | Pending |
-| LANG-02 | Phase 5 | Pending |
-| LANG-03 | Phase 5 | Pending |
-| EXTRA-01 | Phase 5 | Pending |
+| CGI-01 | Phase 3 | Complete |
+| CGI-02 | Phase 3 | Complete |
+| CGI-03 | Phase 3 | Complete |
+| THEME-01 | Phase 4 | Complete |
+| THEME-02 | Phase 4 | Complete |
+| THEME-03 | Phase 4 | Complete |
+| THEME-04 | Phase 4 | Complete |
+| HERO-01 | Phase 4 | Complete |
+| HERO-02 | Phase 4 | Complete |
+| HERO-03 | Phase 4 | Complete |
+| HERO-04 | Phase 4 | Complete |
+| HERO-05 | Phase 4 | Complete |
+| HERO-06 | Phase 4 | Complete |
+| TAGE-01 | Phase 4 | Complete |
+| TAGE-02 | Phase 4 | Complete |
+| EXTRA-02 | Phase 4 | Complete |
+| DATA-01 | Phase 5 | Complete |
+| DATA-02 | Phase 5 | Complete |
+| DATA-03 | Phase 5 | Complete |
+| DATA-04 | Phase 5 | Complete |
+| DATA-05 | Phase 5 | Complete |
+| DATA-06 | Phase 5 | Complete |
+| LANG-01 | Phase 5 | Complete |
+| LANG-02 | Phase 5 | Complete |
+| LANG-03 | Phase 5 | Complete |
+| EXTRA-01 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 34 total

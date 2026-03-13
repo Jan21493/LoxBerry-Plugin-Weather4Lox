@@ -2,105 +2,46 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Completed 02-01-PLAN.md (datatoloxone.pl JSON migration)
-last_updated: "2026-03-12T22:29:02.589Z"
-last_activity: 2026-03-12 — Plan 01-03 complete (supplementary grabbers JSON integration)
+current_phase: 05-datenanbindung-vollstaendigkeit
+current_plan: 05-02 (completed)
+status: completed
+last_updated: "2026-03-13T20:05:00Z"
 progress:
   total_phases: 5
-  completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
-  percent: 100
+  completed_phases: 5
+  total_plans: 8
+  completed_plans: 8
 ---
 
----
-gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: planning
-stopped_at: Completed 01-03-PLAN.md (supplementary grabbers JSON integration)
-last_updated: "2026-03-12T21:07:37.350Z"
-last_activity: 2026-03-12 — Plan 01-03 complete (supplementary grabbers JSON integration)
-progress:
-  [██████████] 100%
-  completed_phases: 0
-  total_plans: 3
-  completed_plans: 3
-  percent: 100
----
-
-# Project State
+# Session State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-12)
+See: .planning/PROJECT.md
 
-**Core value:** Wetterdaten als strukturiertes JSON bereitgestellt, ocean-live Theme zeigt sie dynamisch per AJAX mit Hero-Stundenansicht an
-**Current focus:** Phase 1 — JSON Schema & Grabber Migration
+## Position
 
-## Current Position
+**Milestone:** v1.0 milestone
+**Current phase:** 05-datenanbindung-vollstaendigkeit
+**Current plan:** 05-02 (completed)
+**Status:** Completed
 
-Phase: 1 of 5 (JSON Schema & Grabber Migration)
-Plan: 3 of 3 in current phase — ALL PLANS COMPLETE
-Status: Phase 1 complete — all 3 plans done
-Last activity: 2026-03-12 — Plan 01-03 complete (supplementary grabbers JSON integration)
+## Decisions
 
-Progress: [███████████] 100% (Phase 1)
+- **04-01:** Hero placed above tab panels so Heute/Morgen share single `#heroSection` DOM without duplicate IDs
+- **04-01:** Icon paths use flat suffix convention (`icons/color/clear_day.png`) not subdirectory pattern from SSR template
+- **04-01:** `selectHour(el, dataArray)` receives dataArray as parameter — works for both Heute and Morgen without globals
+- **04-01:** `renderHourStrip()` and `renderDaily()` decoupled from data source — Phase 5 can swap mock arrays for AJAX responses
+- **05-01:** New lang keys inserted after dew_point, before weekdays array to maintain logical grouping of scalar vs. array keys
+- **05-01:** data-i18n applied to label elements so JS can replace label text; stat IDs go on value elements for AJAX binding
+- **05-01:** heroFeelslike ID added to 4th astro item simultaneously with its data-i18n attribute
+- **05-02:** getUrlParam defined in first script block to avoid forward-reference to second block; also kept in second block (no conflict in non-strict JS)
+- **05-02:** hourlyTodayRendered/hourlyTomorrowRendered globals set in renderAll() for preselectHour tab-switch access
+- **05-02:** scheduleRefresh() retries on error to ensure 5-minute auto-refresh cycle continues after transient failures
 
-## Performance Metrics
+## Session Log
 
-**Velocity:**
-- Total plans completed: 3
-- Average duration: 2 min
-- Total execution time: 0.1 hours
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| Phase 01 | 3/3 | 7 min | 2 min |
-
-**Recent Trend:**
-- Last 5 plans: 3min, 2min, 2min
-- Trend: Fast execution
-
-*Updated after each plan completion*
-| Phase 01 P02 | 8 | 2 tasks | 6 files |
-| Phase 02 P01 | 7 | 2 tasks | 1 files |
-
-## Accumulated Context
-
-### Decisions
-
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- JSON-Schema ZUERST definieren, dann alle Grabber anpassen (Schema-Konsistenz-Risiko vermeiden)
-- Dual-Write (JSON + .dat parallel) — altes System bleibt funktionsfahig bis Testphase abgeschlossen
-- datatoloxone.pl und alte Themes weiterhin .dat-kompatibel (keine Breaking Changes)
-- ocean-live als Einzeldatei in webfrontend/html/ (direkter Zugriff ohne CGI-Umweg)
-- [Phase 01]: write_current_json_aq() added as dedicated helper for OpenMeteo AQ grabber (cleaner API than extending write_current_json)
-- [Phase 01]: period field retained explicitly in daily/hourly JSON arrays (self-describing over implicit array index)
-- [Phase 01]: generated_at uses system localtime (grabber runtime), data.datetime uses observation epoch+tz_long
-- [Phase 01]: pollen_*: use today_max values from pollen_result hash as current pollen level fields in aq_values
-- [Phase 01]: Legacy airquality_pollen.json preserved; write_current_json_aq added after it (dual-write philosophy)
-- [Phase 01]: All 5 main grabbers use eval-wrapped write_*_json with source/grabber params for meta traceability
-- [Phase 01]: json-schema.md derived from grabber_utils.pl source arrays as single source of truth
-- [Phase 02]: Used LOGCRIT for JSON load failures — operational fail-fast, script exits immediately
-- [Phase 02]: Derived legacy tz fields from JSON (cur_date_tz_des_sh via DateTime, cur_date_tz via ISO regex)
-- [Phase 02]: Preserved DFC sunrise/sunset base date behavior: uses epochdate (current) not dfc date
-
-### Pending Todos
-
-None yet.
-
-### Blockers/Concerns
-
-- Ocean-Theme CSS (ocean.main.html) sollte vor Phase 4 Planung analysiert werden
-
-## Session Continuity
-
-Last session: 2026-03-12T22:29:02.582Z
-Stopped at: Completed 02-01-PLAN.md (datatoloxone.pl JSON migration)
-Resume file: None
+- 2026-03-13: STATE.md regenerated by /gsd:health --repair
+- 2026-03-13: Completed 04-01-PLAN.md — ocean-live.html with Ocean theme, 3 tabs, hero, hourly strip, 7-day overview (mock data)
+- 2026-03-13: Completed 05-01-PLAN.md — 5 lang files extended with 11 i18n keys each, ocean-live.html equipped with 21 data-i18n attrs, 14 DOM IDs, loading overlay, error banner
+- 2026-03-13: Completed 05-02-PLAN.md — ocean-live.html fully migrated to live AJAX loading (loadAllData, icon_mapping, i18n, auto-refresh, sunrise/sunset binding)

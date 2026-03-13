@@ -243,6 +243,11 @@ my $wdirdes;
 my @filecontent;
 my $i;
 
+# Data structures for direct API→JSON path
+my %current_data;
+my @daily_data;
+my @hourly_data;
+
 # Mapping: Wetteronline Symbol => [Loxone Code, Weather4Lox Icon, Description]
 # Weather symbols with meaning: https://www.wetteronline.de/symbole
 # --> Using https://wiki.loxberry.de/plugins/weather4loxone/start#wetter-codes
@@ -829,6 +834,40 @@ open(F,"<$lbplogdir/current.dat.tmp");
 	}
 close (F);
 
+# Build current data hash for direct API→JSON path
+%current_data = (
+    epoch               => $epoch_time,
+    timezone            => $timezone,
+    city                => Encode::decode("UTF-8", $location),
+    country             => $locs[5],
+    country_code        => $iso_code,
+    latitude            => $lat,
+    longitude           => $long,
+    elevation           => $altitude,
+    temperature         => sprintf("%.1f", $decodedCurrent->{current}->{temperature}->{air}),
+    feelslike           => sprintf("%.1f", $decodedCurrent->{current}->{temperature}->{apparent}),
+    humidity            => $decodedCurrent->{current}->{humidity} * 100,
+    wind_direction_desc => wind_direction_text($decodedCurrent->{current}->{wind}->{direction}, \%L),
+    wind_direction_deg  => $decodedCurrent->{current}->{wind}->{direction},
+    wind_speed          => sprintf("%.1f", $decodedCurrent->{current}->{wind}->{speed}->{kilometer_per_hour}->{value}),
+    wind_gust           => sprintf("%.1f", $decodedCurrent->{current}->{wind}->{speed}->{kilometer_per_hour}->{value}),
+    windchill           => sprintf("%.1f", $decodedCurrent->{current}->{temperature}->{apparent}),
+    pressure            => sprintf("%.0f", $decodedCurrent->{current}->{air_pressure}->{hpa}),
+    dewpoint            => sprintf("%.1f", $decodedCurrent->{current}->{dew_point}->{celsius}),
+    uv_index            => $uvi,
+    precip_today_mm     => sprintf("%.2f", $todayPrecipitationAmount),
+    precip_1hr_mm       => sprintf("%.2f", $hourlyPrecipitationAmount),
+    weather_icon        => $icon,
+    weather_code        => $code,
+    weather_description => $description,
+    moon_percent        => sprintf("%.2f", $moonillum * 100),
+    moon_age            => sprintf("%.2f", $moonage),
+    moon_phase          => sprintf("%.2f", $moonphase * 100),
+    sunrise             => sprintf("%02d:%02d", $sunrise_hour, $sunrise_minute),
+    sunset              => sprintf("%02d:%02d", $sunset_hour, $sunset_minute),
+    precip_probability  => sprintf("%.0f", $cur_pop),
+);
+
 } # End current
 
 
@@ -1035,6 +1074,67 @@ open(F,">$lbplogdir/dailyforecast.dat.tmp") or $error = 1;
 			LOGDEB "$_";
 		}
 	close (F);
+
+	# Build daily data array for direct API→JSON path
+	my $dfc_period = 1;
+	for my $results (@{$decodedDaily}) {
+		my $date_str = qx( TZ='$timezone' date -d "$results->{date}" +'%Y-%m-%d' );
+		chomp($date_str);
+		my $tp = Time::Piece->strptime($date_str, "%Y-%m-%d");
+		my $ep = $tp->epoch;
+
+		my ($c, $ic, $desc) = wetteronline_to_lox($results->{symbol});
+
+		my ($mp, $mi, $ma) = (phase($ep))[0,1,2];
+
+		# Compute average dewpoint from dayparts
+		my @dps = @{$results->{dayparts}};
+		my $dp_sum = 0; my $dp_cnt = 0;
+		my ($hu_min, $hu_max) = (1, 0);
+		for my $dp (@dps) {
+			$dp_sum += $dp->{dew_point}{celsius}; $dp_cnt++;
+			$hu_min = $dp->{humidity} if $dp->{humidity} < $hu_min;
+			$hu_max = $dp->{humidity} if $dp->{humidity} > $hu_max;
+		}
+		my $avg_dp = $dp_cnt ? $dp_sum / $dp_cnt : 0;
+
+		# Sunrise/sunset
+		my $sr_str = qx( TZ='$timezone' date -d "$results->{sun}{rise}" +'%H:%M' );
+		chomp($sr_str);
+		my $ss_str = qx( TZ='$timezone' date -d "$results->{sun}{set}" +'%H:%M' );
+		chomp($ss_str);
+
+		push @daily_data, {
+			period              => $dfc_period,
+			epoch               => $ep,
+			high_temp           => sprintf("%.1f", $results->{temperature}{max}{air}),
+			low_temp            => sprintf("%.1f", $results->{temperature}{min}{air}),
+			precip_probability  => $results->{precipitation}{probability} ? sprintf("%.0f", $results->{precipitation}{probability} * 100) : 0,
+			precip_mm           => $results->{precipitation}{details}{rainfall_amount}{millimeter}{interval_end} ? sprintf("%.2f", $results->{precipitation}{details}{rainfall_amount}{millimeter}{interval_end}) : 0,
+			snow_cm             => $results->{precipitation}{details}{snow_height}{centimeter}{interval_end} ? sprintf("%.2f", $results->{precipitation}{details}{snow_height}{centimeter}{interval_end}) : 0,
+			wind_speed_max      => sprintf("%.2f", $results->{wind}{speed}{kilometer_per_hour}{value}),
+			wind_dir_max_desc   => wind_direction_text($results->{wind}{direction}, \%L),
+			wind_dir_max_deg    => $results->{wind}{direction},
+			wind_speed_avg      => sprintf("%.2f", $results->{wind}{speed}{kilometer_per_hour}{value}),
+			wind_dir_avg_desc   => wind_direction_text($results->{wind}{direction}, \%L),
+			wind_dir_avg_deg    => $results->{wind}{direction},
+			humidity_avg        => sprintf("%.0f", $results->{humidity} * 100),
+			humidity_max        => sprintf("%.0f", $hu_max * 100),
+			humidity_min        => sprintf("%.0f", $hu_min * 100),
+			weather_icon        => $ic,
+			weather_code        => $c,
+			weather_description => $desc,
+			moon_percent        => sprintf("%.2f", $mi * 100),
+			moon_age            => sprintf("%.2f", $ma),
+			moon_phase          => sprintf("%.2f", $mp * 100),
+			dewpoint            => sprintf("%.1f", $avg_dp),
+			pressure            => sprintf("%.0f", $results->{air_pressure}{hpa}),
+			uv_index            => sprintf("%.1f", $results->{uv_index}{value}),
+			sunrise             => $sr_str,
+			sunset              => $ss_str,
+		};
+		$dfc_period++;
+	}
 
 } # End daily
 
@@ -1438,6 +1538,97 @@ if ( $hourly ) { # Start hourly
 		}
 	close (F);
 
+	# Build hourly data array for direct API→JSON path
+	# Part 1: Direct API hours
+	my $hfc_period = 1;
+	for my $hr (@{$decodedHourly->{hours}}) {
+		my $hr_str = qx( TZ='$timezone' date -d "$hr->{date}" +'%Y-%m-%d %H:%M' );
+		chomp($hr_str);
+		my $tp = Time::Piece->strptime($hr_str, "%Y-%m-%d %H:%M");
+		my $ep = $tp->epoch;
+
+		my ($c, $ic, $desc) = wetteronline_to_lox($hr->{symbol});
+		my ($sky_cond, $sky_desc) = skycondition_from_wocode($hr->{symbol});
+		my ($mp, $mi, $ma) = (phase($ep))[0,1,2];
+
+		my $prec = 0;
+		if ($hr->{precipitation}{details}{rainfall_amount}{millimeter}) {
+			$prec = ($hr->{precipitation}{details}{rainfall_amount}{millimeter}{interval_begin}
+					+ $hr->{precipitation}{details}{rainfall_amount}{millimeter}{interval_end}) / 2;
+		}
+
+		push @hourly_data, {
+			period              => $hfc_period,
+			epoch               => $ep,
+			temperature         => sprintf("%.1f", $hr->{temperature}{air}),
+			feelslike           => sprintf("%.1f", $hr->{temperature}{apparent}),
+			humidity            => sprintf("%.0f", $hr->{humidity} * 100),
+			wind_direction_desc => wind_direction_text($hr->{wind}{direction}, \%L),
+			wind_direction_deg  => $hr->{wind}{direction},
+			wind_speed          => sprintf("%.2f", $hr->{wind}{speed}{kilometer_per_hour}{value}),
+			windchill           => sprintf("%.1f", $hr->{temperature}{apparent}),
+			pressure            => sprintf("%.0f", $hr->{air_pressure}{hpa}),
+			dewpoint            => sprintf("%.1f", $hr->{dew_point}{celsius}),
+			sky_percent         => $sky_cond,
+			sky_description     => $sky_desc,
+			precip_mm           => sprintf("%.2f", $prec),
+			snow_cm             => $hr->{precipitation}{details}{snow_height}{centimeter} ? sprintf("%.2f", $hr->{precipitation}{details}{snow_height}{centimeter}) : 0,
+			precip_probability  => $hr->{precipitation}{probability} ? sprintf("%.0f", $hr->{precipitation}{probability} * 100) : 0,
+			weather_icon        => $ic,
+			weather_code        => $c,
+			weather_description => $desc,
+			visibility          => sprintf("%.2f", $hr->{visibility} / 1000),
+			moon_percent        => sprintf("%.2f", $mi * 100),
+			moon_age            => sprintf("%.2f", $ma),
+			moon_phase          => sprintf("%.2f", $mp * 100),
+		};
+		$hfc_period++;
+	}
+
+	# Part 2: Interpolated hours from dayparts
+	# Reuse interpolators and epoch range already computed above
+	my $interp_t = $hourly_data[-1]{epoch} + 3600;  # start 1h after last API hour
+	while ($interp_t <= $end_epoch_time) {
+		# Step/hold: find last daypart epoch <= current
+		my $step_ep = $dp_epochs[0];
+		for my $e (@dp_epochs) {
+			last if $e > $interp_t;
+			$step_ep = $e;
+		}
+
+		my $sym = $symbol{$step_ep};
+		my ($c, $ic, $desc) = wetteronline_to_lox($sym);
+		my ($sky_cond, $sky_desc) = skycondition_from_wocode($sym);
+		my ($mp, $mi, $ma) = (phase($interp_t))[0,1,2];
+
+		push @hourly_data, {
+			period              => $hfc_period,
+			epoch               => $interp_t,
+			temperature         => sprintf("%.1f", $t_air_i->linear($interp_t)),
+			feelslike           => sprintf("%.1f", $t_app_i->linear($interp_t)),
+			humidity            => sprintf("%.0f", $hum_i->linear($interp_t)),
+			wind_direction_desc => wind_direction_text($w_dir{$step_ep}, \%L),
+			wind_direction_deg  => $w_dir{$step_ep},
+			wind_speed          => sprintf("%.2f", $w_sp_i->linear($interp_t)),
+			windchill           => sprintf("%.1f", $t_app_i->linear($interp_t)),
+			pressure            => sprintf("%.0f", $pr_i->linear($interp_t)),
+			dewpoint            => sprintf("%.1f", $dp_i->linear($interp_t)),
+			sky_percent         => $sky_cond,
+			sky_description     => $sky_desc,
+			precip_mm           => sprintf("%.2f", $prec_i->linear($interp_t)),
+			snow_cm             => sprintf("%.2f", $snow_i->linear($interp_t)),
+			precip_probability  => sprintf("%.0f", $pop_i->linear($interp_t)),
+			weather_icon        => $ic,
+			weather_code        => $c,
+			weather_description => $desc,
+			moon_percent        => sprintf("%.2f", $mi * 100),
+			moon_age            => sprintf("%.2f", $ma),
+			moon_phase          => sprintf("%.2f", $mp * 100),
+		};
+		$hfc_period++;
+		$interp_t += 3600;
+	}
+
 } # end hourly
 
 # Clean Up Databases
@@ -1541,17 +1732,17 @@ if ( $hourly ) {
 	}
 }
 
-# Write JSON files from the .dat files
+# Write JSON files directly from API data (not via .dat roundabout)
 if ($current) {
-    eval { write_current_json($lbplogdir, source => "WetterOnline", grabber => "grabber_wetteronline.pl") };
+    eval { write_current_json($lbplogdir, data => \%current_data, source => "WetterOnline", grabber => "grabber_wetteronline.pl") };
     LOGWARN "JSON write failed: $@" if $@;
 }
 if ($daily) {
-    eval { write_daily_json($lbplogdir, source => "WetterOnline", grabber => "grabber_wetteronline.pl") };
+    eval { write_daily_json($lbplogdir, data => \@daily_data, source => "WetterOnline", grabber => "grabber_wetteronline.pl") };
     LOGWARN "JSON write failed: $@" if $@;
 }
 if ($hourly) {
-    eval { write_hourly_json($lbplogdir, source => "WetterOnline", grabber => "grabber_wetteronline.pl") };
+    eval { write_hourly_json($lbplogdir, data => \@hourly_data, source => "WetterOnline", grabber => "grabber_wetteronline.pl") };
     LOGWARN "JSON write failed: $@" if $@;
 }
 

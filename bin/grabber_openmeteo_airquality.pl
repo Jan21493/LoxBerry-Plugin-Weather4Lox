@@ -268,27 +268,8 @@ File::Copy::move($tmpfile, $outfile) or do {
 # Legacy: keep airquality_pollen.json for backward compatibility
 LOGOK "Air quality and pollen data written to $outfile";
 
-# Merge AQ data into current.json via write_current_json_aq
-my %aq_values = (
-    aqi_eu                  => $european_aqi + 0,
-    aqi_us                  => $us_aqi + 0,
-    pm10                    => $pm10 + 0,
-    pm25                    => $pm2_5 + 0,
-    pollen_alder            => $pollen_result{alder}{today_max},
-    pollen_birch            => $pollen_result{birch}{today_max},
-    pollen_grass            => $pollen_result{grass}{today_max},
-    pollen_mugwort          => $pollen_result{mugwort}{today_max},
-    pollen_olive            => $pollen_result{olive}{today_max},
-    pollen_ragweed          => $pollen_result{ragweed}{today_max},
-    pollen_overall_today    => $overall_today,
-    pollen_overall_tomorrow => $overall_tomorrow,
-);
-
-eval { write_current_json_aq($lbplogdir,
-    source  => "OpenMeteo Air Quality",
-    grabber => "grabber_openmeteo_airquality.pl",
-    aq_data => \%aq_values) };
-LOGWARN "JSON write failed: $@" if $@;
+# AQ/pollen data stays exclusively in airquality_pollen.json (written above).
+# No merge into current.json — pollen data is separate by design.
 
 exit;
 

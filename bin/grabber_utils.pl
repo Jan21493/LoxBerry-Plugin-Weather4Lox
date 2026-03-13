@@ -514,52 +514,72 @@ sub _enrich_weather_id {
     return $rec;
 }
 
+# ── Public helpers for grabbers ────────────────────────────────────
+# These can be called by grabbers that build data hashes directly.
+
+# Compute cardinal wind direction text from degrees
+# Usage: wind_direction_text($degrees, \%L)
+#   where %L is the language hash from LoxBerry::System::readlanguage
+sub wind_direction_text {
+    my ($deg, $L) = @_;
+    return undef unless defined $deg && $deg ne '' && $deg ne '-9999';
+    $deg += 0;
+    if    ( $deg >= 0   && $deg <= 22  ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_N'})  }
+    elsif ( $deg > 22   && $deg <= 68  ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_NE'}) }
+    elsif ( $deg > 68   && $deg <= 112 ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_E'})  }
+    elsif ( $deg > 112  && $deg <= 158 ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_SE'}) }
+    elsif ( $deg > 158  && $deg <= 202 ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_S'})  }
+    elsif ( $deg > 202  && $deg <= 248 ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_SW'}) }
+    elsif ( $deg > 248  && $deg <= 292 ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_W'})  }
+    elsif ( $deg > 292  && $deg <= 338 ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_NW'}) }
+    elsif ( $deg > 338  && $deg <= 360 ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_N'})  }
+    return undef;
+}
+
 # ── write_current_json ──────────────────────────────────────────────
+# Accepts either:
+#   write_current_json($logdir, source => ..., grabber => ...)           # legacy: reads current.dat
+#   write_current_json($logdir, data => \%hash, source => ..., grabber => ...)  # direct: hash with JSON field names
 
 sub write_current_json {
     my ($logdir, %opts) = @_;
     my $source  = $opts{source}  // '';
     my $grabber = $opts{grabber} // '';
+    my $data    = $opts{data};     # optional hashref with pre-formatted fields
 
-    my $dat = "$logdir/current.dat";
-    return unless -f $dat;
-    my @lines = _read_dat_lines($dat);
-    return unless @lines;
-
-    my %raw = _line_to_hash($lines[0], \@CURRENT_RAW);
-    my $tz  = $raw{tz_long} || _system_timezone();
-
-    # Build clean record
     my %rec;
+    if ($data) {
+        # Direct path: caller provides hash with final JSON field names/values
+        for my $k (keys %$data) {
+            $rec{$k} = _val($data->{$k});
+        }
+    } else {
+        # Legacy path: read from .dat file
+        my $dat = "$logdir/current.dat";
+        return unless -f $dat;
+        my @lines = _read_dat_lines($dat);
+        return unless @lines;
 
-    # ISO datetime from epoch + tz
-    $rec{datetime} = _epoch_to_iso($raw{epoch}, $tz);
-    $rec{epoch}    = _val($raw{epoch});
-    $rec{timezone} = $tz;
+        my %raw = _line_to_hash($lines[0], \@CURRENT_RAW);
+        my $tz  = $raw{tz_long} || _system_timezone();
 
-    # Sunrise / Sunset as "HH:MM"
-    $rec{sunrise} = _hhmm($raw{sunrise_hour}, $raw{sunrise_min});
-    $rec{sunset}  = _hhmm($raw{sunset_hour},  $raw{sunset_min});
+        $rec{datetime} = _epoch_to_iso($raw{epoch}, $tz);
+        $rec{epoch}    = _val($raw{epoch});
+        $rec{timezone} = $tz;
+        $rec{sunrise} = _hhmm($raw{sunrise_hour}, $raw{sunrise_min});
+        $rec{sunset}  = _hhmm($raw{sunset_hour},  $raw{sunset_min});
 
-    # Copy remaining fields (skip dropped ones)
-    for my $f (@CURRENT_RAW) {
-        next if $DROP_CURRENT{$f};
-        next if $f eq 'epoch';   # already handled
-        $rec{$f} = _val($raw{$f});
-    }
-
-    # AQ fields default to null (set by OpenMeteo AQ grabber only)
-    for my $aqf (qw(aqi_eu aqi_us pm10 pm25
-                    pollen_alder pollen_birch pollen_grass pollen_mugwort
-                    pollen_olive pollen_ragweed
-                    pollen_overall_today pollen_overall_tomorrow)) {
-        $rec{$aqf} //= undef;
+        for my $f (@CURRENT_RAW) {
+            next if $DROP_CURRENT{$f};
+            next if $f eq 'epoch';
+            $rec{$f} = _val($raw{$f});
+        }
     }
 
     _enrich_weather_id(\%rec);
 
     my $generated_at = strftime("%Y-%m-%dT%H:%M:%S%z", localtime(time));
-    $generated_at =~ s/(\d{2})(\d{2})$/$1:$2/;  # insert colon in tz offset
+    $generated_at =~ s/(\d{2})(\d{2})$/$1:$2/;
 
     my %envelope = (
         meta => {
@@ -688,37 +708,52 @@ sub write_json_file {
 }
 
 # ── write_daily_json ────────────────────────────────────────────────
+# Accepts either:
+#   write_daily_json($logdir, source => ..., grabber => ...)           # legacy: reads dailyforecast.dat
+#   write_daily_json($logdir, data => \@records, source => ..., grabber => ...)  # direct: array of hashes
 
 sub write_daily_json {
     my ($logdir, %opts) = @_;
     my $source  = $opts{source}  // '';
     my $grabber = $opts{grabber} // '';
+    my $data    = $opts{data};     # optional arrayref of hashrefs
 
-    my $dat = "$logdir/dailyforecast.dat";
-    return unless -f $dat;
-    my @lines = _read_dat_lines($dat);
-    return unless @lines;
-
-    my $tz = _system_timezone();
     my @records;
-
-    for my $line (@lines) {
-        my %raw = _line_to_hash($line, \@DAILY_RAW);
-        my %rec;
-
-        $rec{period}   = _val($raw{period});
-        $rec{datetime} = _epoch_to_iso($raw{epoch}, $tz);
-        $rec{epoch}    = _val($raw{epoch});
-        $rec{sunrise}  = _hhmm($raw{sunrise_hour}, $raw{sunrise_min});
-        $rec{sunset}   = _hhmm($raw{sunset_hour},  $raw{sunset_min});
-
-        for my $f (@DAILY_RAW) {
-            next if $DROP_FORECAST{$f};
-            next if $f eq 'epoch' || $f eq 'period';
-            $rec{$f} = _val($raw{$f});
+    if ($data) {
+        # Direct path: caller provides array of record hashes
+        for my $entry (@$data) {
+            my %rec;
+            for my $k (keys %$entry) {
+                $rec{$k} = _val($entry->{$k});
+            }
+            _enrich_weather_id(\%rec);
+            push @records, \%rec;
         }
-        _enrich_weather_id(\%rec);
-        push @records, \%rec;
+    } else {
+        # Legacy path: read from .dat file
+        my $dat = "$logdir/dailyforecast.dat";
+        return unless -f $dat;
+        my @lines = _read_dat_lines($dat);
+        return unless @lines;
+
+        my $tz = _system_timezone();
+        for my $line (@lines) {
+            my %raw = _line_to_hash($line, \@DAILY_RAW);
+            my %rec;
+            $rec{period}   = _val($raw{period});
+            $rec{datetime} = _epoch_to_iso($raw{epoch}, $tz);
+            $rec{epoch}    = _val($raw{epoch});
+            $rec{sunrise}  = _hhmm($raw{sunrise_hour}, $raw{sunrise_min});
+            $rec{sunset}   = _hhmm($raw{sunset_hour},  $raw{sunset_min});
+
+            for my $f (@DAILY_RAW) {
+                next if $DROP_FORECAST{$f};
+                next if $f eq 'epoch' || $f eq 'period';
+                $rec{$f} = _val($raw{$f});
+            }
+            _enrich_weather_id(\%rec);
+            push @records, \%rec;
+        }
     }
 
     my $generated_at = strftime("%Y-%m-%dT%H:%M:%S%z", localtime(time));
@@ -751,35 +786,50 @@ sub write_daily_json {
 }
 
 # ── write_hourly_json ───────────────────────────────────────────────
+# Accepts either:
+#   write_hourly_json($logdir, source => ..., grabber => ...)           # legacy: reads hourlyforecast.dat
+#   write_hourly_json($logdir, data => \@records, source => ..., grabber => ...)  # direct: array of hashes
 
 sub write_hourly_json {
     my ($logdir, %opts) = @_;
     my $source  = $opts{source}  // '';
     my $grabber = $opts{grabber} // '';
+    my $data    = $opts{data};     # optional arrayref of hashrefs
 
-    my $dat = "$logdir/hourlyforecast.dat";
-    return unless -f $dat;
-    my @lines = _read_dat_lines($dat);
-    return unless @lines;
-
-    my $tz = _system_timezone();
     my @records;
-
-    for my $line (@lines) {
-        my %raw = _line_to_hash($line, \@HOURLY_RAW);
-        my %rec;
-
-        $rec{period}   = _val($raw{period});
-        $rec{datetime} = _epoch_to_iso($raw{epoch}, $tz);
-        $rec{epoch}    = _val($raw{epoch});
-
-        for my $f (@HOURLY_RAW) {
-            next if $DROP_FORECAST{$f};
-            next if $f eq 'epoch' || $f eq 'period';
-            $rec{$f} = _val($raw{$f});
+    if ($data) {
+        # Direct path: caller provides array of record hashes
+        for my $entry (@$data) {
+            my %rec;
+            for my $k (keys %$entry) {
+                $rec{$k} = _val($entry->{$k});
+            }
+            _enrich_weather_id(\%rec);
+            push @records, \%rec;
         }
-        _enrich_weather_id(\%rec);
-        push @records, \%rec;
+    } else {
+        # Legacy path: read from .dat file
+        my $dat = "$logdir/hourlyforecast.dat";
+        return unless -f $dat;
+        my @lines = _read_dat_lines($dat);
+        return unless @lines;
+
+        my $tz = _system_timezone();
+        for my $line (@lines) {
+            my %raw = _line_to_hash($line, \@HOURLY_RAW);
+            my %rec;
+            $rec{period}   = _val($raw{period});
+            $rec{datetime} = _epoch_to_iso($raw{epoch}, $tz);
+            $rec{epoch}    = _val($raw{epoch});
+
+            for my $f (@HOURLY_RAW) {
+                next if $DROP_FORECAST{$f};
+                next if $f eq 'epoch' || $f eq 'period';
+                $rec{$f} = _val($raw{$f});
+            }
+            _enrich_weather_id(\%rec);
+            push @records, \%rec;
+        }
     }
 
     my $generated_at = strftime("%Y-%m-%dT%H:%M:%S%z", localtime(time));

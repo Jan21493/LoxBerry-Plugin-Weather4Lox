@@ -167,6 +167,11 @@ my $i;
 my $wwo_id;
 my $error = 0;
 
+# Pre-declare data collectors for direct JSON construction
+my %current_json_data;
+my @daily_json_data;
+my @hourly_json_data;
+
 #
 # Fetch current data
 #
@@ -298,6 +303,65 @@ open(F,"<$lbplogdir/current.dat.tmp");
 		LOGDEB "$_";
 	}
 close (F);
+
+# Collect current data for direct JSON construction
+{
+	my $cur = $decoded_json->{current_condition}[0];
+	my $obs_t = Time::Piece->strptime($cur->{localObsDateTime}, "%Y-%m-%d %R %p");
+	my $tz_long = qx(cat /etc/timezone);
+	chomp($tz_long);
+
+	my $wwo_id_c = $cur->{weatherCode};
+	my ($code_c, $icon_c) = wttr_to_lox($wwo_id_c);
+	my $wdes_c = $cur->{'lang_' . $lang}[0]{value};
+	$wdes_c = $cur->{weatherDesc}[0]{value} if !$wdes_c;
+
+	my $sr_t = Time::Piece->strptime($decoded_json->{weather}[0]->{astronomy}[0]{sunrise}, "%R %p");
+	my $ss_t = Time::Piece->strptime($decoded_json->{weather}[0]->{astronomy}[0]{sunset}, "%R %p");
+
+	my ( $mp, $mi, $ma ) = (phase())[0,1,2];
+
+	%current_json_data = (
+		epoch              => $obs_t->epoch,
+		datetime           => _epoch_to_iso($obs_t->epoch, $tz_long),
+		timezone           => $tz_long,
+		city               => Encode::decode("UTF-8", $decoded_json->{nearest_area}[0]->{areaName}[0]->{value}),
+		country            => Encode::decode("UTF-8", $decoded_json->{nearest_area}[0]->{country}[0]->{value}),
+		country_code       => -9999,
+		latitude           => $decoded_json->{nearest_area}[0]->{latitude},
+		longitude          => $decoded_json->{nearest_area}[0]->{longitude},
+		elevation          => -9999,
+		temperature        => sprintf("%.1f", $cur->{temp_C}),
+		feelslike          => sprintf("%.1f", $cur->{FeelsLikeC}),
+		humidity           => $cur->{humidity},
+		wind_direction_desc => wind_direction_text($cur->{winddirDegree}, \%L),
+		wind_direction_deg => $cur->{winddirDegree},
+		wind_speed         => sprintf("%.1f", $cur->{windspeedKmph}),
+		wind_gust          => sprintf("%.1f", $cur->{windspeedKmph}),
+		windchill          => sprintf("%.1f", $cur->{FeelsLikeC}),
+		pressure           => sprintf("%.0f", $cur->{pressure}),
+		dewpoint           => -9999,
+		visibility         => sprintf("%.0f", $cur->{visibility}),
+		solar_radiation    => -9999,
+		heat_index         => -9999,
+		uv_index           => sprintf("%.2f", $cur->{uvIndex}),
+		precip_today_mm    => -9999,
+		precip_1hr_mm      => sprintf("%.2f", $cur->{precipMM}),
+		weather_icon       => $icon_c,
+		weather_code       => $code_c,
+		weather_description => $wdes_c,
+		moon_percent       => sprintf("%.2f", $mi * 100),
+		moon_age           => sprintf("%.2f", $ma),
+		moon_phase         => sprintf("%.2f", $mp * 100),
+		moon_hemisphere    => -9999,
+		sunrise            => sprintf("%02d:%02d", $sr_t->hour, $sr_t->min),
+		sunset             => sprintf("%02d:%02d", $ss_t->hour, $ss_t->min),
+		ozone              => -9999,
+		cloud_cover        => $cur->{cloudcover},
+		precip_probability => -9999,
+		snow               => -9999,
+	);
+}
 
 } # End current
 
@@ -488,6 +552,97 @@ open(F,"<$lbplogdir/dailyforecast.dat.tmp");
 	}
 close (F);
 
+# Collect daily data for direct JSON construction
+{
+	my $tz_long = qx(cat /etc/timezone);
+	chomp($tz_long);
+	my $di = 1;
+	for my $results( @{$decoded_json->{weather}} ){
+		my $dt = Time::Piece->strptime($results->{date}, "%Y-%m-%d");
+
+		# Aggregate hourly values (same logic as .dat writing above)
+		my @d_pops;
+		my $d_prec = 0;
+		my @d_gusts;
+		my @d_winds;
+		my @d_winddirs;
+		my @d_hums;
+		my @d_pressures;
+		my @d_dewps;
+		my @d_viss;
+		for my $hr ( @{$results->{hourly}} ){
+			push @d_pops, $hr->{chanceofrain} if $hr->{chanceofrain};
+			$d_prec += $hr->{precipMM} * 3 if $hr->{precipMM};
+			push @d_gusts, $hr->{WindGustKmph} if $hr->{WindGustKmph};
+			push @d_winds, $hr->{windspeedKmph} if $hr->{windspeedKmph};
+			push @d_winddirs, $hr->{winddirDegree} if $hr->{winddirDegree};
+			push @d_hums, $hr->{humidity} if $hr->{humidity};
+			push @d_pressures, $hr->{pressure} if $hr->{pressure};
+			push @d_dewps, $hr->{DewPointC} if $hr->{DewPointC};
+			push @d_viss, $hr->{visibility} if $hr->{visibility};
+		}
+		@d_pops = sort { $a <=> $b } @d_pops;
+		@d_gusts = sort { $a <=> $b } @d_gusts;
+		@d_winds = sort { $a <=> $b } @d_winds;
+		@d_winddirs = sort { $a <=> $b } @d_winddirs;
+		@d_hums = sort { $a <=> $b } @d_hums;
+		@d_pressures = sort { $a <=> $b } @d_pressures;
+		@d_dewps = sort { $a <=> $b } @d_dewps;
+		@d_viss = sort { $a <=> $b } @d_viss;
+
+		my $d_windavg = @d_winds ? eval(join("+", @d_winds)) / @d_winds : 0;
+		my $d_wdir = @d_winddirs ? eval(join("+", @d_winddirs)) / @d_winddirs : 0;
+		my $d_humavg = @d_hums ? eval(join("+", @d_hums)) / @d_hums : 0;
+		my $d_pressavg = @d_pressures ? eval(join("+", @d_pressures)) / @d_pressures : 0;
+		my $d_dewpavg = @d_dewps ? eval(join("+", @d_dewps)) / @d_dewps : 0;
+		my $d_visavg = @d_viss ? eval(join("+", @d_viss)) / @d_viss : 0;
+
+		my $d_wwo_id = $results->{hourly}[4]->{weatherCode};
+		my ($d_code, $d_icon) = wttr_to_lox($d_wwo_id);
+		my $d_wdes = $results->{hourly}[4]->{'lang_' . $lang}[0]{value};
+		$d_wdes = $results->{hourly}[4]->{weatherDesc}[0]{value} if !$d_wdes;
+
+		my ( $d_mp, $d_mi, $d_ma ) = (phase($dt->epoch))[0,1,2];
+
+		my $d_sr = Time::Piece->strptime($results->{astronomy}[0]{sunrise}, "%R %p");
+		my $d_ss = Time::Piece->strptime($results->{astronomy}[0]{sunset}, "%R %p");
+
+		push @daily_json_data, {
+			period              => $di,
+			epoch               => $dt->epoch,
+			datetime            => _epoch_to_iso($dt->epoch, $tz_long),
+			high_temp           => sprintf("%.1f", $results->{maxtempC}),
+			low_temp            => sprintf("%.1f", $results->{mintempC}),
+			precip_probability  => $d_pops[-1] ? sprintf("%.0f", $d_pops[-1]) : 0,
+			precip_mm           => $d_prec ? sprintf("%.2f", $d_prec) : 0,
+			snow_cm             => sprintf("%.1f", $results->{totalSnow_cm}),
+			wind_speed_max      => $d_gusts[-1] ? sprintf("%.0f", $d_gusts[-1]) : 0,
+			wind_dir_max_desc   => -9999,
+			wind_dir_max_deg    => -9999,
+			wind_speed_avg      => $d_windavg ? sprintf("%.0f", $d_windavg) : 0,
+			wind_dir_avg_desc   => wind_direction_text($d_wdir, \%L),
+			wind_dir_avg_deg    => $d_wdir,
+			humidity_avg        => sprintf("%.0f", $d_humavg),
+			humidity_max        => $d_hums[-1] ? sprintf("%.0f", $d_hums[-1]) : 0,
+			humidity_min        => $d_hums[0] ? sprintf("%.0f", $d_hums[0]) : 0,
+			weather_icon        => $d_icon,
+			weather_code        => $d_code,
+			weather_description => $d_wdes,
+			ozone               => -9999,
+			moon_percent        => sprintf("%.2f", $d_mi * 100),
+			dewpoint            => sprintf("%.1f", $d_dewpavg),
+			pressure            => sprintf("%.1f", $d_pressavg),
+			uv_index            => sprintf("%.1f", $results->{uvIndex}),
+			sunrise             => sprintf("%02d:%02d", $d_sr->hour, $d_sr->min),
+			sunset              => sprintf("%02d:%02d", $d_ss->hour, $d_ss->min),
+			visibility          => sprintf("%.1f", $d_visavg),
+			moon_age            => sprintf("%.2f", $d_ma),
+			moon_phase          => sprintf("%.2f", $d_mp * 100),
+		};
+		$di++;
+	}
+}
+
 } # End daily
 
 #
@@ -587,6 +742,8 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 	my $i = 1;
 	my $ep;
 	my $newline;
+	my $h_tz_long = qx(cat /etc/timezone);
+	chomp($h_tz_long);
 	for ($ep = $startep; $ep <= $endep; $ep += 3600 ) { # Step is 3600s
 		$newline = "";
 		next if $now >= $ep; # data is too old
@@ -654,6 +811,39 @@ open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
 		$newline = $newline . sprintf("%.2f",$moonillum*100) . "|";
 		$newline = $newline . sprintf("%.2f",$moonage) . "|";
 		$newline = $newline . sprintf("%.2f",$moonphase*100) . "|";
+		# Collect hourly record for direct JSON construction
+		{
+			push @hourly_json_data, {
+				period              => $i,
+				epoch               => $ep,
+				datetime            => _epoch_to_iso($ep, $h_tz_long),
+				temperature         => sprintf("%.1f", $temps->linear($ep)),
+				feelslike           => sprintf("%.1f", $fltemps->linear($ep)),
+				heat_index          => sprintf("%.1f", $his->linear($ep)),
+				humidity            => sprintf("%.0f", $hums->linear($ep)),
+				wind_direction_desc => wind_direction_text($winddirs->linear($ep), \%L),
+				wind_direction_deg  => sprintf("%.1f", $winddirs->linear($ep)),
+				wind_speed          => sprintf("%.1f", $winds->linear($ep)),
+				windchill           => sprintf("%.1f", $fltemps->linear($ep)),
+				pressure            => sprintf("%.1f", $pressures->linear($ep)),
+				dewpoint            => sprintf("%.1f", $dewps->linear($ep)),
+				sky_percent         => sprintf("%.0f", $clouds->linear($ep)),
+				sky_description     => -9999,
+				uv_index            => sprintf("%.0f", $uvis->linear($ep)),
+				precip_mm           => sprintf("%.2f", $precs->linear($ep)),
+				snow_cm             => -9999,
+				precip_probability  => sprintf("%.0f", $pops->linear($ep)),
+				weather_icon        => $icon,
+				weather_code        => $code,
+				weather_description => $weatherdes,
+				ozone               => -9999,
+				solar_radiation     => -9999,
+				visibility          => sprintf("%.1f", $viss->linear($ep)),
+				moon_percent        => sprintf("%.2f", $moonillum * 100),
+				moon_age            => sprintf("%.2f", $moonage),
+				moon_phase          => sprintf("%.2f", $moonphase * 100),
+			};
+		}
 		# Save new line / dataset
 		print F "$i|$ep|";
 		$t = Time::Piece->new ($ep);
@@ -825,18 +1015,18 @@ if ($hourlysize > 100) {
 
 }
 
-# Write JSON files from the .dat files
-if ($current) {
-    eval { write_current_json($lbplogdir, source => "wttr.in", grabber => "grabber_wttrin.pl") };
-    LOGWARN "JSON write failed: $@" if $@;
+# Write JSON files directly from API data (no .dat round-trip)
+if ($current && %current_json_data) {
+    eval { write_current_json($lbplogdir, data => \%current_json_data, source => "wttr.in", grabber => "grabber_wttrin.pl") };
+    LOGWARN "JSON write failed (current): $@" if $@;
 }
-if ($daily) {
-    eval { write_daily_json($lbplogdir, source => "wttr.in", grabber => "grabber_wttrin.pl") };
-    LOGWARN "JSON write failed: $@" if $@;
+if ($daily && @daily_json_data) {
+    eval { write_daily_json($lbplogdir, data => \@daily_json_data, source => "wttr.in", grabber => "grabber_wttrin.pl") };
+    LOGWARN "JSON write failed (daily): $@" if $@;
 }
-if ($hourly) {
-    eval { write_hourly_json($lbplogdir, source => "wttr.in", grabber => "grabber_wttrin.pl") };
-    LOGWARN "JSON write failed: $@" if $@;
+if ($hourly && @hourly_json_data) {
+    eval { write_hourly_json($lbplogdir, data => \@hourly_json_data, source => "wttr.in", grabber => "grabber_wttrin.pl") };
+    LOGWARN "JSON write failed (hourly): $@" if $@;
 }
 
 # Give OK status to client.

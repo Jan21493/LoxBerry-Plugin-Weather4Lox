@@ -14,8 +14,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: JSON Schema & Grabber Migration** - JSON-Schema definiert, alle Grabber schreiben JSON parallel zu .dat (Dual-Write) (completed 2026-03-12)
 - [ ] **Phase 2: Delivery Layer Migration** - datatoloxone.pl liest JSON statt .dat, UDP/MQTT Delivery unverandert
-- [ ] **Phase 3: CGI JSON Endpoint** - show.cgi liefert JSON-Wetterdaten mit korrekten HTTP-Headers
-- [ ] **Phase 4: ocean-live Theme Grundgerust** - Einzelne HTML-Datei mit Ocean-Design, Tabs, Hero-Bereich und 7-Tage-Ubersicht
+- [x] **Phase 3: CGI JSON Endpoint** - show.cgi liefert JSON-Wetterdaten mit korrekten HTTP-Headers (completed 2026-03-13)
+- [x] **Phase 4: ocean-live Theme Grundgerust** - Einzelne HTML-Datei mit Ocean-Design, Tabs, Hero-Bereich und 7-Tage-Ubersicht (completed 2026-03-13)
 - [ ] **Phase 5: Datenanbindung & Vollstandigkeit** - AJAX-Datenladen, Mehrsprachigkeit, Auto-Refresh, Fehlerbehandlung
 
 ## Phase Details
@@ -59,7 +59,10 @@ Plans:
   2. Ein Browser-Aufruf mit type=hourly bzw. type=daily gibt die jeweiligen JSON-Daten zuruck
   3. Die HTTP-Response enthalt Cache-Control: no-cache Header
   4. Der Endpoint gibt die JSON-Daten aus den auf der RAM-Disk liegenden JSON-Dateien zuruck
-**Plans**: TBD
+**Plans:** 1/1 plans complete
+
+Plans:
+- [ ] 03-01-PLAN.md — Insert JSON API endpoint into show.cgi (format=json&type=current|hourly|daily with error handling)
 
 ### Phase 4: ocean-live Theme Grundgerust
 **Goal**: Eine einzelne HTML-Datei in webfrontend/html/ mit dem vollstandigen Ocean-Design, 3 Tabs, Hero-Bereich und 7-Tage-Ubersicht — visuell vollstandig, noch ohne Live-Daten
@@ -71,7 +74,10 @@ Plans:
   3. Der Hero-Bereich zeigt Temperatur, Wetter-Icon, Beschreibung, Wind und Feuchtigkeit gross an
   4. Eine horizontale Stundenleiste ist sichtbar; Klick auf eine Stunde aktualisiert den Hero-Bereich mit den Werten dieser Stunde
   5. Der Tage-Tab zeigt eine 7-Tage-Ubersicht mit Icon, Hoch/Tief-Temperatur und Niederschlagswahrscheinlichkeit pro Tag
-**Plans**: TBD
+**Plans:** 1/1 plans complete
+
+Plans:
+- [ ] 04-01-PLAN.md — Create complete ocean-live.html with Ocean design, tabs, hero, hour strip, 7-day overview (mock data)
 
 ### Phase 5: Datenanbindung & Vollstandigkeit
 **Goal**: Das ocean-live Theme ladt Wetterdaten und Sprachstrings live per AJAX, aktualisiert sich automatisch und behandelt Fehler sauber — vollstandig produktionsreif
@@ -83,6 +89,12 @@ Plans:
   3. Wahrenddessen eine Ladeanzeige zu sehen ist; bei Fehler erscheint eine verstandliche Fehlermeldung
   4. Das Theme aktualisiert die Daten automatisch alle 5+ Minuten ohne Seiten-Reload
   5. Sonnenaufgang und Sonnenuntergang sind im Hero-Bereich sichtbar
+**Plans:** 2/3 plans executed
+
+Plans:
+- [ ] 05-01-PLAN.md — Extend lang files with new theme keys + add DOM infrastructure (data-i18n, IDs, loading/error UI)
+- [ ] 05-02-PLAN.md — Replace mock data with AJAX loading (loadAllData, icon mapping, i18n, auto-refresh)
+- [ ] 05-03-PLAN.md — Human verification of complete live theme
 
 ## Progress
 
@@ -93,6 +105,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. JSON Schema & Grabber Migration | 3/3 | Complete   | 2026-03-12 |
 | 2. Delivery Layer Migration | 0/1 | Planning complete | - |
-| 3. CGI JSON Endpoint | 0/TBD | Not started | - |
-| 4. ocean-live Theme Grundgerust | 0/TBD | Not started | - |
-| 5. Datenanbindung & Vollstandigkeit | 0/TBD | Not started | - |
+| 3. CGI JSON Endpoint | 1/1 | Complete   | 2026-03-13 |
+| 4. ocean-live Theme Grundgerust | 1/1 | Complete   | 2026-03-13 |
+| 5. Datenanbindung & Vollstandigkeit | 2/3 | In Progress|  |
