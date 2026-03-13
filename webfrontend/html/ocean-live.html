@@ -329,9 +329,13 @@ function loadAllData() {
     fetch('icons/' + ICONSET + '/icon_mapping.json').then(checkOk).then(function(r) { return r.json(); })
   ]).then(function(results) {
     hideLoading();
-    liveData.current = results[0].data;
+    liveData.current = (results[0] && results[0].data) || results[0] || {};
     liveData.lang = results[3];
-    liveData.iconMapping = results[4].icons;
+    liveData.iconMapping = (results[4] && results[4].icons) || {};
+
+    if (!liveData.current.datetime) {
+      throw new Error('current.json: kein datetime-Feld gefunden');
+    }
 
     // Split hourly into today/tomorrow using datetime from current.json as reference
     var todayStr = liveData.current.datetime.slice(0, 10);
@@ -341,13 +345,15 @@ function loadAllData() {
     var pad2 = function(n) { return n < 10 ? '0' + n : '' + n; };
     var tomorrowStr = tomorrowDate.getFullYear() + '-' + pad2(tomorrowDate.getMonth() + 1) + '-' + pad2(tomorrowDate.getDate());
 
-    var hourlyRaw = results[1].data;
-    liveData.hourlyToday = hourlyRaw.filter(function(h) { return h.datetime.slice(0, 10) === todayStr; });
-    liveData.hourlyTomorrow = hourlyRaw.filter(function(h) { return h.datetime.slice(0, 10) === tomorrowStr; });
+    var hourlyRaw = (results[1] && results[1].data) || results[1] || [];
+    if (!Array.isArray(hourlyRaw)) hourlyRaw = [];
+    liveData.hourlyToday = hourlyRaw.filter(function(h) { return h.datetime && h.datetime.slice(0, 10) === todayStr; });
+    liveData.hourlyTomorrow = hourlyRaw.filter(function(h) { return h.datetime && h.datetime.slice(0, 10) === tomorrowStr; });
 
     // Transform daily data
-    var dailyRaw = results[2].data;
-    var weekdaysShort = liveData.lang.theme.weekdays_short;
+    var dailyRaw = (results[2] && results[2].data) || results[2] || [];
+    if (!Array.isArray(dailyRaw)) dailyRaw = [];
+    var weekdaysShort = (liveData.lang && liveData.lang.theme && liveData.lang.theme.weekdays_short) || ['So','Mo','Di','Mi','Do','Fr','Sa'];
     liveData.daily = dailyRaw.map(function(d) {
       var dt = new Date(d.datetime);
       return {
@@ -372,6 +378,7 @@ function loadAllData() {
 
 // ===== ICON RESOLUTION via icon_mapping.json =====
 function isDaytime(datetimeStr, sunriseStr, sunsetStr) {
+  if (!datetimeStr) return true;
   var h = parseInt(datetimeStr.slice(11, 13));
   var sr = parseInt((sunriseStr || '06:00').split(':')[0]);
   var ss = parseInt((sunsetStr || '20:00').split(':')[0]);
@@ -398,7 +405,7 @@ function resolveIcon(weatherCode, dn) {
 // ===== TRANSFORM HOURLY for renderHourStrip =====
 function transformHourly(hourlyArray, sunriseStr, sunsetStr) {
   return hourlyArray.map(function(h) {
-    var hourStr = h.datetime.slice(11, 13);
+    var hourStr = (h.datetime || '').slice(11, 13);
     var dn = isDaytime(h.datetime, sunriseStr, sunsetStr) ? 'day' : 'night';
     return {
       hour: hourStr,
