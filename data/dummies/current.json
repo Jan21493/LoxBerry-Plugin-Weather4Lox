@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "schema_version": "1.0",
+    "source": "Dummy",
+    "grabber": "postinstall.sh",
+    "generated_at": "2016-10-09T09:13:11+02:00"
+  },
+  "data": {
+    "datetime": "2016-10-09T09:13:11+02:00",
+    "epoch": 1475997191,
+    "timezone": "Europe/Berlin",
+    "city": "Dresden, Radebeul",
+    "country": "Germany",
+    "country_code": "DE",
+    "latitude": 51.114002,
+    "longitude": 13.666002,
+    "elevation": 224.9424,
+    "temperature": 7.5,
+    "feels_like": 6,
+    "humidity": 91,
+    "wind_direction_desc": "West",
+    "wind_direction": 270,
+    "wind_speed": 7.9,
+    "wind_gust": 11.3,
+    "wind_bft": 6,
+    "pressure": 1021,
+    "uv_index": 6,
+    "visibility": 10.0,
+    "dew_point": 0,
+    "precip_today": 0,
+    "precip_1hr": 0,
+    "snow_1hr": 0,
+    "weather_code": "mostlycloudy",
+    "weather_id": 3,
+    "weather_description": "Wolkig",
+    "cloud_cover": 51,
+    "moon_phase": 7,
+    "moon_phase_name": "Erstes Viertel",
+    "sunrise": "07:19",
+    "sunset": "18:24"
+  }
+}

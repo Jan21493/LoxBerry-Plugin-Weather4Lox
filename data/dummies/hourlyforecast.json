@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "schema_version": "1.0",
+    "source": "Dummy",
+    "grabber": "postinstall.sh",
+    "generated_at": "2016-10-09T10:00:00+02:00"
+  },
+  "data": [
+    {
+      "datetime": "2016-10-09T10:00:00+02:00",
+      "epoch": 1476000000,
+      "temperature": 8,
+      "feels_like": 6,
+      "humidity": 87,
+      "wind_direction_desc": "WNW",
+      "wind_direction": 286,
+      "wind_speed": 13,
+      "pressure": 1022,
+      "uv_index": 6,
+      "cloud_cover": 86,
+      "precip_probability": 0,
+      "precip_amount": 0,
+      "snow_amount": 0,
+      "weather_code": "cloudy",
+      "weather_description": "Bedeckt"
+    },
+    {
+      "datetime": "2016-10-09T11:00:00+02:00",
+      "epoch": 1476003600,
+      "temperature": 9,
+      "feels_like": 9,
+      "humidity": 86,
+      "wind_direction_desc": "WNW",
+      "wind_direction": 291,
+      "wind_speed": 14,
+      "pressure": 1023,
+      "uv_index": 7,
+      "cloud_cover": 89,
+      "precip_probability": 0,
+      "precip_amount": 0,
+      "snow_amount": 0,
+      "weather_code": "cloudy",
+      "weather_description": "Bedeckt"
+    },
+    {
+      "datetime": "2016-10-09T12:00:00+02:00",
+      "epoch": 1476007200,
+      "temperature": 9,
+      "feels_like": 9,
+      "humidity": 84,
+      "wind_direction_desc": "WNW",
+      "wind_direction": 293,
+      "wind_speed": 13,
+      "pressure": 1023,
+      "uv_index": 7,
+      "cloud_cover": 89,
+      "precip_probability": 0,
+      "precip_amount": 0,
+      "snow_amount": 0,
+      "weather_code": "cloudy",
+      "weather_description": "Bedeckt"
+    }
+  ]
+}

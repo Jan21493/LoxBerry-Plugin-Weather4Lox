@@ -67,6 +67,15 @@ fi
 if [ ! -e $LBPLOG/REPLACELBPPLUGINDIR/index.txt ]; then
 	cp $LBPDATA/$ARGV3/dummies/index.txt $LBPLOG/$ARGV3/ > /dev/null 2>&1
 fi
+if [ ! -e $LBPLOG/$ARGV3/current.json ]; then
+	cp $LBPDATA/$ARGV3/dummies/current.json $LBPLOG/$ARGV3/ > /dev/null 2>&1
+fi
+if [ ! -e $LBPLOG/$ARGV3/dailyforecast.json ]; then
+	cp $LBPDATA/$ARGV3/dummies/dailyforecast.json $LBPLOG/$ARGV3/ > /dev/null 2>&1
+fi
+if [ ! -e $LBPLOG/$ARGV3/hourlyforecast.json ]; then
+	cp $LBPDATA/$ARGV3/dummies/hourlyforecast.json $LBPLOG/$ARGV3/ > /dev/null 2>&1
+fi
 REPLACELBPBINDIR/weather4lox_cronjob.sh > /dev/null 2>&1
 
 echo "<INFO> Creating Symlinks in Webfolder"
