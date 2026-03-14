@@ -233,24 +233,34 @@ my %DROP_FORECAST = map { $_ => 1 } qw(
 
 # ── Helpers ─────────────────────────────────────────────────────────
 
-# safely navigate nested data structures (hashes and arrays) without risking "Can't use string as hashref/arrayref" errors
+# Robust get_value: returns undef if any path segment is missing or invalid.
+# If the current node is an ARRAYref, only numeric indices are accepted.
 sub get_value {
     my ($root, @path) = @_;
     my $cur = $root;
+
     for my $p (@path) {
         return undef unless defined $cur;
+
         if (ref $cur eq 'ARRAY') {
-            return undef unless defined $cur->[$p];
-            $cur = $cur->[$p];
-        } elsif (ref $cur eq 'HASH') {
+            # only accept numeric indices for arrays
+            return undef unless defined $p && looks_like_number($p);
+            my $idx = int($p);
+            return undef if $idx < 0 || $idx > $#$cur;    # out of bounds
+            $cur = $cur->[$idx];
+        }
+        elsif (ref $cur eq 'HASH') {
             return undef unless exists $cur->{$p};
             $cur = $cur->{$p};
-        } else {
+        }
+        else {
             return undef;
         }
     }
+
     return $cur;
 }
+
 
 # Get value via safe_path, format with sprintf($fmt).
 sub get_formatted {
@@ -689,12 +699,13 @@ sub write_json_file {
         meta => { schema_version => "1.0", 
                   source => $source,
                   grabber => $grabber, 
+                  type => $type,
                   generated_at => $generated_at },
         data => \%data,
     );
 
     my $json_obj = JSON::PP->new->pretty->canonical->utf8;
-    my $out = "$logdir/$source.json";
+    my $out = "$logdir/$type.json";
     my $tmp = "$out.tmp";
     eval {
         open my $fh, '>:raw', $tmp or die "Cannot open $tmp: $!";
