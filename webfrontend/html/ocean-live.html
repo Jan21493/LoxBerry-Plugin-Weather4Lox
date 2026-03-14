@@ -9,7 +9,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    * { font-family: 'Outfit', sans-serif; }
+    * { font-family: 'Outfit', sans-serif; -webkit-user-select: none; user-select: none; }
     .mono { font-family: 'Outfit', sans-serif; font-variant-numeric: tabular-nums; }
 
     /* ===== THEME VARIABLES ===== */
@@ -233,16 +233,63 @@
       .astro-row { grid-template-columns: repeat(2,1fr); }
     }
     @media (max-width: 600px) {
-      body { padding: 6px; }
-      .hero-temp { font-size: 3.5rem; }
-      .hero-icon-box { width: 100px; height: 100px; }
-      .hero-icon { width: 76px; height: 76px; }
-      .extra-row { grid-template-columns: repeat(2,1fr); }
-      .drow { grid-template-columns: 56px 40px 1fr; }
+      body { padding: 4px; }
+      .header { margin-bottom: 12px; gap: 8px; }
+      .hdr-title { font-size: 1.1rem; }
+      .hdr-meta { font-size: 0.72rem; }
+      .hdr-logo { width: 30px; height: 30px; border-radius: 8px; }
+      .controls { gap: 6px; }
+      .theme-btn { width: 34px; height: 34px; border-radius: 10px; }
+      .tabs { flex-wrap: nowrap; gap: 2px; padding: 3px; }
+      .tab { padding: 6px 12px; font-size: 0.75rem; white-space: nowrap; }
+      .glass { border-radius: 14px; }
+      .hero { padding: 16px; }
+      .hero-row { gap: 12px; }
+      .hero-temp { font-size: 3.2rem; }
+      .hero-temp sup { font-size: 1.4rem; }
+      .hero-desc { font-size: 0.95rem; }
+      .hero-icon-box { width: 90px; height: 90px; }
+      .hero-icon { width: 68px; height: 68px; }
+      .astro-row { grid-template-columns: repeat(2,1fr); gap: 8px; margin-top: 14px; padding-top: 12px; }
+      .astro-emoji { width: 32px; height: 32px; font-size: 1.1rem; border-radius: 8px; }
+      .astro-label { font-size: 0.6rem; }
+      .astro-val { font-size: 0.85rem; }
+      .side-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .stat { padding: 12px; }
+      .stat-label { font-size: 0.6rem; }
+      .stat-val { font-size: 1rem; }
+      .extra-row { grid-template-columns: repeat(3,1fr); gap: 6px; margin-top: 10px; }
+      .extra { padding: 10px 8px; }
+      .hour-strip-wrap { padding: 0 4px; }
+      .hour-strip-title { font-size: 0.68rem; margin-bottom: 6px; }
+      .hcard { min-width: 72px; padding: 10px 6px; border-radius: 12px; }
+      .hcard-icon { width: 28px; height: 28px; margin: 0 auto 4px; }
+      .hcard-temp { font-size: 1rem; }
+      .hcard-time { font-size: 0.65rem; margin-bottom: 4px; }
+      .hcard-pop { font-size: 0.62rem; }
+      .chart-wrap { margin-top: 10px; }
+      .daily-wrap { padding: 14px; }
+      .daily-wrap h2 { font-size: 0.95rem; margin-bottom: 10px; }
+      .drow { grid-template-columns: 52px 36px 1fr; gap: 8px; padding: 10px 12px; border-radius: 12px; margin-bottom: 4px; }
       .drow-desc, .drow-pop { display: none; }
-      .tabs { flex-wrap: wrap; }
-      .tab { padding: 7px 12px; font-size: 0.78rem; }
-      .side-stats { grid-template-columns: 1fr 1fr; }
+      .drow-day { font-size: 0.82rem; }
+      .drow-date { font-size: 0.68rem; }
+      .drow-icon { width: 32px; height: 32px; }
+      .drow-lo, .drow-hi { font-size: 0.78rem; min-width: 26px; }
+      .drow-detail-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .drow-detail-label { font-size: 0.6rem; }
+      .drow-detail-val { font-size: 0.82rem; }
+      .footer { margin-top: 16px; padding: 8px; font-size: 0.68rem; }
+    }
+    @media (max-width: 380px) {
+      .hero-row { flex-direction: column; align-items: flex-start; }
+      .hero-icon-box { align-self: center; }
+      .hero-temp { font-size: 2.8rem; }
+      .astro-row { grid-template-columns: 1fr 1fr; gap: 6px; }
+      .extra-row { grid-template-columns: repeat(2,1fr); }
+      .drow { grid-template-columns: 44px 30px 1fr; gap: 6px; padding: 8px 10px; }
+      .drow-icon { width: 28px; height: 28px; }
+      .hcard { min-width: 64px; padding: 8px 4px; }
     }
 
     /* ===== LOADING OVERLAY ===== */
@@ -383,8 +430,11 @@ function loadAllData() {
         pop: d.precip_probability,
         desc: d.weather_description,
         wind: d.wind_speed,
+        windGust: d.wind_gust,
         windDir: d.wind_direction_desc,
         humidity: d.humidity,
+        humidityMax: d.humidity_max,
+        humidityMin: d.humidity_min,
         sunrise: d.sunrise,
         sunset: d.sunset,
         precip: d.precip_amount,
@@ -436,10 +486,15 @@ function transformHourly(hourlyArray, sunriseStr, sunsetStr) {
     return {
       hour: hourStr,
       temp: h.temperature,
+      feelsLike: h.feels_like,
       pop: h.precip_probability,
+      precip: h.precip_amount,
       wind: h.wind_speed,
       wind_dir: h.wind_direction_desc,
       humidity: h.humidity,
+      pressure: h.pressure,
+      uvi: h.uv_index,
+      clouds: h.cloud_cover,
       weatherCode: h.weather_code,
       dn: dn,
       desc: h.weather_description
@@ -807,9 +862,11 @@ function renderDaily(containerId, dataArray) {
     row.className = 'drow glass' + (i === 0 ? ' today' : '');
     var detailHtml = '<div class="drow-detail"><div class="drow-detail-grid">';
     if (d.wind != null) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Wind</div><div class="drow-detail-val">' + d.wind + ' km/h' + (d.windDir ? ' ' + d.windDir : '') + '</div></div>';
-    if (d.humidity != null) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Feuchte</div><div class="drow-detail-val">' + d.humidity + '%</div></div>';
+    if (d.windGust != null) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">B\u00f6en</div><div class="drow-detail-val">' + d.windGust + ' km/h</div></div>';
+    if (d.humidity != null) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Feuchte</div><div class="drow-detail-val">' + d.humidity + '%' + (d.humidityMin != null && d.humidityMax != null ? ' (' + d.humidityMin + '-' + d.humidityMax + ')' : '') + '</div></div>';
     if (d.precip != null) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Niederschlag</div><div class="drow-detail-val">' + d.precip + ' mm</div></div>';
-    if (d.sunrise) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Sonne</div><div class="drow-detail-val">' + d.sunrise + ' - ' + (d.sunset || '') + '</div></div>';
+    if (d.sunrise) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Sonnenaufgang</div><div class="drow-detail-val">' + d.sunrise + '</div></div>';
+    if (d.sunset) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Sonnenuntergang</div><div class="drow-detail-val">' + d.sunset + '</div></div>';
     if (d.uvi != null) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">UV-Index</div><div class="drow-detail-val">' + d.uvi + '</div></div>';
     if (d.snow != null && d.snow > 0) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Schnee</div><div class="drow-detail-val">' + d.snow + ' cm</div></div>';
     detailHtml += '</div></div>';
@@ -821,7 +878,14 @@ function renderDaily(containerId, dataArray) {
       (d.pop != null ? '<div class="drow-pop">' + d.pop + '%</div>' : '<div class="drow-pop"></div>') +
       '<div class="drow-temps"><span class="drow-lo mono">' + Math.round(d.low) + '&deg;</span><div class="drow-bar"><div class="drow-fill" id="bar' + i + '"></div></div><span class="drow-hi mono">' + Math.round(d.high) + '&deg;</span></div>' +
       detailHtml;
-    row.onclick = function() { this.classList.toggle('expanded'); };
+    (function(r) {
+      r.onclick = function() {
+        var wasExpanded = r.classList.contains('expanded');
+        // Collapse all other rows (accordion)
+        container.querySelectorAll('.drow.expanded').forEach(function(c) { c.classList.remove('expanded'); });
+        if (!wasExpanded) r.classList.add('expanded');
+      };
+    })(row);
     container.appendChild(row);
   }
   // Calculate temp bar positions
@@ -836,8 +900,8 @@ function renderDaily(containerId, dataArray) {
   for (var i = 0; i < dataArray.length; i++) {
     var b = document.getElementById('bar' + i);
     if (!b) continue;
-    b.style.left = (Math.max(0, (dataArray[i].low - mn) / rng) * 100) + '%';
-    b.style.width = (Math.max(2, (dataArray[i].high - dataArray[i].low) / rng) * 100) + '%';
+    b.style.left = ((dataArray[i].low - mn) / rng * 100) + '%';
+    b.style.width = Math.max(4, (dataArray[i].high - dataArray[i].low) / rng * 100) + '%';
   }
 }
 
@@ -928,22 +992,35 @@ document.querySelectorAll('.tab').forEach(function(btn) {
 // ===== DRAG SCROLL for hour strips =====
 function makeDragScroll(el) {
   if (!el) return;
-  var down = false, sx = 0, sl = 0;
-  el.style.cursor = 'grab';
-  el.addEventListener('pointerdown', function(e) {
+  var down = false, dragged = false, sx = 0, sl = 0;
+  el.addEventListener('mousedown', function(e) {
     if (e.button !== 0) return;
-    down = true; sx = e.clientX; sl = el.scrollLeft;
-    el.style.cursor = 'grabbing';
-    el.setPointerCapture(e.pointerId);
+    down = true; dragged = false; sx = e.clientX; sl = el.scrollLeft;
+    e.preventDefault();
   });
-  el.addEventListener('pointermove', function(e) {
+  document.addEventListener('mousemove', function(e) {
     if (!down) return;
-    el.scrollLeft = sl - (e.clientX - sx);
+    if (Math.abs(e.clientX - sx) > 5) dragged = true;
+    if (dragged) el.scrollLeft = sl - (e.clientX - sx);
   });
-  var end = function() { down = false; el.style.cursor = 'grab'; };
-  el.addEventListener('pointerup', end);
-  el.addEventListener('pointercancel', end);
-  el.addEventListener('mouseleave', end);
+  document.addEventListener('mouseup', function() {
+    if (!down) return;
+    down = false;
+  });
+  // Touch support
+  el.addEventListener('touchstart', function(e) {
+    down = true; dragged = false; sx = e.touches[0].clientX; sl = el.scrollLeft;
+  }, {passive: true});
+  el.addEventListener('touchmove', function(e) {
+    if (!down) return;
+    if (Math.abs(e.touches[0].clientX - sx) > 5) dragged = true;
+    if (dragged) el.scrollLeft = sl - (e.touches[0].clientX - sx);
+  }, {passive: true});
+  el.addEventListener('touchend', function() { down = false; });
+  // Block click after drag
+  el.addEventListener('click', function(e) {
+    if (dragged) { e.stopPropagation(); dragged = false; }
+  }, true);
   el.addEventListener('wheel', function(e) {
     if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
       el.scrollLeft += e.deltaY;
@@ -956,6 +1033,10 @@ function makeDragScroll(el) {
 function renderTempChart(svgId, dataArray) {
   var svg = document.getElementById(svgId);
   if (!svg || !dataArray || !dataArray.length) return;
+
+  var isHeute = (svgId === 'tempChartHeute');
+  var stripId = isHeute ? 'hourStripHeute' : 'hourStripMorgen';
+  var stripDataArray = isHeute ? hourlyTodayRendered : hourlyTomorrowRendered;
 
   var temps = dataArray.map(function(d) { return d.temp; });
   var n = temps.length;
@@ -972,13 +1053,13 @@ function renderTempChart(svgId, dataArray) {
   svg.setAttribute('height', H);
   svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
 
-  function x(i) { return padL + i * step; }
-  function y(t) { return yBot - ((t - minT) / range) * chartH; }
+  function xPos(i) { return padL + i * step; }
+  function yPos(t) { return yBot - ((t - minT) / range) * chartH; }
 
   var pts = [];
-  for (var i = 0; i < n; i++) pts.push(x(i) + ',' + y(temps[i]));
+  for (var i = 0; i < n; i++) pts.push(xPos(i) + ',' + yPos(temps[i]));
 
-  var area = padL + ',' + yBot + ' ' + pts.join(' ') + ' ' + x(n-1) + ',' + yBot;
+  var area = padL + ',' + yBot + ' ' + pts.join(' ') + ' ' + xPos(n-1) + ',' + yBot;
 
   var labels = '', dots = '', gridLines = '', yAxis = '';
   var cs = getComputedStyle(document.documentElement);
@@ -990,40 +1071,47 @@ function renderTempChart(svgId, dataArray) {
   var yStep = range / ySteps;
   for (var s = 0; s <= ySteps; s++) {
     var tv = minT + s * yStep;
-    var yp = y(tv);
+    var yp = yPos(tv);
     yAxis += '<text x="' + (padL - 6) + '" y="' + (yp + 3) + '" text-anchor="end" font-size="9" fill="' + labelC + '" font-family="Outfit,sans-serif">' + Math.round(tv) + '\u00b0</text>';
     yAxis += '<line x1="' + padL + '" y1="' + yp + '" x2="' + (W - padR) + '" y2="' + yp + '" stroke="' + gridC + '" stroke-dasharray="3,3" />';
   }
 
-  // Determine which strip this chart belongs to
-  var isHeute = (svgId === 'tempChartHeute');
-  var stripDataArray = isHeute ? hourlyTodayRendered : hourlyTomorrowRendered;
-  var stripId = isHeute ? 'hourStripHeute' : 'hourStripMorgen';
-
   for (var i = 0; i < n; i++) {
+    var tPct = (temps[i] - minT) / range;
     if (i % 3 === 0) {
-      gridLines += '<line x1="'+x(i)+'" y1="'+yTop+'" x2="'+x(i)+'" y2="'+yBot+'" stroke="'+gridC+'" />';
-      labels += '<text x="'+x(i)+'" y="14" text-anchor="middle" font-size="9" fill="'+labelC+'" font-family="Outfit,sans-serif">'+dataArray[i].hour+':00</text>';
-      labels += '<text x="'+x(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9" fill="'+labelC+'" font-family="Outfit,sans-serif">'+Math.round(temps[i])+'\u00b0</text>';
+      gridLines += '<line x1="'+xPos(i)+'" y1="'+yTop+'" x2="'+xPos(i)+'" y2="'+yBot+'" stroke="'+gridC+'" />';
+      labels += '<text x="'+xPos(i)+'" y="14" text-anchor="middle" font-size="9" fill="'+labelC+'" font-family="Outfit,sans-serif">'+dataArray[i].hour+':00</text>';
+      labels += '<text x="'+xPos(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9" fill="'+labelC+'" font-family="Outfit,sans-serif">'+Math.round(temps[i])+'\u00b0</text>';
     }
-    dots += '<circle cx="'+x(i)+'" cy="'+y(temps[i])+'" r="3" fill="var(--sky)" stroke="rgba(255,255,255,0.2)" stroke-width="1" class="chart-dot" data-idx="'+i+'" data-strip="'+stripId+'" style="cursor:pointer" />';
+    dots += '<circle cx="'+xPos(i)+'" cy="'+yPos(temps[i])+'" r="3" fill="url(#dotG-'+svgId+')" stroke="rgba(255,255,255,0.2)" stroke-width="1" class="chart-dot" data-idx="'+i+'" data-strip="'+stripId+'" style="cursor:pointer"><set attributeName="fill" to="hsl('+Math.round(200 - tPct * 160)+',80%,55%)"/></circle>';
+  }
+
+  // Build gradient stops based on actual temperature at each point
+  var lineStops = '';
+  for (var i = 0; i < n; i++) {
+    var pct = (i / Math.max(1, n - 1) * 100).toFixed(1);
+    var tPct = (temps[i] - minT) / range;
+    var hue = Math.round(200 - tPct * 160);
+    lineStops += '<stop offset="'+pct+'%" stop-color="hsl('+hue+',80%,55%)"/>';
   }
 
   svg.innerHTML =
-    '<defs><linearGradient id="areaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--sky)" stop-opacity="0.2"/><stop offset="100%" stop-color="var(--sky)" stop-opacity="0"/></linearGradient></defs>' +
+    '<defs>' +
+    '<linearGradient id="lineG-'+svgId+'" x1="0" y1="0" x2="1" y2="0">' + lineStops + '</linearGradient>' +
+    '<linearGradient id="areaG-'+svgId+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--sky)" stop-opacity="0.15"/><stop offset="100%" stop-color="var(--amber)" stop-opacity="0"/></linearGradient>' +
+    '</defs>' +
     yAxis + gridLines +
     '<line x1="'+padL+'" y1="'+yBot+'" x2="'+(W-padR)+'" y2="'+yBot+'" stroke="'+gridC+'" />' +
-    '<path d="M '+area+'" fill="url(#areaG)" />' +
-    '<polyline points="'+pts.join(' ')+'" fill="none" stroke="var(--sky)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' +
+    '<path d="M '+area+'" fill="url(#areaG-'+svgId+')" />' +
+    '<polyline points="'+pts.join(' ')+'" fill="none" stroke="url(#lineG-'+svgId+')" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' +
     dots + labels +
-    '<circle class="chart-highlight" cx="'+x(0)+'" cy="'+y(temps[0])+'" r="6" fill="var(--sky)" stroke="var(--text-primary)" stroke-width="2" opacity="0.9" />';
+    '<circle class="chart-highlight" cx="'+xPos(0)+'" cy="'+yPos(temps[0])+'" r="6" fill="var(--amber)" stroke="var(--text-primary)" stroke-width="2" opacity="0.9" />';
 
   // Click on chart dots → select corresponding hour card
   svg.querySelectorAll('.chart-dot').forEach(function(dot) {
     dot.addEventListener('click', function() {
       var idx = parseInt(dot.getAttribute('data-idx'));
-      var sid = dot.getAttribute('data-strip');
-      var cards = document.getElementById(sid).querySelectorAll('.hcard');
+      var cards = document.getElementById(stripId).querySelectorAll('.hcard');
       if (cards[idx]) selectHour(cards[idx], stripDataArray);
     });
   });
@@ -1039,6 +1127,9 @@ function highlightChartPoint(svgId, idx, dataArray) {
   var H = 140, step = 32, padL = 40, yTop = 32, yBot = H - 28, chartH = yBot - yTop;
   hl.setAttribute('cx', padL + idx * step);
   hl.setAttribute('cy', yBot - ((temps[idx] - minT) / range) * chartH);
+  var tPct = (temps[idx] - minT) / range;
+  var hue = Math.round(200 - tPct * 160);
+  hl.setAttribute('fill', 'hsl('+hue+',80%,55%)');
 
   var wrap = svg.parentElement;
   if (wrap) wrap.scrollLeft = Math.max(0, (padL + idx * step) - wrap.clientWidth / 2);
