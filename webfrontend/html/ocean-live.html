@@ -866,6 +866,10 @@ function selectHour(el, dataArray) {
   document.getElementById('heroWind').textContent = d.wind + ' km/h ' + d.wind_dir;
   document.getElementById('heroHumidity').textContent = d.humidity + '%';
   document.getElementById('heroIcon').src = resolveIcon(d.weatherCode, d.dn);
+
+  // Sync chart highlight
+  var chartId = (tabName === 'morgen') ? 'tempChartMorgen' : 'tempChartHeute';
+  highlightChartPoint(chartId, idx, dataArray);
 }
 
 // ===== PRESELECT HOUR =====
@@ -959,7 +963,7 @@ function renderTempChart(svgId, dataArray) {
   var maxT = Math.max.apply(null, temps);
   var range = Math.max(1, maxT - minT);
 
-  var H = 140, step = 32, padL = 24, padR = 16;
+  var H = 140, step = 32, padL = 40, padR = 16;
   var yTop = 32, yBot = H - 28;
   var chartH = yBot - yTop;
   var W = padL + padR + (n - 1) * step;
@@ -976,27 +980,68 @@ function renderTempChart(svgId, dataArray) {
 
   var area = padL + ',' + yBot + ' ' + pts.join(' ') + ' ' + x(n-1) + ',' + yBot;
 
-  var labels = '', dots = '', gridLines = '';
+  var labels = '', dots = '', gridLines = '', yAxis = '';
   var cs = getComputedStyle(document.documentElement);
   var gridC = cs.getPropertyValue('--border').trim();
   var labelC = cs.getPropertyValue('--text-muted').trim();
+
+  // Y-axis labels
+  var ySteps = Math.max(2, Math.min(5, Math.ceil(range)));
+  var yStep = range / ySteps;
+  for (var s = 0; s <= ySteps; s++) {
+    var tv = minT + s * yStep;
+    var yp = y(tv);
+    yAxis += '<text x="' + (padL - 6) + '" y="' + (yp + 3) + '" text-anchor="end" font-size="9" fill="' + labelC + '" font-family="Outfit,sans-serif">' + Math.round(tv) + '\u00b0</text>';
+    yAxis += '<line x1="' + padL + '" y1="' + yp + '" x2="' + (W - padR) + '" y2="' + yp + '" stroke="' + gridC + '" stroke-dasharray="3,3" />';
+  }
+
+  // Determine which strip this chart belongs to
+  var isHeute = (svgId === 'tempChartHeute');
+  var stripDataArray = isHeute ? hourlyTodayRendered : hourlyTomorrowRendered;
+  var stripId = isHeute ? 'hourStripHeute' : 'hourStripMorgen';
 
   for (var i = 0; i < n; i++) {
     if (i % 3 === 0) {
       gridLines += '<line x1="'+x(i)+'" y1="'+yTop+'" x2="'+x(i)+'" y2="'+yBot+'" stroke="'+gridC+'" />';
       labels += '<text x="'+x(i)+'" y="14" text-anchor="middle" font-size="9" fill="'+labelC+'" font-family="Outfit,sans-serif">'+dataArray[i].hour+':00</text>';
-      labels += '<text x="'+x(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9" fill="'+labelC+'" font-family="Outfit,sans-serif">'+Math.round(temps[i])+'°</text>';
+      labels += '<text x="'+x(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9" fill="'+labelC+'" font-family="Outfit,sans-serif">'+Math.round(temps[i])+'\u00b0</text>';
     }
-    dots += '<circle cx="'+x(i)+'" cy="'+y(temps[i])+'" r="3" fill="var(--sky)" stroke="rgba(255,255,255,0.2)" stroke-width="1" />';
+    dots += '<circle cx="'+x(i)+'" cy="'+y(temps[i])+'" r="3" fill="var(--sky)" stroke="rgba(255,255,255,0.2)" stroke-width="1" class="chart-dot" data-idx="'+i+'" data-strip="'+stripId+'" style="cursor:pointer" />';
   }
 
   svg.innerHTML =
     '<defs><linearGradient id="areaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--sky)" stop-opacity="0.2"/><stop offset="100%" stop-color="var(--sky)" stop-opacity="0"/></linearGradient></defs>' +
-    gridLines +
+    yAxis + gridLines +
     '<line x1="'+padL+'" y1="'+yBot+'" x2="'+(W-padR)+'" y2="'+yBot+'" stroke="'+gridC+'" />' +
     '<path d="M '+area+'" fill="url(#areaG)" />' +
     '<polyline points="'+pts.join(' ')+'" fill="none" stroke="var(--sky)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' +
-    dots + labels;
+    dots + labels +
+    '<circle class="chart-highlight" cx="'+x(0)+'" cy="'+y(temps[0])+'" r="6" fill="var(--sky)" stroke="var(--text-primary)" stroke-width="2" opacity="0.9" />';
+
+  // Click on chart dots → select corresponding hour card
+  svg.querySelectorAll('.chart-dot').forEach(function(dot) {
+    dot.addEventListener('click', function() {
+      var idx = parseInt(dot.getAttribute('data-idx'));
+      var sid = dot.getAttribute('data-strip');
+      var cards = document.getElementById(sid).querySelectorAll('.hcard');
+      if (cards[idx]) selectHour(cards[idx], stripDataArray);
+    });
+  });
+}
+
+function highlightChartPoint(svgId, idx, dataArray) {
+  var svg = document.getElementById(svgId);
+  if (!svg || !dataArray || !dataArray.length) return;
+  var hl = svg.querySelector('.chart-highlight');
+  if (!hl) return;
+  var temps = dataArray.map(function(d) { return d.temp; });
+  var minT = Math.min.apply(null, temps), maxT = Math.max.apply(null, temps), range = Math.max(1, maxT - minT);
+  var H = 140, step = 32, padL = 40, yTop = 32, yBot = H - 28, chartH = yBot - yTop;
+  hl.setAttribute('cx', padL + idx * step);
+  hl.setAttribute('cy', yBot - ((temps[idx] - minT) / range) * chartH);
+
+  var wrap = svg.parentElement;
+  if (wrap) wrap.scrollLeft = Math.max(0, (padL + idx * step) - wrap.clientWidth / 2);
 }
 
 // ===== HIDE EMPTY DATA =====
