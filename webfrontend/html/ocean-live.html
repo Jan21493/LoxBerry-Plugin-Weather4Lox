@@ -484,6 +484,11 @@ function renderAll() {
   // Update header city
   document.getElementById('hdrCity').textContent = c.city || c.location || '--';
 
+  // Reset hero context
+  var ctx = document.getElementById('heroContext');
+  ctx.textContent = (liveData.lang && liveData.lang.theme && liveData.lang.theme.current) || 'Aktuell';
+  ctx.style.opacity = '0.6';
+
   // Update hero with current data
   document.getElementById('heroTemp').innerHTML = Math.round(c.temperature) + '<sup>\u00b0C</sup>';
   document.getElementById('heroDesc').textContent = c.weather_description || '--';
@@ -581,6 +586,7 @@ function scheduleRefresh() {
       <div class="glass hero accent-bg">
         <div class="hero-row">
           <div>
+            <div id="heroContext" style="font-size:0.75rem;font-weight:600;color:var(--sky);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;opacity:0;transition:opacity 0.3s"></div>
             <div class="hero-temp" id="heroTemp">--<sup>&deg;C</sup></div>
             <div class="hero-desc" id="heroDesc">--</div>
             <div class="hero-feels" id="heroWind" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">-- km/h</div>
@@ -841,6 +847,15 @@ function selectHour(el, dataArray) {
   el.classList.add('selected');
   var idx = parseInt(el.getAttribute('data-idx'));
   var d = dataArray[idx];
+
+  // Determine active tab for context label
+  var activeTab = document.querySelector('.tab.active');
+  var tabName = activeTab ? activeTab.getAttribute('data-tab') : 'heute';
+  var tabLabel = tabName === 'morgen' ? (activeTab ? activeTab.textContent : 'Morgen') : (activeTab ? activeTab.textContent : 'Heute');
+  var ctx = document.getElementById('heroContext');
+  ctx.textContent = tabLabel + ' ' + d.hour + ':00';
+  ctx.style.opacity = '1';
+
   var heroTemp = document.getElementById('heroTemp');
   heroTemp.style.opacity = '0';
   setTimeout(function() {
