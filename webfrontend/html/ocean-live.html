@@ -206,6 +206,14 @@
     .drow-hi { color: var(--amber); font-weight: 500; min-width: 30px; font-size: 0.85rem; }
     .drow-bar { flex: 1; height: 5px; border-radius: 3px; background: var(--temp-bar-bg); position: relative; overflow: hidden; }
     .drow-fill { position: absolute; top: 0; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--sky), var(--amber)); }
+    .drow { cursor: pointer; transition: all 0.2s; }
+    .drow:hover { border-color: var(--border-hover); }
+    .drow-detail { display: none; grid-column: 1 / -1; padding: 12px 0 4px; border-top: 1px solid var(--border); margin-top: 8px; }
+    .drow.expanded .drow-detail { display: block; }
+    .drow-detail-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .drow-detail-item { text-align: center; }
+    .drow-detail-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 2px; }
+    .drow-detail-val { font-size: 0.9rem; font-weight: 500; }
 
     /* ===== SVG TEMP CHART ===== */
     .chart-wrap {
@@ -373,7 +381,15 @@ function loadAllData() {
         high: d.high_temp,
         low: d.low_temp,
         pop: d.precip_probability,
-        desc: d.weather_description
+        desc: d.weather_description,
+        wind: d.wind_speed,
+        windDir: d.wind_direction_desc,
+        humidity: d.humidity,
+        sunrise: d.sunrise,
+        sunset: d.sunset,
+        precip: d.precip_amount,
+        snow: d.snow_amount,
+        uvi: d.uv_index
       };
     });
 
@@ -465,6 +481,9 @@ function renderAll() {
   }
   renderDaily('dailyWrap', liveData.daily);
 
+  // Update header city
+  document.getElementById('hdrCity').textContent = c.city || c.location || '--';
+
   // Update hero with current data
   document.getElementById('heroTemp').innerHTML = Math.round(c.temperature) + '<sup>\u00b0C</sup>';
   document.getElementById('heroDesc').textContent = c.weather_description || '--';
@@ -535,9 +554,9 @@ function scheduleRefresh() {
       </div>
       <div class="hdr-meta">
         <span class="dot"></span>
-        <span id="hdrTime" class="mono">--:--</span>
+        <span id="hdrCity" style="font-weight:500;color:var(--text-secondary)">--</span>
         <span>&bull;</span>
-        <span data-i18n="theme.live_dashboard">Live Dashboard</span>
+        <span id="hdrTime" class="mono">--:--</span>
         <span>&bull;</span>
         <span class="mono" style="font-size:0.7rem" id="hdrDate">--.--.----</span>
       </div>
@@ -780,12 +799,23 @@ function renderDaily(containerId, dataArray) {
     var d = dataArray[i];
     var row = document.createElement('div');
     row.className = 'drow glass' + (i === 0 ? ' today' : '');
+    var detailHtml = '<div class="drow-detail"><div class="drow-detail-grid">';
+    if (d.wind != null) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Wind</div><div class="drow-detail-val">' + d.wind + ' km/h' + (d.windDir ? ' ' + d.windDir : '') + '</div></div>';
+    if (d.humidity != null) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Feuchte</div><div class="drow-detail-val">' + d.humidity + '%</div></div>';
+    if (d.precip != null) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Niederschlag</div><div class="drow-detail-val">' + d.precip + ' mm</div></div>';
+    if (d.sunrise) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Sonne</div><div class="drow-detail-val">' + d.sunrise + ' - ' + (d.sunset || '') + '</div></div>';
+    if (d.uvi != null) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">UV-Index</div><div class="drow-detail-val">' + d.uvi + '</div></div>';
+    if (d.snow != null && d.snow > 0) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Schnee</div><div class="drow-detail-val">' + d.snow + ' cm</div></div>';
+    detailHtml += '</div></div>';
+
     row.innerHTML =
       '<div><div class="drow-day">' + d.day + '</div><div class="drow-date mono">' + d.date + '</div></div>' +
       '<img class="drow-icon" src="' + resolveIcon(d.weatherCode, "day") + '" alt="">' +
       (d.desc ? '<div class="drow-desc">' + d.desc + '</div>' : '<div class="drow-desc"></div>') +
       (d.pop != null ? '<div class="drow-pop">' + d.pop + '%</div>' : '<div class="drow-pop"></div>') +
-      '<div class="drow-temps"><span class="drow-lo mono">' + Math.round(d.low) + '&deg;</span><div class="drow-bar"><div class="drow-fill" id="bar' + i + '"></div></div><span class="drow-hi mono">' + Math.round(d.high) + '&deg;</span></div>';
+      '<div class="drow-temps"><span class="drow-lo mono">' + Math.round(d.low) + '&deg;</span><div class="drow-bar"><div class="drow-fill" id="bar' + i + '"></div></div><span class="drow-hi mono">' + Math.round(d.high) + '&deg;</span></div>' +
+      detailHtml;
+    row.onclick = function() { this.classList.toggle('expanded'); };
     container.appendChild(row);
   }
   // Calculate temp bar positions
