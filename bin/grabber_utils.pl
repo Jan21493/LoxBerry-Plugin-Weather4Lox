@@ -1,16 +1,9 @@
 #!/usr/bin/perl
 
-# Shared dump helpers for Weather4Lox grabbers
+# Shared helpers for Weather4Lox grabbers
 #
 # Intended usage in a grabber:
 #   require "$lbpbindir/grabber_utils.pl";
-#   my $decoded_json = api_call(
-#   	url => "your_api_url_with_key_param_here",
-#   	maskkeys => $maskkeys,  # optional, default: 1, used to mask keyparam in URLs and literal key value in dumps
-#   	keyparam => 'key',      # optional, default: 'key' (the query parameter name to mask in URLs, e.g. 'appid' for OpenWeatherMap)
-#   	apikey => '',   	    # optional, used to mask the key if it appears in the URL path or the response 
-#   	info => "",             # optional, used for logging message to specify what data is being fetched (e.g. "current weather", "daily forecast", etc.)
-#   );
 
 # Copyright 2026 Jan Wachsmuth, janw@email.de
 #
@@ -30,8 +23,36 @@
 use strict;
 use warnings;
 use Scalar::Util qw(looks_like_number);
-
+use File::Copy;
+use JSON::PP;
 my $useragent        = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
+
+##########################################################################
+# Special Modules (with error handling in case of missing modules)
+# 
+# These modules should have been installed during installation of plugin
+# by commands in /dpkg/apt
+
+sub require_or_logdie {
+    my ($module) = @_;
+
+    eval "require $module; 1;" or do {
+        my $err = $@ || "Unknown error while loading $module";
+        chomp $err;
+
+        LOGCRIT "Missing Perl module $module - cannot continue.";
+        LOGCRIT $err;
+        warn "CRIT: $err\n";   # falls fetch.pl STDERR mitsammelt
+
+        exit 2;
+    };
+
+    return 1;
+}
+
+
+##########################################################################
+# mask of key in URL (used for logging to keep keys secret)
 
 sub sanitize_url {
     my ($url, $keyparam) = @_;
@@ -44,6 +65,10 @@ sub sanitize_url {
     $url =~ s/([?&]$kp=)[^&\s]*/$1***MASKED***/gi;
     return $url;
 }
+
+
+##########################################################################
+# mask of key in API response (used for logging to keep keys secret)
 
 sub sanitize_dump {
     my ($text, $apikey, $keyparam) = @_;
@@ -63,6 +88,11 @@ sub sanitize_dump {
 
     return $text;
 }
+
+
+##########################################################################
+# Make an API call with error handling, Logging incl. masking of keys,
+# return matched part only, and do JSON decoding
 
 sub api_call {
     my (%p) = @_;
@@ -104,6 +134,7 @@ sub api_call {
         LOGOK "Data fetched successfully.";
     }
 
+    # do regular expression match (if match is defined) and return matched part only, used e.g. by WetterOnline to retrieve API keys, station ID and geo coordinates
     if (defined $match && length $match) {
         if ($content =~ $match) {
             $content = $1; # return only the matched part of the response
@@ -135,7 +166,8 @@ sub api_call {
     return $decoded_json;
 }
 
-# ─── JSON export helpers ───────────────────────────────────────────────
+##########################################################################
+# JSON export helpers
 # Write structured JSON files alongside the legacy pipe-delimited .dat files.
 # Called by each grabber after the .dat has been written and validated.
 #
@@ -179,6 +211,7 @@ my %WEATHER_CODE_TO_ID = (
 );
 
 # ── Raw field lists (positional match to .dat columns) ──────────────
+# TODO: may be removed later
 
 my @CURRENT_RAW = qw(
     epoch date_rfc822 tz_short tz_long tz_offset
@@ -231,10 +264,22 @@ my %DROP_FORECAST = map { $_ => 1 } qw(
     sunrise_hour sunrise_min sunset_hour sunset_min
 );
 
-# ── Helpers ─────────────────────────────────────────────────────────
 
-# Robust get_value: returns undef if any path segment is missing or invalid.
-# If the current node is an ARRAYref, only numeric indices are accepted.
+##########################################################################
+# Helpers to retrieve values from object structure including arrays 
+# these function are used to extracts values from API responses (decoded JSONs)
+##########################################################################
+
+##########################################################################
+# Get a value (string or number from decoded JSON, returns undef if any path 
+# segment is missing or invalid.
+# Parameters:
+#   $root  - root data structure
+#   @path  - path elements (tree and param to retrieve)
+# Returns:
+#   rounded numeric value (e.g. 4.1) or undef if value missing/invalid
+# Note: If the current node is an ARRAYref, only numeric indices are accepted.
+
 sub get_value {
     my ($root, @path) = @_;
     my $cur = $root;
@@ -257,12 +302,19 @@ sub get_value {
             return undef;
         }
     }
-
     return $cur;
 }
 
 
-# Get value via safe_path, format with sprintf($fmt).
+##########################################################################
+# Get a formatted value (numbers only) from decoded JSON, used for rounding
+# Parameters:
+#   $fmt   - sprintf format, e.g. '%.2f', round to two decimal places
+#   $root  - root data structure
+#   @path  - path elements passed to get_value
+# Returns:
+#   rounded numeric value (e.g. 4.1) or undef if value missing/invalid
+
 sub get_formatted {
     my ($fmt, $root, @path) = @_;
 
@@ -281,13 +333,43 @@ sub get_formatted {
     return $s + 0; # return as number
 }
 
-# Return a percentage value by calling get_formatted and multiplying the result by 100.
+##########################################################################
+# Get a formatted value (numbers only) from decoded JSON, used for rounding
+# Parameters:
+#   $fmt      - sprintf format, e.g. '%H:%M'
+#   $root     - root data structure
+#   @path     - path elements passed to get_value
+# Returns:
+#   time information (e.g. 23:10) or undef if value missing/invalid
+
+sub get_time_formatted {
+    my ($fmt, $timezone, $root, @path) = @_;
+
+    # Get value and verify if it is not empty
+    my $iso_time = get_value($root, @path);
+    return undef unless defined $iso_time && $iso_time ne '';
+
+    my $dt = eval { DateTime::Format::ISO8601->parse_datetime($iso_time) };
+    return undef unless $dt;
+
+    # all times are local times, so global variable must be set in grabber
+    if ($timezone eq '') {
+        $timezone = 'UTC';
+    }
+    $dt->set_time_zone($timezone);
+
+    return $dt->strftime('%H:%M');
+}
+
+##########################################################################
+# Get a percentage value by calling get_formatted and multiplying the result by 100.
 # Parameters:
 #   $fmt   - sprintf format used by get_formatted (e.g. '%.2f')
 #   $root  - root data structure (same as for get_formatted)
 #   @path  - path elements passed to get_formatted
 # Returns:
 #   numeric percentage (e.g. 46) or undef if value missing/invalid
+
 sub get_percentage {
     my ($fmt, $root, @path) = @_;
 
@@ -297,13 +379,15 @@ sub get_percentage {
     return $v * 100;
 }
 
-# Returns (short label, description) for a wind direction in degrees
+##########################################################################
+# Get label for a wind direction in degrees
 # Parameters:
-#   $deg  - wind direction in degrees (number)
+#   $deg  - wind direction in degrees (number from 0 to 360 expected)
 #   $Lref - optional hashref to localization hash (e.g. \%L)
 # Return:
-#   ($short_label, $description) or (undef, undef) on invalid input
-sub get_wind_direction_info {
+#   $label or (undef, undef) on invalid input
+
+sub get_wind_direction_label {
     my ($deg, $Lref) = @_;
 
     # validate/normalize input
@@ -314,8 +398,8 @@ sub get_wind_direction_info {
     $deg += 0;                              # numericify
     $deg = ($deg % 360 + 360) % 360;        # 0..359.999...
 
-    # wind direction labels
-    my @dirs = qw(N NO O SO S SW W NW);                                                                                       # wind direction labels
+    # wind direction labels for eight‑point compass rose
+    my @dirs = qw(N NE E SE S SW W NW);
 
     # calculate section on eight‑point compass rose
     my $wdir = $dirs[int((($deg + 22.5) / 45)) % 8];
@@ -325,23 +409,51 @@ sub get_wind_direction_info {
     $L = {} unless defined $L && ref $L eq 'HASH';
     
     my %dir_labels = (
-        N  => $L->{'GRABBER.LABEL_N'},
-        NO => $L->{'GRABBER.LABEL_NE'},
-        O  => $L->{'GRABBER.LABEL_E'},
-        SO => $L->{'GRABBER.LABEL_SE'},
-        S  => $L->{'GRABBER.LABEL_S'},
-        SW => $L->{'GRABBER.LABEL_SW'},
-        W  => $L->{'GRABBER.LABEL_W'},
-        NW => $L->{'GRABBER.LABEL_NW'},
+        N  => $L->{'GRABBER.LABEL_N'}  // 'North',
+        NE => $L->{'GRABBER.LABEL_NE'} // 'North-East',
+        E  => $L->{'GRABBER.LABEL_E'}  // 'East',
+        SE => $L->{'GRABBER.LABEL_SE'} // 'South-East',
+        S  => $L->{'GRABBER.LABEL_S'}  // 'South',
+        SW => $L->{'GRABBER.LABEL_SW'} // 'South-West',
+        W  => $L->{'GRABBER.LABEL_W'}  // 'West',
+        NW => $L->{'GRABBER.LABEL_NW'} // 'North-West',
     );
 
     # cur_w_dirdes, wind direction description, e.g. "South",
-    my $desc = $dir_labels{$wdir};
-    $desc = defined $desc ? Encode::decode("UTF-8", $desc) : undef;
+    my $label = $dir_labels{$wdir};
+    $label = defined $label ? Encode::decode("UTF-8", $label) : undef;
 
-    return ($wdir, $desc);
+    return $label;
 }
 
+# Calculate short name for wind direction from long name
+sub get_wind_direction_short {
+    my ($wind_descr) = @_;
+    
+    # calculate short name from description
+    my $short = join('', $wind_descr =~ /([A-Z]+)/g);
+
+    return $short;
+}
+
+# Get short and full label for a wind direction in degrees
+# Parameters:
+#   $deg  - wind direction in degrees (number from 0 to 360 expected)
+#   $Lref - optional hashref to localization hash (e.g. \%L)
+# Return:
+#   ($label, $short) or (undef, undef) on invalid input
+
+sub get_wind_direction_info {
+    my ($deg, $Lref) = @_;
+
+    my $label = get_wind_direction_label($deg, $Lref);
+    my $short = get_wind_direction_short($label);
+
+    return ($label, $short);
+
+}
+
+##########################################################################
 # get_coverage($w4l_code) -> returns estimated sky cover percentage (0..100) or undef
 # get_metar_code($w4l_code) -> returns METAR cloud code ('SKC','FEW','SCT','BKN','OVC') or undef
 #
@@ -356,31 +468,31 @@ my %W4L_COVERAGE_MAP = (
     cloudy                     => [ 70, 'BKN' ],
     overcast                   => [100, 'OVC' ],
 
-    cloudy_shower              => [ 65, 'BKN' ],
-    overcast_shower            => [ 95, 'OVC' ],
+    cloudy_shower              => [ 70, 'BKN' ],
+    overcast_shower            => [100, 'OVC' ],
 
     cloudy_rain                => [ 75, 'BKN' ],
-    overcast_rain              => [ 95, 'OVC' ],
+    overcast_rain              => [100, 'OVC' ],
 
     cloudy_sleet               => [ 75, 'BKN' ],
-    overcast_sleet             => [ 95, 'OVC' ],
+    overcast_sleet             => [100, 'OVC' ],
 
     cloudy_snow                => [ 75, 'BKN' ],
-    overcast_snow              => [ 95, 'OVC' ],
+    overcast_snow              => [100, 'OVC' ],
 
     cloudy_freezingrain        => [ 80, 'BKN' ],
-    overcast_freezingrain      => [ 95, 'OVC' ],
+    overcast_freezingrain      => [100, 'OVC' ],
 
     cloudy_thunderstorm        => [ 85, 'OVC' ],
-    overcast_thunderstorm      => [ 95, 'OVC' ],
+    overcast_thunderstorm      => [100, 'OVC' ],
 
-    cloudy_snowthunderstorm    => [ 90, 'OVC' ],
+    cloudy_snowthunderstorm    => [ 85, 'OVC' ],
     overcast_snowthunderstorm  => [100, 'OVC' ],
 
     cloudy_fog                 => [ 90, 'OVC' ],
     overcast_fog               => [100, 'OVC' ],
 
-    overcast_hail              => [ 98, 'OVC' ],
+    overcast_hail              => [100, 'OVC' ],
 
     no_data                    => [ undef, undef ],
 );
@@ -526,27 +638,6 @@ sub _enrich_weather_id {
     return $rec;
 }
 
-# ── Public helpers for grabbers ────────────────────────────────────
-# These can be called by grabbers that build data hashes directly.
-
-# Compute cardinal wind direction text from degrees
-# Usage: wind_direction_text($degrees, \%L)
-#   where %L is the language hash from LoxBerry::System::readlanguage
-sub wind_direction_text {
-    my ($deg, $L) = @_;
-    return undef unless defined $deg && $deg ne '' && $deg ne '-9999';
-    $deg += 0;
-    if    ( $deg >= 0   && $deg <= 22  ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_N'})  }
-    elsif ( $deg > 22   && $deg <= 68  ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_NE'}) }
-    elsif ( $deg > 68   && $deg <= 112 ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_E'})  }
-    elsif ( $deg > 112  && $deg <= 158 ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_SE'}) }
-    elsif ( $deg > 158  && $deg <= 202 ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_S'})  }
-    elsif ( $deg > 202  && $deg <= 248 ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_SW'}) }
-    elsif ( $deg > 248  && $deg <= 292 ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_W'})  }
-    elsif ( $deg > 292  && $deg <= 338 ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_NW'}) }
-    elsif ( $deg > 338  && $deg <= 360 ) { return Encode::decode("UTF-8", $L->{'GRABBER.LABEL_N'})  }
-    return undef;
-}
 
 # ── write_current_json ──────────────────────────────────────────────
 # Accepts either:
@@ -683,42 +774,81 @@ sub write_current_json_aq {
     LOGOK "Saved current weather data (with AQ) as JSON to $out";
 }
 
-# ── write_json_file ────────────────────────────────────────────
 
+##########################################################################
+# Generalized JSON file writer for any weather type (current, daily, hourly).
+# Parameter:
+#   filepath:           directory for file
+#   filename:           e.g. 'current' | 'dailyforecast' | 'hourlyforecast'
+#   json_data:          hashref or arrayref
 
 sub write_json_file {
-    my ($logdir, %opts) = @_;               # directory to store the JSON file
-    my $grabber = $opts{grabber} // '';     # name of grabber
-    my $source  = $opts{source}  // '';     # origin of weather data
-    my $type    = $opts{type}    // '';     # 'current', 'dailyforecast, or 'hourlyforecast'
-    my %data    = %{ $opts{data} // {} };   # data structure
+    my ($filepath, $filename, $json_data) = @_;
 
-    my $generated_at = strftime("%Y-%m-%dT%H:%M:%S%z", localtime(time));
-    $generated_at =~ s/(\d{2})(\d{2})$/$1:$2/;
-    my %envelope = (
-        meta => { schema_version => "1.0", 
-                  source => $source,
-                  grabber => $grabber, 
-                  type => $type,
-                  generated_at => $generated_at },
-        data => \%data,
-    );
+    $filepath    = $filepath // '.';
+    my $out      = "$filepath/$filename.json";
+    my $tmp      = "$out.tmp";
 
     my $json_obj = JSON::PP->new->pretty->canonical->utf8;
-    my $out = "$logdir/$type.json";
-    my $tmp = "$out.tmp";
+
     eval {
         open my $fh, '>:raw', $tmp or die "Cannot open $tmp: $!";
-        print $fh $json_obj->encode(\%envelope);
+        print $fh $json_obj->encode($json_data);
         close $fh;
         File::Copy::move($tmp, $out) or die "Cannot rename $tmp to $out: $!";
     };
     if ($@) {
         LOGWARN "JSON write failed for $out: $@";
         return;
-    }
-    LOGOK "Saved $source weather data as JSON to $out";
+    };
+    LOGOK "Saved $filename weather data as JSON to $out";
 }
+
+
+##########################################################################
+# Generalized JSON file reader for any weather type (current, daily, hourly).
+# Parameter:
+#   weather_key:        'current' | 'dailyforecast' | 'hourlyforecast'
+#   filepath:           directory for file
+
+sub read_json_file {
+    my ($filepath, $weather_key) = @_;
+
+    my $filename = "$filepath/$weather_key.json";
+
+    # Existenz prüfen
+    unless (-f $filename) {
+        LOGWARN "File not found: $filename";
+        return undef;
+    }
+
+    # Datei lesen und parsen
+    my $json_text;
+    eval {
+        open my $fh, '<:raw', $filename or die "Cannot open $filename: $!";
+        local $/;
+        $json_text = <$fh>;
+        close $fh;
+    };
+    if ($@) {
+        LOGWARN "Failed to read $filename: $@";
+        return undef;
+    }
+
+    # JSON-Deserialisierung    
+    my $data;
+    eval {
+        $data = JSON::PP->new->utf8->decode($json_text);
+    };
+    if ($@) {
+        LOGWARN "Failed to decode JSON from $filename: $@";
+        return undef;
+    }
+    LOGOK "Read $filename weather data as JSON from $filename";
+
+    return $data;
+}
+
 
 # ── write_daily_json ────────────────────────────────────────────────
 # Accepts either:
