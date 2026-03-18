@@ -27,7 +27,7 @@ use warnings;
 use LoxBerry::System;
 use LoxBerry::Log;
 use LWP::UserAgent;
-use JSON qw( decode_json encode_json );
+use JSON::PP;
 use File::Copy;
 use Getopt::Long;
 use DateTime;

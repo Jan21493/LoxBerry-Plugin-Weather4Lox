@@ -827,7 +827,9 @@ sub read_json_file {
     eval {
         open my $fh, '<:raw', $filename or die "Cannot open $filename: $!";
         local $/;
+        flock($fh, 1);  # LOCK_SH — shared read lock
         $json_text = <$fh>;
+        flock($fh, 8);  # LOCK_UN
         close $fh;
     };
     if ($@) {
