@@ -185,6 +185,17 @@
     "overcast_hail_3": "Used for overcast weather with heavy hail. Night symbols do not show moon phases.",
     "no_data": "Used when no weather data is available. The icon may indicate day/night depending on the set."
   },
+  "wind_from": "Wind from",
+  "wind_directions": {
+    "N": "North",
+    "NE": "North-East",
+    "E": "East",
+    "SE": "South-East",
+    "S": "South",
+    "SW": "South-West",
+    "W": "West",
+    "NW": "North-West"
+  },
   "theme": {
     "current_weather": "Current weather",
     "forecast": "Forecast",

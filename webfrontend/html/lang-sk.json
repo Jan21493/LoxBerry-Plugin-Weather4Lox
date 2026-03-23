@@ -184,6 +184,17 @@
     "overcast_hail_3": "Používa sa pre zamračené počasie so silným krupobitím. Nočné ikony nezobrazujú fázy Mesiaca.",
     "no_data": "Používa sa, keď nie sú dostupné žiadne meteorologické údaje. Ikona môže podľa sady indikovať deň/noc."
   },
+  "wind_from": "Vietor od"
+  "wind_directions": {
+    "N": "Sever",
+    "NE": "Severovýchod",
+    "E": "Východ",
+    "SE": "Juhovýchod",
+    "S": "Juh",
+    "SW": "Juhozápad",
+    "W": "Západ",
+    "NW": "Severozápad"
+  },
   "theme": {
     "current_weather": "Aktuálne počasie",
     "forecast": "Predpoveď",

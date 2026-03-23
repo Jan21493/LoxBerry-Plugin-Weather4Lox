@@ -185,6 +185,17 @@
     "overcast_hail_3": "Wird für bedecktes Wetter mit starkem Hagel verwendet. Symbole für Nacht zeigen keine Mondphasen an.",
     "no_data": "Wird verwendet, wenn keine Wetterdaten vorliegen. Das Symbol kann je nach Set Tag/Nacht anzeigen."
   },
+  "wind_from": "Wind aus",
+  "wind_directions": {
+    "N": "Nord",
+    "NE": "Nord-Ost",
+    "E": "Ost",
+    "SE": "Süd-Ost",
+    "S": "Süd",
+    "SW": "Süd-West",
+    "W": "West",
+    "NW": "Nord-West"
+  },
   "theme": {
     "current_weather": "Aktuelles Wetter",
     "forecast": "Vorhersage",

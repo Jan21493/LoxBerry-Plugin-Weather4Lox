@@ -185,6 +185,17 @@
     "overcast_hail_3": "Se usa para tiempo cubierto con granizo fuerte. Los iconos nocturnos no muestran fases lunares.",
     "no_data": "Se usa cuando no hay datos meteorológicos. El icono puede indicar día/noche según el conjunto."
   },
+  "wind_from": "Viento de"
+  "wind_directions": {
+    "N": "Norte",
+    "NE": "Noreste",
+    "E": "Este",
+    "SE": "Sudeste",
+    "S": "Sur",
+    "SW": "Sudoeste",
+    "W": "Oeste",
+    "NW": "Noroeste"
+  },
   "theme": {
     "current_weather": "Tiempo actual",
     "forecast": "Pronóstico",
@@ -203,15 +214,15 @@
     "visibility": "Visibilidad",
     "dew_point": "Punto de rocío",
     "tab_today": "Hoy",
-    "tab_tomorrow": "Manana",
-    "tab_days": "Dias",
+    "tab_tomorrow": "Mañana",
+    "tab_days": "Días",
     "hours_today": "Horas de hoy",
-    "hours_tomorrow": "Horas de manana",
-    "forecast_7day": "Pronostico de 7 dias",
+    "hours_tomorrow": "Horas de mañana",
+    "forecast_7day": "Pronóstico de 7 días",
     "click_hour_detail": "Clic en hora para detalles",
-    "loading": "Cargando datos meteorologicos...",
+    "loading": "Cargando datos meteorológicos...",
     "error_loading": "No se pudieron cargar los datos.",
-    "gusts": "Rafagas",
+    "gusts": "Ráfagas",
     "live_dashboard": "Panel en vivo",
     "weekdays": [
       "Domingo",

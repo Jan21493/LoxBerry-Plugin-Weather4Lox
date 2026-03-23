@@ -185,6 +185,17 @@
     "overcast_hail_3": "Wordt gebruikt voor dicht bewolkt weer met zware hagel. Nachtpictogrammen tonen geen maanfasen.",
     "no_data": "Wordt gebruikt wanneer geen weergegevens aanwezig zijn. Het pictogram kan dag/nacht aangeven afhankelijk van de set."
   },
+  "wind_from": "Wind uit"
+  "wind_directions": {
+    "N": "Noord",
+    "NE": "Noordoost",
+    "E": "Oost",
+    "SE": "Zuidoost",
+    "S": "Zuid",
+    "SW": "Zuidwest",
+    "W": "West",
+    "NW": "Noordwest"
+  },
   "theme": {
     "current_weather": "Actueel weer",
     "forecast": "Voorspelling",

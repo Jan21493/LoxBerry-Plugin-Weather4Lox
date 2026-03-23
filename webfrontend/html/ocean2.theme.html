@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Weather4Lox - Ocean2 Theme</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #18658a;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 950px;
+      margin: 0 auto;
+      padding: 1em;
+    }
+    .hero-card {
+      background: linear-gradient(125deg, #5fbdf4 0%, #18658a 100%);
+      border-radius: 14px;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.22);
+      padding: 2em;
+      margin-bottom: 2em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .hero-temp {
+      font-size: 4em;
+      font-weight: bold;
+      color: #fff;
+    }
+    .hero-details {
+      font-size: 1.1em;
+      margin-left: 1em;
+    }
+    .hourly-scrollbar {
+      overflow-x: auto;
+      display: flex;
+      gap: 16px;
+      background: rgba(255,255,255,0.09);
+      padding: 1em 0 2em 0;
+      border-radius: 7px;
+      margin-bottom: 2em;
+    }
+    .hour-card {
+      min-width: 92px;
+      flex: 0 0 92px;
+      background: rgba(0,0,0,0.08);
+      padding: 16px 7px 9px 7px;
+      border-radius: 7px;
+      text-align: center;
+      color: #fff;
+      font-size: 1em;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    }
+    .hour-card.selected {
+      border: 1.5px solid #5fbdf4;
+    }
+    .svg-temp-chart {
+      width: 100%;
+      height: 160px;
+      margin-top: -16px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 10px;
+    }
+    .forecast-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 22px;
+      margin-top: 25px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+    .forecast-card {
+      min-width: 105px;
+      background: rgba(0,0,0,0.06);
+      padding: 17px 7px 6px 7px;
+      border-radius: 7px;
+      text-align: center;
+      color: #fff;
+      font-size: 1em;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .forecast-card .temp-high {color: #f6ffb0;}
+    .forecast-card .temp-low {color: #b9e5e5;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Hero Card für aktuelle Werte -->
+    <div class="hero-card" id="hero-card">
+      <div>
+        <div class="hero-temp" id="hero-temp">--</div>
+        <div class="hero-details" id="hero-details"></div>
+      </div>
+      <div id="hero-icon"></div>
+    </div>
+    <!-- Stunden Scrollbar -->
+    <div class="hourly-scrollbar" id="hourly-scrollbar">
+      <!-- Hourly cards werden hier dynamisch eingehängt -->
+    </div>
+    <!-- Temperatur SVG Chart -->
+    <svg class="svg-temp-chart" id="svg-temp-chart"></svg>
+
+    <!-- 7-Tage-Vorhersage -->
+    <div class="forecast-row" id="forecast-row"></div>
+  </div>
+  <script>
+    // Datenquellen
+    const currentJsonPath = 'current.json';
+    const hourlyJsonPath = 'hourlyforecast.json';
+    const dailyJsonPath = 'dailyforecast.json';
+    const iconsMapPath = 'icon_mapping.json';
+
+    // Hilfsfunktion: Fetch JSON
+    async function fetchJson(path) {
+      const res = await fetch(path);
+      return res.json();
+    }
+
+    // Icon mapping cache
+    let iconsMap = {};
+
+    // Icon-Funktion: Erzeugt Icon-Name mit Moonphasen-Suffix
+    function getIconFile(code, isDaytime = true, moonphase = 0, iconsMap = {}) {
+      // Map prüfen, fallback auf code selbst
+      const iconConfig = iconsMap[code] || iconsMap['no_data'];
+      // Tag oder Nacht Icon
+      let iconName = isDaytime ? iconConfig.icon_day : iconConfig.icon_night;
+
+      const mp = iconConfig.moon_phases || 0;
+      if(mp > 0 && !isDaytime) { // Nacht + Moonphasen
+        // Mondphasen-Suffix von 0q bis (mp-1)q, z.B. _0q bis _4q für mp=5
+        let maxPhase = mp - 1;
+        let phaseIdx = Math.round(moonphase * maxPhase);
+        iconName = iconName.replace('.png', `_${phaseIdx}q.png`);
+      }
+      return iconName;
+    }
+
+    // Momentane Stunde gemäß Forecast
+    function getCurrentHourIdx(hourly) {
+      const now = new Date();
+      for(let i=0; i<hourly.length; i++){
+        const dt = new Date(hourly[i].datetime);
+        if(dt.getHours() === now.getHours() && dt.getDate() === now.getDate()) return i;
+      }
+      return 0;
+    }
+
+    async function main() {
+      // Lade iconsMap
+      const iconMapRaw = await fetchJson(iconsMapPath);
+      iconsMap = Object.fromEntries(Object.entries(iconMapRaw.icons).map(([k,v]) => [k,v]));
+
+      // Lade Wetterdaten
+      const [current, hourly, daily] = await Promise.all([
+        fetchJson(currentJsonPath),
+        fetchJson(hourlyJsonPath),
+        fetchJson(dailyJsonPath)
+      ]);
+      // Hero Card
+      document.getElementById('hero-temp').textContent = `${current.temperature.toFixed(1)}°`;
+      document.getElementById('hero-details').innerHTML =
+        `<div>${current.city}, ${current.country}</div>
+         <div>Bedingung: ${current.weather_description}, Feelslike: ${current.feelslike.toFixed(1)}°</div>
+         <div>Wind: ${current.wind_speed} km/h aus ${current.wind_direction_desc}</div>
+         <div>Humidity: ${current.humidity}%</div>`;
+
+      // Icon für Hero Card
+      const isDaytime = (() => {
+        const [hrNow] = new Date(current.datetime).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}).split(':');
+        return (parseInt(hrNow) >= parseInt(current.sunrise.split(':')[0]) &&
+                parseInt(hrNow) < parseInt(current.sunset.split(':')[0]));
+      })();
+      const heroIconFile = getIconFile(current.weather_id, isDaytime, current.moon_phase/100, iconsMap);
+      document.getElementById('hero-icon').innerHTML =
+        `<img src="icons/${heroIconFile}" alt="${current.weather_description}" style="width:68px;height:68px;border-radius:9px;box-shadow:0 2px 6px rgba(0,0,0,0.12)">`;
+
+      // Stunden-Scrollbar
+      let hourIdx = getCurrentHourIdx(hourly);
+      let count = 0;
+      // Zeige 24-Stunden ab jetzt + ggf. bis Folgetag
+      let hourlyCardsHtml = '';
+      for(let i=hourIdx; i<Math.min(hourly.length,hourIdx+24); i++){
+        const h = hourly[i];
+        const dt = new Date(h.datetime);
+        hourlyCardsHtml += `<div class="hour-card${i==hourIdx?' selected':''}">
+          <div>${dt.getHours().toString().padStart(2,'0')}:00</div>
+          <img src="icons/${getIconFile(h.weather_code, dt.getHours() >= parseInt(current.sunrise.split(':')[0]) && dt.getHours() < parseInt(current.sunset.split(':')[0]), h.moon_phase||0, iconsMap)}" alt="${h.weather_description}" style="width:40px;height:40px;margin:4px 0">
+          <div>${h.temperature.toFixed(1)}°</div>
+          <div style="font-size:0.9em;color:#b9e5e5">${h.weather_description}</div>
+        </div>`;
+        count++;
+      }
+      document.getElementById('hourly-scrollbar').innerHTML = hourlyCardsHtml;
+
+      // SVG Temperatur-Linie
+      const svg = document.getElementById('svg-temp-chart');
+      const temps = hourly.slice(hourIdx, hourIdx+24).map(h => h.temperature);
+      const maxTemp = Math.max(...temps);
+      const minTemp = Math.min(...temps);
+      const svgWidth = svg.clientWidth || 800;
+      const svgHeight = svg.clientHeight || 160;
+      // Punkte generieren
+      const points = temps.map((t,i) =>
+        `${Math.round(i*(svgWidth/(temps.length-1)))} ${svgHeight-Math.round(((t-minTemp)/(maxTemp-minTemp))*svgHeight*0.7+svgHeight*0.1)}`
+      ).join(' ');
+      svg.innerHTML = `
+        <polyline
+          fill="none"
+          stroke="#fff"
+          stroke-width="3"
+          points="${points}"
+        />
+        <!-- Achse und Labels -->
+        <text x="7" y="${svgHeight-25}" font-size="1em" fill="#fff">${minTemp.toFixed(1)}°</text>
+        <text x="${svgWidth-52}" y="35" font-size="1em" fill="#fff">${maxTemp.toFixed(1)}°</text>
+      `;
+
+      // 7-Tage Vorhersage
+      let forecastHtml = '';
+      for(let i=0; i<Math.min(daily.length,7); i++){
+        const d = daily[i];
+        const dt = new Date(d.datetime);
+        forecastHtml += `<div class="forecast-card">
+            <div style="font-weight:bold">${dt.toLocaleDateString('de-DE',{weekday:'short'})}</div>
+            <img src="icons/${getIconFile(d.weather_id, true, d.moon_phase||0, iconsMap)}" alt="${d.weather_description}" style="width:40px;height:40px;margin:4px 0">
+            <div class="temp-high">${d.high_temp.toFixed(1)}°</div>
+            <div class="temp-low">${d.low_temp.toFixed(1)}°</div>
+            <div>${d.weather_description}</div>
+        </div>`;
+      }
+      document.getElementById('forecast-row').innerHTML = forecastHtml;
+    }
+    main();
+  </script>
+</body>
+</html>

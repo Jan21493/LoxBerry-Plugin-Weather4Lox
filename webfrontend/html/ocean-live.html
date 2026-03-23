@@ -186,7 +186,7 @@
     .hcard-time { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; }
     .hcard-icon { width: 32px; height: 32px; margin: 0 auto 6px; display: block; }
     .hcard-temp { font-size: 1.1rem; font-weight: 600; }
-    .hcard-pop { font-size: 0.68rem; color: var(--sky); margin-top: 2px; }
+    .hcard-prop { font-size: 0.68rem; color: var(--sky); margin-top: 2px; }
 
     /* ===== DAILY TAB ===== */
     .daily-wrap { padding: 24px; }
@@ -200,7 +200,7 @@
     .drow-date { font-size: 0.75rem; color: var(--text-muted); }
     .drow-icon { width: 40px; height: 40px; }
     .drow-desc { font-size: 0.8rem; color: var(--text-secondary); }
-    .drow-pop { font-size: 0.75rem; color: var(--sky); text-align: center; }
+    .drow-prop { font-size: 0.75rem; color: var(--sky); text-align: center; }
     .drow-temps { display: flex; align-items: center; gap: 6px; }
     .drow-lo { color: var(--sky); font-weight: 500; min-width: 30px; text-align: right; font-size: 0.85rem; }
     .drow-hi { color: var(--amber); font-weight: 500; min-width: 30px; font-size: 0.85rem; }
@@ -231,7 +231,7 @@
       .hero-icon { width: 76px; height: 76px; }
       .extra-row { grid-template-columns: repeat(2,1fr); }
       .drow { grid-template-columns: 56px 40px 1fr; }
-      .drow-desc, .drow-pop { display: none; }
+      .drow-desc, .drow-prop { display: none; }
       .tabs { flex-wrap: wrap; }
       .tab { padding: 7px 12px; font-size: 0.78rem; }
       .side-stats { grid-template-columns: 1fr 1fr; }
@@ -274,13 +274,13 @@ function getUrlParam(name) {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-var ICONSET = getUrlParam('iconset') || 'color';
+var ICONSET = getUrlParam('iconset') || 'naturalistic';
 var currentLang = (function() {
   var p = getUrlParam('lang');
   return (p && SUPPORTED_LANGS.indexOf(p) !== -1) ? p : 'de';
 })();
 
-// Weather code to icon key mapping (from weathercodes.html)
+// Weather code to icon key mapping (from wCodes.html)
 var WEATHER_CODE_MAP = {
   1:'clear', 2:'fair', 3:'partly_cloudy', 4:'cloudy', 5:'overcast',
   10:'cloudy_shower_1', 11:'cloudy_shower_2', 12:'overcast_shower_1', 13:'overcast_shower_2', 14:'overcast_shower_3',
@@ -317,46 +317,89 @@ function showError(msg) {
   setTimeout(function() { b.style.display = 'none'; }, 8000);
 }
 
+/**
+ * Bestimmt, ob der Mond zunimmt (waxing) oder abnimmt (waning)
+ * @param {number} age - Mondalter in Tagen (0..29.53)
+ * @returns {'waxing'|'waning'}
+ */
+function getMoonDirection(age) {
+    const synodicMonth = 29.53;
+    age = age % synodicMonth; // normalisieren
+
+    // Zunehmend < Vollmond, abnehmend > Vollmond
+    if (age < (synodicMonth / 2)) {
+        return 'waxing';
+    } else {
+        return 'waning';
+    }
+}
+
+
+/**
+ * Gibt die Mondphasenzahl (0...4 bei quarter, 0...2 bei half) zurück.
+ * 0 = Neumond, 1 = Zunehmend, 2 = Erstes Viertel, 3 = Zunehmend gibbous, 4 = Vollmond usw.
+ * @param {number} age: Mondalter in Tagen (0..29.53)
+ * @param {number} resolution: 5 für "quarter" (default), 3 für "half"
+ * @returns {number}
+ */
+function getMoonPhasePart(age, resolution = 5) {
+    const synodicMonth = 29.53;
+
+    // Alter auf 0..29.53 normieren
+    age = age % synodicMonth;
+
+    // Vollmond liegt bei der Hälfte des Monats
+    const fullSize = synodicMonth / 2;
+
+    // Für die zweite Hälfte (abnehmend bis Neumond), Spiegelung um Vollmond
+    if (age > fullSize) {
+        age = synodicMonth - age;
+    }
+
+    return Math.round(age / fullSize * (resolution - 1));
+}
+
 // ===== DATA LOADING =====
 function loadAllData() {
   showLoading();
   return Promise.all([
-    fetch('./log/current.json').then(checkOk).then(function(r) { return r.json(); }),
-    fetch('./log/hourlyforecast.json').then(checkOk).then(function(r) { return r.json(); }),
-    fetch('./log/dailyforecast.json').then(checkOk).then(function(r) { return r.json(); }),
+    fetch('./current.json').then(checkOk).then(function(r) { return r.json(); }),
+    fetch('./hourlyforecast.json').then(checkOk).then(function(r) { return r.json(); }),
+    fetch('./dailyforecast.json').then(checkOk).then(function(r) { return r.json(); }),
     fetch('lang-' + currentLang + '.json').then(checkOk).then(function(r) { return r.json(); }),
     fetch('icons/' + ICONSET + '/icon_mapping.json').then(checkOk).then(function(r) { return r.json(); })
   ]).then(function(results) {
     hideLoading();
-    liveData.current = results[0].data;
+    liveData.location = results[0].location;
     liveData.lang = results[3];
-    liveData.iconMapping = results[4].icons;
+    liveData.iconMapping = results[4];
+    liveData.current = results[0].current;
 
     // Split hourly into today/tomorrow using datetime from current.json as reference
-    var todayStr = liveData.current.datetime.slice(0, 10);
+    var todayStr = liveData.current.time.datetime.slice(0, 10);
     var todayDate = new Date(todayStr + 'T00:00:00');
-    var tomorrowDate = new Date(todayDate);
-    tomorrowDate.setDate(todayDate.getDate() + 1);
+    var tomorrowDate = new Date(todayDate.getTime() + 86400000);
+
     var pad2 = function(n) { return n < 10 ? '0' + n : '' + n; };
     var tomorrowStr = tomorrowDate.getFullYear() + '-' + pad2(tomorrowDate.getMonth() + 1) + '-' + pad2(tomorrowDate.getDate());
 
-    var hourlyRaw = results[1].data;
-    liveData.hourlyToday = hourlyRaw.filter(function(h) { return h.datetime.slice(0, 10) === todayStr; });
-    liveData.hourlyTomorrow = hourlyRaw.filter(function(h) { return h.datetime.slice(0, 10) === tomorrowStr; });
+    var hourlyRaw = results[1].hourlyforecast;
+    liveData.hourlyToday = hourlyRaw.filter(function(h) { return h.time.datetime.slice(0, 10) === todayStr; });
+    liveData.hourlyTomorrow = hourlyRaw.filter(function(h) { return h.time.datetime.slice(0, 10) === tomorrowStr; });
 
     // Transform daily data
-    var dailyRaw = results[2].data;
+    var dailyRaw = results[2].dailyforecast;
     var weekdaysShort = liveData.lang.theme.weekdays_short;
     liveData.daily = dailyRaw.map(function(d) {
       var dt = new Date(d.datetime);
       return {
         day: weekdaysShort[dt.getDay()],
         date: pad2(dt.getDate()) + '.' + pad2(dt.getMonth() + 1) + '.',
-        weatherCode: d.weather_code,
-        high: d.high_temp,
-        low: d.low_temp,
-        pop: d.precip_probability,
-        desc: d.weather_description
+        wCode: d.weatherCode.weather4lox,
+        tempMax: d.temperature.max.air,
+        tempMin: d.temperature.min.air,
+        precipitationProbability: d.precipitation.probability,
+        wCodeDesc: d.weatherCode.description
       };
     });
 
@@ -373,44 +416,91 @@ function loadAllData() {
 function isDaytime(datetimeStr, sunriseStr, sunsetStr) {
   var h = parseInt(datetimeStr.slice(11, 13));
   var sr = parseInt((sunriseStr || '06:00').split(':')[0]);
-  var ss = parseInt((sunsetStr || '20:00').split(':')[0]);
+  var ss = parseInt((sunsetStr || '18:00').split(':')[0]);
   return h >= sr && h < ss;
 }
 
-function resolveIcon(weatherCode, dn) {
-  var suffix = (dn === 'night') ? 'night' : 'day';
-  var key = WEATHER_CODE_MAP[weatherCode];
-  if (!key) {
-    // Fallback: try weather_code as string key directly (underscore-normalized)
-    key = (typeof weatherCode === 'string') ? weatherCode.replace(/-/g, '_') : 'cloudy';
-  }
-  if (liveData.iconMapping) {
-    var entry = liveData.iconMapping[key];
-    if (entry) {
-      var field = (suffix === 'day') ? 'icon_day' : 'icon_night';
-      return 'icons/' + ICONSET + '/' + entry[field];
-    }
-  }
-  return 'icons/' + ICONSET + '/' + key + '_' + suffix + '.png';
+function buildIconPath(filename) {
+  return 'icons/' + ICONSET + '/' + filename;
 }
+
+function phaseFilename(baseFilename, phaseIdx, pchar, ext) {
+  return buildIconPath(baseFilename + '_' + phaseIdx + pchar + ext);
+}
+
+function resolveIcon(wCode, isNight, moonAge) {
+
+  const ext = '.' + (liveData.iconMapping.format || 'png');
+  const iconEntry = liveData.iconMapping.icons && liveData.iconMapping.icons[wCode];
+  var iconName = null;
+
+  if (iconEntry) {
+    if (isNight) {
+      const moonPhases = iconEntry.moonPhases || 0;
+      if (moonPhases === 3) {
+        return phaseFilename(iconEntry.iconNight, getMoonPhasePart(moonAge, 3), 'h', ext);
+      } else if (moonPhases === 5) {
+        return phaseFilename(iconEntry.iconNight, getMoonPhasePart(moonAge, 5), 'q', ext);
+      } else {
+        return buildIconPath(iconEntry.iconNight + ext);
+      }
+    } else {
+      return buildIconPath(iconEntry.iconDay + ext);
+    }
+  } else {
+    // If no mapping found, fallback to a generic icon based on weather code category
+    return 'no_icon.png'; 
+  }
+}
+
 
 // ===== TRANSFORM HOURLY for renderHourStrip =====
 function transformHourly(hourlyArray, sunriseStr, sunsetStr) {
   return hourlyArray.map(function(h) {
-    var hourStr = h.datetime.slice(11, 13);
-    var dn = isDaytime(h.datetime, sunriseStr, sunsetStr) ? 'day' : 'night';
+    var hourStr = h.time.datetime.slice(11, 13);
     return {
       hour: hourStr,
-      temp: h.temperature,
-      pop: h.precip_probability,
-      wind: h.wind_speed,
-      wind_dir: h.wind_direction_desc,
+      temp: h.temperature.air,
+      prop: h.precipitation.probability,
+      wind: h.wind.speed,
+      windDir: h.wind.direction,
       humidity: h.humidity,
-      weatherCode: h.weather_code,
-      dn: dn,
-      desc: h.weather_description
+      wCode: h.weatherCode.weather4lox,
+      moonAge: h.moon.age,
+      moonDirection: h.moon.direction,
+      isNight: h.isNight,
+      desc: h.weatherCode.description
     };
   });
+}
+
+// ===== wind direction label =====
+function getWindDirLabel(deg) {
+   // Verify input & value
+  if (deg === null || deg === undefined) return "--";
+  if (typeof deg === 'string') deg = deg.trim();
+  // Float-Parsing with Regex (like Perl)
+  if (!/^-?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(String(deg))) return "--";
+
+  deg = Number(deg);
+  // Normalize to 0..360
+  deg = ((deg % 360) + 360) % 360;
+
+  // Directions (8-point compass)
+  const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  const idx = Math.floor((deg + 22.5) / 45) % 8;
+
+  const dirKey = dirs[idx];
+  var translations = liveData.lang && liveData.lang.wind_directions;
+  var label = (translations && translations[dirKey]) ? translations[dirKey] : dirKey;
+
+  return label || '--';
+}
+
+function getWindDirShort(deg) {
+  var labelMatches = getWindDirLabel(deg).match(/[A-Z]/g);
+  var labelShort = labelMatches ? labelMatches.join('') : "--";
+  return labelShort;
 }
 
 // ===== i18n =====
@@ -443,37 +533,36 @@ function renderAll() {
     renderHourStrip('hourStripMorgen', hourlyTomorrowRendered);
   } else {
     var morgenStrip = document.getElementById('hourStripMorgen');
-    if (morgenStrip) morgenStrip.innerHTML = '<div style="color:var(--text-muted);padding:16px;font-size:0.85rem;">' + (liveData.lang ? liveData.lang.theme.loading : 'Keine Daten') + '</div>';
+    if (morgenStrip) morgenStrip.innerHTML = '<div style="color:var(--text-muted);padding:16px;font-size:0.85rem;">' + (liveData.lang ? liveData.lang.theme.loading : 'No data') + '</div>';
   }
   renderDaily('dailyWrap', liveData.daily);
 
   // Update hero with current data
-  document.getElementById('heroTemp').innerHTML = Math.round(c.temperature) + '<sup>\u00b0C</sup>';
-  document.getElementById('heroDesc').textContent = c.weather_description || '--';
-  document.getElementById('heroWind').textContent = (c.wind_speed != null ? c.wind_speed : '--') + ' km/h ' + (c.wind_direction_desc || '');
+  document.getElementById('heroTemp').innerHTML = Math.round(c.temperature.air) + '<sup>\u00b0C</sup>';
+  document.getElementById('heroDesc').textContent = c.weatherCode.description || '--';
+  document.getElementById('heroWind').textContent = (c.wind.speed != null ? c.wind.speed : '--') + ' km/h, ' + (c.wind.direction || '');
   document.getElementById('heroHumidity').textContent = (c.humidity != null ? c.humidity : '--') + '%';
-  var curDn = isDaytime(c.datetime, sunrise, sunset) ? 'day' : 'night';
-  document.getElementById('heroIcon').src = resolveIcon(c.weather_code, curDn);
+  document.getElementById('heroIcon').src = resolveIcon(c.weatherCode.weather4lox, c.isNight, c.moon.age);
+  document.getElementById('heroFeelslike').textContent = (c.temperature.feelsLike != null ? c.temperature.feelsLike : '--') + '\u00b0';
 
   // Sunrise/Sunset
   document.getElementById('heroSunrise').textContent = sunrise;
   document.getElementById('heroSunset').textContent = sunset;
-  document.getElementById('heroFeelslike').textContent = (c.feelslike != null ? c.feelslike : '--') + '\u00b0';
 
   // Side stats
   document.getElementById('statHumidity').textContent = (c.humidity != null ? c.humidity : '--') + '%';
-  document.getElementById('statWind').textContent = (c.wind_speed != null ? c.wind_speed : '--') + ' km/h';
-  document.getElementById('statWindDir').textContent = c.wind_direction_desc || '--';
+  document.getElementById('statWind').textContent = (c.wind.speed != null ? c.wind.speed : '--') + ' km/h';
+  document.getElementById('statWindDir').textContent = getWindDirShort(c.wind.direction) || '--';
   document.getElementById('statPressure').innerHTML = (c.pressure != null ? c.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
   document.getElementById('statVisibility').innerHTML = (c.visibility != null ? c.visibility : '--') + ' <small style="color:var(--text-muted)">km</small>';
 
   // Extra stats
   document.getElementById('statDewpoint').textContent = (c.dewpoint != null ? c.dewpoint : '--') + '\u00b0';
-  document.getElementById('statPrecip').textContent = (c.precip_today_mm != null ? c.precip_today_mm : 0) + ' mm';
-  document.getElementById('statUVI').textContent = c.uv_index != null ? c.uv_index : '--';
-  document.getElementById('statClouds').textContent = (c.cloud_cover != null ? c.cloud_cover : '--') + '%';
-  document.getElementById('statGusts').textContent = (c.wind_gust != null ? c.wind_gust : '--') + ' km/h';
-  document.getElementById('statFeelslike').textContent = (c.feelslike != null ? c.feelslike : '--') + '\u00b0';
+  document.getElementById('statPrecip').textContent = (c.precipitation.rainToday != null ? c.precipitation.rainToday : 0) + ' mm';
+  document.getElementById('statUVI').textContent = c.uvIndex != null ? c.uvIndex : '--';
+  document.getElementById('statClouds').textContent = (c.cloudCover != null ? c.cloudCover : '--') + '%';
+  document.getElementById('statGusts').textContent = (c.wind.gust != null ? c.wind.gust : '--') + ' km/h';
+  document.getElementById('statFeelslike').textContent = (c.temperature.feelsLike != null ? c.temperature.feelsLike : '--') + '\u00b0';
 
   // Render temperature charts
   renderTempChart('tempChartHeute', hourlyTodayRendered);
@@ -513,7 +602,7 @@ function scheduleRefresh() {
         <div class="hdr-logo accent-bg">
           <svg width="18" height="18" fill="none" stroke="var(--sky)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
         </div>
-        <span class="hdr-title">Weather4Lox</span>
+        <span class="hdr-title">Weather4Lox v2.0</span>
       </div>
       <div class="hdr-meta">
         <span class="dot"></span>
@@ -549,7 +638,7 @@ function scheduleRefresh() {
             <div class="hero-feels" id="heroWind" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">-- km/h</div>
           </div>
           <div class="hero-icon-box accent-bg">
-            <img class="hero-icon" id="heroIcon" src="icons/color/cloudy_day.png" alt="">
+            <img class="hero-icon" id="heroIcon" src="icons/naturalistic/clear_day.png" alt="">
           </div>
         </div>
 
@@ -594,7 +683,7 @@ function scheduleRefresh() {
           </div>
           <div class="astro-item">
             <div class="astro-emoji" style="background:rgba(99,102,241,0.1)">&nbsp;&#x1F321;</div>
-            <div><div class="astro-label" data-i18n="theme.feels_like">Gefuehlt</div><div class="astro-val mono" id="heroFeelslike">9.1&deg;</div></div>
+            <div><div class="astro-label" data-i18n="theme.feels_like">Gefühlt</div><div class="astro-val mono" id="heroFeelslike">9.1&deg;</div></div>
           </div>
         </div>
       </div>
@@ -626,9 +715,9 @@ function scheduleRefresh() {
       <div class="glass extra"><div class="stat-label" data-i18n="theme.dew_point">Taupunkt</div><div class="stat-val mono" id="statDewpoint">6&deg;</div></div>
       <div class="glass extra"><div class="stat-label" data-i18n="theme.precipitation">Niederschlag</div><div class="stat-val mono" id="statPrecip">0.2 mm</div></div>
       <div class="glass extra"><div class="stat-label" data-i18n="theme.uv_index">UV-Index</div><div class="stat-val mono" id="statUVI">3</div></div>
-      <div class="glass extra"><div class="stat-label" data-i18n="theme.cloud_cover">Bewoelkung</div><div class="stat-val mono" id="statClouds">45%</div></div>
-      <div class="glass extra"><div class="stat-label" data-i18n="theme.gusts">Boen</div><div class="stat-val mono" id="statGusts">28 km/h</div></div>
-      <div class="glass extra"><div class="stat-label" data-i18n="theme.feels_like">Gefuehlt</div><div class="stat-val mono" id="statFeelslike">9.1&deg;</div></div>
+      <div class="glass extra"><div class="stat-label" data-i18n="theme.cloud_cover">Bewölkung</div><div class="stat-val mono" id="statClouds">45%</div></div>
+      <div class="glass extra"><div class="stat-label" data-i18n="theme.gusts">Böen</div><div class="stat-val mono" id="statGusts">28 km/h</div></div>
+      <div class="glass extra"><div class="stat-label" data-i18n="theme.feels_like">Gefühlt</div><div class="stat-val mono" id="statFeelslike">9.1&deg;</div></div>
     </div>
   </div>
 
@@ -733,11 +822,12 @@ window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', fu
 
 // ===== RENDER HOUR STRIP =====
 function renderHourStrip(containerId, dataArray) {
+  console.log('renderHourStrip', containerId, dataArray.length);
   var container = document.getElementById(containerId);
   if (!container) return;
   container.innerHTML = '';
   for (var i = 0; i < dataArray.length; i++) {
-    var d = dataArray[i];
+    var h = dataArray[i];
     var card = document.createElement('div');
     card.className = 'hcard glass';
     card.setAttribute('data-idx', i);
@@ -745,10 +835,21 @@ function renderHourStrip(containerId, dataArray) {
       el.onclick = function() { selectHour(el, arr); };
     })(card, dataArray);
     card.innerHTML =
-      '<div class="hcard-time mono">' + d.hour + ':00</div>' +
-      '<img class="hcard-icon" src="' + resolveIcon(d.weatherCode, d.dn) + '" alt="">' +
-      '<div class="hcard-temp">' + Math.round(d.temp) + '&deg;</div>' +
-      (d.pop != null ? '<div class="hcard-pop">' + d.pop + '%</div>' : '');
+      '<div class="hcard-time mono">' + h.hour + ':00</div>' +
+      '<img class="hcard-icon" src="' + resolveIcon(h.wCode, h.isNight, h.moonAge) + '" alt="">' +
+      '<div class="hcard-temp">' + Math.round(h.temp) + '&deg;</div>' +
+      (h.prop != null ? '<div class="hcard-prop">' + h.prop + '%</div>' : '');
+    card.onclick = function() {
+      console.log('CLICKED:', this.getAttribute('data-idx')); // sollte IMMER sichtbar werden
+      selectHour(this, dataArray);
+    };
+    container.addEventListener('click', function(evt) {
+      var card = evt.target.closest('.hcard');
+      if (card && container.contains(card)) {
+        console.log('Delegierter Klick auf Card:', card.getAttribute('data-idx'));
+        selectHour(card, dataArray);
+      }
+    });
     container.appendChild(card);
   }
 }
@@ -756,6 +857,7 @@ function renderHourStrip(containerId, dataArray) {
 // ===== RENDER DAILY =====
 function renderDaily(containerId, dataArray) {
   var container = document.getElementById(containerId);
+  const isDay = false; // equals not is day
   if (!container) return;
   container.innerHTML = '';
   for (var i = 0; i < dataArray.length; i++) {
@@ -763,18 +865,18 @@ function renderDaily(containerId, dataArray) {
     var row = document.createElement('div');
     row.className = 'drow glass' + (i === 0 ? ' today' : '');
     row.innerHTML =
-      '<div><div class="drow-day">' + d.day + '</div><div class="drow-date mono">' + d.date + '</div></div>' +
-      '<img class="drow-icon" src="' + resolveIcon(d.weatherCode, "day") + '" alt="">' +
+      '<div><div class="drow-day">' + d.day + '</div><div class="drow-date mono">' + d.datetime + '</div></div>' +
+      '<img class="drow-icon" src="' + resolveIcon(d.wCode, isDay, 0) + '" alt="">' +
       (d.desc ? '<div class="drow-desc">' + d.desc + '</div>' : '<div class="drow-desc"></div>') +
-      (d.pop != null ? '<div class="drow-pop">' + d.pop + '%</div>' : '<div class="drow-pop"></div>') +
-      '<div class="drow-temps"><span class="drow-lo mono">' + Math.round(d.low) + '&deg;</span><div class="drow-bar"><div class="drow-fill" id="bar' + i + '"></div></div><span class="drow-hi mono">' + Math.round(d.high) + '&deg;</span></div>';
+      (d.prop != null ? '<div class="drow-prop">' + d.prop + '%</div>' : '<div class="drow-prop"></div>') +
+      '<div class="drow-temps"><span class="drow-lo mono">' + Math.round(d.tempMin) + '&deg;</span><div class="drow-bar"><div class="drow-fill" id="bar' + i + '"></div></div><span class="drow-hi mono">' + Math.round(d.tempMax) + '&deg;</span></div>';
     container.appendChild(row);
   }
   // Calculate temp bar positions
   var allTemps = [];
   for (var i = 0; i < dataArray.length; i++) {
-    allTemps.push(dataArray[i].low);
-    allTemps.push(dataArray[i].high);
+    allTemps.push(dataArray[i].tempMin);
+    allTemps.push(dataArray[i].tempMax);
   }
   var mn = Math.min.apply(null, allTemps);
   var mx = Math.max.apply(null, allTemps);
@@ -782,8 +884,8 @@ function renderDaily(containerId, dataArray) {
   for (var i = 0; i < dataArray.length; i++) {
     var b = document.getElementById('bar' + i);
     if (!b) continue;
-    b.style.left = (Math.max(0, (dataArray[i].low - mn) / rng) * 100) + '%';
-    b.style.width = (Math.max(2, (dataArray[i].high - dataArray[i].low) / rng) * 100) + '%';
+    b.style.left = (Math.max(0, (dataArray[i].tempMin - mn) / rng) * 100) + '%';
+    b.style.width = (Math.max(2, (dataArray[i].tempMax - dataArray[i].tempMin) / rng) * 100) + '%';
   }
 }
 
@@ -799,10 +901,22 @@ function selectHour(el, dataArray) {
     heroTemp.innerHTML = Math.round(d.temp) + '<sup>\u00b0C</sup>';
     heroTemp.style.opacity = '1';
   }, 150);
-  document.getElementById('heroDesc').textContent = d.desc;
-  document.getElementById('heroWind').textContent = d.wind + ' km/h ' + d.wind_dir;
-  document.getElementById('heroHumidity').textContent = d.humidity + '%';
-  document.getElementById('heroIcon').src = resolveIcon(d.weatherCode, d.dn);
+  document.getElementById('heroDesc').textContent = d.desc || '--';
+
+  // Wind: d.wind (Geschwindigkeit), d.windDir (Grad)
+  document.getElementById('heroWind').textContent =
+    (d.wind != null ? d.wind : '--') + ' km/h' +
+    (liveData.lang.wind_from ? ', ' + liveData.lang.wind_from + ' ' : ' ') +
+    getWindDirLabel(d.windDir);
+
+  // Luftfeuchte
+  document.getElementById('heroHumidity').textContent =
+    (d.humidity != null ? d.humidity : '--') + '%';
+  
+  // Icon
+  document.getElementById('heroIcon').src =
+    resolveIcon(d.wCode, d.isNight, d.moonAge);
+  console.log('Selected hour:', d);
 }
 
 // ===== PRESELECT HOUR =====

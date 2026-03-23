@@ -46,28 +46,28 @@ require "$lbpbindir/grabber_utils.pl";
 my $version = LoxBerry::System::pluginversion();
 
 # params from config
-my $pcfg		= new Config::Simple("$lbpconfigdir/weather4lox.cfg");
-my $wuurl		= $pcfg->param("WUNDERGROUND.URL");
-my $stationid		= $pcfg->param("WUNDERGROUND.STATIONID");
+my $pcfg        = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
+my $wuurl       = $pcfg->param("WUNDERGROUND.URL");
+my $stationid   = $pcfg->param("WUNDERGROUND.STATIONID");
 
 # names for JSON 
-my $grabber_file     = basename(__FILE__);
-my $grabber_label    = "Weather Underground ";
-my $grabber_key      = "wunderground";          # name in JSONs
+my $grabberFile     = basename(__FILE__);
+my $grabberLabel    = "Weather Underground ";
+my $grabberKey      = "wunderground";          # name in JSONs
 
 # Get the public API key from the WU website
 # curl -Ss https://www.wunderground.com/dashboard/pws/ISACHSEN347 | grep apiKey | sed -r 's/.*apiKey=([0-9a-z]*)\&.*/\1/g'
 # $content = qx(curl -Ss https://www.wunderground.com/dashboard/pws/ISACHSEN347 | grep apiKey);
-my $urlGetKey_raw = "https://www.wunderground.com/dashboard/pws/$stationid";
+my $urlGetKeyRaw = "https://www.wunderground.com/dashboard/pws/$stationid";
 
 # Read language phrases
 my %L = LoxBerry::System::readlanguage("language.ini");
 
 # Create a logging object
 my $log = LoxBerry::Log->new (
-	package => 'weather4lox',
-	name => 'grabber_wu',
-	logdir => "$lbplogdir",
+    package => 'weather4lox',
+    name => 'grabber_wu',
+    logdir => "$lbplogdir",
 );
 
 # Commandline options
@@ -77,104 +77,104 @@ GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 });
 
 if ($verbose) {
-	$log->stdout(1);
-	$log->loglevel(7);
+    $log->stdout(1);
+    $log->loglevel(7);
 }
 
 LOGSTART "Weather4Lox GRABBER_WUNDERGROUND process started";
 LOGDEB "This is $0 Version $version";
 
-require_or_logdie('DateTime::Format::ISO8601');
+requireOrLogdie('DateTime::Format::ISO8601');
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone         = qx(cat /etc/timezone);
 chomp ($timezone);
 
-my $apikey = api_call(
-	url => "$urlGetKey_raw",
-	# maskkeys => $maskkeys,    # no masking needed here as there are no secret API keys
-	# keyparam => 'appid',
-	# apikey => $apikey, 
-	info => "for PWS station ID $stationid (getting API key only)",
+my $apikey = apiCall(
+    url => "$urlGetKeyRaw",
+    # maskkeys => $maskkeys,    # no masking needed here as there are no secret API keys
+    # keyparam => 'appid',
+    # apikey => $apikey, 
+    info => "for PWS station ID $stationid (getting API key only)",
     match => qr/.*apiKey=([0-9a-z]*)\&.*/s,
 );
 
 # Get data from Wunderground Server (API request) for current conditions
-my $resCurrent = api_call(
-	url => "$wuurl?apiKey=$apikey&stationId=$stationid&format=json&units=m&numericPrecision=decimal",
-	#maskkeys => $maskkeys, # not needed here 
-	#keyparam => 'appid',
-	# apikey => $apikey,
-	info => "for PWS station ID $stationid (Current Weather Data)",
+my $resCurrent = apiCall(
+    url => "$wuurl?apiKey=$apikey&stationId=$stationid&format=json&units=m&numericPrecision=decimal",
+    #maskkeys => $maskkeys, # not needed here 
+    #keyparam => 'appid',
+    # apikey => $apikey,
+    info => "for PWS station ID $stationid (Current Weather Data)",
 );
 
 # read JSON file for current conditions get basic weather data
-my $weather_key = "current";
-my $envelope = read_json_file($lbplogdir, $weather_key);
-my $cur = $envelope->{$weather_key} // {};
+my $weatherKey = "current";
+my $envelope = readJsonFile($lbplogdir, $weatherKey);
+my $cur = $envelope->{$weatherKey} // {};
 
-LOGDEB "Adding/overwriting WU data to $weather_key weather data.";
+LOGDEB "Adding/overwriting WU data to $weatherKey weather data.";
 
 # real (air) temperature, feels like, wind chill and heat index
-my $temp = get_formatted('%.1f', $resCurrent, 'observations', 0, 'metric', 'temp');
-my $wind_chill = get_formatted('%.1f', $resCurrent, 'observations', 0, 'metric', 'windChill');
-my $heat_index = get_formatted('%.1f', $resCurrent, 'observations', 0, 'metric', 'heatIndex');
+my $temp = getFormatted('%.1f', $resCurrent, 'observations', 0, 'metric', 'temp');
+my $windChill = getFormatted('%.1f', $resCurrent, 'observations', 0, 'metric', 'windChill');
+my $heatIndex = getFormatted('%.1f', $resCurrent, 'observations', 0, 'metric', 'heatIndex');
 
 $cur->{temperature}{air} = $temp;                                                                    # cur_tt        - hourly max temperature (°C)
 # Windchill is only relevant if it differs significantly from the actual temperature
-if (abs($wind_chill - $temp) > 0.1 || !defined $cur->{temperature}{wind_chill}) {
-	$cur->{temperature}{wind_chill} = $wind_chill;                                                   # cur_w_ch      - min feels-like temperature, same as cur_w_ch  - wind chill (feel)
+if (defined $windChill && defined $temp && abs($windChill - $temp) > 0.1 || !defined $cur->{temperature}{windChill}) {
+    $cur->{temperature}{windChill} = $windChill;                                                   # cur_w_ch      - min feels-like temperature, same as cur_w_ch  - wind chill (feel)
 }
 # Heat index is only relevant if it differs significantly from the actual temperature
-if (abs($heat_index - $temp) > 0.1 || !defined $cur->{temperature}{heat_index}) {
-	$cur->{temperature}{heat_index} = $heat_index;                                                   # cur_hi        - heat index (°C)
+if (defined $heatIndex && defined $temp && abs($heatIndex - $temp) > 0.1 || !defined $cur->{temperature}{heatIndex}) {
+    $cur->{temperature}{heatIndex} = $heatIndex;                                                   # cur_hi        - heat index (°C)
 }
 
 # wind data
-my $wind_dir = get_formatted('%.0f', $resCurrent, 'observations', 0, 'winddir'); 
+my $windDir = getFormatted('%.0f', $resCurrent, 'observations', 0, 'winddir'); 
 $cur->{wind} = {
-    direction       => $wind_dir,                                                                    # cur_w_dir     - wind direction (degree)
-    dir_label       => get_wind_direction_label($wind_dir, \%L),                                     # cur_w_dirdes  - wind direction description
-    speed           => get_formatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'windSpeed'), # cur_w_sp      - wind speed (km/h)
-    gust            => get_formatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'windGust'),  # cur_w_gu      - wind gust (km/h)
+    direction       => $windDir,                                                                    # cur_w_dir     - wind direction (degree)
+    dirLabel       => getWindDirectionLabel($windDir, \%L),                                         # cur_w_dirdes  - wind direction description
+    speed           => getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'windSpeed'), # cur_w_sp      - wind speed (km/h)
+    gust            => getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'windGust'),  # cur_w_gu      - wind gust (km/h)
 };
 
 # other weather data
-$cur->{humidity} = get_formatted('%.1f', $resCurrent, 'observations', 0, 'humidity');              # cur_hu        - humidity
-$cur->{pressure} = get_formatted('%.0f', $resCurrent, 'observations', 0, 'metric', 'pressure');    # cur_pr        - air pressure (hPa)
-$cur->{dewpoint} = get_formatted('%.1f', $resCurrent, 'observations', 0, 'metric', 'dewpt');       # cur_dp        - dew point (°C)
-$cur->{uv_index} = get_formatted('%.1f', $resCurrent, 'observations', 0, 'uv');                    # cur_uvi       - UV index
-$cur->{visibility} = get_percentage('%.0f', $resCurrent, 'observations', 0, 'visibility');         # cur_vis       - visibility (m/km as needed)
-$cur->{solar_radiation} = get_formatted('%.1f', $resCurrent, 'observations', 0, 'solarRadiation'); # cur_sr        - solar radiation (W/m²)
+$cur->{humidity} = getFormatted('%.1f', $resCurrent, 'observations', 0, 'humidity');              # cur_hu        - humidity
+$cur->{pressure} = getFormatted('%.0f', $resCurrent, 'observations', 0, 'metric', 'pressure');    # cur_pr        - air pressure (hPa)
+$cur->{dewpoint} = getFormatted('%.1f', $resCurrent, 'observations', 0, 'metric', 'dewpt');       # cur_dp        - dew point (°C)
+$cur->{uvIndex} = getFormatted('%.1f', $resCurrent, 'observations', 0, 'uv');                     # cur_uvi       - UV index
+$cur->{visibility} = getPercentage('%.0f', $resCurrent, 'observations', 0, 'visibility');         # cur_vis       - visibility (m/km as needed)
+$cur->{solarRadiation} = getFormatted('%.1f', $resCurrent, 'observations', 0, 'solarRadiation');  # cur_sr        - solar radiation (W/m²)
 
 # precipitation
 my %precipitation = %{ $cur->{precipitation} // {} };
 
-$precipitation{rain_today_mm} = get_formatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'precipTotal' );      # cur_prec_today, today precipitation in mm
-$precipitation{rain_1hr_mm} = get_formatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'precipRate' );        # cur_prec_1hr, 1h precipitation in mm
+$precipitation{rainToday} = getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'precipTotal' );      # cur_prec_today, today precipitation in mm
+$precipitation{rain1hr} = getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'precipRate' );         # cur_prec_1hr, 1h precipitation in mm
 
 $cur->{precipitation} = \%precipitation;
 
 # Add station information and metadata
 
-my $station_id = get_formatted('', $resCurrent, 'observations', 0, 'stationID'); # station ID from WU data, e.g. ISCHLESW69
-my $obs_time_local = get_formatted('', $resCurrent, 'observations', 0, 'obsTimeLocal'); # observation time in local time, e.g. 2026-03-16 00:44:29
+my $stationID = getFormatted('', $resCurrent, 'observations', 0, 'stationID'); # station ID from WU data, e.g. ISCHLESW69
+my $obsTimeLocal = getFormatted('', $resCurrent, 'observations', 0, 'obsTimeLocal'); # observation time in local time, e.g. 2026-03-16 00:44:29
 
-my $dt_current = DateTime->now( time_zone => $timezone );
+my $dtCurrent = DateTime->now( time_zone => $timezone );
 
-$envelope->{$grabber_key} = {
-	filename        => "$lbplogdir/$weather_key.json",
-	generated_at    => $dt_current->iso8601(),
-	observed_at     => $obs_time_local,
-	grabber_label   => $grabber_label,
-	grabber_script  => $grabber_file,
-	station_id      => $station_id,
-	schema_version  => "v1.0",
+$envelope->{$grabberKey} = {
+    filename        => "$lbplogdir/$weatherKey.json",
+    generatedAt     => $dtCurrent->iso8601(),
+    observedAt      => $obsTimeLocal,
+    grabberLabel    => $grabberLabel,
+    grabberScript   => $grabberFile,
+    stationID       => $stationID,
+    schemaVersion   => "v1.0",
 };
-$envelope->{$weather_key} = $cur;
+$envelope->{$weatherKey} = $cur;
 
 # Write JSON back to file
-write_json_file($lbplogdir, $weather_key, $envelope);
+writeJsonFile($lbplogdir, $weatherKey, $envelope);
 
 # Give OK status to client.
 LOGOK "Current weather data is saved successfully.";
@@ -184,5 +184,5 @@ exit;
 
 END
 {
-	LOGEND;
+    LOGEND;
 }

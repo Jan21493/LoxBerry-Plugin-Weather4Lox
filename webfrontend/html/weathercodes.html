@@ -647,26 +647,26 @@ async function computeIconSetInfo(iconMapping) {
 
   keys.forEach(function(k) {
     const e = icons[k] || {};
-    if (e.icon_day) {
-      const url = basePath + e.icon_day;
+    if (e.iconDay) {
+      const url = basePath + e.iconDay + ext;
       filesToCheck.push(url);
       symbolsDay++;
     }
-    if (e.icon_night) {
-      let moonPhases = e.moon_phases || 0;
+    if (e.iconNight) {
+      let moonPhases = e.moonPhases || 0;
       if (![0, 3, 5].includes(moonPhases)) {
-        console.warn('Unexpected moon_phases value for code ' + k + ': ' + moonPhases);
+        console.warn('Unexpected moonPhases value for code ' + k + ': ' + moonPhases);
         moonPhases = 0;
       }
       
       if (moonPhases === 0) {
-        const url = basePath + e.icon_night;
+        const url = basePath + e.iconNight + ext;
         filesToCheck.push(url);
         symbolsNight++;
       } else {
         for (let i = 0; i < moonPhases; i++) {
           const pchar = moonPhases === 3 ? 'h' : 'q'; // 'h' for half phases, 'q' for quarter phases
-          const fname = phaseFilename(e.icon_night, i, pchar, ext);
+          const fname = phaseFilename(e.iconNight, i, pchar, ext);
           const url = basePath + fname;
           filesToCheck.push(url);
           symbolsNight++; 
@@ -770,7 +770,7 @@ function buildIconPath(filename) {
 }
 
 function phaseFilename(baseFilename, phaseIdx, pchar, ext) {
-  const base = baseFilename.slice(0, -ext.length);
+  const base = baseFilename;
   return base + '_' + phaseIdx + pchar + ext;
 }
 
@@ -825,22 +825,22 @@ function renderIconContainer(code) {
   }
 
   // Day icon
-  if (codeEntry.icon_day) {
+  if (codeEntry.iconDay) {
     const tooltip = [
       '<b>' + t('hover_day') + '</b>',
-      t('hover_filename') + ': ' + codeEntry.icon_day
+      t('hover_filename') + ': ' + codeEntry.iconDay + ext
     ];
-    container.appendChild(makeIcon(codeEntry.icon_day, tooltip));
+    container.appendChild(makeIcon(codeEntry.iconDay, tooltip));
   }
 
   // Night icon(s)
-  if (codeEntry.icon_night) {
+  if (codeEntry.iconNight) {
 
-    const moonPhases = codeEntry.moon_phases || 0;
+    const moonPhases = codeEntry.moonPhases || 0;
     if (moonPhases > 0) {
       for (let i = 0; i < moonPhases; i++) {
         const pchar = moonPhases === 3 ? 'h' : 'q'; // 'h' for half phases, 'q' for quarter phases
-        const phaseFile = phaseFilename(codeEntry.icon_night, i, pchar, ext);
+        const phaseFile = phaseFilename(codeEntry.iconNight, i, pchar, ext);
         const tooltip = [
           '<b>' + t('hover_night') + '</b>',
           t('hover_moon_phase') + ': ' + tMoonPhase(i),
@@ -851,9 +851,9 @@ function renderIconContainer(code) {
     } else {
       const tooltip = [
         '<b>' + t('hover_night') + '</b>',
-        t('hover_filename') + ': ' + codeEntry.icon_night
+        t('hover_filename') + ': ' + codeEntry.iconNight + ext
       ];
-      container.appendChild(makeIcon(codeEntry.icon_night, tooltip));
+      container.appendChild(makeIcon(codeEntry.iconNight, tooltip));
     }
   }
 

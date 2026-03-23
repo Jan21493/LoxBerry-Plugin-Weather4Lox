@@ -25,7 +25,19 @@ use warnings;
 use Scalar::Util qw(looks_like_number);
 use File::Copy;
 use JSON::PP;
-my $useragent        = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
+use Encode qw(encode_utf8);
+use POSIX qw(strftime);
+my $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
+
+##########################################################################
+# Helper: convert snake_case to camelCase
+sub snakeToCamel {
+    my ($s) = @_;
+    return $s unless defined $s;
+    # convert snake_case -> camelCase: example my_key_name -> myKeyName
+    $s =~ s/_([a-z])/\U$1\E/g;
+    return $s;
+}
 
 ##########################################################################
 # Special Modules (with error handling in case of missing modules)
@@ -33,7 +45,7 @@ my $useragent        = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/53
 # These modules should have been installed during installation of plugin
 # by commands in /dpkg/apt
 
-sub require_or_logdie {
+sub requireOrLogdie {
     my ($module) = @_;
 
     eval "require $module; 1;" or do {
@@ -54,7 +66,7 @@ sub require_or_logdie {
 ##########################################################################
 # mask of key in URL (used for logging to keep keys secret)
 
-sub sanitize_url {
+sub sanitizeUrl {
     my ($url, $keyparam) = @_;
     return $url if !defined $url;
 
@@ -70,7 +82,7 @@ sub sanitize_url {
 ##########################################################################
 # mask of key in API response (used for logging to keep keys secret)
 
-sub sanitize_dump {
+sub sanitizeDump {
     my ($text, $apikey, $keyparam) = @_;
     return $text if !defined $text;
 
@@ -94,7 +106,7 @@ sub sanitize_dump {
 # Make an API call with error handling, Logging incl. masking of keys,
 # return matched part only, and do JSON decoding
 
-sub api_call {
+sub apiCall {
     my (%p) = @_;
 
     my $url      = $p{url}       // '';
@@ -108,9 +120,9 @@ sub api_call {
     my $urlmasked;
     if ($maskkeys) {
         # Mask keyparam in URL, e.g. ?key=abc123 -> ?key=***MASKED***
-        $urlmasked = sanitize_url($url, $keyparam);
+        $urlmasked = sanitizeUrl($url, $keyparam);
         # Mask literal key value (if provided!) in case the key appears elsewhere in the URL (e.g. in path segments)
-        $urlmasked = sanitize_dump($urlmasked, $apikey, $keyparam);
+        $urlmasked = sanitizeDump($urlmasked, $apikey, $keyparam);
     } else {
         $urlmasked = $url;
     }
@@ -118,7 +130,7 @@ sub api_call {
     LOGDEB("URL for API call: $urlmasked");
 
     # Perform the API call
-    my $ua  = LWP::UserAgent->new( agent => $useragent );
+    my $ua  = LWP::UserAgent->new( agent => $userAgent );
     my $res = $ua->get($url);
     my $content = $res->decoded_content();
 
@@ -149,21 +161,21 @@ sub api_call {
     # JSON response is expected, so check if it can be decoded
 
     # Decode JSON response from server
-    my $decoded_json = decode_json( "$content" );
+    my $decodedJson = decode_json( "$content" );
 
     my $body    = '';
     # my $json_obj = JSON->new->pretty->canonical;
-    my $json_obj = JSON->new->canonical;
-    $body = $json_obj->encode($decoded_json);
+    my $jsonObj = JSON->new->canonical;
+    $body = $jsonObj->encode($decodedJson);
 
-    my $resp_entry = '';
-    $resp_entry = "HTTP body (JSON):\n$body" if $body ne '';
-    $resp_entry = sanitize_dump($resp_entry, $apikey, $keyparam) if $resp_entry ne '';
-    $resp_entry = encode_utf8($resp_entry) if $resp_entry ne '';
-    LOGDEB($resp_entry) if $resp_entry ne '';
+    my $respEntry = '';
+    $respEntry = "HTTP body (JSON):\n$body" if $body ne '';
+    $respEntry = sanitizeDump($respEntry, $apikey, $keyparam) if $respEntry ne '';
+    $respEntry = encode_utf8($respEntry) if $respEntry ne '';
+    LOGDEB($respEntry) if $respEntry ne '';
     LOGDEB("-" x 80);
 
-    return $decoded_json;
+    return $decodedJson;
 }
 
 ##########################################################################
@@ -174,9 +186,6 @@ sub api_call {
 # Design principle: The JSON files use ISO 8601 datetime strings instead
 # of the localized weekday/month name columns in the .dat files.
 # Consumers parse the ISO datetime and format in their own locale.
-
-use JSON::PP ();
-use POSIX     qw(strftime);
 
 # ── Normalized weather code mapping (legacy_code → normalized id) ──
 # Matches data/weathercodes.json v2.0
@@ -210,59 +219,6 @@ my %WEATHER_CODE_TO_ID = (
     29 => "sleet-shower-heavy",
 );
 
-# ── Raw field lists (positional match to .dat columns) ──────────────
-# TODO: may be removed later
-
-my @CURRENT_RAW = qw(
-    epoch date_rfc822 tz_short tz_long tz_offset
-    city country country_code latitude longitude elevation
-    temperature feelslike humidity
-    wind_direction_desc wind_direction_deg wind_speed wind_gust windchill
-    pressure dewpoint visibility solar_radiation heat_index uv_index
-    precip_today_mm precip_1hr_mm
-    weather_icon weather_code weather_description
-    moon_percent moon_age moon_phase moon_hemisphere
-    sunrise_hour sunrise_min sunset_hour sunset_min
-    ozone cloud_cover precip_probability snow
-);
-
-my @DAILY_RAW = qw(
-    period epoch day month month_name month_name_short year hour minutes
-    weekday weekday_short
-    high_temp low_temp precip_probability precip_mm snow_cm
-    wind_speed_max wind_dir_max_desc wind_dir_max_deg
-    wind_speed_avg wind_dir_avg_desc wind_dir_avg_deg
-    humidity_avg humidity_max humidity_min
-    weather_icon weather_code weather_description
-    ozone moon_percent dewpoint pressure uv_index
-    sunrise_hour sunrise_min sunset_hour sunset_min
-    visibility moon_age moon_phase
-);
-
-my @HOURLY_RAW = qw(
-    period epoch day month month_name month_name_short year hour minutes
-    weekday weekday_short
-    temperature feelslike heat_index humidity
-    wind_direction_desc wind_direction_deg wind_speed windchill
-    pressure dewpoint sky_percent sky_description uv_index
-    precip_mm snow_cm precip_probability
-    weather_code weather_icon weather_description
-    ozone solar_radiation visibility
-    moon_percent moon_age moon_phase
-);
-
-# ── Fields to DROP from JSON (replaced by "datetime" / "sunrise" / "sunset") ──
-
-my %DROP_CURRENT = map { $_ => 1 } qw(
-    date_rfc822 tz_short tz_long tz_offset
-    sunrise_hour sunrise_min sunset_hour sunset_min
-);
-
-my %DROP_FORECAST = map { $_ => 1 } qw(
-    day month month_name month_name_short year hour minutes
-    weekday weekday_short
-    sunrise_hour sunrise_min sunset_hour sunset_min
-);
 
 
 ##########################################################################
@@ -277,10 +233,10 @@ my %DROP_FORECAST = map { $_ => 1 } qw(
 #   $root  - root data structure
 #   @path  - path elements (tree and param to retrieve)
 # Returns:
-#   rounded numeric value (e.g. 4.1) or undef if value missing/invalid
+#   value or undef if missing/invalid
 # Note: If the current node is an ARRAYref, only numeric indices are accepted.
 
-sub get_value {
+sub getValue {
     my ($root, @path) = @_;
     my $cur = $root;
 
@@ -311,14 +267,14 @@ sub get_value {
 # Parameters:
 #   $fmt   - sprintf format, e.g. '%.2f', round to two decimal places
 #   $root  - root data structure
-#   @path  - path elements passed to get_value
+#   @path  - path elements passed to getValue
 # Returns:
 #   rounded numeric value (e.g. 4.1) or undef if value missing/invalid
 
-sub get_formatted {
+sub getFormatted {
     my ($fmt, $root, @path) = @_;
 
-    my $v = get_value($root, @path);
+    my $v = getValue($root, @path);
     return undef unless defined $v;
   
     # Trim leading/trailing whitespace (only scalar strings)
@@ -329,24 +285,24 @@ sub get_formatted {
     return undef unless looks_like_number($v);
     return undef if $v =~ /^(?:nan|inf|infinity)$/i;  # just in case
 
-    my $s = sprintf($fmt, $v);
-    return $s + 0; # return as number
+    my $s = sprintf($fmt, $v) + 0; # numeric result of sprintf
+    return $s;
 }
 
 ##########################################################################
-# Get a formatted value (numbers only) from decoded JSON, used for rounding
+# Get a formatted time value (numbers only) from decoded JSON, used for rounding
 # Parameters:
 #   $fmt      - sprintf format, e.g. '%H:%M'
 #   $root     - root data structure
-#   @path     - path elements passed to get_value
+#   @path     - path elements passed to getValue
 # Returns:
 #   time information (e.g. 23:10) or undef if value missing/invalid
 
-sub get_time_formatted {
+sub getTimeFormatted {
     my ($fmt, $timezone, $root, @path) = @_;
 
     # Get value and verify if it is not empty
-    my $iso_time = get_value($root, @path);
+    my $iso_time = getValue($root, @path);
     return undef unless defined $iso_time && $iso_time ne '';
 
     my $dt = eval { DateTime::Format::ISO8601->parse_datetime($iso_time) };
@@ -362,18 +318,18 @@ sub get_time_formatted {
 }
 
 ##########################################################################
-# Get a percentage value by calling get_formatted and multiplying the result by 100.
+# Get a percentage value by calling getFormatted and multiplying the result by 100.
 # Parameters:
-#   $fmt   - sprintf format used by get_formatted (e.g. '%.2f')
-#   $root  - root data structure (same as for get_formatted)
-#   @path  - path elements passed to get_formatted
+#   $fmt   - sprintf format used by getFormatted (e.g. '%.2f')
+#   $root  - root data structure (same as for getFormatted)
+#   @path  - path elements passed to getFormatted
 # Returns:
 #   numeric percentage (e.g. 46) or undef if value missing/invalid
 
-sub get_percentage {
+sub getPercentage {
     my ($fmt, $root, @path) = @_;
 
-    my $v = get_formatted($fmt, $root, @path);
+    my $v = getFormatted($fmt, $root, @path);
     return undef unless defined $v;
 
     return $v * 100;
@@ -387,7 +343,7 @@ sub get_percentage {
 # Return:
 #   $label or (undef, undef) on invalid input
 
-sub get_wind_direction_label {
+sub getWindDirectionLabel {
     my ($deg, $Lref) = @_;
 
     # validate/normalize input
@@ -408,7 +364,7 @@ sub get_wind_direction_label {
     my $L = $Lref // \%main::L;
     $L = {} unless defined $L && ref $L eq 'HASH';
     
-    my %dir_labels = (
+    my %dirLabels = (
         N  => $L->{'GRABBER.LABEL_N'}  // 'North',
         NE => $L->{'GRABBER.LABEL_NE'} // 'North-East',
         E  => $L->{'GRABBER.LABEL_E'}  // 'East',
@@ -420,22 +376,24 @@ sub get_wind_direction_label {
     );
 
     # cur_w_dirdes, wind direction description, e.g. "South",
-    my $label = $dir_labels{$wdir};
+    my $label = $dirLabels{$wdir};
     $label = defined $label ? Encode::decode("UTF-8", $label) : undef;
 
     return $label;
 }
 
+##########################################################################
 # Calculate short name for wind direction from long name
-sub get_wind_direction_short {
-    my ($wind_descr) = @_;
+sub getWindDirectionShort {
+    my ($windDescr) = @_;
     
     # calculate short name from description
-    my $short = join('', $wind_descr =~ /([A-Z]+)/g);
+    my $short = join('', $windDescr =~ /([A-Z]+)/g);
 
     return $short;
 }
 
+##########################################################################
 # Get short and full label for a wind direction in degrees
 # Parameters:
 #   $deg  - wind direction in degrees (number from 0 to 360 expected)
@@ -443,19 +401,18 @@ sub get_wind_direction_short {
 # Return:
 #   ($label, $short) or (undef, undef) on invalid input
 
-sub get_wind_direction_info {
+sub getWindDirectionInfo {
     my ($deg, $Lref) = @_;
 
-    my $label = get_wind_direction_label($deg, $Lref);
-    my $short = get_wind_direction_short($label);
+    my $label = getWindDirectionLabel($deg, $Lref);
+    my $short = getWindDirectionShort($label);
 
     return ($label, $short);
-
 }
 
 ##########################################################################
-# get_coverage($w4l_code) -> returns estimated sky cover percentage (0..100) or undef
-# get_metar_code($w4l_code) -> returns METAR cloud code ('SKC','FEW','SCT','BKN','OVC') or undef
+# getCoverage($w4l_code) -> returns estimated sky cover percentage (0..100) or undef
+# getMetarCode($w4l_code) -> returns METAR cloud code ('SKC','FEW','SCT','OVC') or undef
 #
 # Both functions normalize the icon name (trim, lowercase) and strip intensity suffixes
 # like "_1", "_2", "_3" before lookup. If the icon is not found in the compact mapping,
@@ -497,7 +454,7 @@ my %W4L_COVERAGE_MAP = (
     no_data                    => [ undef, undef ],
 );
 
-sub _normalize_icon {
+sub _normalizeIcon {
     my ($w4l_code) = @_;
     return undef unless defined $w4l_code;
     $w4l_code =~ s/^\s+|\s+$//g;
@@ -506,7 +463,7 @@ sub _normalize_icon {
     return $w4l_code;
 }
 
-sub _fallback_map {
+sub _fallbackMap {
     my ($w4l_code) = @_;
     return (100, 'OVC') if $w4l_code =~ /overcast|ovc|overcast_/;
     return (90,  'OVC') if $w4l_code =~ /thunder|storm/;
@@ -521,43 +478,174 @@ sub _fallback_map {
     return (undef, undef);
 }
 
+##########################################################################
 # Public: returns sky cover percentage (0..100) or undef
-sub get_coverage {
+sub getCoverage {
     my ($w4l_code) = @_;
-    my $w4l_short_code = _normalize_icon($w4l_code);
+    my $w4l_short_code = _normalizeIcon($w4l_code);
     return undef unless defined $w4l_short_code;
 
     if (exists $W4L_COVERAGE_MAP{$w4l_short_code}) {
         return $W4L_COVERAGE_MAP{$w4l_short_code}[0];
     }
 
-    my ($pct, $metar) = _fallback_map($w4l_short_code);
+    my ($pct, $metar) = _fallbackMap($w4l_short_code);
     return $pct;
 }
 
+##########################################################################
 # Public: returns METAR cloud code (SKC, FEW, SCT, BKN, OVC) or undef
-sub get_metar_code {
+sub getMetarCode {
     my ($w4l_code) = @_;
-    my $w4l_short_code = _normalize_icon($w4l_code);
+    my $w4l_short_code = _normalizeIcon($w4l_code);
     return undef unless defined $w4l_short_code;
 
     if (exists $W4L_COVERAGE_MAP{$w4l_short_code}) {
         return $W4L_COVERAGE_MAP{$w4l_short_code}[1];
     }
 
-    my ($pct, $metar) = _fallback_map($w4l_short_code);
+    my ($pct, $metar) = _fallbackMap($w4l_short_code);
     return $metar;
 }
 
 # Example usage:
-# my $cover = get_coverage('cloudy_rain_1');   # -> e.g. 75
-# my $metar = get_metar_code('cloudy_rain_1');# -> e.g. 'BKN'
+# my $cover = getCoverage('cloudy_rain_1');   # -> e.g. 75
+# my $metar = getMetarCode('cloudy_rain_1'); # -> e.g. 'BKN'
 
-sub _read_dat_lines {
-    my ($dat_file) = @_;
+##########################################################################
+# Returns the moon waxing/waning state
+sub getMoonDirection {
+    my $age = shift;                 # moon age in days (0..29.53)
+    my $synodicMonth = 29.53;
+
+    $age = $age % $synodicMonth; # normalize age
+
+    # Determine direction: waxing (<full moon), waning (>full moon)
+    if ($age < ($synodicMonth / 2)) {
+        return 'waxing';
+    } else {
+        return 'waning';
+    }
+}
+
+##########################################################################
+# Returns the moon phase part, either quarter (0q, 1q, 2q, 3q, 4q) or half (0h, 1h, 2h)
+# Parameters:
+#   $age:         moon age in days (0..29.53)
+#   $resolution:  5 for 'quarter' or 3 for 'half' (default: 'quarter')
+
+sub getMoonPhasePart {
+    my ($age, $resolution) = @_;
+    my $synodicMonth = 29.53;
+
+    # normalize age to 0..29.53
+    $age = $age % $synodicMonth;
+
+    # full moon is at half of the synodic month
+    my $fullSize = $synodicMonth / 2;
+    
+    # For the second half (full to new), the quarter is proportional to the remaining time.
+    $age = $synodicMonth - $age if ($age > $fullSize);
+
+    return int($age / $fullSize * ($resolution - 1) + 0.5); # round to nearest integer
+}
+
+##########################################################################
+# Converts time to seconds since midnight
+# Parameter:
+#   time:      time to convert (e.g. "01:30" or "01:30:45")
+
+sub timeToSec {
+    my ($time) = @_;
+
+    my ($hour, $minute, $second) = split /:/, $time;
+    $second //= 0;  # Setze $second auf 0, falls nicht vorhanden
+    $hour   = 0 + ($hour   // 0);
+    $minute = 0 + ($minute // 0);
+    $second = 0 + ($second // 0);
+    my $seconds = $hour * 3600 + $minute * 60 + $second;
+    return $seconds;
+}
+
+##########################################################################
+# Converts time to Loxone epoch time (seconds since 01.01.1970)
+# Parameter:
+#   time:      time to convert - datetime object or unix epoch timestamp
+
+sub toLoxEpoch {
+    my ($dtInput) = @_;
+
+    my $date;
+    # Check, if $dtInput is a DateTime object
+    if (ref($dtInput) eq 'DateTime') {
+        $date = $dtInput;
+    }
+    # Check, if $dtInput is numeric (Epoch)
+    elsif (defined $dtInput && $dtInput =~ /^\d+$/) {
+        $date = DateTime->from_epoch(epoch => $dtInput);
+    }
+    # Otherwise: Try to parse ISO8601 string
+    else {
+        $date = DateTime::Format::ISO8601->parse_datetime($dtInput);
+    }
+
+    my $loxone_ref = 1230764400;                        # time reference is Kollerschlag time (MEZ/UTC+1) according to findings, not UTC!
+    my $loxone_epoch = $date->epoch - $loxone_ref;
+
+    return $loxone_epoch;
+}
+
+##########################################################################
+# Get timezone offset in seconds from tz_offset (perl or ISO), e.g. "+0100" => 3600,
+# "-02:30" => -9000, "2026-03-16T20:00:04+02:00" => 7200
+# Note: The tz_offset string can be in the format "+HHMM" or "-HHMM", 
+#       optionally preceded by a datetime string, e.g. "2026-03-16T20:00:04+0200"
+
+sub tzOffsetSeconds {
+    my ($dtInput) = @_;
+
+    my $tzseconds = 0;
+    if (defined($dtInput) && $dtInput =~ /([+-])(\d{2}):?(\d{2})$/) {
+        my $sign = ($1 eq '+') ? 1 : -1;
+        $tzseconds = $sign * ($2 * 3600 + $3 * 60);
+    }
+    return $tzseconds;
+}
+
+##########################################################################
+# Get timezone offset in seconds from DateTime object, e.g. "+01:00"
+
+sub isoTzOffset {
+    my ($dt) = @_;
+
+    my $tz = $dt->strftime('%z');
+    # add colon to get ISO format, e.g. "+0100" -> "+01:00"
+    return substr($tz,0,3) . ":" . substr($tz,3);
+}
+
+##########################################################################
+# Calculate average / mean of a list of numbers
+
+sub mean {
+  my (@data) = @_;
+
+  my $sum = 0;
+  foreach (@data) {
+    $sum += $_;
+  }
+  if (@data == 0) {
+    return undef; # Avoid division by zero
+  }
+  return ( $sum / @data );
+}
+
+##########################################################################
+# TODO: cleanup - private helper name conversions
+sub _readDatLines {
+    my ($datFile) = @_;
     my @lines;
-    open my $fh, '<:encoding(UTF-8)', $dat_file or do {
-        LOGWARN "Cannot open $dat_file for JSON conversion: $!";
+    open my $fh, '<:encoding(UTF-8)', $datFile or do {
+        LOGWARN "Cannot open $datFile for JSON conversion: $!";
         return ();
     };
     while (my $line = <$fh>) {
@@ -580,24 +668,24 @@ sub _val {
 }
 
 # Build a raw key=>value hash from one pipe-delimited line
-sub _line_to_hash {
-    my ($line, $fields_ref) = @_;
+sub _lineToHash {
+    my ($line, $fieldsRef) = @_;
     my @vals = split /\|/, $line, -1;
     my %h;
-    for my $i (0 .. $#$fields_ref) {
-        $h{ $fields_ref->[$i] } = $vals[$i] // '';
+    for my $i (0 .. $#$fieldsRef) {
+        $h{ $fieldsRef->[$i] } = $vals[$i] // '';
     }
     return %h;
 }
 
 # epoch -> ISO 8601 with timezone from tz_long (or UTC fallback)
-sub _epoch_to_iso {
-    my ($epoch, $tz_long) = @_;
+sub _epochToIso {
+    my ($epoch, $tzLong) = @_;
     return undef unless defined $epoch && $epoch =~ /^\d+$/;
 
     # Try POSIX localtime with TZ override
-    if (defined $tz_long && $tz_long ne '') {
-        local $ENV{TZ} = $tz_long;
+    if (defined $tzLong && $tzLong ne '') {
+        local $ENV{TZ} = $tzLong;
         POSIX::tzset();
         my $iso = strftime("%Y-%m-%dT%H:%M:%S%z", localtime($epoch));
         # Insert colon in offset: +0200 -> +02:00
@@ -610,16 +698,16 @@ sub _epoch_to_iso {
 }
 
 # Read system timezone once
-my $_system_tz;
-sub _system_timezone {
-    return $_system_tz if defined $_system_tz;
+my $_systemTz;
+sub _systemTimezone {
+    return $_systemTz if defined $_systemTz;
     if (open my $fh, '<', '/etc/timezone') {
-        $_system_tz = <$fh>;
-        chomp $_system_tz if defined $_system_tz;
+        $_systemTz = <$fh>;
+        chomp $_systemTz if defined $_systemTz;
         close $fh;
     }
-    $_system_tz //= 'UTC';
-    return $_system_tz;
+    $_systemTz //= 'UTC';
+    return $_systemTz;
 }
 
 # "HH|MM" -> "HH:MM" (from two separate fields)
@@ -629,150 +717,25 @@ sub _hhmm {
     return sprintf("%02d:%02d", $h, $m // 0);
 }
 
-# Add normalized weather_id from legacy weather_code
-sub _enrich_weather_id {
+# Add normalized weatherId from legacy weather_code
+# NOTE: this function now writes camelCase key 'weatherId' and reads either weather_code or weatherCode
+sub _enrichWeatherId {
     my ($rec) = @_;
-    if (defined $rec->{weather_code} && exists $WEATHER_CODE_TO_ID{ $rec->{weather_code} }) {
-        $rec->{weather_id} = $WEATHER_CODE_TO_ID{ $rec->{weather_code} };
+    return $rec unless defined $rec && ref $rec eq 'HASH';
+
+    my $code = undef;
+    if (exists $rec->{weatherCode}) {
+        $code = $rec->{weatherCode};
+    } elsif (exists $rec->{weather_code}) {
+        $code = $rec->{weather_code};
+    }
+
+    if (defined $code && exists $WEATHER_CODE_TO_ID{ $code }) {
+        $rec->{weatherId} = $WEATHER_CODE_TO_ID{ $code };
     }
     return $rec;
 }
 
-
-# ── write_current_json ──────────────────────────────────────────────
-# Accepts either:
-#   write_current_json($logdir, source => ..., grabber => ...)           # legacy: reads current.dat
-#   write_current_json($logdir, data => \%hash, source => ..., grabber => ...)  # direct: hash with JSON field names
-
-sub write_current_json {
-    my ($logdir, %opts) = @_;
-    my $source  = $opts{source}  // '';
-    my $grabber = $opts{grabber} // '';
-    my $data    = $opts{data};     # optional hashref with pre-formatted fields
-
-    my %rec;
-    if ($data) {
-        # Direct path: caller provides hash with final JSON field names/values
-        for my $k (keys %$data) {
-            $rec{$k} = _val($data->{$k});
-        }
-    } else {
-        # Legacy path: read from .dat file
-        my $dat = "$logdir/current.dat";
-        return unless -f $dat;
-        my @lines = _read_dat_lines($dat);
-        return unless @lines;
-
-        my %raw = _line_to_hash($lines[0], \@CURRENT_RAW);
-        my $tz  = $raw{tz_long} || _system_timezone();
-
-        $rec{datetime} = _epoch_to_iso($raw{epoch}, $tz);
-        $rec{epoch}    = _val($raw{epoch});
-        $rec{timezone} = $tz;
-        $rec{sunrise} = _hhmm($raw{sunrise_hour}, $raw{sunrise_min});
-        $rec{sunset}  = _hhmm($raw{sunset_hour},  $raw{sunset_min});
-
-        for my $f (@CURRENT_RAW) {
-            next if $DROP_CURRENT{$f};
-            next if $f eq 'epoch';
-            $rec{$f} = _val($raw{$f});
-        }
-    }
-
-    _enrich_weather_id(\%rec);
-
-    my $generated_at = strftime("%Y-%m-%dT%H:%M:%S%z", localtime(time));
-    $generated_at =~ s/(\d{2})(\d{2})$/$1:$2/;
-
-    my %envelope = (
-        meta => {
-            schema_version => "1.0",
-            source         => $source,
-            grabber        => $grabber,
-            generated_at   => $generated_at,
-        },
-        data => \%rec,
-    );
-
-    my $json_obj = JSON::PP->new->pretty->canonical->utf8;
-    my $out = "$logdir/current.json";
-    my $tmp = "$out.tmp";
-    eval {
-        open my $fh, '>:raw', $tmp or die "Cannot open $tmp: $!";
-        print $fh $json_obj->encode(\%envelope);
-        close $fh;
-        File::Copy::move($tmp, $out) or die "Cannot rename $tmp to $out: $!";
-    };
-    if ($@) {
-        LOGWARN "JSON write failed for $out: $@";
-        return;
-    }
-    LOGOK "Saved current weather data as JSON to $out";
-}
-
-# ── write_current_json_aq ────────────────────────────────────────────
-# For the OpenMeteo AQ grabber: reads current.dat, merges AQ values,
-# writes current.json with the full schema including AQ fields populated.
-
-sub write_current_json_aq {
-    my ($logdir, %opts) = @_;
-    my $source  = $opts{source}  // '';
-    my $grabber = $opts{grabber} // '';
-    my %aq_data = %{ $opts{aq_data} // {} };
-
-    my $dat = "$logdir/current.dat";
-    return unless -f $dat;
-    my @lines = _read_dat_lines($dat);
-    return unless @lines;
-
-    # Build same record as write_current_json
-    my %raw = _line_to_hash($lines[0], \@CURRENT_RAW);
-    my $tz  = $raw{tz_long} || _system_timezone();
-    my %rec;
-    $rec{datetime} = _epoch_to_iso($raw{epoch}, $tz);
-    $rec{epoch}    = _val($raw{epoch});
-    $rec{timezone} = $tz;
-    $rec{sunrise}  = _hhmm($raw{sunrise_hour}, $raw{sunrise_min});
-    $rec{sunset}   = _hhmm($raw{sunset_hour},  $raw{sunset_min});
-    for my $f (@CURRENT_RAW) {
-        next if $DROP_CURRENT{$f};
-        next if $f eq 'epoch';
-        $rec{$f} = _val($raw{$f});
-    }
-
-    # AQ fields: defaults to null, override with provided data
-    for my $aqf (qw(aqi_eu aqi_us pm10 pm25
-                    pollen_alder pollen_birch pollen_grass pollen_mugwort
-                    pollen_olive pollen_ragweed
-                    pollen_overall_today pollen_overall_tomorrow)) {
-        $rec{$aqf} = exists $aq_data{$aqf} ? _val($aq_data{$aqf}) : undef;
-    }
-
-    _enrich_weather_id(\%rec);
-
-    my $generated_at = strftime("%Y-%m-%dT%H:%M:%S%z", localtime(time));
-    $generated_at =~ s/(\d{2})(\d{2})$/$1:$2/;
-    my %envelope = (
-        meta => { schema_version => "1.0", source => $source,
-                  grabber => $grabber, generated_at => $generated_at },
-        data => \%rec,
-    );
-
-    my $json_obj = JSON::PP->new->pretty->canonical->utf8;
-    my $out = "$logdir/current.json";
-    my $tmp = "$out.tmp";
-    eval {
-        open my $fh, '>:raw', $tmp or die "Cannot open $tmp: $!";
-        print $fh $json_obj->encode(\%envelope);
-        close $fh;
-        File::Copy::move($tmp, $out) or die "Cannot rename $tmp to $out: $!";
-    };
-    if ($@) {
-        LOGWARN "JSON write failed for $out: $@";
-        return;
-    }
-    LOGOK "Saved current weather data (with AQ) as JSON to $out";
-}
 
 
 ##########################################################################
@@ -780,20 +743,22 @@ sub write_current_json_aq {
 # Parameter:
 #   filepath:           directory for file
 #   filename:           e.g. 'current' | 'dailyforecast' | 'hourlyforecast'
-#   json_data:          hashref or arrayref
+#   jsonData:           hashref or arrayref
 
-sub write_json_file {
-    my ($filepath, $filename, $json_data) = @_;
+sub writeJsonFile {
+    my ($filepath, $filename, $jsonData) = @_;
 
     $filepath    = $filepath // '.';
     my $out      = "$filepath/$filename.json";
     my $tmp      = "$out.tmp";
 
-    my $json_obj = JSON::PP->new->pretty->canonical->utf8;
+    LOGINF "Saving $filename weather data as JSON to $out ...";
+ 
+    my $jsonObj = JSON::PP->new->pretty->canonical->utf8;
 
     eval {
-        open my $fh, '>:raw', $tmp or die "Cannot open $tmp: $!";
-        print $fh $json_obj->encode($json_data);
+       open my $fh, '>:raw', $tmp or die "Cannot open $tmp: $!";
+        print $fh $jsonObj->encode($jsonData);
         close $fh;
         File::Copy::move($tmp, $out) or die "Cannot rename $tmp to $out: $!";
     };
@@ -801,20 +766,19 @@ sub write_json_file {
         LOGWARN "JSON write failed for $out: $@";
         return;
     };
-    LOGOK "Saved $filename weather data as JSON to $out";
+    LOGOK "Saved $filename weather data as JSON finished.";
 }
-
 
 ##########################################################################
 # Generalized JSON file reader for any weather type (current, daily, hourly).
 # Parameter:
-#   weather_key:        'current' | 'dailyforecast' | 'hourlyforecast'
+#   weatherKey:        'current' | 'dailyforecast' | 'hourlyforecast'
 #   filepath:           directory for file
 
-sub read_json_file {
-    my ($filepath, $weather_key) = @_;
+sub readJsonFile {
+    my ($filepath, $weatherKey) = @_;
 
-    my $filename = "$filepath/$weather_key.json";
+    my $filename = "$filepath/$weatherKey.json";
 
     # Existenz prüfen
     unless (-f $filename) {
@@ -823,12 +787,12 @@ sub read_json_file {
     }
 
     # Datei lesen und parsen
-    my $json_text;
+    my $jsonText;
     eval {
         open my $fh, '<:raw', $filename or die "Cannot open $filename: $!";
         local $/;
         flock($fh, 1);  # LOCK_SH — shared read lock
-        $json_text = <$fh>;
+        $jsonText = <$fh>;
         flock($fh, 8);  # LOCK_UN
         close $fh;
     };
@@ -840,7 +804,7 @@ sub read_json_file {
     # JSON-Deserialisierung    
     my $data;
     eval {
-        $data = JSON::PP->new->utf8->decode($json_text);
+        $data = JSON::PP->new->utf8->decode($jsonText);
     };
     if ($@) {
         LOGWARN "Failed to decode JSON from $filename: $@";
@@ -851,159 +815,5 @@ sub read_json_file {
     return $data;
 }
 
-
-# ── write_daily_json ────────────────────────────────────────────────
-# Accepts either:
-#   write_daily_json($logdir, source => ..., grabber => ...)           # legacy: reads dailyforecast.dat
-#   write_daily_json($logdir, data => \@records, source => ..., grabber => ...)  # direct: array of hashes
-
-sub write_daily_json {
-    my ($logdir, %opts) = @_;
-    my $source  = $opts{source}  // '';
-    my $grabber = $opts{grabber} // '';
-    my $data    = $opts{data};     # optional arrayref of hashrefs
-
-    my @records;
-    if ($data) {
-        # Direct path: caller provides array of record hashes
-        for my $entry (@$data) {
-            my %rec;
-            for my $k (keys %$entry) {
-                $rec{$k} = _val($entry->{$k});
-            }
-            _enrich_weather_id(\%rec);
-            push @records, \%rec;
-        }
-    } else {
-        # Legacy path: read from .dat file
-        my $dat = "$logdir/dailyforecast.dat";
-        return unless -f $dat;
-        my @lines = _read_dat_lines($dat);
-        return unless @lines;
-
-        my $tz = _system_timezone();
-        for my $line (@lines) {
-            my %raw = _line_to_hash($line, \@DAILY_RAW);
-            my %rec;
-            $rec{period}   = _val($raw{period});
-            $rec{datetime} = _epoch_to_iso($raw{epoch}, $tz);
-            $rec{epoch}    = _val($raw{epoch});
-            $rec{sunrise}  = _hhmm($raw{sunrise_hour}, $raw{sunrise_min});
-            $rec{sunset}   = _hhmm($raw{sunset_hour},  $raw{sunset_min});
-
-            for my $f (@DAILY_RAW) {
-                next if $DROP_FORECAST{$f};
-                next if $f eq 'epoch' || $f eq 'period';
-                $rec{$f} = _val($raw{$f});
-            }
-            _enrich_weather_id(\%rec);
-            push @records, \%rec;
-        }
-    }
-
-    my $generated_at = strftime("%Y-%m-%dT%H:%M:%S%z", localtime(time));
-    $generated_at =~ s/(\d{2})(\d{2})$/$1:$2/;
-
-    my %envelope = (
-        meta => {
-            schema_version => "1.0",
-            source         => $source,
-            grabber        => $grabber,
-            generated_at   => $generated_at,
-        },
-        data => \@records,
-    );
-
-    my $json_obj = JSON::PP->new->pretty->canonical->utf8;
-    my $out = "$logdir/dailyforecast.json";
-    my $tmp = "$out.tmp";
-    eval {
-        open my $fh, '>:raw', $tmp or die "Cannot open $tmp: $!";
-        print $fh $json_obj->encode(\%envelope);
-        close $fh;
-        File::Copy::move($tmp, $out) or die "Cannot rename $tmp to $out: $!";
-    };
-    if ($@) {
-        LOGWARN "JSON write failed for $out: $@";
-        return;
-    }
-    LOGOK "Saved daily forecast data as JSON to $out";
-}
-
-# ── write_hourly_json ───────────────────────────────────────────────
-# Accepts either:
-#   write_hourly_json($logdir, source => ..., grabber => ...)           # legacy: reads hourlyforecast.dat
-#   write_hourly_json($logdir, data => \@records, source => ..., grabber => ...)  # direct: array of hashes
-
-sub write_hourly_json {
-    my ($logdir, %opts) = @_;
-    my $source  = $opts{source}  // '';
-    my $grabber = $opts{grabber} // '';
-    my $data    = $opts{data};     # optional arrayref of hashrefs
-
-    my @records;
-    if ($data) {
-        # Direct path: caller provides array of record hashes
-        for my $entry (@$data) {
-            my %rec;
-            for my $k (keys %$entry) {
-                $rec{$k} = _val($entry->{$k});
-            }
-            _enrich_weather_id(\%rec);
-            push @records, \%rec;
-        }
-    } else {
-        # Legacy path: read from .dat file
-        my $dat = "$logdir/hourlyforecast.dat";
-        return unless -f $dat;
-        my @lines = _read_dat_lines($dat);
-        return unless @lines;
-
-        my $tz = _system_timezone();
-        for my $line (@lines) {
-            my %raw = _line_to_hash($line, \@HOURLY_RAW);
-            my %rec;
-            $rec{period}   = _val($raw{period});
-            $rec{datetime} = _epoch_to_iso($raw{epoch}, $tz);
-            $rec{epoch}    = _val($raw{epoch});
-
-            for my $f (@HOURLY_RAW) {
-                next if $DROP_FORECAST{$f};
-                next if $f eq 'epoch' || $f eq 'period';
-                $rec{$f} = _val($raw{$f});
-            }
-            _enrich_weather_id(\%rec);
-            push @records, \%rec;
-        }
-    }
-
-    my $generated_at = strftime("%Y-%m-%dT%H:%M:%S%z", localtime(time));
-    $generated_at =~ s/(\d{2})(\d{2})$/$1:$2/;
-
-    my %envelope = (
-        meta => {
-            schema_version => "1.0",
-            source         => $source,
-            grabber        => $grabber,
-            generated_at   => $generated_at,
-        },
-        data => \@records,
-    );
-
-    my $json_obj = JSON::PP->new->pretty->canonical->utf8;
-    my $out = "$logdir/hourlyforecast.json";
-    my $tmp = "$out.tmp";
-    eval {
-        open my $fh, '>:raw', $tmp or die "Cannot open $tmp: $!";
-        print $fh $json_obj->encode(\%envelope);
-        close $fh;
-        File::Copy::move($tmp, $out) or die "Cannot rename $tmp to $out: $!";
-    };
-    if ($@) {
-        LOGWARN "JSON write failed for $out: $@";
-        return;
-    }
-    LOGOK "Saved hourly forecast data as JSON to $out";
-}
 
 1; # end of module

@@ -48,8 +48,22 @@ my $pcfg   = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $lat    = $pcfg->param("OPENMETEOAIRQUALITY.COORDLAT");
 my $lon    = $pcfg->param("OPENMETEOAIRQUALITY.COORDLONG");
 
-my $timezone         = qx(cat /etc/timezone);
-chomp ($timezone);
+# Determine system timezone (Debian / DietPi)
+my $timezone = $ENV{TZ} // '';
+
+if (!$timezone) {
+    if (open my $tzfh, '<:encoding(UTF-8)', '/etc/timezone') {
+        $timezone = <$tzfh>;
+        chomp $timezone if defined $timezone;
+        close $tzfh;
+    }
+}
+
+# Validate that zoneinfo exists (avoid invalid names)
+if (!$timezone || !-f "/usr/share/zoneinfo/$timezone") {
+    # Fallback to UTC if not found
+    $timezone = 'UTC';
+}
 
 # Create a logging object
 my $log = LoxBerry::Log->new (
@@ -90,9 +104,9 @@ my $url = "https://air-quality-api.open-meteo.com/v1/air-quality"
         . "&hourly=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen"
         . "&forecast_days=5&timezone=$timezone";
 
-my $decoded_json = api_call(
+my $resOM = apiCall(
 	url      => $url,
-	maskkeys => 0,
+	maskKeys => 0,
 	info     => "air quality and pollen data for lat=$lat lon=$lon and timezone=$timezone",
 );
 
@@ -102,7 +116,7 @@ my $decoded_json = api_call(
 
 # Pollen level thresholds (grains/m³) -> level 0-4
 # Returns level 0-4 for a given concentration value
-sub pollen_level {
+sub pollenLevel {
 	my ($type, $value) = @_;
 	return 0 unless defined $value && $value ne '' && $value ne 'null';
 	$value = 0 + $value; # numeric
@@ -124,103 +138,103 @@ sub pollen_level {
 }
 
 # Get hourly timestamps and pollen values
-my $times = $decoded_json->{hourly}{time}          // [];
+my $times = $resOM->{hourly}{time}          // [];
 my %hourly_pollen = (
-	alder   => $decoded_json->{hourly}{alder_pollen}   // [],
-	birch   => $decoded_json->{hourly}{birch_pollen}   // [],
-	grass   => $decoded_json->{hourly}{grass_pollen}   // [],
-	mugwort => $decoded_json->{hourly}{mugwort_pollen} // [],
-	olive   => $decoded_json->{hourly}{olive_pollen}   // [],
-	ragweed => $decoded_json->{hourly}{ragweed_pollen} // [],
+	alder   => $resOM->{hourly}{alder_pollen}   // [],
+	birch   => $resOM->{hourly}{birch_pollen}   // [],
+	grass   => $resOM->{hourly}{grass_pollen}   // [],
+	mugwort => $resOM->{hourly}{mugwort_pollen} // [],
+	olive   => $resOM->{hourly}{olive_pollen}   // [],
+	ragweed => $resOM->{hourly}{ragweed_pollen} // [],
 );
 
 # Determine today and tomorrow date strings from the first timestamp
-my ( $today_date, $tomorrow_date );
+my ( $todayDate, $tomorrowDate );
 if ( @$times ) {
 	# timestamps are like "2026-03-01T00:00"
-	$today_date    = substr($times->[0], 0, 10);
+	$todayDate    = substr($times->[0], 0, 10);
 	# compute tomorrow
-	my ($y, $m, $d) = split(/-/, $today_date);
+	my ($y, $m, $d) = split(/-/, $todayDate);
 	# Simple date increment
-	my @days_in_month = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
+	my @daysInMonth = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
 	# leap year check
-	$days_in_month[2] = 29 if ($y % 4 == 0 && ($y % 100 != 0 || $y % 400 == 0));
+	$daysInMonth[2] = 29 if ($y % 4 == 0 && ($y % 100 != 0 || $y % 400 == 0));
 	$d++;
-	if ($d > $days_in_month[$m]) {
+	if ($d > $daysInMonth[$m]) {
 		$d = 1;
 		$m++;
 		if ($m > 12) { $m = 1; $y++; }
 	}
-	$tomorrow_date = sprintf("%04d-%02d-%02d", $y, $m, $d);
+	$tomorrowDate = sprintf("%04d-%02d-%02d", $y, $m, $d);
 }
 
-LOGINF "Today: $today_date, Tomorrow: $tomorrow_date";
+LOGINF "Today: $todayDate, Tomorrow: $tomorrowDate";
 
-# For each pollen type compute today_avg, today_max, tomorrow_avg, tomorrow_max
-my %pollen_result;
-my @pollen_types = qw(alder birch grass mugwort olive ragweed);
+# For each pollen type compute todayAvg, todayMax, tomorrowAvg, tomorrowMax
+my %pollenResult;
+my @pollenTypes = qw(alder birch grass mugwort olive ragweed);
 
-for my $ptype (@pollen_types) {
-	my @today_levels    = ();
-	my @tomorrow_levels = ();
+for my $ptype (@pollenTypes) {
+	my @todayLevels    = ();
+	my @tomorrowLevels = ();
 
 	for my $i (0 .. $#$times) {
 		my $ts    = $times->[$i];
 		my $date  = substr($ts, 0, 10);
 		my $raw   = $hourly_pollen{$ptype}[$i];
-		my $level = pollen_level($ptype, $raw);
+		my $level = pollenLevel($ptype, $raw);
 
-		if ($date eq $today_date) {
-			push @today_levels, $level;
-		} elsif ($date eq $tomorrow_date) {
-			push @tomorrow_levels, $level;
+		if ($date eq $todayDate) {
+			push @todayLevels, $level;
+		} elsif ($date eq $tomorrowDate) {
+			push @tomorrowLevels, $level;
 		}
 	}
 
-	my $today_avg    = 0;
-	my $today_max    = 0;
-	my $tomorrow_avg = 0;
-	my $tomorrow_max = 0;
+	my $todayAvg    = 0;
+	my $todayMax    = 0;
+	my $tomorrowAvg = 0;
+	my $tomorrowMax = 0;
 
-	if (@today_levels) {
+	if (@todayLevels) {
 		my $sum = 0;
-		for my $l (@today_levels) { $sum += $l; $today_max = $l if $l > $today_max; }
-		$today_avg = int($sum / scalar(@today_levels) + 0.5);
+		for my $l (@todayLevels) { $sum += $l; $todayMax = $l if $l > $todayMax; }
+		$todayAvg = int($sum / scalar(@todayLevels) + 0.5);
 	}
-	if (@tomorrow_levels) {
+	if (@tomorrowLevels) {
 		my $sum = 0;
-		for my $l (@tomorrow_levels) { $sum += $l; $tomorrow_max = $l if $l > $tomorrow_max; }
-		$tomorrow_avg = int($sum / scalar(@tomorrow_levels) + 0.5);
+		for my $l (@tomorrowLevels) { $sum += $l; $tomorrowMax = $l if $l > $tomorrowMax; }
+		$tomorrowAvg = int($sum / scalar(@tomorrowLevels) + 0.5);
 	}
 
-	$pollen_result{$ptype} = {
-		today_avg    => $today_avg,
-		today_max    => $today_max,
-		tomorrow_avg => $tomorrow_avg,
-		tomorrow_max => $tomorrow_max,
+	$pollenResult{$ptype} = {
+		todayAvg    => $todayAvg,
+		todayMax    => $todayMax,
+		tomorrowAvg => $tomorrowAvg,
+		tomorrowMax => $tomorrowMax,
 	};
 
-	LOGDEB "Pollen $ptype: today_avg=$today_avg today_max=$today_max tomorrow_avg=$tomorrow_avg tomorrow_max=$tomorrow_max";
+	LOGDEB "Pollen $ptype: todayAvg=$todayAvg todayMax=$todayMax tomorrowAvg=$tomorrowAvg tomorrowMax=$tomorrowMax";
 }
 
-# Overall today and tomorrow (max of all today_max / tomorrow_max)
-my $overall_today    = 0;
-my $overall_tomorrow = 0;
-for my $ptype (@pollen_types) {
-	$overall_today    = $pollen_result{$ptype}{today_max}    if $pollen_result{$ptype}{today_max}    > $overall_today;
-	$overall_tomorrow = $pollen_result{$ptype}{tomorrow_max} if $pollen_result{$ptype}{tomorrow_max} > $overall_tomorrow;
+# Overall today and tomorrow (max of all todayMax / tomorrowMax)
+my $overallToday    = 0;
+my $overallTomorrow = 0;
+for my $ptype (@pollenTypes) {
+	$overallToday    = $pollenResult{$ptype}{todayMax}    if $pollenResult{$ptype}{todayMax}    > $overallToday;
+	$overallTomorrow = $pollenResult{$ptype}{tomorrowMax} if $pollenResult{$ptype}{tomorrowMax} > $overallTomorrow;
 }
 
 ##########################################################################
 # Current AQI values
 ##########################################################################
 
-my $european_aqi = $decoded_json->{current}{european_aqi} // 0;
-my $us_aqi       = $decoded_json->{current}{us_aqi}       // 0;
-my $pm10         = $decoded_json->{current}{pm10}         // 0;
-my $pm2_5        = $decoded_json->{current}{pm2_5}        // 0;
+my $europeanAqi  = $resOM->{current}{european_aqi} // 0;
+my $usAqi        = $resOM->{current}{us_aqi}       // 0;
+my $pm10         = $resOM->{current}{pm10}         // 0;
+my $pm2_5        = $resOM->{current}{pm2_5}        // 0;
 
-LOGINF "Current AQI: european=$european_aqi us=$us_aqi pm10=$pm10 pm2_5=$pm2_5";
+LOGINF "Current AQI: european=$europeanAqi us=$usAqi pm10=$pm10 pm2_5=$pm2_5";
 
 ##########################################################################
 # Build result and write JSON file
@@ -236,18 +250,18 @@ my %result = (
 	retrieved_at => $retrieved_at,
 	coordinates  => { lat => $lat + 0, lon => $lon + 0 },
 	current_aqi  => {
-		european_aqi => $european_aqi + 0,
-		us_aqi       => $us_aqi + 0,
-		pm10         => $pm10 + 0,
-		pm2_5        => $pm2_5 + 0,
+		europeanAqi => $europeanAqi + 0,
+		usAqi       => $usAqi + 0,
+		pm10        => $pm10 + 0,
+		pm2_5       => $pm2_5 + 0,
 	},
-	pollen           => \%pollen_result,
-	overall_today    => $overall_today,
-	overall_tomorrow => $overall_tomorrow,
+	pollen           => \%pollenResult,
+	overallToday     => $overallToday,
+	overallTomorrow  => $overallTomorrow,
 );
 
-my $json_obj  = JSON->new->pretty->canonical;
-my $json_text = $json_obj->encode(\%result);
+my $jsonObj  = JSON->new->pretty->canonical;
+my $jsonText = $jsonObj->encode(\%result);
 
 # Write atomically: write to .tmp, then rename
 my $outfile = "$lbplogdir/airquality_pollen.json";
@@ -257,7 +271,7 @@ open(my $fh, '>', $tmpfile) or do {
 	LOGCRIT "Cannot write to $tmpfile: $!";
 	exit 1;
 };
-print $fh $json_text;
+print $fh $jsonText;
 close($fh);
 
 File::Copy::move($tmpfile, $outfile) or do {
