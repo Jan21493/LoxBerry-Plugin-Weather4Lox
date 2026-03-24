@@ -17,6 +17,7 @@ Every JSON file shares the same top-level envelope with source-specific metadata
 }
 ```
 
+- `refresh` -- integer; seconds until next expected update (from `SERVER.CRON` or `SERVER.CRON_PATCH` config)
 - `location` -- object; always present, contains geographic information about the observation site
 - `<grabberKey>` -- one or more source-specific metadata objects (e.g. `"wetteronline"`, `"wunderground"`)
 - `<weatherKey>` -- `"current"` (object), `"dailyforecast"` (array), or `"hourlyforecast"` (array)
@@ -96,6 +97,31 @@ Each grabber writes its own metadata section using its key (e.g. `"wetteronline"
 | `direction` | string | --   | `"waxing"` or `"waning"`                       |
 | `percent`   | number | %    | Moon illumination percentage                   |
 | `phase`     | number | %    | Moon phase (0--100)                            |
+
+### current.airQuality
+
+Added by `grabber_openmeteo_airquality.pl`. `null` if AQ grabber has not run.
+
+| Field   | Type         | Unit   | Description                          |
+|---------|--------------|--------|--------------------------------------|
+| `aqiEu` | number      | --     | European Air Quality Index           |
+| `aqiUs` | number      | --     | US Air Quality Index                 |
+| `pm10`  | number      | ug/m3  | PM10 particulate matter              |
+| `pm25`  | number      | ug/m3  | PM2.5 particulate matter             |
+
+### current.pollen
+
+Added by `grabber_openmeteo_airquality.pl`. Values are levels 0-7 (converted from grains/m3). `null` if AQ grabber has not run.
+
+| Field         | Type    | Description                                              |
+|---------------|---------|----------------------------------------------------------|
+| `alder`       | integer | Alder pollen level (0-7)                                 |
+| `birch`       | integer | Birch pollen level (0-7)                                 |
+| `grass`       | integer | Grass pollen level (0-7)                                 |
+| `mugwort`     | integer | Mugwort pollen level (0-7)                               |
+| `olive`       | integer | Olive pollen level (0-7)                                 |
+| `ragweed`     | integer | Ragweed pollen level (0-7)                               |
+| `personalMix` | integer | Weighted average from `[POLLEN]` config sensitivity (0-7)|
 
 ### current.precipitation
 
@@ -203,6 +229,20 @@ Each grabber writes its own metadata section using its key (e.g. `"wetteronline"
 | `phase`     | number       | %    | Moon phase (0--100)                      |
 | `rise`      | string\|null | --   | Moonrise time as `"HH:MM"` local time   |
 | `set`       | string\|null | --   | Moonset time as `"HH:MM"` local time    |
+
+### dailyforecast[n].pollen
+
+Aggregated from hourly pollen levels per day. `null` for days without pollen data (beyond API coverage). `airQuality` is `null` for daily entries.
+
+| Field         | Type    | Description                                              |
+|---------------|---------|----------------------------------------------------------|
+| `alder`       | object  | `{ avg: integer, max: integer }` -- level 0-7            |
+| `birch`       | object  | `{ avg: integer, max: integer }` -- level 0-7            |
+| `grass`       | object  | `{ avg: integer, max: integer }` -- level 0-7            |
+| `mugwort`     | object  | `{ avg: integer, max: integer }` -- level 0-7            |
+| `olive`       | object  | `{ avg: integer, max: integer }` -- level 0-7            |
+| `ragweed`     | object  | `{ avg: integer, max: integer }` -- level 0-7            |
+| `personalMix` | object  | `{ avg: integer, max: integer }` -- weighted from config  |
 
 ### dailyforecast[n].precipitation
 
@@ -319,6 +359,10 @@ Same structure as `current.moon`:
 | `direction` | string | --   | `"waxing"` or `"waning"`                 |
 | `percent`   | number | %    | Moon illumination percentage             |
 | `phase`     | number | %    | Moon phase (0--100)                      |
+
+### hourlyforecast[n].pollen
+
+Same fields as `current.pollen`. Values are levels 0-7. `null` for hours without pollen data (beyond API coverage of 5 days). `airQuality` is `null` for hourly entries (API provides no hourly AQ).
 
 ### hourlyforecast[n].precipitation
 
