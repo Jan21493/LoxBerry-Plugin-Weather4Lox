@@ -489,8 +489,8 @@ function resolveIcon(weatherCode, dn) {
   if (liveData.iconMapping) {
     var entry = liveData.iconMapping[key];
     if (entry) {
-      var field = (suffix === 'day') ? 'icon_day' : 'icon_night';
-      return 'icons/' + ICONSET + '/' + entry[field];
+      var field = (suffix === 'day') ? 'iconDay' : 'iconNight';
+      return 'icons/' + ICONSET + '/' + entry[field] + '.png';
     }
   }
   return 'icons/' + ICONSET + '/' + key + '_' + suffix + '.png';
