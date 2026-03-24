@@ -55,6 +55,8 @@ my $country      = $pcfg->param("VISUALCROSSING.COUNTRY");
 my $grabberKey   = "visualcrossing";
 my $grabberLabel = "Visual Crossing";
 my $grabberFile  = "grabber_visualcrossing.pl";
+my $cronMinutes  = $pcfg->param("SERVER.CRON") // 15;
+my $refresh      = $cronMinutes * 60;
 
 # Read language phrases
 my %L = LoxBerry::System::readlanguage("language.ini");
