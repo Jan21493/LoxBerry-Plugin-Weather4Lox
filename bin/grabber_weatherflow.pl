@@ -2,7 +2,7 @@
 
 # grabber for fetching data from Weatherflow
 # fetches weather data (current and forecast) from Weatherflow
-#
+
 # Copyright 2016-2023 Michael Schlenstedt, michael@loxberry.de
 # Copyright 2020 Martin Barnasconi, nufke@barnasconi.net
 #
@@ -47,11 +47,16 @@ my $pcfg         = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $url          = $pcfg->param("WEATHERFLOW.URL");
 my $apikey       = $pcfg->param("WEATHERFLOW.APIKEY");
 my $lang         = $pcfg->param("WEATHERFLOW.LANG");
-#my $coordlat     = $pcfg->param("WEATHERFLOW.COORDLAT");
-#my $coordlong    = $pcfg->param("WEATHERFLOW.COORDLONG");
 my $city         = $pcfg->param("WEATHERFLOW.CITY");
 my $country      = $pcfg->param("WEATHERFLOW.COUNTRY");
 my $stationid    = $pcfg->param("WEATHERFLOW.STATIONID");
+
+# Grabber metadata for JSON envelope
+my $grabberKey   = "weatherflow";
+my $grabberLabel = "WeatherFlow";
+my $grabberFile  = "grabber_weatherflow.pl";
+my $cronMinutes  = $pcfg->param("SERVER.CRON") // 15;
+my $refresh      = $cronMinutes * 60;
 
 # Read language phrases
 my %L = LoxBerry::System::readlanguage("language.ini");
@@ -61,8 +66,6 @@ my $log = LoxBerry::Log->new (
 	package => 'weather4lox',
 	name => 'grabber_weatherflow',
 	logdir => "$lbplogdir",
-	#filename => "$lbplogdir/weather4lox.log",
-	#append => 1,
 );
 
 # Commandline options
@@ -79,15 +82,10 @@ GetOptions ('verbose' => \$verbose,
             'maskkeys' => \$maskkeys,
             );
 
-# Due to a bug in the Logging routine, set the loglevel fix to 3
-#$log->loglevel(3);
 if ($verbose) {
 	$log->stdout(1);
 	$log->loglevel(7);
 }
-
-# Update API key to comply with Wetherflow format
-#$apikey =~ s/^(.{8})(.{4})(.{4})(.{4})(.{12})/$1\-$2\-$3\-$4\-$5/;
 
 LOGSTART "Weather4Lox GRABBER_WEATHERFLOW process started";
 LOGDEB "This is $0 Version $version";
@@ -100,59 +98,50 @@ my $forecast_json = api_call(
 	url => "$url\/better_forecast?station_id=$stationid&api_key=$apikey",
 	maskkeys => $maskkeys,
 	keyparam => 'api_key',
-	# apikey => $apikey,	# not needed here as the URL is already masked and the key won't appear elsewhere in the response
 	info => "for Location $stationid (Current, Daily, and Hourly Weather Data)",
 );
 
-my $t;
-my $weather;
-my $icon;
-my $code;
-my $wdir;
-my $wdirdes;
-my @filecontent;
 my $i;
-my $error;
 my $current_observation_json;
 
 # Mapping: WeatherFlow Icon => [Loxone Code, Weather4Lox Icon Name]
 # https://weatherflow.github.io/Tempest/api/swagger/#/forecast/getBetterForecast
 # https://www.loxone.com/enen/kb/weather-service/
-my %weatherflow_to_lox = (                            # WeatherFlow Icon Values (originally with -day and -night suffixes)
-    "clear"                => ["1",  "clear"],           # was clear-day, clear-night
-    "partlycloudy"         => ["3",  "partlycloudy"],    # was partly-cloudy-day, partly-cloudy-night
-    "cloudy"               => ["4",  "cloudy"],          # was cloudy
-    "sleet"                => ["26", "sleet"],			 # was sleet
-    "chancesleet"          => ["26", "chancesleet"],     # was possibly-sleet-day, possibly-sleet-night
-    "snow"                 => ["21", "snow"],            # was snow
-    "chancesnow"           => ["23", "chancesnow"],      # was possibly-snow-day, possibly-snow-night
-    "rainy"                => ["11", "rain"],      # was rainy
-    "chancerainy"          => ["16", "chancerain"],      # was possibly-rainy-day, possibly-rainy-night
-    "chancethunderstorm"   => ["18", "chancetstorms"],   # was possibly-thunderstorm-day, possibly-thunderstorm-night
-    "thunderstorm"         => ["18", "tstorms"],         # was thunderstorm
-    "foggy"                => ["6",  "fog"],             # was foggy
-    "windy"                => ["5", "wind"],            # was windy
+my %weatherflow_to_lox = (
+    "clear"                => ["1",  "clear"],
+    "partlycloudy"         => ["3",  "partlycloudy"],
+    "cloudy"               => ["4",  "cloudy"],
+    "sleet"                => ["26", "sleet"],
+    "chancesleet"          => ["26", "chancesleet"],
+    "snow"                 => ["21", "snow"],
+    "chancesnow"           => ["23", "chancesnow"],
+    "rainy"                => ["11", "rain"],
+    "chancerainy"          => ["16", "chancerain"],
+    "chancethunderstorm"   => ["18", "chancetstorms"],
+    "thunderstorm"         => ["18", "tstorms"],
+    "foggy"                => ["6",  "fog"],
+    "windy"                => ["5", "wind"],
 );
 
 sub weatherflow_to_lox {
     my ($weather_raw) = @_;
-    
+
     # Check for empty/undefined values
     if (!defined $weather_raw || $weather_raw eq "") {
         LOGWARN "WeatherFlow icon is empty/undefined!";
         return ("0", "clear");
     }
-    
+
     # Normalization
     my $weather = lc($weather_raw);           # Lowercase
     $weather =~ s/-(?:night|day)//;           # remove -night and -day
     $weather =~ s/cc-//;                      # remove cc- (current Weatherflow API bug)
     $weather =~ s/-//g;                       # remove all hyphens
     $weather =~ s/possibly/chance/;           # replace possibly with chance
-    
+
     # Lookup in the hash
     my $result = $weatherflow_to_lox{$weather};
-    
+
     if ($result) {
         return ($result->[0], $result->[1]);  # (code, icon)
     } else {
@@ -162,533 +151,394 @@ sub weatherflow_to_lox {
     }
 }
 
+# Detect nighttime from WeatherFlow icon string (contains "-night" suffix)
+sub wfIsNight {
+    my ($icon_raw) = @_;
+    return undef unless defined $icon_raw;
+    return ($icon_raw =~ /-night/) ? 1 : undef;
+}
 
-if ( $current ) { # Start current
+##########################################################################
+# Common data
+##########################################################################
 
-	# Get current station observation from Weatherflow Server
-	# API : https://weatherflow.github.io/Tempest/api/swagger/#!/observations/getStationObservation
-	# Docs: https://apidocs.tempestwx.com/reference/get_better-forecast-1
+my $timezone = $forecast_json->{timezone};
+my $lat      = $forecast_json->{latitude};
+my $lon      = $forecast_json->{longitude};
+
+# Derive timezone short name and offset from current epoch
+my $currentEpoch = $forecast_json->{current_conditions}->{time};
+my $generatedAt  = _epochToIso($currentEpoch, $timezone);
+
+# Timezone short and offset via POSIX
+my ($tzShort, $tzOffset);
+{
+    local $ENV{TZ} = $timezone;
+    POSIX::tzset();
+    $tzShort  = POSIX::strftime('%Z', localtime($currentEpoch));
+    $tzOffset = POSIX::strftime('%z', localtime($currentEpoch));
+    POSIX::tzset();
+}
+
+$city    = Encode::decode("UTF-8", $city)    if defined $city;
+$country = Encode::decode("UTF-8", $country) if defined $country;
+
+my $location = {
+    city        => $city,
+    country     => $country,
+    countryCode => undef,                 # not available from WeatherFlow API
+    elevation   => undef,                 # will be filled from observation if available
+    latitude    => defined $lat ? $lat + 0 : undef,
+    longitude   => defined $lon ? $lon + 0 : undef,
+    timezone    => $timezone,
+    tzOffset    => $tzOffset,
+    tzShort     => $tzShort,
+};
+
+##########################################################################
+# Fetch current data
+##########################################################################
+
+if ( $current ) {
+
+    # Get current station observation from Weatherflow Server
+    # API : https://weatherflow.github.io/Tempest/api/swagger/#!/observations/getStationObservation
+    # Docs: https://apidocs.tempestwx.com/reference/get_better-forecast-1
     $current_observation_json = api_call(
         url => "$url\/observations/station/$stationid?token=$apikey",
         maskkeys => $maskkeys,
         keyparam => 'token',
-        # apikey => $apikey,	# not needed here as the URL is already masked and the key won't appear elsewhere in the response
         info => "for Location $stationid (Current Observation Data)",
     );
 
-	# Write location data into database
-	$t = localtime($forecast_json->{current_conditions}->{time});
-	LOGINF "Saving new Data for Timestamp $t to database.";
+    my $cur = $current_observation_json->{obs}->[0];
+    my $cc  = $forecast_json->{current_conditions};
 
-	# Saving new current data...
-	$error = 0;
-	open(F,">$lbplogdir/current.dat.tmp") or $error = 1;
-	if ($error) {
-		LOGCRIT "Cannot open $lbpconfigdir/current.dat.tmp";
-		exit 2;
-	}
-	binmode F, ':encoding(UTF-8)';
-	print F "$forecast_json->{current_conditions}->{time}|"; # Date Epoche
-	print F $t, " ", sprintf("+%04d", $forecast_json->{timezone_offset_minutes}/60 * 100), "|"; # Date RFC822
-	my $tz_short = qx(TZ='$forecast_json->{timezone}' date +%Z);
-	chomp ($tz_short);
-	print F "$tz_short|"; # Timezone Short
-	print F "$forecast_json->{timezone}|"; # Timezone Long
-	print F sprintf("+%04d", $forecast_json->{timezone_offset_minutes}/60 * 100), "|"; # Timezone Offset
-	$city = Encode::decode("UTF-8", $city);
-	print F "$city|"; # Observation location
-	$country = Encode::decode("UTF-8", $country);
-	print F "$country|"; # Location Country
-	print F "-9999|"; # Location Country Code (not available in Weatherflow API)
-	print F "$forecast_json->{latitude}|"; # Location Latitude
-	print F "$forecast_json->{longitude}|"; # Location Longitude
-	print F "$current_observation_json->{elevation}|"; # Location Elevation (Height in meters above sea level)
-	print F sprintf("%.1f",$current_observation_json->{obs}->[0]->{air_temperature}), "|"; # Temperature
-	print F sprintf("%.1f",$current_observation_json->{obs}->[0]->{feels_like}), "|"; # Feelslike Temp
-	print F "$current_observation_json->{obs}->[0]->{relative_humidity}|"; # Rel. Humidity
-	$wdir = $current_observation_json->{obs}->[0]->{wind_direction};
-	if ( $wdir >= 0 && $wdir <= 22 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'}) }; # North
-	if ( $wdir > 22 && $wdir <= 68 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NE'}) }; # NorthEast
-	if ( $wdir > 68 && $wdir <= 112 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_E'}) }; # East
-	if ( $wdir > 112 && $wdir <= 158 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_SE'}) }; # SouthEast
-	if ( $wdir > 158 && $wdir <= 202 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_S'}) }; # South
-	if ( $wdir > 202 && $wdir <= 248 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_SW'}) }; # SouthWest
-	if ( $wdir > 248 && $wdir <= 292 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_W'}) }; # West
-	if ( $wdir > 292 && $wdir <= 338 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NW'}) }; # NorthWest
-	if ( $wdir > 338 && $wdir <= 360 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'}) }; # North
-	print F "$wdirdes|"; # Wind Dir Description
-	print F "$current_observation_json->{obs}->[0]->{wind_direction}|"; # Wind Dir Degrees
-	print F sprintf("%.1f",$current_observation_json->{obs}->[0]->{wind_avg} * 3.6), "|"; # Wind Speed
-	print F sprintf("%.1f",$current_observation_json->{obs}->[0]->{wind_gust} * 3.6), "|"; # Wind Gust
-	print F sprintf("%.0f",$current_observation_json->{obs}->[0]->{wind_chill}), "|"; # Windchill
-	print F "$current_observation_json->{obs}->[0]->{sea_level_pressure}|"; # Pressure
-	print F sprintf("%.1f",$current_observation_json->{obs}->[0]->{dew_point}), "|"; # Dew Point
-	print F "-9999|"; # Visibility (not available in Weatherflow API)
-	print F "$current_observation_json->{obs}->[0]->{solar_radiation}|"; #Solar Radiation
-	print F "$current_observation_json->{obs}->[0]->{heat_index}|"; #Heat Index
-	print F "$current_observation_json->{obs}->[0]->{uv}|"; # UV Index
-	print F sprintf("%.3f",$current_observation_json->{obs}->[0]->{precip_accum_local_day}), "|";  # Precipitation Today
-	print F sprintf("%.3f",$forecast_json->{forecast}->{hourly}->[0]->{precip}), "|"; # Precipitation 1hr (note: forecast, to reflect the expected rain in mm/h)
+    # Update location elevation from observation data
+    if (defined $current_observation_json->{elevation}) {
+        $location->{elevation} = $current_observation_json->{elevation} + 0;
+    }
 
-	# Convert Weatherflow weather icon string into normalized icon name and Loxone picto-code
-	($code, $icon)= weatherflow_to_lox($forecast_json->{current_conditions}->{icon});
-	print F "$icon|"; # Weather4Lox Weather Icon name
-	print F "$code|"; # Loxone Weather Code
-	print F "$forecast_json->{current_conditions}->{conditions}|"; # Weather Description (note: forecast, since current observation does not have this info)
-	my ( $moonphase,
-	  $moonillum,
-	  $moonage,
-	  $moondist,
-	  $moonang,
-	  $sundist,
-	  $sunang ) = phase();
-	print F sprintf("%.2f",$moonillum*100), "|";
-	print F sprintf("%.2f",$moonage), "|";
-	print F sprintf("%.2f",$moonphase*100), "|";
-	print F "-9999|";
-#	print F "-9999|"; # Moon percent Illuminated (not available in Weatherflow API)
-#	print F "-9999|"; # Moon: Age of Moon (not available in Weatherflow API)
-#	print F "-9999|"; # Moon: Phase of Moon (not available in Weatherflow API)
-#	print F "-9999|"; # Moon: Hemisphere (not available in Weatherflow API)
-	$t = localtime($forecast_json->{forecast}->{daily}->[0]->{sunrise});
-	print F sprintf("%02d", $t->hour), "|"; # Sunrise
-	print F sprintf("%02d", $t->min), "|";
-	$t = localtime($forecast_json->{forecast}->{daily}->[0]->{sunset});
-	print F sprintf("%02d", $t->hour), "|"; # Sunset
-	print F sprintf("%02d", $t->min), "|";
-	print F "-9999|"; # Density of atmospheric ozone (not available in Weatherflow API)
-	print F "-9999|"; # Sky (clouds) % (not available in Weatherflow API)
-	print F $forecast_json->{forecast}->{daily}->[0]->{precip_probability}*100, "|"; # % of Precipitation
-	print F "-9999|"; # Snow (not available in Weatherflow API)
-	close(F);
+    LOGINF "Reading current weather data from API response into W4L structure.";
 
-	LOGOK "Saving current data to $lbplogdir/current.dat.tmp successfully.";
+    # time
+    my %time;
+    $time{datetime} = _epochToIso($cc->{time}, $timezone);
+    $time{epoch}    = $cc->{time};
+    $time{timezone} = $timezone;
+    $time{tzShort}  = $tzShort;
+    $time{tzOffset} = $tzOffset;
 
-	my @filecontent;
-	LOGDEB "Database content:";
-	open(F,"<$lbplogdir/current.dat.tmp");
-	@filecontent = <F>;
-	foreach (@filecontent) {
-		chomp ($_);
-		# Convert elevation from feet to meter
-		LOGDEB "$_";
-	}
-	close (F);
-
-} # end current
-
-#
-# Fetch daily data
-#
-
-if ( $daily ) { # Start daily
-
-	# Saving new daily forecast data...
-	$error = 0;
-	open(F,">$lbplogdir/dailyforecast.dat.tmp") or $error = 1;
-	if ($error) {
-		LOGCRIT "Cannot open $lbplogdir/dailyforecast.dat.tmp";
-		exit 2;
-	}
-	binmode F, ':encoding(UTF-8)';
-	my $i = 1;
-	for my $results( @{$forecast_json->{forecast}->{daily}} ){
-		print F "$i|"; # day count
-		$i++;
-		print F $results->{day_start_local}, "|"; # Date Epoche
-		$t = localtime($results->{day_start_local});
-		print F sprintf("%02d", $t->mday), "|"; # Date: Day
-		print F sprintf("%02d", $t->mon), "|"; # Date: Month
-		my @month = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_MONTH'}) );
-		$t->mon_list(@month);
-		print F $t->monname . "|"; # Date: Month name
-		@month = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_MONTH_SH'}) );
-		$t->mon_list(@month);
-		print F $t->monname . "|"; # Date: Month name short
-		print F $t->year . "|"; # Date: Year
-		print F sprintf("%02d", $t->hour), "|"; # Date: Hour
-		print F sprintf("%02d", $t->min), "|"; # Date: Minutes
-		my @days = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_DAYS'}) );
-		$t->day_list(@days);
-		print F $t->wdayname . "|"; # Date: weekday name
-		@days = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_DAYS_SH'}) );
-		$t->day_list(@days);
-		print F $t->wdayname . "|"; # Date: weekday short name
-		print F sprintf("%.1f",$results->{air_temp_high}), "|"; # High temperature
-		print F sprintf("%.1f",$results->{air_temp_low}), "|"; # Low temperature
-		print F $results->{precip_probability}, "|"; # % of Precipitation
-		print F "-9999|"; # Precipitation Forecast (not available in Weatherflow API)
-		print F "-9999|"; # Snow Forecast (not available in Weatherflow API)
-		print F "-9999|"; # Max. Wind Speed (not available in Weatherflow API)
-		print F "-9999|"; # Max. Wind Dir Descript. (not available in Weatherflow API)
-		print F "-9999|"; # Max. Wind Dir  (not available in Weatherflow API)
-		print F "-9999|"; # Ave. Wind Speed (not available in Weatherflow API)
-		print F "-9999|"; # Ave. Wind Dir Descript. (not available in Weatherflow API)
-		print F "-9999|"; # Ave. Wind Dir (not available in Weatherflow API)
-		print F "-9999|"; # Ave. Humidity (not available in Weatherflow API)
-		print F "-9999|"; # Max. Humidity (not available in Weatherflow API)
-		print F "-9999|"; # Min. Humidity (not available in Weatherflow API)
-
-		# Convert Weatherflow weather icon string into normalized icon name and Loxone picto-code
-		($code, $icon)= weatherflow_to_lox($results->{icon});
-		print F "$icon|"; # Weather4Lox Weather Icon name
-		print F "$code|"; # Loxone Weather Code
-		print F "$results->{conditions}|"; # Weather Description
-		print F "-9999|"; # Density of atmospheric ozone (not available in Weatherflow API)
-		my ( $moonphase,
-		  $moonillum,
-		  $moonage,
-		  $moondist,
-		  $moonang,
-		  $sundist,
-		  $sunang ) = phase($results->{day_start_local});
-		print F sprintf("%.2f",$moonillum*100), "|";
-		print F "-9999|"; # Dew Point (not available in Weatherflow API)
-		print F "-9999|"; # Pressure (not available in Weatherflow API)
-		print F "-9999|"; #UV Index (not available in Weatherflow API)
-		$t = localtime($results->{sunrise}); # Sunrise
-		print F sprintf("%02d", $t->hour), "|";
-		print F sprintf("%02d", $t->min), "|";
-		$t = localtime($results->{sunset}); # Sunset
-		print F sprintf("%02d", $t->hour), "|";
-		print F sprintf("%02d", $t->min), "|";
-		print F "-9999|"; # Visibility  (not available in Weatherflow API)
-		print F sprintf("%.2f",$moonage), "|";
-		print F sprintf("%.2f",$moonphase*100), "|";
-		print F "\n";
-	}
-	close(F);
-
-	LOGOK "Saving daily forecast data to $lbplogdir/dailyforecast.dat.tmp successfully.";
-
-	LOGDEB "Database content:";
-	open(F,"<$lbplogdir/dailyforecast.dat.tmp");
-		@filecontent = <F>;
-		foreach (@filecontent) {
-			chomp ($_);
-			LOGDEB "$_";
-		}
-	close (F);
-
-} # end daily
-
-#
-# Fetch hourly data
-#
-
-if ( $hourly ) { # Start hourly
-
-	# Saving new hourly forecast data...
-	$error = 0;
-	open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
-	if ($error) {
-		LOGCRIT "Cannot open $lbplogdir/hourlyforecast.dat.tmp";
-		exit 2;
-	}
-	binmode F, ':encoding(UTF-8)';
-	$i = 1;
-	my $n = 0;
-	for my $results( @{$forecast_json->{forecast}->{hourly}} ){
-		print F "$i|"; # Hour count
-		$i++;
-		print F $results->{time}, "|"; # Date: Epoche
-		$t = localtime($results->{time});
-		print F sprintf("%02d", $t->mday), "|"; # Date: Day
-		print F sprintf("%02d", $t->mon), "|"; # Date: Month
-		my @month = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_MONTH'}) );
-		$t->mon_list(@month);
-		print F $t->monname . "|"; # Date: Month name
-		@month = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_MONTH_SH'}) );
-		$t->mon_list(@month);
-		print F $t->monname . "|"; # Date: Month short name
-		print F $t->year . "|";
-		print F sprintf("%02d", $t->hour), "|"; # Date: hour
-		print F sprintf("%02d", $t->min), "|"; # Date: minutes
-		my @days = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_DAYS'}) );
-		$t->day_list(@days);
-		print F $t->wdayname . "|"; # Date: Weekday name
-		@days = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_DAYS_SH'}) );
-		$t->day_list(@days);
-		print F $t->wdayname . "|"; # Date: Weekday short name
-		print F sprintf("%.1f",$results->{air_temperature}), "|"; # Temperature (air)
-		print F sprintf("%.1f",$results->{feels_like}), "|"; # Feelslike Temperature
-		print F "-9999|"; # Heat Index (not available in Weatherflow API)
-		print F $results->{relative_humidity}, "|"; # Humidity
-		$wdir = $results->{wind_direction};
-		if ( $wdir >= 0 && $wdir <= 22 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'}) }; # North
-		if ( $wdir > 22 && $wdir <= 68 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NE'}) }; # NorthEast
-		if ( $wdir > 68 && $wdir <= 112 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_E'}) }; # East
-		if ( $wdir > 112 && $wdir <= 158 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_SE'}) }; # SouthEast
-		if ( $wdir > 158 && $wdir <= 202 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_S'}) }; # South
-		if ( $wdir > 202 && $wdir <= 248 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_SW'}) }; # SouthWest
-		if ( $wdir > 248 && $wdir <= 292 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_W'}) }; # West
-		if ( $wdir > 292 && $wdir <= 338 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NW'}) }; # NorthWest
-		if ( $wdir > 338 && $wdir <= 360 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'}) }; # North
-		print F "$wdirdes|"; # Wind Dir. Description
-		print F "$results->{wind_direction}|"; # Wind Dir. (grad)
-		print F sprintf("%.1f",$results->{wind_avg} * 3.6), "|"; # Wind Speed in Km/h
-		print F sprintf("%.1f",$results->{feels_like}), "|"; # TODI Wind Chill same as feels like?
-		print F "$results->{sea_level_pressure}|";
-		print F "-9999|"; # Dewpoint (not available in Weatherflow API)
-		print F "-9999|"; # Sky (clouds) cover (not available in Weatherflow API)
-		print F "-9999|"; # Sky Description (not available in Weatherflow API)
-		print F "$results->{uv}|"; # UV Index
-		print F $results->{precip}, "|";  # Quant. Precipitation FC in mm
-		print F "-9999|"; # Snow Forecast (not available in Weatherflow API)
-		print F $results->{precip_probability}, "|";
-
-		# Convert Weatherflow weather icon string into normalized icon name and Loxone picto-code
-		($code, $icon)= weatherflow_to_lox($results->{icon});
-		print F "$icon|"; # Weather4Lox Weather Icon name
-		print F "$code|"; # Loxone Weather Code
-		print F "$results->{conditions}|"; # Weather description
-		print F "-9999|"; # Ozone (not available in Weatherflow API)
-		print F "-9999|"; # Solar Radiation (not available in Weatherflow API)
-		print F "-9999|"; # Visability (not available in Weatherflow API)
-		# dfc0_moon_p
-		my ( $moonphase,
-		  $moonillum,
-		  $moonage,
-		  $moondist,
-		  $moonang,
-		  $sundist,
-		  $sunang ) = phase($results->{time});
-		print F sprintf("%.2f",$moonillum*100), "|";
-		print F sprintf("%.2f",$moonage), "|";
-		print F sprintf("%.2f",$moonphase*100), "|";
-		print F "\n";
-	}
-close(F);
-
-LOGOK "Saving hourly forecast data to $lbplogdir/hourlyforecast.dat.tmp successfully.";
-
-LOGDEB "Database content:";
-open(F,"<$lbplogdir/hourlyforecast.dat.tmp");
-	@filecontent = <F>;
-	foreach (@filecontent) {
-		chomp ($_);
-		LOGDEB "$_";
-	}
-close (F);
-
-} # end hourly
-
-# Clean Up Databases
-
-if ($current) {
-
-LOGINF "Cleaning $lbplogdir/current.dat.tmp";
-open(F,"+<$lbplogdir/current.dat.tmp");
-	@filecontent = <F>;
-	seek(F,0,0);
-	truncate(F,0);
-	foreach (@filecontent){
-		s/[\n\r]//g;
-		if($_ =~ /^#/) {
-		  print F "$_\n";
-		  next;
-		}
-		LOGDEB "Original: $_";
-		s/\|null\|/"|0|"/eg;
-		s/\|--\|/"|0|"/eg;
-		s/\|na\|/"|-9999.00|"/eg;
-		s/\|NA\|/"|-9999.00|"/eg;
-		s/\|n\/a\|/"|-9999.00|"/eg;
-		s/\|N\/A\|/"|-9999.00|"/eg;
-		LOGDEB "Cleaned:  $_";
-		print F "$_\n";
-	}
-close(F);
-
-my $currentname = "$lbplogdir/current.dat.tmp";
-my $currentsize = -s ($currentname);
-if ($currentsize > 100) {
-        move($currentname, "$lbplogdir/current.dat");
-}
-
-}
-
-if ($daily) {
-
-LOGINF "Cleaning $lbplogdir/dailyforecast.dat.tmp";
-open(F,"+<$lbplogdir/dailyforecast.dat.tmp");
-	@filecontent = <F>;
-	seek(F,0,0);
-	truncate(F,0);
-	foreach (@filecontent){
-		s/[\n\r]//g;
-		if($_ =~ /^#/) {
-		  print F "$_\n";
-		  next;
-		}
-		LOGDEB "Original: $_";
-		s/\|null\|/"|0|"/eg;
-		s/\|--\|/"|0|"/eg;
-		s/\|na\|/"|-9999.00|"/eg;
-		s/\|NA\|/"|-9999.00|"/eg;
-		s/\|n\/a\|/"|-9999.00|"/eg;
-		s/\|N\/A\|/"|-9999.00|"/eg;
-		LOGDEB "Cleaned:  $_";
-		print F "$_\n";
-	}
-close(F);
-
-my $dailyname = "$lbplogdir/dailyforecast.dat.tmp";
-my $dailysize = -s ($dailyname);
-if ($dailysize > 100) {
-        move($dailyname, "$lbplogdir/dailyforecast.dat");
-}
-
-}
-
-if ($hourly) {
-
-LOGINF "Cleaning $lbplogdir/hourlyforecast.dat.tmp";
-open(F,"+<$lbplogdir/hourlyforecast.dat.tmp");
-	@filecontent = <F>;
-	seek(F,0,0);
-	truncate(F,0);
-	foreach (@filecontent){
-		s/[\n\r]//g;
-		if($_ =~ /^#/) {
-		  print F "$_\n";
-		  next;
-		}
-		LOGDEB "Original: $_";
-		s/\|null\|/"|0|"/eg;
-		s/\|--\|/"|0|"/eg;
-		s/\|na\|/"|-9999.00|"/eg;
-		s/\|NA\|/"|-9999.00|"/eg;
-		s/\|n\/a\|/"|-9999.00|"/eg;
-		s/\|N\/A\|/"|-9999.00|"/eg;
-		LOGDEB "Cleaned:  $_";
-		print F "$_\n";
-	}
-close(F);
-
-my $hourlyname = "$lbplogdir/hourlyforecast.dat.tmp";
-my $hourlysize = -s ($hourlyname);
-if ($hourlysize > 100) {
-        move($hourlyname, "$lbplogdir/hourlyforecast.dat");
-}
-
-}
-
-# Write JSON files directly from API data
-if ($current) {
-    eval {
-        my $cur   = $current_observation_json->{obs}->[0];
-        my $cc    = $forecast_json->{current_conditions};
-        my $tz    = $forecast_json->{timezone};
-        my ($c, $ic) = weatherflow_to_lox($cc->{icon});
-        my ($mp, $mi, $ma) = (phase())[0,1,2];
+    # sunrise / sunset
+    my ($sunrise, $sunset);
+    if (defined $forecast_json->{forecast}->{daily}->[0]->{sunrise}) {
         my $t_sr = localtime($forecast_json->{forecast}->{daily}->[0]->{sunrise});
+        $sunrise = sprintf("%02d:%02d", $t_sr->hour, $t_sr->min);
+    }
+    if (defined $forecast_json->{forecast}->{daily}->[0]->{sunset}) {
         my $t_ss = localtime($forecast_json->{forecast}->{daily}->[0]->{sunset});
+        $sunset = sprintf("%02d:%02d", $t_ss->hour, $t_ss->min);
+    }
 
-        my %current_data = (
-            epoch               => $cc->{time},
-            datetime            => _epoch_to_iso($cc->{time}, $tz),
-            timezone            => $tz,
-            city                => Encode::decode("UTF-8", $city),
-            country             => Encode::decode("UTF-8", $country),
-            latitude            => $forecast_json->{latitude},
-            longitude           => $forecast_json->{longitude},
-            elevation           => $current_observation_json->{elevation},
-            temperature         => sprintf("%.1f", $cur->{air_temperature}),
-            feelslike           => sprintf("%.1f", $cur->{feels_like}),
-            humidity            => $cur->{relative_humidity},
-            wind_direction_desc => wind_direction_text($cur->{wind_direction}, \%L),
-            wind_direction_deg  => $cur->{wind_direction},
-            wind_speed          => sprintf("%.1f", $cur->{wind_avg} * 3.6),
-            wind_gust           => sprintf("%.1f", $cur->{wind_gust} * 3.6),
-            windchill           => sprintf("%.0f", $cur->{wind_chill}),
-            pressure            => $cur->{sea_level_pressure},
-            dewpoint            => sprintf("%.1f", $cur->{dew_point}),
-            solar_radiation     => $cur->{solar_radiation},
-            heat_index          => $cur->{heat_index},
-            uv_index            => $cur->{uv},
-            precip_today_mm     => sprintf("%.3f", $cur->{precip_accum_local_day}),
-            precip_1hr_mm       => sprintf("%.3f", $forecast_json->{forecast}->{hourly}->[0]->{precip}),
-            weather_icon        => $ic,
-            weather_code        => $c,
-            weather_description => $cc->{conditions},
-            moon_percent        => sprintf("%.2f", $mi * 100),
-            moon_age            => sprintf("%.2f", $ma),
-            moon_phase          => sprintf("%.2f", $mp * 100),
-            sunrise             => sprintf("%02d:%02d", $t_sr->hour, $t_sr->min),
-            sunset              => sprintf("%02d:%02d", $t_ss->hour, $t_ss->min),
-            precip_probability  => sprintf("%.0f", $forecast_json->{forecast}->{daily}->[0]->{precip_probability} * 100),
-        );
-        write_current_json($lbplogdir, data => \%current_data, source => "WeatherFlow", grabber => "grabber_weatherflow.pl");
+    # temperature
+    my %temperature;
+    $temperature{air}       = defined $cur->{air_temperature} ? sprintf("%.1f", $cur->{air_temperature}) + 0 : undef;
+    $temperature{feelsLike} = defined $cur->{feels_like}      ? sprintf("%.1f", $cur->{feels_like}) + 0      : undef;
+    $temperature{windChill} = defined $cur->{wind_chill}      ? sprintf("%.1f", $cur->{wind_chill}) + 0      : undef;
+    $temperature{heatIndex} = defined $cur->{heat_index}      ? sprintf("%.1f", $cur->{heat_index}) + 0      : undef;
+
+    # wind (WeatherFlow provides m/s, convert to km/h)
+    my %wind;
+    my $wdeg = $cur->{wind_direction};
+    $wind{direction} = defined $wdeg ? $wdeg + 0 : undef;
+    $wind{dirLabel}  = getWindDirectionLabel($wdeg, \%L);
+    $wind{speed}     = defined $cur->{wind_avg}  ? sprintf("%.1f", $cur->{wind_avg} * 3.6) + 0  : undef;
+    $wind{gust}      = defined $cur->{wind_gust} ? sprintf("%.1f", $cur->{wind_gust} * 3.6) + 0 : undef;
+
+    # precipitation
+    my %precipitation;
+    $precipitation{rainToday}    = defined $cur->{precip_accum_local_day} ? sprintf("%.2f", $cur->{precip_accum_local_day}) + 0 : undef;
+    $precipitation{rain1hr}      = defined $forecast_json->{forecast}->{hourly}->[0]->{precip} ? sprintf("%.2f", $forecast_json->{forecast}->{hourly}->[0]->{precip}) + 0 : undef;
+    $precipitation{probability}  = defined $forecast_json->{forecast}->{daily}->[0]->{precip_probability} ? sprintf("%.0f", $forecast_json->{forecast}->{daily}->[0]->{precip_probability} * 100) + 0 : undef;
+    $precipitation{type}         = "none";  # not available from WeatherFlow observation
+    $precipitation{snowToday}    = undef;   # not available from WeatherFlow API
+    $precipitation{snow1h}       = undef;   # not available from WeatherFlow API
+
+    # weather codes
+    my %weatherCode;
+    my ($loxoneCode, $w4lCode) = weatherflow_to_lox($cc->{icon});
+    $weatherCode{loxone}      = $loxoneCode;
+    $weatherCode{weather4lox} = $w4lCode;
+    $weatherCode{description} = $cc->{conditions};
+    $weatherCode{image}       = $cc->{icon};
+    $weatherCode{metar}       = getMetarCode($w4lCode);
+
+    # moon
+    my %moon;
+    my ($moonphase, $moonillum, $moonage) = (phase())[0,1,2];
+    $moon{age}       = sprintf("%.2f", $moonage) + 0;
+    $moon{percent}   = sprintf("%.2f", $moonillum * 100) + 0;
+    $moon{phase}     = sprintf("%.2f", $moonphase * 100) + 0;
+    $moon{direction} = getMoonDirection($moonage);
+
+    # Build current data hash
+    my %currentData = (
+        time           => \%time,
+        sunrise        => $sunrise,
+        sunset         => $sunset,
+        temperature    => \%temperature,
+        humidity       => defined $cur->{relative_humidity} ? $cur->{relative_humidity} + 0 : undef,
+        wind           => \%wind,
+        pressure       => defined $cur->{sea_level_pressure} ? sprintf("%.0f", $cur->{sea_level_pressure}) + 0 : undef,
+        dewpoint       => defined $cur->{dew_point}          ? sprintf("%.1f", $cur->{dew_point}) + 0          : undef,
+        visibility     => undef,  # not available from WeatherFlow API
+        solarRadiation => defined $cur->{solar_radiation}    ? sprintf("%.1f", $cur->{solar_radiation}) + 0    : undef,
+        uvIndex        => defined $cur->{uv}                 ? sprintf("%.0f", $cur->{uv}) + 0                 : undef,
+        precipitation  => \%precipitation,
+        weatherCode    => \%weatherCode,
+        ozone          => undef,  # not available from WeatherFlow API
+        cloudCover     => undef,  # not available from WeatherFlow API
+        moon           => \%moon,
+        isNight        => wfIsNight($cc->{icon}),
+    );
+
+    # Build envelope and write JSON to file
+    my $weatherKey = "current";
+    my $envelope = {
+        location    => $location,
+        $grabberKey => {
+            filename      => "$lbplogdir/$weatherKey.json",
+            generatedAt   => $generatedAt,
+            grabberLabel  => $grabberLabel,
+            grabberScript => $grabberFile,
+            schemaVersion => "v1.0",
+        },
+        $weatherKey => \%currentData,
     };
-    LOGWARN "JSON write failed: $@" if $@;
-}
-if ($daily) {
-    eval {
-        my @daily_data;
-        my $di = 1;
-        my $tz = $forecast_json->{timezone};
-        for my $d (@{$forecast_json->{forecast}->{daily}}) {
-            my ($c, $ic) = weatherflow_to_lox($d->{icon});
-            my ($mp, $mi, $ma) = (phase($d->{day_start_local}))[0,1,2];
-            my $t_sr = localtime($d->{sunrise});
-            my $t_ss = localtime($d->{sunset});
-            push @daily_data, {
-                period              => $di++,
-                epoch               => $d->{day_start_local},
-                datetime            => _epoch_to_iso($d->{day_start_local}, $tz),
-                high_temp           => sprintf("%.1f", $d->{air_temp_high}),
-                low_temp            => sprintf("%.1f", $d->{air_temp_low}),
-                precip_probability  => $d->{precip_probability},
-                weather_icon        => $ic,
-                weather_code        => $c,
-                weather_description => $d->{conditions},
-                moon_percent        => sprintf("%.2f", $mi * 100),
-                sunrise             => sprintf("%02d:%02d", $t_sr->hour, $t_sr->min),
-                sunset              => sprintf("%02d:%02d", $t_ss->hour, $t_ss->min),
-                moon_age            => sprintf("%.2f", $ma),
-                moon_phase          => sprintf("%.2f", $mp * 100),
-            };
+    writeJsonFile($lbplogdir, $weatherKey, $envelope);
+
+} # End current
+
+##########################################################################
+# Fetch daily data
+##########################################################################
+
+if ( $daily ) {
+
+    my @dailyData;
+    $i = 0;
+
+    LOGINF "Reading daily weather data from API response into W4L structure.";
+
+    for my $results ( @{$forecast_json->{forecast}->{daily}} ) {
+
+        # time
+        my %time;
+        $time{datetime} = _epochToIso($results->{day_start_local}, $timezone);
+        $time{epoch}    = $results->{day_start_local};
+
+        # sunrise / sunset
+        my ($sunrise, $sunset);
+        if (defined $results->{sunrise}) {
+            my $t_sr = localtime($results->{sunrise});
+            $sunrise = sprintf("%02d:%02d", $t_sr->hour, $t_sr->min);
         }
-        write_daily_json($lbplogdir, data => \@daily_data, source => "WeatherFlow", grabber => "grabber_weatherflow.pl");
-    };
-    LOGWARN "JSON write failed: $@" if $@;
-}
-if ($hourly) {
-    eval {
-        my @hourly_data;
-        my $hi = 1;
-        my $tz = $forecast_json->{timezone};
-        for my $h (@{$forecast_json->{forecast}->{hourly}}) {
-            my ($c, $ic) = weatherflow_to_lox($h->{icon});
-            my ($mp, $mi, $ma) = (phase($h->{time}))[0,1,2];
-            push @hourly_data, {
-                period              => $hi++,
-                epoch               => $h->{time},
-                datetime            => _epoch_to_iso($h->{time}, $tz),
-                temperature         => sprintf("%.1f", $h->{air_temperature}),
-                feelslike           => sprintf("%.1f", $h->{feels_like}),
-                humidity            => $h->{relative_humidity},
-                wind_direction_desc => wind_direction_text($h->{wind_direction}, \%L),
-                wind_direction_deg  => $h->{wind_direction},
-                wind_speed          => sprintf("%.1f", $h->{wind_avg} * 3.6),
-                windchill           => sprintf("%.1f", $h->{feels_like}),
-                pressure            => $h->{sea_level_pressure},
-                uv_index            => $h->{uv},
-                precip_mm           => $h->{precip},
-                precip_probability  => $h->{precip_probability},
-                weather_icon        => $ic,
-                weather_code        => $c,
-                weather_description => $h->{conditions},
-                moon_percent        => sprintf("%.2f", $mi * 100),
-                moon_age            => sprintf("%.2f", $ma),
-                moon_phase          => sprintf("%.2f", $mp * 100),
-            };
+        if (defined $results->{sunset}) {
+            my $t_ss = localtime($results->{sunset});
+            $sunset = sprintf("%02d:%02d", $t_ss->hour, $t_ss->min);
         }
-        write_hourly_json($lbplogdir, data => \@hourly_data, source => "WeatherFlow", grabber => "grabber_weatherflow.pl");
+
+        # temperature
+        my %tempMax;
+        $tempMax{air}       = defined $results->{air_temp_high} ? sprintf("%.1f", $results->{air_temp_high}) + 0 : undef;
+        $tempMax{feelsLike} = undef;  # not available from WeatherFlow daily
+        $tempMax{heatIndex} = undef;  # not available from WeatherFlow daily
+
+        my %tempMin;
+        $tempMin{air}       = defined $results->{air_temp_low} ? sprintf("%.1f", $results->{air_temp_low}) + 0 : undef;
+        $tempMin{feelsLike} = undef;  # not available from WeatherFlow daily
+        $tempMin{windChill} = undef;  # not available from WeatherFlow daily
+
+        # wind - not available from WeatherFlow daily forecast
+        my %windAvg;
+        $windAvg{direction} = undef;
+        $windAvg{dirLabel}  = undef;
+        $windAvg{speed}     = undef;
+        $windAvg{gust}      = undef;
+
+        my %windMax = %windAvg;
+
+        # humidity - not available from WeatherFlow daily forecast
+        my %humidity;
+        $humidity{avg} = undef;
+        $humidity{max} = undef;
+        $humidity{min} = undef;
+
+        # precipitation
+        my %precipitation;
+        $precipitation{probability} = defined $results->{precip_probability} ? sprintf("%.0f", $results->{precip_probability} * 100) + 0 : undef;
+        $precipitation{rainHigh}    = undef;  # not available from WeatherFlow daily
+        $precipitation{rainLow}     = undef;  # not available from WeatherFlow daily
+        $precipitation{snowHigh}    = undef;  # not available from WeatherFlow daily
+        $precipitation{snowLow}     = undef;  # not available from WeatherFlow daily
+        $precipitation{duration}    = undef;  # not available from WeatherFlow daily
+        $precipitation{type}        = "none"; # not available from WeatherFlow daily
+
+        # weather codes
+        my %weatherCode;
+        my ($loxoneCode, $w4lCode) = weatherflow_to_lox($results->{icon});
+        $weatherCode{loxone}      = $loxoneCode;
+        $weatherCode{weather4lox} = $w4lCode;
+        $weatherCode{description} = $results->{conditions};
+        $weatherCode{image}       = undef;
+        $weatherCode{metar}       = getMetarCode($w4lCode);
+
+        # moon
+        my %moon;
+        my ($moonphase, $moonillum, $moonage) = (phase($results->{day_start_local}))[0,1,2];
+        $moon{age}       = sprintf("%.2f", $moonage) + 0;
+        $moon{percent}   = sprintf("%.2f", $moonillum * 100) + 0;
+        $moon{phase}     = sprintf("%.2f", $moonphase * 100) + 0;
+        $moon{direction} = getMoonDirection($moonage);
+        $moon{rise}      = undef;  # not available from WeatherFlow API
+        $moon{set}       = undef;  # not available from WeatherFlow API
+
+        push @dailyData, {
+            day            => $i,
+            time           => \%time,
+            sunrise        => $sunrise,
+            sunset         => $sunset,
+            temperature    => { max => \%tempMax, min => \%tempMin },
+            wind           => { avg => \%windAvg, max => \%windMax },
+            humidity       => \%humidity,
+            pressure       => undef,  # not available from WeatherFlow daily
+            dewpoint       => undef,  # not available from WeatherFlow daily
+            precipitation  => \%precipitation,
+            weatherCode    => \%weatherCode,
+            moon           => \%moon,
+            uvIndex        => undef,  # not available from WeatherFlow daily
+            visibility     => undef,  # not available from WeatherFlow daily
+            solarRadiation => undef,  # not available from WeatherFlow daily
+            heatIndex      => undef,  # not available from WeatherFlow daily
+            ozone          => undef,  # not available from WeatherFlow daily
+            cloudCover     => undef,  # not available from WeatherFlow daily
+        };
+        $i++;
+    }
+
+    # Build envelope and write JSON to file
+    my $weatherKey = "dailyforecast";
+    my $envelope = {
+        location    => $location,
+        $grabberKey => {
+            filename      => "$lbplogdir/$weatherKey.json",
+            generatedAt   => $generatedAt,
+            grabberLabel  => $grabberLabel,
+            grabberScript => $grabberFile,
+            schemaVersion => "v1.0",
+        },
+        $weatherKey => \@dailyData,
     };
-    LOGWARN "JSON write failed: $@" if $@;
-}
+    writeJsonFile($lbplogdir, $weatherKey, $envelope);
+
+} # End daily
+
+##########################################################################
+# Fetch hourly data
+##########################################################################
+
+if ( $hourly ) {
+
+    my @hourlyData;
+    $i = 0;
+
+    LOGINF "Reading hourly weather data from API response into W4L structure.";
+
+    for my $h ( @{$forecast_json->{forecast}->{hourly}} ) {
+
+        # time
+        my %time;
+        $time{datetime} = _epochToIso($h->{time}, $timezone);
+        $time{epoch}    = $h->{time};
+
+        # temperature
+        my %temperature;
+        $temperature{air}       = defined $h->{air_temperature} ? sprintf("%.1f", $h->{air_temperature}) + 0 : undef;
+        $temperature{feelsLike} = defined $h->{feels_like}      ? sprintf("%.1f", $h->{feels_like}) + 0      : undef;
+        $temperature{heatIndex} = undef;  # not available from WeatherFlow hourly
+        $temperature{windChill} = undef;  # not available from WeatherFlow hourly
+
+        # wind (WeatherFlow provides m/s, convert to km/h)
+        my %wind;
+        my $wdeg = $h->{wind_direction};
+        $wind{direction} = defined $wdeg ? $wdeg + 0 : undef;
+        $wind{dirLabel}  = getWindDirectionLabel($wdeg, \%L);
+        $wind{speed}     = defined $h->{wind_avg} ? sprintf("%.1f", $h->{wind_avg} * 3.6) + 0 : undef;
+        $wind{gust}      = undef;  # not available from WeatherFlow hourly
+
+        # precipitation
+        my %precipitation;
+        $precipitation{probability} = defined $h->{precip_probability} ? sprintf("%.0f", $h->{precip_probability}) + 0 : undef;
+        $precipitation{rainHigh}    = defined $h->{precip} && $h->{precip} > 0 ? sprintf("%.2f", $h->{precip}) + 0 : undef;
+        $precipitation{rainLow}     = undef;
+        $precipitation{snowHigh}    = undef;  # not available from WeatherFlow hourly
+        $precipitation{snowLow}     = undef;
+        $precipitation{duration}    = undef;
+        $precipitation{type}        = "none";  # not available from WeatherFlow hourly
+
+        # weather codes
+        my %weatherCode;
+        my ($loxoneCode, $w4lCode) = weatherflow_to_lox($h->{icon});
+        $weatherCode{loxone}      = $loxoneCode;
+        $weatherCode{weather4lox} = $w4lCode;
+        $weatherCode{description} = $h->{conditions};
+        $weatherCode{metar}       = getMetarCode($w4lCode);
+
+        # moon
+        my %moon;
+        my ($moonphase, $moonillum, $moonage) = (phase($h->{time}))[0,1,2];
+        $moon{age}       = sprintf("%.2f", $moonage) + 0;
+        $moon{percent}   = sprintf("%.2f", $moonillum * 100) + 0;
+        $moon{phase}     = sprintf("%.2f", $moonphase * 100) + 0;
+        $moon{direction} = getMoonDirection($moonage);
+
+        push @hourlyData, {
+            hour           => $i,
+            time           => \%time,
+            temperature    => \%temperature,
+            humidity       => defined $h->{relative_humidity} ? $h->{relative_humidity} + 0 : undef,
+            wind           => \%wind,
+            pressure       => defined $h->{sea_level_pressure} ? sprintf("%.0f", $h->{sea_level_pressure}) + 0 : undef,
+            dewpoint       => undef,       # not available from WeatherFlow hourly
+            visibility     => undef,       # not available from WeatherFlow hourly
+            solarRadiation => undef,       # not available from WeatherFlow hourly
+            uvIndex        => defined $h->{uv} ? sprintf("%.1f", $h->{uv}) + 0 : undef,
+            precipitation  => \%precipitation,
+            weatherCode    => \%weatherCode,
+            ozone          => undef,       # not available from WeatherFlow hourly
+            cloudCover     => undef,       # not available from WeatherFlow hourly
+            moon           => \%moon,
+            isNight        => wfIsNight($h->{icon}),
+        };
+        $i++;
+    }
+
+    # Build envelope and write JSON to file
+    my $weatherKey = "hourlyforecast";
+    my $envelope = {
+        location    => $location,
+        $grabberKey => {
+            filename      => "$lbplogdir/$weatherKey.json",
+            generatedAt   => $generatedAt,
+            grabberLabel  => $grabberLabel,
+            grabberScript => $grabberFile,
+            schemaVersion => "v1.0",
+        },
+        $weatherKey => \@hourlyData,
+    };
+    writeJsonFile($lbplogdir, $weatherKey, $envelope);
+
+} # End hourly
 
 # Give OK status to client.
 LOGOK "Current Data and Forecasts saved successfully.";
