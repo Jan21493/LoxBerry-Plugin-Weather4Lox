@@ -40,22 +40,24 @@ Vollstaendige JSON-Schema-Referenz inkl. Field-Mapping: `data/json-schema.md`
 
 ## Migrations-Strategie
 
-### Dual-Write Prinzip
-- Grabber schreiben **JSON parallel zu .dat** -- .dat bleibt fuer Rollback
-- **.dat hat Prioritaet:** JSON-Write-Fehler stoppen NICHT den Grabber-Lauf
-- JSON-Write in `eval{}` gekapselt, bei Fehler: `LOGWARN` + return (nie `die`/`exit`)
-- Bei Encoding-Fehler (ungueltiges UTF-8): gesamten JSON-Write ueberspringen, vorherige Datei bleibt
+### JSON-Only Output (kein .dat mehr)
+- Grabber schreiben **ausschliesslich JSON** -- .dat-System komplett entfernt
+- Atomarer Write: `.tmp` + `File::Copy::move()` via `writeJsonFile()` in grabber_utils.pl
+- Patch-Grabber: `readJsonFile()` -> merge -> `writeJsonFile()` (kein .dat patching)
+- `LOGOK` bei erfolgreichem JSON-Write, `LOGWARN` bei Fehler
+- datatoloxone.pl: `LOGCRIT` + exit bei fehlendem JSON (fail-fast)
 
-### Atomarer Write
-- Immer `.tmp` + `File::Copy::move()` -- nie direkt in Zieldatei schreiben
-- Gleich fuer .dat und .json (bewaehrtes Pattern)
-- Leser sieht nie eine unvollstaendige Datei
+### AQ + Pollen Integration
+- `grabber_openmeteo_airquality.pl` merged `airQuality` + `pollen` in alle 3 JSON-Dateien
+- Pollenwerte als Level 0-7 (umgerechnet aus grains/m3)
+- `personalMix` berechnet aus `[POLLEN]`-Config Gewichtung (0-7)
+- Pollenempfindlichkeit in `weather4lox.cfg` Sektion `[POLLEN]` (war: mapping_custom_mix_pollen.json)
 
-### Fehler-Verhalten
-- `LOGOK` bei erfolgreichem JSON-Write
-- `LOGWARN` bei Fehler
-- Keine Re-Validierung nach Schreiben (JSON::PP erzeugt gueltiges JSON)
-- datatoloxone.pl: `LOGCRIT` + exit bei fehlendem JSON (fail-fast, kein .dat-Fallback)
+### Refresh-Intervall
+- `refresh` Feld auf Top-Level jeder JSON-Datei (Integer, Sekunden)
+- Haupt-Grabber: `SERVER.CRON * 60`
+- Patch-Grabber: `SERVER.CRON_PATCH * 60` (neuer Config-Parameter, Default: 1 Min)
+- ocean-live.html nutzt `refresh` dynamisch statt hardcodiertem 5-Min-Timer
 
 ---
 
