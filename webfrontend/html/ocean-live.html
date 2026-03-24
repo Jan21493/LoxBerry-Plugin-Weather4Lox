@@ -393,6 +393,7 @@ function loadAllData() {
 
     liveData.lang = results[3];
     liveData.iconMapping = (results[4] && results[4].icons) || {};
+    liveData.iconFormat = (results[4] && results[4].format) || 'png';
 
     // Derive datetime from time object if missing
     var curTime = liveData.current.time || {};
@@ -490,10 +491,10 @@ function resolveIcon(weatherCode, dn) {
     var entry = liveData.iconMapping[key];
     if (entry) {
       var field = (suffix === 'day') ? 'iconDay' : 'iconNight';
-      return 'icons/' + ICONSET + '/' + entry[field] + '.png';
+      return 'icons/' + ICONSET + '/' + entry[field] + '.' + (liveData.iconFormat || 'png');
     }
   }
-  return 'icons/' + ICONSET + '/' + key + '_' + suffix + '.png';
+  return 'icons/' + ICONSET + '/' + key + '_' + suffix + '.' + (liveData.iconFormat || 'png');
 }
 
 // ===== TRANSFORM HOURLY for renderHourStrip =====
