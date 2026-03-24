@@ -1,0 +1,6045 @@
+{
+   "hourlyforecast" : [
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5,
+         "hour" : 0,
+         "humidity" : 55,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 6.33,
+            "direction" : "waxing",
+            "percent" : 38.9,
+            "phase" : 21.44
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 20,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 1006,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 13.2,
+            "feelsLike" : 10.7,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-24T21:00:00+01:00",
+            "epoch" : 1774382400
+         },
+         "uvIndex" : null,
+         "visibility" : 29940,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : "5",
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 210,
+            "gust" : null,
+            "speed" : 20
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 4,
+         "hour" : 1,
+         "humidity" : 55,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 6.38,
+            "direction" : "waxing",
+            "percent" : 39.37,
+            "phase" : 21.59
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 20,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 1005,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 12.7,
+            "feelsLike" : 10.1,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-24T22:00:00+01:00",
+            "epoch" : 1774386000
+         },
+         "uvIndex" : null,
+         "visibility" : 29940,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 210,
+            "gust" : 40,
+            "speed" : 20
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : 4,
+         "hour" : 2,
+         "humidity" : 55,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 6.42,
+            "direction" : "waxing",
+            "percent" : 39.84,
+            "phase" : 21.74
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 20,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 1003,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 12.3,
+            "feelsLike" : 9.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-24T23:00:00+01:00",
+            "epoch" : 1774389600
+         },
+         "uvIndex" : null,
+         "visibility" : 29870,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 210,
+            "gust" : 40,
+            "speed" : 20
+         }
+      },
+      {
+         "cloudCover" : 0,
+         "dewpoint" : 4,
+         "hour" : 3,
+         "humidity" : 60,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 6.47,
+            "direction" : "waxing",
+            "percent" : 40.31,
+            "phase" : 21.9
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 20,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 1002,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 11.8,
+            "feelsLike" : 9,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T00:00:00+01:00",
+            "epoch" : 1774393200
+         },
+         "uvIndex" : null,
+         "visibility" : 29750,
+         "weatherCode" : {
+            "description" : "Klar",
+            "loxone" : "1",
+            "metar" : "SKC",
+            "weather4lox" : "clear"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 210,
+            "gust" : 40,
+            "speed" : 20
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 4,
+         "hour" : 4,
+         "humidity" : 60,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 6.51,
+            "direction" : "waxing",
+            "percent" : 40.78,
+            "phase" : 22.05
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 20,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 1001,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 11.6,
+            "feelsLike" : 8.7,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T01:00:00+01:00",
+            "epoch" : 1774396800
+         },
+         "uvIndex" : null,
+         "visibility" : 27750,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 210,
+            "gust" : 45,
+            "speed" : 25
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 4,
+         "hour" : 5,
+         "humidity" : 60,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 6.56,
+            "direction" : "waxing",
+            "percent" : 41.25,
+            "phase" : 22.2
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 30,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 999,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 11.3,
+            "feelsLike" : 8.2,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T02:00:00+01:00",
+            "epoch" : 1774400400
+         },
+         "uvIndex" : null,
+         "visibility" : 25700,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : "5",
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 210,
+            "gust" : 45,
+            "speed" : 25
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 4,
+         "hour" : 6,
+         "humidity" : 60,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 6.6,
+            "direction" : "waxing",
+            "percent" : 41.72,
+            "phase" : 22.35
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 40,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 997,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 11.3,
+            "feelsLike" : 8.1,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T03:00:00+01:00",
+            "epoch" : 1774404000
+         },
+         "uvIndex" : null,
+         "visibility" : 24240,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : "5",
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 215,
+            "gust" : 50,
+            "speed" : 25
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5,
+         "hour" : 7,
+         "humidity" : 65,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 6.65,
+            "direction" : "waxing",
+            "percent" : 42.19,
+            "phase" : 22.5
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 60,
+            "rainHigh" : 0.5,
+            "rainLow" : 0,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "rain"
+         },
+         "pressure" : 996,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 11,
+            "feelsLike" : 7.8,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T04:00:00+01:00",
+            "epoch" : 1774407600
+         },
+         "uvIndex" : null,
+         "visibility" : 10000,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regenschauern",
+            "loxone" : "16",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 215,
+            "gust" : 50,
+            "speed" : 25
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 7,
+         "hour" : 8,
+         "humidity" : 80,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 6.69,
+            "direction" : "waxing",
+            "percent" : 42.67,
+            "phase" : 22.66
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 70,
+            "rainHigh" : 2,
+            "rainLow" : 1,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "rain"
+         },
+         "pressure" : 994,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 10.2,
+            "feelsLike" : 6.9,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T05:00:00+01:00",
+            "epoch" : 1774411200
+         },
+         "uvIndex" : null,
+         "visibility" : 4940,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regen",
+            "loxone" : "11",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_2"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 210,
+            "gust" : 55,
+            "speed" : 25
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 8,
+         "hour" : 9,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 6.74,
+            "direction" : "waxing",
+            "percent" : 43.14,
+            "phase" : 22.81
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 80,
+            "rainHigh" : 2,
+            "rainLow" : 1,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "rain"
+         },
+         "pressure" : 993,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 9.5,
+            "feelsLike" : 5.8,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T06:00:00+01:00",
+            "epoch" : 1774414800
+         },
+         "uvIndex" : null,
+         "visibility" : 4440,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regen",
+            "loxone" : "11",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_2"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 215,
+            "gust" : 55,
+            "speed" : 30
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 8,
+         "hour" : 10,
+         "humidity" : 95,
+         "isNight" : null,
+         "moon" : {
+            "age" : 6.78,
+            "direction" : "waxing",
+            "percent" : 43.61,
+            "phase" : 22.96
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 80,
+            "rainHigh" : 0.5,
+            "rainLow" : 0,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "rain"
+         },
+         "pressure" : 992,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 8.8,
+            "feelsLike" : 4.9,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T07:00:00+01:00",
+            "epoch" : 1774418400
+         },
+         "uvIndex" : null,
+         "visibility" : 5170,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regenschauern",
+            "loxone" : "16",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 225,
+            "gust" : 55,
+            "speed" : 30
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 6,
+         "hour" : 11,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 6.83,
+            "direction" : "waxing",
+            "percent" : 44.09,
+            "phase" : 23.11
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 60,
+            "rainHigh" : 0.5,
+            "rainLow" : 0,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "rain"
+         },
+         "pressure" : 992,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.9,
+            "feelsLike" : 3.8,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T08:00:00+01:00",
+            "epoch" : 1774422000
+         },
+         "uvIndex" : null,
+         "visibility" : 9880,
+         "weatherCode" : {
+            "description" : "Bewölkt mit leichtem Regen",
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_rain_1"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 235,
+            "gust" : 60,
+            "speed" : 30
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 5,
+         "hour" : 12,
+         "humidity" : 80,
+         "isNight" : null,
+         "moon" : {
+            "age" : 6.87,
+            "direction" : "waxing",
+            "percent" : 44.56,
+            "phase" : 23.26
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 40,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 992,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.9,
+            "feelsLike" : 4.1,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T09:00:00+01:00",
+            "epoch" : 1774425600
+         },
+         "uvIndex" : null,
+         "visibility" : 12240,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 240,
+            "gust" : 60,
+            "speed" : 30
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 3,
+         "hour" : 13,
+         "humidity" : 75,
+         "isNight" : null,
+         "moon" : {
+            "age" : 6.92,
+            "direction" : "waxing",
+            "percent" : 45.03,
+            "phase" : 23.42
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 40,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 992,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.4,
+            "feelsLike" : 3.7,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T10:00:00+01:00",
+            "epoch" : 1774429200
+         },
+         "uvIndex" : null,
+         "visibility" : 8400,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 245,
+            "gust" : 60,
+            "speed" : 30
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 4,
+         "hour" : 14,
+         "humidity" : 85,
+         "isNight" : null,
+         "moon" : {
+            "age" : 6.96,
+            "direction" : "waxing",
+            "percent" : 45.51,
+            "phase" : 23.57
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 70,
+            "rainHigh" : 2,
+            "rainLow" : 1,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "rain"
+         },
+         "pressure" : 994,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6.1,
+            "feelsLike" : 1.9,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T11:00:00+01:00",
+            "epoch" : 1774432800
+         },
+         "uvIndex" : null,
+         "visibility" : 3700,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regenschauern",
+            "loxone" : "11",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_shower_2"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 255,
+            "gust" : 60,
+            "speed" : 30
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5,
+         "hour" : 15,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 7,
+            "direction" : "waxing",
+            "percent" : 45.98,
+            "phase" : 23.72
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 80,
+            "rainHigh" : 2,
+            "rainLow" : 1,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "rain"
+         },
+         "pressure" : 994,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 5.9,
+            "feelsLike" : 1.5,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T12:00:00+01:00",
+            "epoch" : 1774436400
+         },
+         "uvIndex" : null,
+         "visibility" : 7330,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regen",
+            "loxone" : "11",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_2"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 265,
+            "gust" : 55,
+            "speed" : 30
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 3,
+         "hour" : 16,
+         "humidity" : 75,
+         "isNight" : null,
+         "moon" : {
+            "age" : 7.05,
+            "direction" : "waxing",
+            "percent" : 46.46,
+            "phase" : 23.87
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 60,
+            "rainHigh" : 0.5,
+            "rainLow" : 0,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "rain"
+         },
+         "pressure" : 995,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.2,
+            "feelsLike" : 3.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T13:00:00+01:00",
+            "epoch" : 1774440000
+         },
+         "uvIndex" : null,
+         "visibility" : 10000,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regenschauern",
+            "loxone" : "16",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 280,
+            "gust" : 55,
+            "speed" : 30
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 1,
+         "hour" : 17,
+         "humidity" : 60,
+         "isNight" : null,
+         "moon" : {
+            "age" : 7.09,
+            "direction" : "waxing",
+            "percent" : 46.93,
+            "phase" : 24.02
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 40,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 996,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.8,
+            "feelsLike" : 4.3,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T14:00:00+01:00",
+            "epoch" : 1774443600
+         },
+         "uvIndex" : null,
+         "visibility" : 23170,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : "5",
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 55,
+            "speed" : 30
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 1,
+         "hour" : 18,
+         "humidity" : 60,
+         "isNight" : null,
+         "moon" : {
+            "age" : 7.14,
+            "direction" : "waxing",
+            "percent" : 47.41,
+            "phase" : 24.17
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 40,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 996,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 8,
+            "feelsLike" : 4.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T15:00:00+01:00",
+            "epoch" : 1774447200
+         },
+         "uvIndex" : null,
+         "visibility" : 25210,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 290,
+            "gust" : 55,
+            "speed" : 30
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 1,
+         "hour" : 19,
+         "humidity" : 65,
+         "isNight" : null,
+         "moon" : {
+            "age" : 7.18,
+            "direction" : "waxing",
+            "percent" : 47.88,
+            "phase" : 24.33
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 30,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 997,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.8,
+            "feelsLike" : 4.3,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T16:00:00+01:00",
+            "epoch" : 1774450800
+         },
+         "uvIndex" : null,
+         "visibility" : 22960,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 290,
+            "gust" : 55,
+            "speed" : 30
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : 2,
+         "hour" : 20,
+         "humidity" : 65,
+         "isNight" : null,
+         "moon" : {
+            "age" : 7.23,
+            "direction" : "waxing",
+            "percent" : 48.36,
+            "phase" : 24.48
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 30,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 998,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.2,
+            "feelsLike" : 3.8,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T17:00:00+01:00",
+            "epoch" : 1774454400
+         },
+         "uvIndex" : null,
+         "visibility" : 20760,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Nord-Westen",
+            "direction" : 295,
+            "gust" : 55,
+            "speed" : 25
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : 2,
+         "hour" : 21,
+         "humidity" : 70,
+         "isNight" : null,
+         "moon" : {
+            "age" : 7.27,
+            "direction" : "waxing",
+            "percent" : 48.83,
+            "phase" : 24.63
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 20,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 999,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6.4,
+            "feelsLike" : 2.9,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T18:00:00+01:00",
+            "epoch" : 1774458000
+         },
+         "uvIndex" : null,
+         "visibility" : 17920,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 290,
+            "gust" : 50,
+            "speed" : 25
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : 2,
+         "hour" : 22,
+         "humidity" : 75,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 7.32,
+            "direction" : "waxing",
+            "percent" : 49.3,
+            "phase" : 24.78
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 20,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 1000,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 5.4,
+            "feelsLike" : 2,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T19:00:00+01:00",
+            "epoch" : 1774461600
+         },
+         "uvIndex" : null,
+         "visibility" : 15740,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 280,
+            "gust" : 45,
+            "speed" : 20
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : 2,
+         "hour" : 23,
+         "humidity" : 80,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 7.36,
+            "direction" : "waxing",
+            "percent" : 49.78,
+            "phase" : 24.93
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 20,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 1000,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 4.8,
+            "feelsLike" : 1.4,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T20:00:00+01:00",
+            "epoch" : 1774465200
+         },
+         "uvIndex" : null,
+         "visibility" : 13950,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 270,
+            "gust" : 40,
+            "speed" : 20
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : 2,
+         "hour" : 24,
+         "humidity" : 80,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 7.41,
+            "direction" : "waxing",
+            "percent" : 50.25,
+            "phase" : 25.08
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 10,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 1001,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 4.5,
+            "feelsLike" : 1.1,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T21:00:00+01:00",
+            "epoch" : 1774468800
+         },
+         "uvIndex" : null,
+         "visibility" : 13120,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 265,
+            "gust" : null,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : 2,
+         "hour" : 25,
+         "humidity" : 85,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 7.45,
+            "direction" : "waxing",
+            "percent" : 50.73,
+            "phase" : 25.23
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 10,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 1001,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 4.2,
+            "feelsLike" : 0.9,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T22:00:00+01:00",
+            "epoch" : 1774472400
+         },
+         "uvIndex" : null,
+         "visibility" : 12370,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 260,
+            "gust" : null,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : 2,
+         "hour" : 26,
+         "humidity" : 85,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 7.5,
+            "direction" : "waxing",
+            "percent" : 51.2,
+            "phase" : 25.38
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : null,
+            "probability" : 10,
+            "rainHigh" : null,
+            "rainLow" : null,
+            "snowHigh" : null,
+            "snowLow" : null,
+            "type" : "none"
+         },
+         "pressure" : 1002,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 4.1,
+            "feelsLike" : 0.8,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-25T23:00:00+01:00",
+            "epoch" : 1774476000
+         },
+         "uvIndex" : null,
+         "visibility" : 12340,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 260,
+            "gust" : null,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 0,
+         "hour" : 27,
+         "humidity" : 85,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 7.54,
+            "direction" : "waxing",
+            "percent" : 51.67,
+            "phase" : 25.53
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 50,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1003,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "2.4",
+            "feelsLike" : "-1.1",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T00:00:00+01:00",
+            "epoch" : 1774479600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 260,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -0.2,
+         "hour" : 28,
+         "humidity" : 82,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 7.58,
+            "direction" : "waxing",
+            "percent" : 52.15,
+            "phase" : 25.68
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 50,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1004,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "2.7",
+            "feelsLike" : "-0.8",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T01:00:00+01:00",
+            "epoch" : 1774483200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 260,
+            "gust" : 8.33,
+            "speed" : 16.67
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -0.3,
+         "hour" : 29,
+         "humidity" : 80,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 7.63,
+            "direction" : "waxing",
+            "percent" : 52.62,
+            "phase" : 25.83
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 50,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1004,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "3.0",
+            "feelsLike" : "-0.4",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T02:00:00+01:00",
+            "epoch" : 1774486800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 260,
+            "gust" : 16.67,
+            "speed" : 18.33
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -0.5,
+         "hour" : 30,
+         "humidity" : 78,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 7.67,
+            "direction" : "waxing",
+            "percent" : 53.09,
+            "phase" : 25.98
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 50,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1005,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "3.2",
+            "feelsLike" : "-0.1",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T03:00:00+01:00",
+            "epoch" : 1774490400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 260,
+            "gust" : 25,
+            "speed" : 20
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -0.7,
+         "hour" : 31,
+         "humidity" : 75,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 7.72,
+            "direction" : "waxing",
+            "percent" : 53.56,
+            "phase" : 26.13
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 50,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1006,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "3.5",
+            "feelsLike" : "0.2",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T04:00:00+01:00",
+            "epoch" : 1774494000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 260,
+            "gust" : 33.33,
+            "speed" : 21.67
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -0.8,
+         "hour" : 32,
+         "humidity" : 72,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 7.76,
+            "direction" : "waxing",
+            "percent" : 54.03,
+            "phase" : 26.28
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 50,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1006,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "3.8",
+            "feelsLike" : "0.6",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T05:00:00+01:00",
+            "epoch" : 1774497600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 260,
+            "gust" : 41.67,
+            "speed" : 23.33
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -1,
+         "hour" : 33,
+         "humidity" : 70,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 7.81,
+            "direction" : "waxing",
+            "percent" : 54.5,
+            "phase" : 26.43
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 50,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1007,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.1",
+            "feelsLike" : "0.9",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T06:00:00+01:00",
+            "epoch" : 1774501200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 260,
+            "gust" : 50,
+            "speed" : 25
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -1.2,
+         "hour" : 34,
+         "humidity" : 68,
+         "isNight" : null,
+         "moon" : {
+            "age" : 7.85,
+            "direction" : "waxing",
+            "percent" : 54.97,
+            "phase" : 26.58
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 52,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1007,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.5",
+            "feelsLike" : "1.3",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T07:00:00+01:00",
+            "epoch" : 1774504800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 50.83,
+            "speed" : 25
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -1.3,
+         "hour" : 35,
+         "humidity" : 65,
+         "isNight" : null,
+         "moon" : {
+            "age" : 7.89,
+            "direction" : "waxing",
+            "percent" : 55.44,
+            "phase" : 26.73
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 53,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1008,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.8",
+            "feelsLike" : "1.7",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T08:00:00+01:00",
+            "epoch" : 1774508400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 51.67,
+            "speed" : 25
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -1.5,
+         "hour" : 36,
+         "humidity" : 62,
+         "isNight" : null,
+         "moon" : {
+            "age" : 7.94,
+            "direction" : "waxing",
+            "percent" : 55.91,
+            "phase" : 26.88
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 55,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1008,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "5.1",
+            "feelsLike" : "2.1",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T09:00:00+01:00",
+            "epoch" : 1774512000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 52.5,
+            "speed" : 25
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -1.7,
+         "hour" : 37,
+         "humidity" : 60,
+         "isNight" : null,
+         "moon" : {
+            "age" : 7.98,
+            "direction" : "waxing",
+            "percent" : 56.37,
+            "phase" : 27.03
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 57,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1008,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "5.5",
+            "feelsLike" : "2.6",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T10:00:00+01:00",
+            "epoch" : 1774515600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 53.33,
+            "speed" : 25
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -1.8,
+         "hour" : 38,
+         "humidity" : 58,
+         "isNight" : null,
+         "moon" : {
+            "age" : 8.03,
+            "direction" : "waxing",
+            "percent" : 56.84,
+            "phase" : 27.18
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 58,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1009,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "5.9",
+            "feelsLike" : "3.0",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T11:00:00+01:00",
+            "epoch" : 1774519200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 54.17,
+            "speed" : 25
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -2,
+         "hour" : 39,
+         "humidity" : 55,
+         "isNight" : null,
+         "moon" : {
+            "age" : 8.07,
+            "direction" : "waxing",
+            "percent" : 57.31,
+            "phase" : 27.33
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 60,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1009,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "6.2",
+            "feelsLike" : "3.4",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T12:00:00+01:00",
+            "epoch" : 1774522800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 55,
+            "speed" : 25
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -1.8,
+         "hour" : 40,
+         "humidity" : 58,
+         "isNight" : null,
+         "moon" : {
+            "age" : 8.12,
+            "direction" : "waxing",
+            "percent" : 57.77,
+            "phase" : 27.48
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 55,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1010,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "5.6",
+            "feelsLike" : "2.8",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T13:00:00+01:00",
+            "epoch" : 1774526400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Nord-Westen",
+            "direction" : 300,
+            "gust" : 45.83,
+            "speed" : 23.33
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -1.7,
+         "hour" : 41,
+         "humidity" : 62,
+         "isNight" : null,
+         "moon" : {
+            "age" : 8.16,
+            "direction" : "waxing",
+            "percent" : 58.23,
+            "phase" : 27.63
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 50,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1010,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "5.0",
+            "feelsLike" : "2.2",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T14:00:00+01:00",
+            "epoch" : 1774530000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Nord-Westen",
+            "direction" : 300,
+            "gust" : 36.67,
+            "speed" : 21.67
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -1.5,
+         "hour" : 42,
+         "humidity" : 65,
+         "isNight" : null,
+         "moon" : {
+            "age" : 8.2,
+            "direction" : "waxing",
+            "percent" : 58.7,
+            "phase" : 27.78
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 45,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1011,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.4",
+            "feelsLike" : "1.7",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T15:00:00+01:00",
+            "epoch" : 1774533600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Nord-Westen",
+            "direction" : 300,
+            "gust" : 27.5,
+            "speed" : 20
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -1.3,
+         "hour" : 43,
+         "humidity" : 68,
+         "isNight" : null,
+         "moon" : {
+            "age" : 8.25,
+            "direction" : "waxing",
+            "percent" : 59.16,
+            "phase" : 27.93
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 40,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1012,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "3.8",
+            "feelsLike" : "1.1",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T16:00:00+01:00",
+            "epoch" : 1774537200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Nord-Westen",
+            "direction" : 300,
+            "gust" : 18.33,
+            "speed" : 18.33
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -1.2,
+         "hour" : 44,
+         "humidity" : 72,
+         "isNight" : null,
+         "moon" : {
+            "age" : 8.29,
+            "direction" : "waxing",
+            "percent" : 59.62,
+            "phase" : 28.08
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 35,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1012,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "3.2",
+            "feelsLike" : "0.5",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T17:00:00+01:00",
+            "epoch" : 1774540800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Nord-Westen",
+            "direction" : 300,
+            "gust" : 9.17,
+            "speed" : 16.67
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -1,
+         "hour" : 45,
+         "humidity" : 75,
+         "isNight" : null,
+         "moon" : {
+            "age" : 8.34,
+            "direction" : "waxing",
+            "percent" : 60.08,
+            "phase" : 28.23
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 30,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "2.6",
+            "feelsLike" : "-0.1",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T18:00:00+01:00",
+            "epoch" : 1774544400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt mit vereinzelten Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy_shower_1"
+         },
+         "wind" : {
+            "dirLabel" : "Nord-Westen",
+            "direction" : 300,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : -1.2,
+         "hour" : 46,
+         "humidity" : 76,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 8.38,
+            "direction" : "waxing",
+            "percent" : 60.54,
+            "phase" : 28.38
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 27,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "2.3",
+            "feelsLike" : "-0.5",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T19:00:00+01:00",
+            "epoch" : 1774548000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "image" : null,
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : -1.3,
+         "hour" : 47,
+         "humidity" : 77,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 8.42,
+            "direction" : "waxing",
+            "percent" : 60.99,
+            "phase" : 28.53
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 23,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1014,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "2.0",
+            "feelsLike" : "-1.0",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T20:00:00+01:00",
+            "epoch" : 1774551600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "image" : null,
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : -1.5,
+         "hour" : 48,
+         "humidity" : 78,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 8.47,
+            "direction" : "waxing",
+            "percent" : 61.45,
+            "phase" : 28.68
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1014,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "1.8",
+            "feelsLike" : "-1.4",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T21:00:00+01:00",
+            "epoch" : 1774555200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "image" : null,
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : -1.7,
+         "hour" : 49,
+         "humidity" : 78,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 8.51,
+            "direction" : "waxing",
+            "percent" : 61.9,
+            "phase" : 28.83
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 17,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1014,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "1.5",
+            "feelsLike" : "-1.8",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T22:00:00+01:00",
+            "epoch" : 1774558800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "image" : null,
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : -1.8,
+         "hour" : 50,
+         "humidity" : 79,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 8.56,
+            "direction" : "waxing",
+            "percent" : 62.36,
+            "phase" : 28.97
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 13,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1015,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "1.2",
+            "feelsLike" : "-2.3",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-26T23:00:00+01:00",
+            "epoch" : 1774562400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "image" : null,
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : -2,
+         "hour" : 51,
+         "humidity" : 80,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 8.6,
+            "direction" : "waxing",
+            "percent" : 62.81,
+            "phase" : 29.12
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 10,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1015,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "0.9",
+            "feelsLike" : "-2.7",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T00:00:00+01:00",
+            "epoch" : 1774566000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "image" : null,
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 0,
+         "dewpoint" : -1.7,
+         "hour" : 52,
+         "humidity" : 78,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 8.64,
+            "direction" : "waxing",
+            "percent" : 63.26,
+            "phase" : 29.27
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 10,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1016,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "1.5",
+            "feelsLike" : "-1.8",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T01:00:00+01:00",
+            "epoch" : 1774569600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Klar",
+            "image" : null,
+            "loxone" : "1",
+            "metar" : "SKC",
+            "weather4lox" : "clear"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 0,
+         "dewpoint" : -1.3,
+         "hour" : 53,
+         "humidity" : 77,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 8.69,
+            "direction" : "waxing",
+            "percent" : 63.71,
+            "phase" : 29.42
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 10,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1016,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "2.2",
+            "feelsLike" : "-1.0",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T02:00:00+01:00",
+            "epoch" : 1774573200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Klar",
+            "image" : null,
+            "loxone" : "1",
+            "metar" : "SKC",
+            "weather4lox" : "clear"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 0,
+         "dewpoint" : -1,
+         "hour" : 54,
+         "humidity" : 75,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 8.73,
+            "direction" : "waxing",
+            "percent" : 64.16,
+            "phase" : 29.57
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 10,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1017,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "2.9",
+            "feelsLike" : "-0.1",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T03:00:00+01:00",
+            "epoch" : 1774576800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Klar",
+            "image" : null,
+            "loxone" : "1",
+            "metar" : "SKC",
+            "weather4lox" : "clear"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 0,
+         "dewpoint" : -0.7,
+         "hour" : 55,
+         "humidity" : 73,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 8.78,
+            "direction" : "waxing",
+            "percent" : 64.6,
+            "phase" : 29.72
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 10,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "3.5",
+            "feelsLike" : "0.8",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T04:00:00+01:00",
+            "epoch" : 1774580400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Klar",
+            "image" : null,
+            "loxone" : "1",
+            "metar" : "SKC",
+            "weather4lox" : "clear"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 0,
+         "dewpoint" : -0.3,
+         "hour" : 56,
+         "humidity" : 72,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 8.82,
+            "direction" : "waxing",
+            "percent" : 65.05,
+            "phase" : 29.87
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 10,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.2",
+            "feelsLike" : "1.6",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T05:00:00+01:00",
+            "epoch" : 1774584000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Klar",
+            "image" : null,
+            "loxone" : "1",
+            "metar" : "SKC",
+            "weather4lox" : "clear"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 0,
+         "dewpoint" : 0,
+         "hour" : 57,
+         "humidity" : 70,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 8.86,
+            "direction" : "waxing",
+            "percent" : 65.49,
+            "phase" : 30.01
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 10,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1019,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.8",
+            "feelsLike" : "2.5",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T06:00:00+01:00",
+            "epoch" : 1774587600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Klar",
+            "image" : null,
+            "loxone" : "1",
+            "metar" : "SKC",
+            "weather4lox" : "clear"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 0,
+         "dewpoint" : -0.3,
+         "hour" : 58,
+         "humidity" : 66,
+         "isNight" : null,
+         "moon" : {
+            "age" : 8.91,
+            "direction" : "waxing",
+            "percent" : 65.93,
+            "phase" : 30.16
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 12,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1019,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "5.6",
+            "feelsLike" : "3.3",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T07:00:00+01:00",
+            "epoch" : 1774591200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Sonnig",
+            "image" : null,
+            "loxone" : "1",
+            "metar" : "SKC",
+            "weather4lox" : "clear"
+         },
+         "wind" : {
+            "dirLabel" : "Nord-Westen",
+            "direction" : 300,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 0,
+         "dewpoint" : -0.7,
+         "hour" : 59,
+         "humidity" : 62,
+         "isNight" : null,
+         "moon" : {
+            "age" : 8.95,
+            "direction" : "waxing",
+            "percent" : 66.37,
+            "phase" : 30.31
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 13,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1019,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "6.3",
+            "feelsLike" : "4.1",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T08:00:00+01:00",
+            "epoch" : 1774594800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Sonnig",
+            "image" : null,
+            "loxone" : "1",
+            "metar" : "SKC",
+            "weather4lox" : "clear"
+         },
+         "wind" : {
+            "dirLabel" : "Nord-Westen",
+            "direction" : 300,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 0,
+         "dewpoint" : -1,
+         "hour" : 60,
+         "humidity" : 58,
+         "isNight" : null,
+         "moon" : {
+            "age" : 8.99,
+            "direction" : "waxing",
+            "percent" : 66.81,
+            "phase" : 30.46
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 15,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "7.1",
+            "feelsLike" : "4.9",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T09:00:00+01:00",
+            "epoch" : 1774598400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Sonnig",
+            "image" : null,
+            "loxone" : "1",
+            "metar" : "SKC",
+            "weather4lox" : "clear"
+         },
+         "wind" : {
+            "dirLabel" : "Nord-Westen",
+            "direction" : 300,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 0,
+         "dewpoint" : -1.3,
+         "hour" : 61,
+         "humidity" : 53,
+         "isNight" : null,
+         "moon" : {
+            "age" : 9.04,
+            "direction" : "waxing",
+            "percent" : 67.25,
+            "phase" : 30.61
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 17,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "7.9",
+            "feelsLike" : "5.7",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T10:00:00+01:00",
+            "epoch" : 1774602000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Sonnig",
+            "image" : null,
+            "loxone" : "1",
+            "metar" : "SKC",
+            "weather4lox" : "clear"
+         },
+         "wind" : {
+            "dirLabel" : "Nord-Westen",
+            "direction" : 300,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 0,
+         "dewpoint" : -1.7,
+         "hour" : 62,
+         "humidity" : 49,
+         "isNight" : null,
+         "moon" : {
+            "age" : 9.08,
+            "direction" : "waxing",
+            "percent" : 67.68,
+            "phase" : 30.75
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 18,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "8.6",
+            "feelsLike" : "6.5",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T11:00:00+01:00",
+            "epoch" : 1774605600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Sonnig",
+            "image" : null,
+            "loxone" : "1",
+            "metar" : "SKC",
+            "weather4lox" : "clear"
+         },
+         "wind" : {
+            "dirLabel" : "Nord-Westen",
+            "direction" : 300,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 0,
+         "dewpoint" : -2,
+         "hour" : 63,
+         "humidity" : 45,
+         "isNight" : null,
+         "moon" : {
+            "age" : 9.13,
+            "direction" : "waxing",
+            "percent" : 68.12,
+            "phase" : 30.9
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "9.4",
+            "feelsLike" : "7.3",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T12:00:00+01:00",
+            "epoch" : 1774609200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Sonnig",
+            "image" : null,
+            "loxone" : "1",
+            "metar" : "SKC",
+            "weather4lox" : "clear"
+         },
+         "wind" : {
+            "dirLabel" : "Nord-Westen",
+            "direction" : 300,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -2,
+         "hour" : 64,
+         "humidity" : 48,
+         "isNight" : null,
+         "moon" : {
+            "age" : 9.17,
+            "direction" : "waxing",
+            "percent" : 68.55,
+            "phase" : 31.05
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "8.8",
+            "feelsLike" : "6.7",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T13:00:00+01:00",
+            "epoch" : 1774612800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -2,
+         "hour" : 65,
+         "humidity" : 50,
+         "isNight" : null,
+         "moon" : {
+            "age" : 9.21,
+            "direction" : "waxing",
+            "percent" : 68.98,
+            "phase" : 31.2
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "8.1",
+            "feelsLike" : "6.1",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T14:00:00+01:00",
+            "epoch" : 1774616400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -2,
+         "hour" : 66,
+         "humidity" : 52,
+         "isNight" : null,
+         "moon" : {
+            "age" : 9.26,
+            "direction" : "waxing",
+            "percent" : 69.41,
+            "phase" : 31.34
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "7.5",
+            "feelsLike" : "5.5",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T15:00:00+01:00",
+            "epoch" : 1774620000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -2,
+         "hour" : 67,
+         "humidity" : 55,
+         "isNight" : null,
+         "moon" : {
+            "age" : 9.3,
+            "direction" : "waxing",
+            "percent" : 69.83,
+            "phase" : 31.49
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "6.8",
+            "feelsLike" : "4.9",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T16:00:00+01:00",
+            "epoch" : 1774623600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -2,
+         "hour" : 68,
+         "humidity" : 58,
+         "isNight" : null,
+         "moon" : {
+            "age" : 9.34,
+            "direction" : "waxing",
+            "percent" : 70.26,
+            "phase" : 31.64
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "6.2",
+            "feelsLike" : "4.3",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T17:00:00+01:00",
+            "epoch" : 1774627200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -2,
+         "hour" : 69,
+         "humidity" : 60,
+         "isNight" : null,
+         "moon" : {
+            "age" : 9.39,
+            "direction" : "waxing",
+            "percent" : 70.68,
+            "phase" : 31.79
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "5.5",
+            "feelsLike" : "3.7",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T18:00:00+01:00",
+            "epoch" : 1774630800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -2,
+         "hour" : 70,
+         "humidity" : 61,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 9.43,
+            "direction" : "waxing",
+            "percent" : 71.1,
+            "phase" : 31.93
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 25,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "5.3",
+            "feelsLike" : "3.3",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T19:00:00+01:00",
+            "epoch" : 1774634400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 220,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -2,
+         "hour" : 71,
+         "humidity" : 62,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 9.47,
+            "direction" : "waxing",
+            "percent" : 71.52,
+            "phase" : 32.08
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 30,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1019,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "5.1",
+            "feelsLike" : "3.0",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T20:00:00+01:00",
+            "epoch" : 1774638000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 220,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -2,
+         "hour" : 72,
+         "humidity" : 62,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 9.52,
+            "direction" : "waxing",
+            "percent" : 71.93,
+            "phase" : 32.23
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 35,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1019,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.8",
+            "feelsLike" : "2.6",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T21:00:00+01:00",
+            "epoch" : 1774641600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 220,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -2,
+         "hour" : 73,
+         "humidity" : 63,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 9.56,
+            "direction" : "waxing",
+            "percent" : 72.35,
+            "phase" : 32.37
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 40,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1019,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.6",
+            "feelsLike" : "2.2",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T22:00:00+01:00",
+            "epoch" : 1774645200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 220,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -2,
+         "hour" : 74,
+         "humidity" : 64,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 9.6,
+            "direction" : "waxing",
+            "percent" : 72.76,
+            "phase" : 32.52
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 45,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.4",
+            "feelsLike" : "1.9",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-27T23:00:00+01:00",
+            "epoch" : 1774648800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 220,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -2,
+         "hour" : 75,
+         "humidity" : 65,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 9.65,
+            "direction" : "waxing",
+            "percent" : 73.17,
+            "phase" : 32.67
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 50,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.2",
+            "feelsLike" : "1.5",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T00:00:00+01:00",
+            "epoch" : 1774652400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 220,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : -1.5,
+         "hour" : 76,
+         "humidity" : 67,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 9.69,
+            "direction" : "waxing",
+            "percent" : 73.58,
+            "phase" : 32.81
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 48,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.4",
+            "feelsLike" : "1.7",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T01:00:00+01:00",
+            "epoch" : 1774656000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 215,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : -1,
+         "hour" : 77,
+         "humidity" : 68,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 9.73,
+            "direction" : "waxing",
+            "percent" : 73.98,
+            "phase" : 32.96
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 47,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.5",
+            "feelsLike" : "2.0",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T02:00:00+01:00",
+            "epoch" : 1774659600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 215,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : -0.5,
+         "hour" : 78,
+         "humidity" : 70,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 9.78,
+            "direction" : "waxing",
+            "percent" : 74.38,
+            "phase" : 33.11
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 45,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.7",
+            "feelsLike" : "2.2",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T03:00:00+01:00",
+            "epoch" : 1774663200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 215,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 0,
+         "hour" : 79,
+         "humidity" : 72,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 9.82,
+            "direction" : "waxing",
+            "percent" : 74.78,
+            "phase" : 33.25
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 43,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.9",
+            "feelsLike" : "2.4",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T04:00:00+01:00",
+            "epoch" : 1774666800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 215,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 0.5,
+         "hour" : 80,
+         "humidity" : 73,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 9.86,
+            "direction" : "waxing",
+            "percent" : 75.18,
+            "phase" : 33.4
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 42,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "5.0",
+            "feelsLike" : "2.7",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T05:00:00+01:00",
+            "epoch" : 1774670400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 215,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 1,
+         "hour" : 81,
+         "humidity" : 75,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 9.91,
+            "direction" : "waxing",
+            "percent" : 75.58,
+            "phase" : 33.55
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 40,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "5.2",
+            "feelsLike" : "2.9",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T06:00:00+01:00",
+            "epoch" : 1774674000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 215,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 1.5,
+         "hour" : 82,
+         "humidity" : 76,
+         "isNight" : null,
+         "moon" : {
+            "age" : 9.95,
+            "direction" : "waxing",
+            "percent" : 75.97,
+            "phase" : 33.69
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 43,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "5.6",
+            "feelsLike" : "3.5",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T07:00:00+01:00",
+            "epoch" : 1774677600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "image" : null,
+            "loxone" : "5",
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 240,
+            "gust" : 0,
+            "speed" : 14.17
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 2,
+         "hour" : 83,
+         "humidity" : 77,
+         "isNight" : null,
+         "moon" : {
+            "age" : 9.99,
+            "direction" : "waxing",
+            "percent" : 76.36,
+            "phase" : 33.84
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 47,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "6.0",
+            "feelsLike" : "4.0",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T08:00:00+01:00",
+            "epoch" : 1774681200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "image" : null,
+            "loxone" : "5",
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 240,
+            "gust" : 0,
+            "speed" : 13.33
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 2.5,
+         "hour" : 84,
+         "humidity" : 78,
+         "isNight" : null,
+         "moon" : {
+            "age" : 10.04,
+            "direction" : "waxing",
+            "percent" : 76.75,
+            "phase" : 33.99
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 50,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "6.5",
+            "feelsLike" : "4.6",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T09:00:00+01:00",
+            "epoch" : 1774684800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "image" : null,
+            "loxone" : "5",
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 240,
+            "gust" : 0,
+            "speed" : 12.5
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 3,
+         "hour" : 85,
+         "humidity" : 78,
+         "isNight" : null,
+         "moon" : {
+            "age" : 10.08,
+            "direction" : "waxing",
+            "percent" : 77.14,
+            "phase" : 34.13
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 53,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1019,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "6.9",
+            "feelsLike" : "5.2",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T10:00:00+01:00",
+            "epoch" : 1774688400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "image" : null,
+            "loxone" : "5",
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 240,
+            "gust" : 0,
+            "speed" : 11.67
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 3.5,
+         "hour" : 86,
+         "humidity" : 79,
+         "isNight" : null,
+         "moon" : {
+            "age" : 10.12,
+            "direction" : "waxing",
+            "percent" : 77.52,
+            "phase" : 34.28
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 57,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1019,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "7.3",
+            "feelsLike" : "5.7",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T11:00:00+01:00",
+            "epoch" : 1774692000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "image" : null,
+            "loxone" : "5",
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 240,
+            "gust" : 0,
+            "speed" : 10.83
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 4,
+         "hour" : 87,
+         "humidity" : 80,
+         "isNight" : null,
+         "moon" : {
+            "age" : 10.17,
+            "direction" : "waxing",
+            "percent" : 77.9,
+            "phase" : 34.42
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 60,
+            "rainHigh" : 2,
+            "rainLow" : 2,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1019,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "7.7",
+            "feelsLike" : "6.3",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T12:00:00+01:00",
+            "epoch" : 1774695600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "image" : null,
+            "loxone" : "5",
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 240,
+            "gust" : 0,
+            "speed" : 10
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 3.8,
+         "hour" : 88,
+         "humidity" : 82,
+         "isNight" : null,
+         "moon" : {
+            "age" : 10.21,
+            "direction" : "waxing",
+            "percent" : 78.28,
+            "phase" : 34.57
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 53,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1019,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "7.2",
+            "feelsLike" : "5.6",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T13:00:00+01:00",
+            "epoch" : 1774699200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 10
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 3.7,
+         "hour" : 89,
+         "humidity" : 83,
+         "isNight" : null,
+         "moon" : {
+            "age" : 10.25,
+            "direction" : "waxing",
+            "percent" : 78.66,
+            "phase" : 34.71
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 47,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "6.7",
+            "feelsLike" : "4.9",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T14:00:00+01:00",
+            "epoch" : 1774702800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 10
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 3.5,
+         "hour" : 90,
+         "humidity" : 85,
+         "isNight" : null,
+         "moon" : {
+            "age" : 10.29,
+            "direction" : "waxing",
+            "percent" : 79.03,
+            "phase" : 34.86
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 40,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "6.2",
+            "feelsLike" : "4.2",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T15:00:00+01:00",
+            "epoch" : 1774706400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 10
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 3.3,
+         "hour" : 91,
+         "humidity" : 87,
+         "isNight" : null,
+         "moon" : {
+            "age" : 10.34,
+            "direction" : "waxing",
+            "percent" : 79.4,
+            "phase" : 35
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 33,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "5.8",
+            "feelsLike" : "3.5",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T16:00:00+01:00",
+            "epoch" : 1774710000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 10
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 3.2,
+         "hour" : 92,
+         "humidity" : 88,
+         "isNight" : null,
+         "moon" : {
+            "age" : 10.38,
+            "direction" : "waxing",
+            "percent" : 79.77,
+            "phase" : 35.15
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 27,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1021,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "5.3",
+            "feelsLike" : "2.8",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T17:00:00+01:00",
+            "epoch" : 1774713600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 10
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 3,
+         "hour" : 93,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 10.42,
+            "direction" : "waxing",
+            "percent" : 80.13,
+            "phase" : 35.3
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1021,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.8",
+            "feelsLike" : "2.1",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T18:00:00+01:00",
+            "epoch" : 1774717200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bedeckt mit Regenschauern",
+            "image" : null,
+            "loxone" : "16",
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 275,
+            "gust" : 0,
+            "speed" : 10
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 2.5,
+         "hour" : 94,
+         "humidity" : 91,
+         "isNight" : null,
+         "moon" : {
+            "age" : 10.47,
+            "direction" : "waxing",
+            "percent" : 80.5,
+            "phase" : 35.44
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1021,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.2",
+            "feelsLike" : "1.4",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T19:00:00+01:00",
+            "epoch" : 1774720800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 290,
+            "gust" : 0,
+            "speed" : 10
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 2,
+         "hour" : 95,
+         "humidity" : 92,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 10.51,
+            "direction" : "waxing",
+            "percent" : 80.86,
+            "phase" : 35.59
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1022,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "3.6",
+            "feelsLike" : "0.6",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T20:00:00+01:00",
+            "epoch" : 1774724400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 290,
+            "gust" : 0,
+            "speed" : 10
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 1.5,
+         "hour" : 96,
+         "humidity" : 92,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 10.55,
+            "direction" : "waxing",
+            "percent" : 81.21,
+            "phase" : 35.73
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1022,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "3.0",
+            "feelsLike" : "-0.1",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T21:00:00+01:00",
+            "epoch" : 1774728000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 290,
+            "gust" : 0,
+            "speed" : 10
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 1,
+         "hour" : 97,
+         "humidity" : 93,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 10.59,
+            "direction" : "waxing",
+            "percent" : 81.57,
+            "phase" : 35.88
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1022,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "2.3",
+            "feelsLike" : "-0.8",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T22:00:00+01:00",
+            "epoch" : 1774731600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 290,
+            "gust" : 0,
+            "speed" : 10
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 0.5,
+         "hour" : 98,
+         "humidity" : 94,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 10.64,
+            "direction" : "waxing",
+            "percent" : 81.92,
+            "phase" : 36.02
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1023,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "1.7",
+            "feelsLike" : "-1.6",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-28T23:00:00+01:00",
+            "epoch" : 1774735200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 290,
+            "gust" : 0,
+            "speed" : 10
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 0,
+         "hour" : 99,
+         "humidity" : 95,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 10.68,
+            "direction" : "waxing",
+            "percent" : 82.27,
+            "phase" : 36.17
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1023,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "1.1",
+            "feelsLike" : "-2.3",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T00:00:00+01:00",
+            "epoch" : 1774738800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 290,
+            "gust" : 0,
+            "speed" : 10
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 0,
+         "hour" : 100,
+         "humidity" : 92,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 10.72,
+            "direction" : "waxing",
+            "percent" : 82.62,
+            "phase" : 36.31
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1023,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "1.6",
+            "feelsLike" : "-1.7",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T01:00:00+01:00",
+            "epoch" : 1774742400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 290,
+            "gust" : 0,
+            "speed" : 11
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 0,
+         "hour" : 101,
+         "humidity" : 89,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 10.77,
+            "direction" : "waxing",
+            "percent" : 82.96,
+            "phase" : 36.45
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1024,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "2.0",
+            "feelsLike" : "-1.1",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T03:00:00+02:00",
+            "epoch" : 1774746000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 290,
+            "gust" : 0,
+            "speed" : 12
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 0,
+         "hour" : 102,
+         "humidity" : 86,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 10.81,
+            "direction" : "waxing",
+            "percent" : 83.3,
+            "phase" : 36.6
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1024,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "2.5",
+            "feelsLike" : "-0.4",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T04:00:00+02:00",
+            "epoch" : 1774749600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 290,
+            "gust" : 0,
+            "speed" : 13
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 0,
+         "hour" : 103,
+         "humidity" : 83,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 10.85,
+            "direction" : "waxing",
+            "percent" : 83.64,
+            "phase" : 36.74
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1025,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "2.9",
+            "feelsLike" : "0.2",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T05:00:00+02:00",
+            "epoch" : 1774753200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 290,
+            "gust" : 0,
+            "speed" : 14
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 0,
+         "hour" : 104,
+         "humidity" : 80,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 10.89,
+            "direction" : "waxing",
+            "percent" : 83.97,
+            "phase" : 36.89
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1025,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "3.4",
+            "feelsLike" : "0.8",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T06:00:00+02:00",
+            "epoch" : 1774756800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 290,
+            "gust" : 0,
+            "speed" : 15
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : 0,
+         "hour" : 105,
+         "humidity" : 75,
+         "isNight" : null,
+         "moon" : {
+            "age" : 10.94,
+            "direction" : "waxing",
+            "percent" : 84.3,
+            "phase" : 37.03
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1025,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.5",
+            "feelsLike" : "2.0",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T07:00:00+02:00",
+            "epoch" : 1774760400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "image" : null,
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 7.5,
+            "speed" : 15.83
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : 0,
+         "hour" : 106,
+         "humidity" : 70,
+         "isNight" : null,
+         "moon" : {
+            "age" : 10.98,
+            "direction" : "waxing",
+            "percent" : 84.63,
+            "phase" : 37.18
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1025,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "5.6",
+            "feelsLike" : "3.2",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T08:00:00+02:00",
+            "epoch" : 1774764000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "image" : null,
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 15,
+            "speed" : 16.67
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : 0,
+         "hour" : 107,
+         "humidity" : 65,
+         "isNight" : null,
+         "moon" : {
+            "age" : 11.02,
+            "direction" : "waxing",
+            "percent" : 84.95,
+            "phase" : 37.32
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1024,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "6.8",
+            "feelsLike" : "4.4",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T09:00:00+02:00",
+            "epoch" : 1774767600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "image" : null,
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 22.5,
+            "speed" : 17.5
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : 0,
+         "hour" : 108,
+         "humidity" : 60,
+         "isNight" : null,
+         "moon" : {
+            "age" : 11.06,
+            "direction" : "waxing",
+            "percent" : 85.28,
+            "phase" : 37.46
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1024,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "7.9",
+            "feelsLike" : "5.6",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T10:00:00+02:00",
+            "epoch" : 1774771200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "image" : null,
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 30,
+            "speed" : 18.33
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : 0,
+         "hour" : 109,
+         "humidity" : 55,
+         "isNight" : null,
+         "moon" : {
+            "age" : 11.11,
+            "direction" : "waxing",
+            "percent" : 85.59,
+            "phase" : 37.61
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1024,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "9.0",
+            "feelsLike" : "6.8",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T11:00:00+02:00",
+            "epoch" : 1774774800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "image" : null,
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 37.5,
+            "speed" : 19.17
+         }
+      },
+      {
+         "cloudCover" : 33,
+         "dewpoint" : 0,
+         "hour" : 110,
+         "humidity" : 50,
+         "isNight" : null,
+         "moon" : {
+            "age" : 11.15,
+            "direction" : "waxing",
+            "percent" : 85.91,
+            "phase" : 37.75
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 20,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1024,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "10.1",
+            "feelsLike" : "8.0",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T12:00:00+02:00",
+            "epoch" : 1774778400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Teilweise bewölkt",
+            "image" : null,
+            "loxone" : "2",
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 45,
+            "speed" : 20
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 0,
+         "hour" : 111,
+         "humidity" : 52,
+         "isNight" : null,
+         "moon" : {
+            "age" : 11.19,
+            "direction" : "waxing",
+            "percent" : 86.22,
+            "phase" : 37.9
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 23,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1023,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "9.6",
+            "feelsLike" : "7.5",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T13:00:00+02:00",
+            "epoch" : 1774782000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 45,
+            "speed" : 20.83
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 0,
+         "hour" : 112,
+         "humidity" : 53,
+         "isNight" : null,
+         "moon" : {
+            "age" : 11.23,
+            "direction" : "waxing",
+            "percent" : 86.53,
+            "phase" : 38.04
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 27,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1023,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "9.2",
+            "feelsLike" : "7.0",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T14:00:00+02:00",
+            "epoch" : 1774785600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 45,
+            "speed" : 21.67
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 0,
+         "hour" : 113,
+         "humidity" : 55,
+         "isNight" : null,
+         "moon" : {
+            "age" : 11.28,
+            "direction" : "waxing",
+            "percent" : 86.84,
+            "phase" : 38.18
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 30,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1022,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "8.8",
+            "feelsLike" : "6.5",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T15:00:00+02:00",
+            "epoch" : 1774789200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 45,
+            "speed" : 22.5
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 0,
+         "hour" : 114,
+         "humidity" : 57,
+         "isNight" : null,
+         "moon" : {
+            "age" : 11.32,
+            "direction" : "waxing",
+            "percent" : 87.14,
+            "phase" : 38.33
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 33,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1021,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "8.3",
+            "feelsLike" : "5.9",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T16:00:00+02:00",
+            "epoch" : 1774792800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 45,
+            "speed" : 23.33
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 0,
+         "hour" : 115,
+         "humidity" : 58,
+         "isNight" : null,
+         "moon" : {
+            "age" : 11.36,
+            "direction" : "waxing",
+            "percent" : 87.44,
+            "phase" : 38.47
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 37,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1021,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "7.9",
+            "feelsLike" : "5.4",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T17:00:00+02:00",
+            "epoch" : 1774796400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 45,
+            "speed" : 24.17
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : 0,
+         "hour" : 116,
+         "humidity" : 60,
+         "isNight" : null,
+         "moon" : {
+            "age" : 11.4,
+            "direction" : "waxing",
+            "percent" : 87.74,
+            "phase" : 38.61
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 40,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "7.4",
+            "feelsLike" : "4.9",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T18:00:00+02:00",
+            "epoch" : 1774800000
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Westen",
+            "direction" : 285,
+            "gust" : 45,
+            "speed" : 25
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -0.2,
+         "hour" : 117,
+         "humidity" : 62,
+         "isNight" : null,
+         "moon" : {
+            "age" : 11.44,
+            "direction" : "waxing",
+            "percent" : 88.03,
+            "phase" : 38.76
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 43,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "6.8",
+            "feelsLike" : "4.1",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T19:00:00+02:00",
+            "epoch" : 1774803600
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 225,
+            "gust" : 46.67,
+            "speed" : 25.83
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -0.3,
+         "hour" : 118,
+         "humidity" : 63,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 11.49,
+            "direction" : "waxing",
+            "percent" : 88.32,
+            "phase" : 38.9
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 47,
+            "rainHigh" : 0,
+            "rainLow" : 0,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "6.1",
+            "feelsLike" : "3.3",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T20:00:00+02:00",
+            "epoch" : 1774807200
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 225,
+            "gust" : 48.33,
+            "speed" : 26.67
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -0.5,
+         "hour" : 119,
+         "humidity" : 65,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 11.53,
+            "direction" : "waxing",
+            "percent" : 88.61,
+            "phase" : 39.04
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 50,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "5.5",
+            "feelsLike" : "2.5",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T21:00:00+02:00",
+            "epoch" : 1774810800
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 225,
+            "gust" : 50,
+            "speed" : 27.5
+         }
+      },
+      {
+         "cloudCover" : 66,
+         "dewpoint" : -0.7,
+         "hour" : 120,
+         "humidity" : 67,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 11.57,
+            "direction" : "waxing",
+            "percent" : 88.89,
+            "phase" : 39.18
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "duration" : 0,
+            "probability" : 53,
+            "rainHigh" : 1,
+            "rainLow" : 1,
+            "snowHigh" : 0,
+            "snowLow" : 0,
+            "type" : null
+         },
+         "pressure" : 1020,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : "4.8",
+            "feelsLike" : "1.7",
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-03-29T22:00:00+02:00",
+            "epoch" : 1774814400
+         },
+         "uvIndex" : 0,
+         "visibility" : null,
+         "weatherCode" : {
+            "description" : "Bewölkt",
+            "image" : null,
+            "loxone" : "3",
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "dirLabel" : "Süd-Westen",
+            "direction" : 225,
+            "gust" : 51.67,
+            "speed" : 28.33
+         }
+      }
+   ],
+   "location" : {
+      "city" : "Schwarzenbek",
+      "country" : "Deutschland",
+      "countryCode" : "DE",
+      "elevation" : 50,
+      "latitude" : 53.509,
+      "longitude" : 10.487,
+      "timezone" : "Europe/Berlin",
+      "tzOffset" : "+0100",
+      "tzShort" : "CET"
+   },
+   "wetteronline" : {
+      "filename" : "/opt/loxberry/log/plugins/weather4lox/hourlyforecast.json",
+      "generatedAt" : "2026-03-24T20:40:24",
+      "grabberLabel" : "Wetter Online",
+      "grabberScript" : "grabber_wetteronline.pl",
+      "schemaVersion" : "v1.0"
+   }
+}

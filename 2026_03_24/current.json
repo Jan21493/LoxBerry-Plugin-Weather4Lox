@@ -1,0 +1,82 @@
+{
+   "current" : {
+      "cloudCover" : 100,
+      "dewpoint" : 3.5,
+      "humidity" : 50,
+      "isNight" : 1,
+      "moon" : {
+         "age" : 6.32,
+         "direction" : "waxing",
+         "percent" : 38.75,
+         "phase" : 21.39
+      },
+      "ozone" : null,
+      "precipitation" : {
+         "probability" : 20,
+         "rain1hr" : 0,
+         "rainToday" : 0,
+         "snow1h" : null,
+         "snowToday" : null,
+         "type" : "none"
+      },
+      "pressure" : 1006,
+      "solarRadiation" : 0,
+      "sunrise" : "06:11",
+      "sunset" : "18:38",
+      "temperature" : {
+         "air" : 13.7,
+         "feelsLike" : 10.8,
+         "heatIndex" : 13.7,
+         "windChill" : 13.7
+      },
+      "time" : {
+         "datetime" : "2026-03-24T20:40:24+01:00",
+         "epoch" : 1774381224,
+         "timezone" : "Europe/Berlin",
+         "tzOffset" : "+0100",
+         "tzShort" : "CET"
+      },
+      "uvIndex" : 0,
+      "visibility" : null,
+      "weatherCode" : {
+         "description" : "Bedeckt",
+         "image" : "overcast_night",
+         "loxone" : "5",
+         "metar" : "OVC",
+         "weather4lox" : "overcast"
+      },
+      "wind" : {
+         "dirLabel" : "Süd-Westen",
+         "direction" : 214,
+         "gust" : 12.9,
+         "speed" : 3.2
+      }
+   },
+   "location" : {
+      "city" : "Schwarzenbek",
+      "country" : "Deutschland",
+      "countryCode" : "DE",
+      "elevation" : 50,
+      "latitude" : 53.509,
+      "longitude" : 10.487,
+      "timezone" : "Europe/Berlin",
+      "tzOffset" : "+0100",
+      "tzShort" : "CET"
+   },
+   "wetteronline" : {
+      "filename" : "/opt/loxberry/log/plugins/weather4lox/current.json",
+      "generatedAt" : "2026-03-24T20:40:24",
+      "grabberLabel" : "Wetter Online",
+      "grabberScript" : "grabber_wetteronline.pl",
+      "schemaVersion" : "v1.0"
+   },
+   "wunderground" : {
+      "filename" : "/opt/loxberry/log/plugins/weather4lox/current.json",
+      "generatedAt" : "2026-03-24T20:40:33",
+      "grabberLabel" : "Weather Underground ",
+      "grabberScript" : "grabber_wu.pl",
+      "observedAt" : null,
+      "schemaVersion" : "v1.0",
+      "stationID" : null
+   }
+}
