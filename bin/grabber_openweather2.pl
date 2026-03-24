@@ -58,7 +58,11 @@ my $stationid    = "lat=" . $pcfg->param("OPENWEATHER.COORDLAT") . "&lon=" . $pc
 my $city         = $pcfg->param("OPENWEATHER.STATION");
 my $country      = $pcfg->param("OPENWEATHER.COUNTRY");
 
-# names for JSON 
+# refresh interval in seconds (from CRON config, default 15 minutes)
+my $cronMinutes  = $pcfg->param("SERVER.CRON") // 15;
+my $refresh      = $cronMinutes * 60;
+
+# names for JSON
 my $grabberFile     = basename(__FILE__);
 my $grabberLabel    = "OpenWeather";
 my $grabberKey      = "openweather";          # name in JSONs
@@ -624,8 +628,9 @@ if ( $current ) {
 
     # Build envelope and write JSON to file
     $weatherKey = "current";
-    my $envelope = { 
+    my $envelope = {
         location => $location,
+        refresh  => $refresh,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
             generatedAt     => $dtCurrent->iso8601(),
@@ -633,7 +638,7 @@ if ( $current ) {
             grabberScript   => $grabberFile,
             schemaVersion   => "v1.0",
         },
-        $weatherKey => \%currentData, 
+        $weatherKey => \%currentData,
     };
     writeJsonFile($lbplogdir, $weatherKey, $envelope);
 
@@ -832,8 +837,9 @@ if ( $daily ) {
  
     # Build envelope and write JSON to file
     $weatherKey = "dailyforecast";
-    my $envelope = { 
+    my $envelope = {
         location => $location,
+        refresh  => $refresh,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
             generatedAt     => $dtCurrent->iso8601(),
@@ -841,7 +847,7 @@ if ( $daily ) {
             grabberScript   => $grabberFile,
             schemaVersion   => "v1.0",
         },
-        $weatherKey => \@dailyData, 
+        $weatherKey => \@dailyData,
     };
     writeJsonFile($lbplogdir, $weatherKey, $envelope);
 
@@ -1194,8 +1200,9 @@ if ( $hourly ) {
 
     # Build envelope and write JSON to file
     $weatherKey = "hourlyforecast";
-    my $envelope = { 
+    my $envelope = {
         location => $location,
+        refresh  => $refresh,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
             generatedAt     => $dtCurrent->iso8601(),
@@ -1203,7 +1210,7 @@ if ( $hourly ) {
             grabberScript   => $grabberFile,
             schemaVersion   => "v1.0",
         },
-        $weatherKey => \@hourlyData, 
+        $weatherKey => \@hourlyData,
     };
     writeJsonFile($lbplogdir, $weatherKey, $envelope);
 
