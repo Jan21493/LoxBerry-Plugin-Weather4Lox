@@ -1,1 +1,0 @@
-der grabber von wetteronline ist der neue standard bitte verwende diese struktur und übertrage das auf die anderen grabber

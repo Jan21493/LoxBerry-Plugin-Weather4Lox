@@ -275,6 +275,7 @@ if ( $current ) {
     # Build envelope and write JSON to file
     my $weatherKey = "current";
     my $envelope = {
+        refresh     => $refresh,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
@@ -401,6 +402,7 @@ if ( $daily ) {
     # Build envelope and write JSON to file
     my $weatherKey = "dailyforecast";
     my $envelope = {
+        refresh     => $refresh,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
@@ -505,6 +507,7 @@ if ( $hourly ) {
     # Build envelope and write JSON to file
     my $weatherKey = "hourlyforecast";
     my $envelope = {
+        refresh     => $refresh,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
