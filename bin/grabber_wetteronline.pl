@@ -61,6 +61,8 @@ my $city             = $pcfg->param("WETTERONLINE.STATIONID");
 my $grabberFile     = basename(__FILE__);
 my $grabberLabel    = "Wetter Online";
 my $grabberKey      = "wetteronline";          # name in JSONs
+my $cronMinutes     = $pcfg->param("SERVER.CRON") // 15;
+my $refresh         = $cronMinutes * 60;
 
 my $weatherKey;
 
@@ -708,7 +710,8 @@ if ( $current ) {
 
     # Build envelope and write JSON to file
     $weatherKey = "current";
-    my $envelope = { 
+    my $envelope = {
+        refresh  => $refresh,
         location => $location,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
@@ -916,7 +919,8 @@ if ( $daily ) {
  
     # Build envelope and write JSON to file
     $weatherKey = "dailyforecast";
-    my $envelope = { 
+    my $envelope = {
+        refresh  => $refresh,
         location => $location,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
@@ -1278,7 +1282,8 @@ if ( $hourly ) {
 
     # Build envelope and write JSON to file
     $weatherKey = "hourlyforecast";
-    my $envelope = { 
+    my $envelope = {
+        refresh  => $refresh,
         location => $location,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",

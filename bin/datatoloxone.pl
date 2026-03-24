@@ -183,11 +183,11 @@ sendToLox($toMS, "cur_pr", !$metric ? $cur->{pressure}*0.0295301 : $cur->{pressu
 sendToLox($toMS, "cur_dp", !$metric ? $cur->{dewpoint}*1.8+32 : $cur->{dewpoint});
 sendToLox($toMS, "cur_vis", !$metric ? $cur->{visibility}*0.621371192 : $cur->{visibility});
 sendToLox($toMS, "cur_sr", $cur->{solarRadiation});
-sendToLox($toMS, "cur_hi", !$metric ? $cur->{heatIndex}*1.8+32 : $cur->{heatIndex});
+sendToLox($toMS, "cur_hi", !$metric ? $cur->{temperature}{heatIndex}*1.8+32 : $cur->{temperature}{heatIndex});
 sendToLox($toMS, "cur_uvi", $cur->{uvIndex});
 sendToLox($toMS, "cur_pop", $cur->{precipitation}{probability});
 sendToLox($toMS, "cur_prec_today", !$metric ? $cur->{precipitation}{rainToday}*0.0393700787 : $cur->{precipitation}{rainToday});
-sendToLox($toMS, "cur_prec_1hr", !$metric ? $cur->{precipitation}{rain1Hr}*0.0393700787 : $cur->{precipitation}{rain1Hr});
+sendToLox($toMS, "cur_prec_1hr", !$metric ? $cur->{precipitation}{rain1hr}*0.0393700787 : $cur->{precipitation}{rain1hr});
 sendToLox($toMS, "cur_snow", !$metric ? $cur->{precipitation}{snowToday}*0.393700787 : $cur->{precipitation}{snowToday});
 sendToLox($toMS, "cur_we_icon", $cur->{weatherCode}{weather4lox});
 sendToLox($toMS, "cur_we_code", $cur->{weatherCode}{loxone});
@@ -195,7 +195,7 @@ sendToLox($toMS, "cur_we_des", encode_utf8($cur->{weatherCode}{description}));
 sendToLox($toMS, "cur_moon_p", $cur->{moon}{percent});
 sendToLox($toMS, "cur_moon_a", $cur->{moon}{age});
 sendToLox($toMS, "cur_moon_ph", $cur->{moon}{phase});
-sendToLox($toMS, "cur_moon_h", $cur->{moon}{hemisphere});
+sendToLox($toMS, "cur_moon_h", $cur->{moon}{direction});
 sendToLox($toMS, "cur_sun_r", $curDateLoxEpoch + timeToSec($cur->{sunrise}));
 sendToLox($toMS, "cur_sun_s", $curDateLoxEpoch + timeToSec($cur->{sunset}));
 sendToLox($toMS, "cur_ozone", $cur->{ozone});
@@ -260,8 +260,8 @@ foreach my $dfcEntry (@$dfc) {
     sendToLox($toMS, "dfc${per}_min", sprintf("%02d", $dfcDate->minute));
     sendToLox($toMS, "dfc${per}_wday", $dfcDate->day_name);
     sendToLox($toMS, "dfc${per}_wday_sh", $dfcDate->day_abbr);
-    sendToLox($toMS, "dfc${per}_tt_h", !$metric ? $dfcEntry->{temperature}{airMax}*1.8+32 : $dfcEntry->{temperature}{airMax});
-    sendToLox($toMS, "dfc${per}_tt_l", !$metric ? $dfcEntry->{temperature}{airMin}*1.8+32 : $dfcEntry->{temperature}{airMin});
+    sendToLox($toMS, "dfc${per}_tt_h", !$metric ? $dfcEntry->{temperature}{max}{air}*1.8+32 : $dfcEntry->{temperature}{max}{air});
+    sendToLox($toMS, "dfc${per}_tt_l", !$metric ? $dfcEntry->{temperature}{min}{air}*1.8+32 : $dfcEntry->{temperature}{min}{air});
     sendToLox($toMS, "dfc${per}_pop", $dfcEntry->{precipitation}{probability});
     sendToLox($toMS, "dfc${per}_prec", !$metric ? $dfcEntry->{precipitation}{rainHigh}*0.0393700787 : $dfcEntry->{precipitation}{rainHigh});
     sendToLox($toMS, "dfc${per}_snow", !$metric ? $dfcEntry->{precipitation}{snowHigh}*0.393700787 : $dfcEntry->{precipitation}{snowHigh});
@@ -353,7 +353,7 @@ foreach my $hfcEntry (@$hfc) {
     sendToLox($toMS, "hfc${per}_moon_a", $hfcEntry->{moon}{age});
     sendToLox($toMS, "hfc${per}_moon_ph", $hfcEntry->{moon}{phase});
     sendToLox($toMS, "hfc${per}_sr", $hfcEntry->{solarRadiation});
-    sendToLox($toMS, "hfc${per}_hi", !$metric ? $hfcEntry->{heatIndex}*1.8+32 : $hfcEntry->{heatIndex});
+    sendToLox($toMS, "hfc${per}_hi", !$metric ? $hfcEntry->{temperature}{heatIndex}*1.8+32 : $hfcEntry->{temperature}{heatIndex});
     sendToLox($toMS, "hfc${per}_sky", $hfcEntry->{cloudCover});
     sendToLox($toMS, "hfc${per}_sky_des", encode_utf8($hfcEntry->{weatherCode}{description}));
 
@@ -413,7 +413,7 @@ foreach my $hfcEntry (@$hfc) {
     # Set defaults for the first period object
 
     for my $p (@periods) {
-        next unless $hfcEntry->{period} <= $p;
+        next unless $hfcEntry->{hour} <= $p;
 
         $var{prec}{$p}  += $hfcEntry->{precipitation}{rainHigh} if defined $hfcEntry->{precipitation}{rainHigh} && $hfcEntry->{precipitation}{rainHigh} > 0;
         $var{snow}{$p}  += $hfcEntry->{precipitation}{snowHigh} if defined $hfcEntry->{precipitation}{snowHigh} && $hfcEntry->{precipitation}{snowHigh} > 0;
@@ -697,7 +697,7 @@ if ($emu) {
 
     # Calculate precipitation in the last hour and snow fraction for current conditions
     my $rain_1hr_mm = $cur->{precipitation}{rain1hr} // 0;
-    my $snow_1hr_cm = $cur->{precipitation}{snow1hr} // 0;
+    my $snow_1hr_cm = $cur->{precipitation}{snow1h} // 0;
     my $precip_1hr = $rain_1hr_mm + $snow_1hr_cm ;                                                    # 1cm snow counts as 1mm
     my $snow_fraction = $rain_1hr_mm > 0 ? $snow_1hr_cm / $precip_1hr : ($snow_1hr_cm > 0 ? 1 : 0);   # Snow fraction in precipitation in %
     my $precip_prob = $cur->{precipitation}{probability} // 0;

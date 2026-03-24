@@ -23,7 +23,7 @@ use Config::Simple '-strict';
 use CGI::Carp qw(fatalsToBrowser);
 use CGI;
 use LWP::UserAgent;
-use JSON qw( decode_json encode_json );
+use JSON qw( decode_json );
 use LoxBerry::System;
 use LoxBerry::Web;
 #use warnings;
@@ -245,21 +245,14 @@ if ($R::saveformdata1) {
 
 	$cfg->save();
 
-	# Save pollen sensitivity settings to JSON
-	my %pollen_data = (
-		"grasses" => ($R::pollen_grasses + 0),
-		"birch"   => ($R::pollen_birch + 0),
-		"alder"   => ($R::pollen_alder + 0),
-		"mugwort" => ($R::pollen_mugwort + 0),
-		"olive"   => ($R::pollen_olive + 0),
-		"ragweed" => ($R::pollen_ragweed + 0),
-	);
-	if ( open(my $fh, '>', "$lbpconfigdir/mapping_custom_mix_pollen.json") ) {
-		print $fh encode_json(\%pollen_data);
-		close($fh);
-	} else {
-		$error = "Cannot write pollen config: $!";
-	}
+	# Save pollen sensitivity settings to config
+	$cfg->param("POLLEN.ALDER",   $R::pollen_alder + 0);
+	$cfg->param("POLLEN.BIRCH",   $R::pollen_birch + 0);
+	$cfg->param("POLLEN.GRASS",   $R::pollen_grasses + 0);
+	$cfg->param("POLLEN.MUGWORT", $R::pollen_mugwort + 0);
+	$cfg->param("POLLEN.OLIVE",   $R::pollen_olive + 0);
+	$cfg->param("POLLEN.RAGWEED", $R::pollen_ragweed + 0);
+	$cfg->save();
 
 	# Create Cronjob
 	if ($R::getdata eq "1"){
@@ -550,22 +543,15 @@ if ($R::form eq "1" || !$R::form) {
   $template->param( OPENMETEOAIRQUALITYGRABBER => $openmeteoairqualitygrabber );
 
   # Pollen sensitivity dropdowns (0-7 scale)
-  # Read defaults from pollen JSON file if it exists
-  my %pollen_defaults = ( grasses => 0, birch => 0, alder => 0, mugwort => 0, olive => 0, ragweed => 0 );
-  if ( -e "$lbpconfigdir/mapping_custom_mix_pollen.json" ) {
-    open(my $pfh, '<', "$lbpconfigdir/mapping_custom_mix_pollen.json");
-    my $pjson = do { local $/; <$pfh> };
-    close($pfh);
-    my $pdata = eval { decode_json($pjson) };
-    if ($pdata) {
-      $pollen_defaults{grasses} = $pdata->{grasses} if defined $pdata->{grasses};
-      $pollen_defaults{birch}   = $pdata->{birch}   if defined $pdata->{birch};
-      $pollen_defaults{alder}   = $pdata->{alder}   if defined $pdata->{alder};
-      $pollen_defaults{mugwort} = $pdata->{mugwort} if defined $pdata->{mugwort};
-      $pollen_defaults{olive}   = $pdata->{olive}   if defined $pdata->{olive};
-      $pollen_defaults{ragweed} = $pdata->{ragweed} if defined $pdata->{ragweed};
-    }
-  }
+  # Read defaults from config
+  my %pollen_defaults = (
+    grasses => $cfg->param("POLLEN.GRASS")   // 0,
+    birch   => $cfg->param("POLLEN.BIRCH")   // 0,
+    alder   => $cfg->param("POLLEN.ALDER")   // 0,
+    mugwort => $cfg->param("POLLEN.MUGWORT") // 0,
+    olive   => $cfg->param("POLLEN.OLIVE")   // 0,
+    ragweed => $cfg->param("POLLEN.RAGWEED") // 0,
+  );
 
   @values = ('0', '1', '2', '3', '4', '5', '6', '7');
   %labels = (

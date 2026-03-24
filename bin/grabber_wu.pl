@@ -54,6 +54,8 @@ my $stationid   = $pcfg->param("WUNDERGROUND.STATIONID");
 my $grabberFile     = basename(__FILE__);
 my $grabberLabel    = "Weather Underground ";
 my $grabberKey      = "wunderground";          # name in JSONs
+my $cronMinutes     = $pcfg->param("SERVER.CRON_PATCH") // 1;
+my $refresh         = $cronMinutes * 60;
 
 # Get the public API key from the WU website
 # curl -Ss https://www.wunderground.com/dashboard/pws/ISACHSEN347 | grep apiKey | sed -r 's/.*apiKey=([0-9a-z]*)\&.*/\1/g'
@@ -172,6 +174,7 @@ $envelope->{$grabberKey} = {
     schemaVersion   => "v1.0",
 };
 $envelope->{$weatherKey} = $cur;
+$envelope->{refresh} = $refresh;
 
 # Write JSON back to file
 writeJsonFile($lbplogdir, $weatherKey, $envelope);

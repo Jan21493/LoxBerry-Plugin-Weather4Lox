@@ -1,0 +1,15 @@
+{
+  "refresh": 900,
+  "location": {
+    "city": "--",
+    "country": "--",
+    "countryCode": "--",
+    "elevation": 0,
+    "latitude": 0,
+    "longitude": 0,
+    "timezone": "UTC",
+    "tzOffset": "+0000",
+    "tzShort": "UTC"
+  },
+  "hourlyforecast": []
+}

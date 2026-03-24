@@ -1,0 +1,35 @@
+{
+  "refresh": 900,
+  "location": {
+    "city": "--",
+    "country": "--",
+    "countryCode": "--",
+    "elevation": 0,
+    "latitude": 0,
+    "longitude": 0,
+    "timezone": "UTC",
+    "tzOffset": "+0000",
+    "tzShort": "UTC"
+  },
+  "current": {
+    "temperature": { "air": null, "feelsLike": null, "windChill": null, "heatIndex": null },
+    "wind": { "direction": null, "dirLabel": null, "speed": null, "gust": null },
+    "precipitation": { "rainToday": null, "rain1hr": null, "probability": null, "type": "none", "snowToday": null, "snow1h": null },
+    "weatherCode": { "loxone": null, "weather4lox": null, "description": "--", "image": null, "metar": null },
+    "moon": { "age": null, "percent": null, "phase": null, "direction": null },
+    "time": { "datetime": null, "epoch": null, "timezone": "UTC", "tzOffset": "+0000", "tzShort": "UTC" },
+    "humidity": null,
+    "pressure": null,
+    "dewpoint": null,
+    "visibility": null,
+    "solarRadiation": null,
+    "uvIndex": null,
+    "cloudCover": null,
+    "ozone": null,
+    "isNight": 0,
+    "sunrise": "--:--",
+    "sunset": "--:--",
+    "airQuality": null,
+    "pollen": null
+  }
+}

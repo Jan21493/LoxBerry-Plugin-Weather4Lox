@@ -33,7 +33,6 @@ use Getopt::Long;
 use Time::Piece;
 use Math::Function::Interpolator;
 use Astro::MoonPhase;
-#use Data::Dumper;
 
 require "$lbpbindir/grabber_utils.pl";
 
@@ -49,6 +48,13 @@ my $url          = $pcfg->param("WTTRIN.URL");
 my $lang         = $pcfg->param("WTTRIN.LANG");
 my $stationid    = $pcfg->param("WTTRIN.STATIONID");
 
+# Grabber metadata for JSON envelope
+my $grabberKey   = "wttrin";
+my $grabberLabel = "wttr.in";
+my $grabberFile  = "grabber_wttrin.pl";
+my $cronMinutes  = $pcfg->param("SERVER.CRON") // 15;
+my $refresh      = $cronMinutes * 60;
+
 # Read language phrases
 my %L = LoxBerry::System::readlanguage("language.ini");
 
@@ -57,8 +63,6 @@ my $log = LoxBerry::Log->new (
 	package => 'weather4lox',
 	name => 'grabber_wttr.in',
 	logdir => "$lbplogdir",
-	#filename => "$lbplogdir/weather4lox.log",
-	#append => 1,
 );
 
 # Commandline options
@@ -140,7 +144,7 @@ sub wttr_to_lox {
     $wwo_id = int($wwo_id);
 
     my $data = $wttr_to_lox{$wwo_id} // [1, "clear"];
-    
+
     if (!exists $wttr_to_lox{$wwo_id}) {
         LOGWARN "Unknown ID from WTTR.in: $wwo_id. Please check! Using fallback 'clear'.";
     }
@@ -148,886 +152,520 @@ sub wttr_to_lox {
 }
 
 # Get weather data from WTTR.in (API request)
-my $decoded_json = api_call(
+my $decoded_json = apiCall(
 	url => "$url/$stationid?lang=$lang&M&3&format=j1",
-	# maskkeys => $maskkeys, # not needed here
-	# keyparam => 'appid',
-	# apikey => $apikey,
 	info => "for Location $stationid (Current, Daily, and Hourly Weather Data)",
 );
 
-my $t;
-my $weather;
-my $code;
-my $icon;
-my $wdir;
-my $wdirdes;
-my @filecontent;
-my $i;
-my $wwo_id;
-my $error = 0;
+##########################################################################
+# Common data
+##########################################################################
 
-# Pre-declare data collectors for direct JSON construction
-my %current_json_data;
-my @daily_json_data;
-my @hourly_json_data;
+my $timezone = _systemTimezone();
+my $lat      = $decoded_json->{nearest_area}[0]->{latitude};
+my $lon      = $decoded_json->{nearest_area}[0]->{longitude};
 
-#
+# Derive generatedAt from current observation time
+my $obs_t = Time::Piece->strptime($decoded_json->{current_condition}[0]->{localObsDateTime}, "%Y-%m-%d %R %p");
+my $currentEpoch = $obs_t->epoch;
+my $generatedAt  = _epochToIso($currentEpoch, $timezone);
+
+# Timezone short and offset via POSIX
+my ($tzShort, $tzOffset);
+{
+    local $ENV{TZ} = $timezone;
+    POSIX::tzset();
+    $tzShort  = POSIX::strftime('%Z', localtime($currentEpoch));
+    $tzOffset = POSIX::strftime('%z', localtime($currentEpoch));
+    POSIX::tzset();
+}
+
+my $city    = Encode::decode("UTF-8", $decoded_json->{nearest_area}[0]->{areaName}[0]->{value});
+my $country = Encode::decode("UTF-8", $decoded_json->{nearest_area}[0]->{country}[0]->{value});
+
+my $location = {
+    city        => $city,
+    country     => $country,
+    countryCode => undef,
+    elevation   => undef,
+    latitude    => defined $lat ? $lat + 0 : undef,
+    longitude   => defined $lon ? $lon + 0 : undef,
+    timezone    => $timezone,
+    tzOffset    => $tzOffset,
+    tzShort     => $tzShort,
+};
+
+##########################################################################
 # Fetch current data
-#
-
-if ( $current ) { # Start current
-
-# Write location data into database
-my $t = Time::Piece->strptime($decoded_json->{current_condition}[0]->{localObsDateTime}, "%Y-%m-%d %R %p");
-LOGINF "Saving new Data for Timestamp $t to database.";
-# Saving new current data...
-$error = 0;
-open(F,">$lbplogdir/current.dat.tmp") or $error = 1;
-  flock(F,2);
-	if ($error) {
-		LOGCRIT "Cannot open $lbpconfigdir/current.dat.tmp";
-		exit 2;
-	}
-	binmode F, ':encoding(UTF-8)';
-	print F $t->epoch . "|";
-	print F "$t|";
-	my $tz_short = qx(date +%Z);
-	chomp ($tz_short);
-	print F "$tz_short|";
-	my $tz_long = qx(cat /etc/timezone);
-	chomp ($tz_long);
-	print F "$tz_long|";
-	my $tz_offset = qx(date +%z);
-	chomp ($tz_offset);
-	print F "$tz_offset|";
-	my $city = Encode::decode("UTF-8", $decoded_json->{nearest_area}[0]->{areaName}[0]->{value});
-	print F "$city|";
-	my $country = Encode::decode("UTF-8", $decoded_json->{nearest_area}[0]->{country}[0]->{value});
-	print F "$country|";
-	print F "-9999|";
-	print F "$decoded_json->{nearest_area}[0]->{latitude}|";
-	print F "$decoded_json->{nearest_area}[0]->{longitude}|";
-	print F "-9999|";
-	print F sprintf("%.1f",$decoded_json->{current_condition}[0]->{temp_C}), "|";
-	print F sprintf("%.1f",$decoded_json->{current_condition}[0]->{FeelsLikeC}), "|";
-	print F "$decoded_json->{current_condition}[0]->{humidity}|";
-	$wdir = $decoded_json->{current_condition}[0]->{winddirDegree};
-	if ( $wdir >= 0 && $wdir <= 22 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'}) }; # North
-	if ( $wdir > 22 && $wdir <= 68 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NE'}) }; # NorthEast
-	if ( $wdir > 68 && $wdir <= 112 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_E'}) }; # East
-	if ( $wdir > 112 && $wdir <= 158 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_SE'}) }; # SouthEast
-	if ( $wdir > 158 && $wdir <= 202 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_S'}) }; # South
-	if ( $wdir > 202 && $wdir <= 248 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_SW'}) }; # SouthWest
-	if ( $wdir > 248 && $wdir <= 292 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_W'}) }; # West
-	if ( $wdir > 292 && $wdir <= 338 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NW'}) }; # NorthWest
-	if ( $wdir > 338 && $wdir <= 360 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'}) }; # North
-	print F "$wdirdes|";
-	print F "$decoded_json->{current_condition}[0]->{winddirDegree}|";
-	print F sprintf("%.1f",$decoded_json->{current_condition}[0]->{windspeedKmph}), "|";
-	print F sprintf("%.1f",$decoded_json->{current_condition}[0]->{windspeedKmph}), "|";
-	print F sprintf("%.1f",$decoded_json->{current_condition}[0]->{FeelsLikeC}), "|";
-	print F sprintf("%.0f",$decoded_json->{current_condition}[0]->{pressure}), "|";
-	print F "-9999|";
-	print F sprintf("%.0f",$decoded_json->{current_condition}[0]->{visibility}), "|";
-	print F "-9999|";
-	print F "-9999|";
-	print F sprintf("%.2f",$decoded_json->{current_condition}[0]->{uvIndex}),"|";
-	print F "-9999|";
-	print F sprintf("%.2f",$decoded_json->{current_condition}[0]->{precipMM}), "|";
-	# Convert WTTR weather code into Loxone Weather Code (picto-code) and weather symbol name
-	my $wwo_id = $decoded_json->{current_condition}[0]->{weatherCode};
-	($code, $icon) = wttr_to_lox($wwo_id);
-	print F "$icon|";
-	print F "$code|";
-	my $wdes = $decoded_json->{current_condition}[0]->{'lang_' . $lang}[0]{value};
-	$wdes = $decoded_json->{current_condition}[0]->{weatherDesc}[0]{value} if !$wdes;
-	print F "$wdes|";
-	my ( $moonphase,
-	  $moonillum,
-	  $moonage,
-	  $moondist,
-	  $moonang,
-	  $sundist,
-	  $sunang ) = phase();
-	print F sprintf("%.2f",$moonillum*100), "|";
-	print F sprintf("%.2f",$moonage), "|";
-	print F sprintf("%.2f",$moonphase*100), "|";
-	print F "-9999|";
-#	print F "$decoded_json->{weather}[0]->{astronomy}[0]{moon_illumination}|";
-#	print F "-9999|";
-#	my $moonphasen;
-#	my $moonphase = lc( $decoded_json->{weather}[0]->{astronomy}[0]{moon_phase} );
-#	if ( $moonphase eq "new moon" ) {
-#		$moonphasen = 0;
-#	} elsif ( $moonphase eq "waxing crescent" ) {
-#		$moonphasen = 0.125;
-#	} elsif ( $moonphase eq "first quarter" ) {
-#		$moonphasen = 0.25;
-#	} elsif ( $moonphase eq "waxing gibbous" ) {
-#		$moonphasen = 0.375;
-#	} elsif ( $moonphase eq "full moon" ) {
-#		$moonphasen = 0.5;
-#	} elsif ( $moonphase eq "waning gibbous" ) {
-#		$moonphasen = 0.625;
-#	} elsif ( $moonphase eq "last quarter" ) {
-#		$moonphasen = 0.75;
-#	} elsif ( $moonphase eq "waning crescent" ) {
-#		$moonphasen = 0.875;
-#	} else {
-#		$moonphasen = 1;
-#	}
-#	print F sprintf("%.0f",$moonphasen*100), "|";
-#	print F "-9999|";
-	$t = Time::Piece->strptime($decoded_json->{weather}[0]->{astronomy}[0]{sunrise}, "%R %p");
-	print F sprintf("%02d", $t->hour), "|";
-	print F sprintf("%02d", $t->min), "|";
-	$t = Time::Piece->strptime($decoded_json->{weather}[0]->{astronomy}[0]{sunset}, "%R %p");
-	print F sprintf("%02d", $t->hour), "|";
-	print F sprintf("%02d", $t->min), "|";
-	print F "-9999|";
-	print F "$decoded_json->{current_condition}[0]->{cloudcover}|";
-	print F "-9999|";
-	print F "-9999|";
-	print F "\n";
-  flock(F,8);
-close(F);
-
-LOGOK "Saving current data to $lbplogdir/current.dat.tmp successfully.";
-
-LOGDEB "Database content:";
-open(F,"<$lbplogdir/current.dat.tmp");
-	@filecontent = <F>;
-	foreach (@filecontent) {
-		chomp ($_);
-		LOGDEB "$_";
-	}
-close (F);
-
-# Collect current data for direct JSON construction
-{
-	my $cur = $decoded_json->{current_condition}[0];
-	my $obs_t = Time::Piece->strptime($cur->{localObsDateTime}, "%Y-%m-%d %R %p");
-	my $tz_long = qx(cat /etc/timezone);
-	chomp($tz_long);
-
-	my $wwo_id_c = $cur->{weatherCode};
-	my ($code_c, $icon_c) = wttr_to_lox($wwo_id_c);
-	my $wdes_c = $cur->{'lang_' . $lang}[0]{value};
-	$wdes_c = $cur->{weatherDesc}[0]{value} if !$wdes_c;
-
-	my $sr_t = Time::Piece->strptime($decoded_json->{weather}[0]->{astronomy}[0]{sunrise}, "%R %p");
-	my $ss_t = Time::Piece->strptime($decoded_json->{weather}[0]->{astronomy}[0]{sunset}, "%R %p");
-
-	my ( $mp, $mi, $ma ) = (phase())[0,1,2];
-
-	%current_json_data = (
-		epoch              => $obs_t->epoch,
-		datetime           => _epoch_to_iso($obs_t->epoch, $tz_long),
-		timezone           => $tz_long,
-		city               => Encode::decode("UTF-8", $decoded_json->{nearest_area}[0]->{areaName}[0]->{value}),
-		country            => Encode::decode("UTF-8", $decoded_json->{nearest_area}[0]->{country}[0]->{value}),
-		country_code       => -9999,
-		latitude           => $decoded_json->{nearest_area}[0]->{latitude},
-		longitude          => $decoded_json->{nearest_area}[0]->{longitude},
-		elevation          => -9999,
-		temperature        => sprintf("%.1f", $cur->{temp_C}),
-		feelslike          => sprintf("%.1f", $cur->{FeelsLikeC}),
-		humidity           => $cur->{humidity},
-		wind_direction_desc => wind_direction_text($cur->{winddirDegree}, \%L),
-		wind_direction_deg => $cur->{winddirDegree},
-		wind_speed         => sprintf("%.1f", $cur->{windspeedKmph}),
-		wind_gust          => sprintf("%.1f", $cur->{windspeedKmph}),
-		windchill          => sprintf("%.1f", $cur->{FeelsLikeC}),
-		pressure           => sprintf("%.0f", $cur->{pressure}),
-		dewpoint           => -9999,
-		visibility         => sprintf("%.0f", $cur->{visibility}),
-		solar_radiation    => -9999,
-		heat_index         => -9999,
-		uv_index           => sprintf("%.2f", $cur->{uvIndex}),
-		precip_today_mm    => -9999,
-		precip_1hr_mm      => sprintf("%.2f", $cur->{precipMM}),
-		weather_icon       => $icon_c,
-		weather_code       => $code_c,
-		weather_description => $wdes_c,
-		moon_percent       => sprintf("%.2f", $mi * 100),
-		moon_age           => sprintf("%.2f", $ma),
-		moon_phase         => sprintf("%.2f", $mp * 100),
-		moon_hemisphere    => -9999,
-		sunrise            => sprintf("%02d:%02d", $sr_t->hour, $sr_t->min),
-		sunset             => sprintf("%02d:%02d", $ss_t->hour, $ss_t->min),
-		ozone              => -9999,
-		cloud_cover        => $cur->{cloudcover},
-		precip_probability => -9999,
-		snow               => -9999,
-	);
-}
-
-} # End current
-
-#
-# Fetch daily data
-#
-
-if ( $daily ) { # Start daily
-
-# Saving new daily forecast data...
-
-open(F,">$lbplogdir/dailyforecast.dat.tmp") or $error = 1;
-  flock(F,2);
-	if ($error) {
-		LOGCRIT "Cannot open $lbplogdir/dailyforecast.dat.tmp";
-		exit 2;
-	}
-	binmode F, ':encoding(UTF-8)';
-	my $i = 1;
-	for my $results( @{$decoded_json->{weather}} ){
-		print F "$i|";
-		$i++;
-		$t = Time::Piece->strptime($results->{date}, "%Y-%m-%d");
-		print F $t->epoch, "|";
-		print F sprintf("%02d", $t->mday), "|";
-		print F sprintf("%02d", $t->mon), "|";
-		my @month = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_MONTH'}) );
-		$t->mon_list(@month);
-		print F $t->monname . "|";
-		@month = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_MONTH_SH'}) );
-		$t->mon_list(@month);
-		print F $t->monname . "|";
-		print F $t->year . "|";
-		print F sprintf("%02d", $t->hour), "|";
-		print F sprintf("%02d", $t->min), "|";
-		my @days = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_DAYS'}) );
-		$t->day_list(@days);
-		print F $t->wdayname . "|";
-		@days = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_DAYS_SH'}) );
-		$t->day_list(@days);
-		print F $t->wdayname . "|";
-		print F sprintf("%.1f",$results->{maxtempC}), "|";
-		print F sprintf("%.1f",$results->{mintempC}), "|";
-		# Figure out min/max/sum values for daily forecast from hourly values
-		my @pops;
-		my $prec = 0;
-		my @gusts;
-		my @winds;
-		my @winddirs;
-		my @hums;
-		my @pressures;
-		my @dewps;
-		my @visibilitys;
-		for my $hourly ( @{$results->{hourly}} ){
-			if ( $hourly->{chanceofrain} ) {
-				push ( @pops, $hourly->{chanceofrain} );
-			}
-			if ( $hourly->{precipMM} ) {
-				$prec += $hourly->{precipMM} * 3; # 3 hourly FC
-			}
-			if ( $hourly->{WindGustKmph} ) {
-				push ( @gusts, $hourly->{WindGustKmph} );
-			}
-			if ( $hourly->{windspeedKmph} ) {
-				push ( @winds, $hourly->{windspeedKmph} );
-			}
-			if ( $hourly->{winddirDegree} ) {
-				push ( @winddirs, $hourly->{winddirDegree} );
-			}
-			if ( $hourly->{humidity} ) {
-				push ( @hums, $hourly->{humidity} );
-			}
-			if ( $hourly->{pressure} ) {
-				push ( @pressures, $hourly->{pressure} );
-			}
-			if ( $hourly->{DewPointC} ) {
-				push ( @dewps, $hourly->{DewPointC} );
-			}
-			if ( $hourly->{visibility} ) {
-				push ( @visibilitys, $hourly->{visibility} );
-			}
-		}
-		@pops = sort { $a <=> $b } @pops;
-		@gusts = sort { $a <=> $b } @gusts;
-		@winds = sort { $a <=> $b } @winds;
-		@winddirs = sort { $a <=> $b } @winddirs;
-		@hums = sort { $a <=> $b } @hums;
-		@pressures = sort { $a <=> $b } @pressures;
-		@dewps = sort { $a <=> $b } @dewps;
-		@visibilitys = sort { $a <=> $b } @visibilitys;
-		if ($pops[-1]) { # Max from sorted array
-			print F sprintf("%.0f",$pops[-1]), "|";
-		} else {
-			print F "0|";
-		}
-		if ($prec) {
-			print F sprintf("%.2f",$prec), "|";
-		} else {
-			print F "0|";
-		}
-		print F sprintf("%.1f",$results->{totalSnow_cm}), "|";
-		if ($gusts[-1]) { # Max from sorted array
-			print F sprintf("%.0f",$gusts[-1]), "|";
-		} else {
-			print F "0|";
-		}
-		print F "-9999|";
-		print F "-9999|";
-		my $windavg = eval(join("+", @winds)) / @winds; # Mean from array
-		if ($windavg) {
-			print F sprintf("%.0f",$windavg), "|";
-		} else {
-			print F "0|";
-		}
-		my $wdir = 0;
-		$wdir = eval(join("+", @winddirs)) / @winddirs; # Mean from array
-		if ( $wdir >= 0 && $wdir <= 22 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'}) }; # North
-		if ( $wdir > 22 && $wdir <= 68 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NE'}) }; # NorthEast
-		if ( $wdir > 68 && $wdir <= 112 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_E'}) }; # East
-		if ( $wdir > 112 && $wdir <= 158 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_SE'}) }; # SouthEast
-		if ( $wdir > 158 && $wdir <= 202 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_S'}) }; # South
-		if ( $wdir > 202 && $wdir <= 248 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_SW'}) }; # SouthWest
-		if ( $wdir > 248 && $wdir <= 292 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_W'}) }; # West
-		if ( $wdir > 292 && $wdir <= 338 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NW'}) }; # NorthWest
-		if ( $wdir > 338 && $wdir <= 360 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'}) }; # North
-		print F "$wdirdes|";
-		print F "$wdir|";
-		my $humidity = eval(join("+", @hums)) / @hums; # Mean from array
-		print F sprintf("%.0f",$humidity), "|";
-		if ($hums[-1]) { # Max from sorted array
-			print F sprintf("%.0f",$hums[-1]), "|";
-		} else {
-			print F "0|";
-		}
-		if ($hums[0]) { # Min from sorted array
-			print F sprintf("%.0f",$hums[0]), "|";
-		} else {
-			print F "0|";
-		}
-        # Convert WTTR weather code into Loxone Weather Code (picto-code) and weather symbol name
-        #  We do not have an average, so we take value from 12 o'clock
-	    $wwo_id = $results->{hourly}[4]->{weatherCode};
-	    ($code, $icon) = wttr_to_lox($wwo_id);
-		print F "$icon|";
-		print F "$code|";
-		my $wdes = "";
-		$wdes = $results->{hourly}[4]->{'lang_' . $lang}[0]{value};
-		$wdes = $results->{hourly}[4]->{weatherDesc}[0]{value} if !$wdes;
-		print F "$wdes|";
-		print F "-9999|";
-		# dfc0_moon_p
-		my ( $moonphase,
-		  $moonillum,
-		  $moonage,
-		  $moondist,
-		  $moonang,
-		  $sundist,
-		  $sunang ) = phase($t->epoch);
-		print F sprintf("%.2f",$moonillum*100), "|";
-		my $dewp = eval(join("+", @dewps)) / @dewps; # Mean from array
-		print F sprintf("%.1f",$dewp), "|";
-		my $pressure = eval(join("+", @pressures)) / @pressures; # Mean from array
-		print F sprintf("%.1f",$pressure), "|";
-		print F sprintf("%.1f",$results->{uvIndex}),"|";
-		$t = Time::Piece->strptime($results->{astronomy}[0]{sunrise}, "%R %p");
-		print F sprintf("%02d", $t->hour), "|";
-		print F sprintf("%02d", $t->min), "|";
-		$t = Time::Piece->strptime($results->{astronomy}[0]{sunset}, "%R %p");
-		print F sprintf("%02d", $t->hour), "|";
-		print F sprintf("%02d", $t->min), "|";
-		my $vis = eval(join("+", @visibilitys)) / @visibilitys; # Mean from array
-		print F sprintf("%.1f",$vis), "|";
-		print F sprintf("%.2f",$moonage), "|";
-		print F sprintf("%.2f",$moonphase*100), "|";
-		print F "\n";
-	}
-  flock(F,8);
-close(F);
-
-LOGOK "Saving daily forecast data to $lbplogdir/dailyforecast.dat.tmp successfully.";
-
-LOGDEB "Database content:";
-open(F,"<$lbplogdir/dailyforecast.dat.tmp");
-	@filecontent = <F>;
-	foreach (@filecontent) {
-		chomp ($_);
-		LOGDEB "$_";
-	}
-close (F);
-
-# Collect daily data for direct JSON construction
-{
-	my $tz_long = qx(cat /etc/timezone);
-	chomp($tz_long);
-	my $di = 1;
-	for my $results( @{$decoded_json->{weather}} ){
-		my $dt = Time::Piece->strptime($results->{date}, "%Y-%m-%d");
-
-		# Aggregate hourly values (same logic as .dat writing above)
-		my @d_pops;
-		my $d_prec = 0;
-		my @d_gusts;
-		my @d_winds;
-		my @d_winddirs;
-		my @d_hums;
-		my @d_pressures;
-		my @d_dewps;
-		my @d_viss;
-		for my $hr ( @{$results->{hourly}} ){
-			push @d_pops, $hr->{chanceofrain} if $hr->{chanceofrain};
-			$d_prec += $hr->{precipMM} * 3 if $hr->{precipMM};
-			push @d_gusts, $hr->{WindGustKmph} if $hr->{WindGustKmph};
-			push @d_winds, $hr->{windspeedKmph} if $hr->{windspeedKmph};
-			push @d_winddirs, $hr->{winddirDegree} if $hr->{winddirDegree};
-			push @d_hums, $hr->{humidity} if $hr->{humidity};
-			push @d_pressures, $hr->{pressure} if $hr->{pressure};
-			push @d_dewps, $hr->{DewPointC} if $hr->{DewPointC};
-			push @d_viss, $hr->{visibility} if $hr->{visibility};
-		}
-		@d_pops = sort { $a <=> $b } @d_pops;
-		@d_gusts = sort { $a <=> $b } @d_gusts;
-		@d_winds = sort { $a <=> $b } @d_winds;
-		@d_winddirs = sort { $a <=> $b } @d_winddirs;
-		@d_hums = sort { $a <=> $b } @d_hums;
-		@d_pressures = sort { $a <=> $b } @d_pressures;
-		@d_dewps = sort { $a <=> $b } @d_dewps;
-		@d_viss = sort { $a <=> $b } @d_viss;
-
-		my $d_windavg = @d_winds ? eval(join("+", @d_winds)) / @d_winds : 0;
-		my $d_wdir = @d_winddirs ? eval(join("+", @d_winddirs)) / @d_winddirs : 0;
-		my $d_humavg = @d_hums ? eval(join("+", @d_hums)) / @d_hums : 0;
-		my $d_pressavg = @d_pressures ? eval(join("+", @d_pressures)) / @d_pressures : 0;
-		my $d_dewpavg = @d_dewps ? eval(join("+", @d_dewps)) / @d_dewps : 0;
-		my $d_visavg = @d_viss ? eval(join("+", @d_viss)) / @d_viss : 0;
-
-		my $d_wwo_id = $results->{hourly}[4]->{weatherCode};
-		my ($d_code, $d_icon) = wttr_to_lox($d_wwo_id);
-		my $d_wdes = $results->{hourly}[4]->{'lang_' . $lang}[0]{value};
-		$d_wdes = $results->{hourly}[4]->{weatherDesc}[0]{value} if !$d_wdes;
-
-		my ( $d_mp, $d_mi, $d_ma ) = (phase($dt->epoch))[0,1,2];
-
-		my $d_sr = Time::Piece->strptime($results->{astronomy}[0]{sunrise}, "%R %p");
-		my $d_ss = Time::Piece->strptime($results->{astronomy}[0]{sunset}, "%R %p");
-
-		push @daily_json_data, {
-			period              => $di,
-			epoch               => $dt->epoch,
-			datetime            => _epoch_to_iso($dt->epoch, $tz_long),
-			high_temp           => sprintf("%.1f", $results->{maxtempC}),
-			low_temp            => sprintf("%.1f", $results->{mintempC}),
-			precip_probability  => $d_pops[-1] ? sprintf("%.0f", $d_pops[-1]) : 0,
-			precip_mm           => $d_prec ? sprintf("%.2f", $d_prec) : 0,
-			snow_cm             => sprintf("%.1f", $results->{totalSnow_cm}),
-			wind_speed_max      => $d_gusts[-1] ? sprintf("%.0f", $d_gusts[-1]) : 0,
-			wind_dir_max_desc   => -9999,
-			wind_dir_max_deg    => -9999,
-			wind_speed_avg      => $d_windavg ? sprintf("%.0f", $d_windavg) : 0,
-			wind_dir_avg_desc   => wind_direction_text($d_wdir, \%L),
-			wind_dir_avg_deg    => $d_wdir,
-			humidity_avg        => sprintf("%.0f", $d_humavg),
-			humidity_max        => $d_hums[-1] ? sprintf("%.0f", $d_hums[-1]) : 0,
-			humidity_min        => $d_hums[0] ? sprintf("%.0f", $d_hums[0]) : 0,
-			weather_icon        => $d_icon,
-			weather_code        => $d_code,
-			weather_description => $d_wdes,
-			ozone               => -9999,
-			moon_percent        => sprintf("%.2f", $d_mi * 100),
-			dewpoint            => sprintf("%.1f", $d_dewpavg),
-			pressure            => sprintf("%.1f", $d_pressavg),
-			uv_index            => sprintf("%.1f", $results->{uvIndex}),
-			sunrise             => sprintf("%02d:%02d", $d_sr->hour, $d_sr->min),
-			sunset              => sprintf("%02d:%02d", $d_ss->hour, $d_ss->min),
-			visibility          => sprintf("%.1f", $d_visavg),
-			moon_age            => sprintf("%.2f", $d_ma),
-			moon_phase          => sprintf("%.2f", $d_mp * 100),
-		};
-		$di++;
-	}
-}
-
-} # End daily
-
-#
-# Fetch hourly data
-#
-
-if ( $hourly ) { # Start hourly
-
-# Parse data for hourly data
-my %temps;
-my $temps;
-my %fltemps;
-my $fltemps;
-my %hums;
-my $hums;
-my %winddirs;
-my $winddirs;
-my %winds;
-my $winds;
-my %gusts;
-my $gusts;
-my %pressures;
-my $pressures;
-my %dewps;
-my $dewps;
-my %clouds;
-my $clouds;
-my %uvis;
-my $uvis;
-my %his;
-my $his;
-my %precs;
-my $precs;
-my %codes;
-my %weatherdess;
-my %viss;
-my $viss;
-my %pops;
-my $pops;
-my @epoches;
-for my $daily( @{$decoded_json->{weather}} ){
-	for my $hourly( @{$daily->{hourly}} ){
-		my $datetime = $daily->{date} . " " . $hourly->{time}/100 . ":00";
-		$t = Time::Piece->strptime($datetime, "%Y-%m-%d %H:%M");
-		my $ep = $t->epoch;
-		push ( @epoches, $ep );
-		$temps{$ep} = $hourly->{tempC};
-		$temps = Math::Function::Interpolator::Linear->new( points => \%temps );
-		$fltemps{$ep} = $hourly->{FeelsLikeC};
-		$fltemps = Math::Function::Interpolator::Linear->new( points => \%fltemps );
-		$hums{$ep} = $hourly->{humidity};
-		$hums = Math::Function::Interpolator::Linear->new( points => \%hums );
-		$winddirs{$ep} = $hourly->{winddirDegree};
-		$winddirs = Math::Function::Interpolator::Linear->new( points => \%winddirs );
-		$winds{$ep} = $hourly->{windspeedKmph};
-		$winds = Math::Function::Interpolator::Linear->new( points => \%winds );
-		$gusts{$ep} = $hourly->{WindGustKmph};
-		$gusts = Math::Function::Interpolator::Linear->new( points => \%gusts );
-		$pressures{$ep} = $hourly->{pressure};
-		$pressures = Math::Function::Interpolator::Linear->new( points => \%pressures );
-		$dewps{$ep} = $hourly->{DewPointC};
-		$dewps = Math::Function::Interpolator::Linear->new( points => \%dewps );
-		$clouds{$ep} = $hourly->{cloudcover};
-		$clouds = Math::Function::Interpolator::Linear->new( points => \%clouds );
-		$uvis{$ep} = $hourly->{uvIndex};
-		$uvis = Math::Function::Interpolator::Linear->new( points => \%uvis );
-		$his{$ep} = $hourly->{HeatIndexC};
-		$his = Math::Function::Interpolator::Linear->new( points => \%his );
-		$precs{$ep} = $hourly->{precipMM};
-		$precs = Math::Function::Interpolator::Linear->new( points => \%precs );
-		$pops{$ep} = $hourly->{chanceofrain};
-		$pops = Math::Function::Interpolator::Linear->new( points => \%pops );
-		$codes{$ep} = $hourly->{weatherCode};
-		if ($hourly->{'lang_' . $lang}[0]->{value}) {
-			$weatherdess{$ep} = $hourly->{'lang_' . $lang}[0]->{value};
-		} else {
-			$weatherdess{$ep} = $hourly->{weatherDesc}[0]->{value};
-		}
-		$viss{$ep} = $hourly->{visibility};
-		$viss = Math::Function::Interpolator::Linear->new( points => \%viss );
-	}
-}
-
-# Saving new hourly forecast data...
-open(F,">$lbplogdir/hourlyforecast.dat.tmp") or $error = 1;
-  flock(F,2);
-	if ($error) {
-		LOGCRIT "Cannot open $lbplogdir/hourlyforecast.dat.tmp";
-		exit 2;
-	}
-	binmode F, ':encoding(UTF-8)';
-	# Create hourly data set with interpolation from 3-hourly data
-	my $now = time();
-	@epoches = sort { $a <=> $b } @epoches;
-	my $startep = $epoches[0];
-	my $endep = $epoches[-1];
-	my $i = 1;
-	my $ep;
-	my $newline;
-	my $h_tz_long = qx(cat /etc/timezone);
-	chomp($h_tz_long);
-	for ($ep = $startep; $ep <= $endep; $ep += 3600 ) { # Step is 3600s
-		$newline = "";
-		next if $now >= $ep; # data is too old
-		$newline = $newline . sprintf("%.1f", $temps->linear($ep)) . "|";
-		$newline = $newline . sprintf("%.1f", $fltemps->linear($ep)) . "|";
-		$newline = $newline . sprintf("%.1f", $his->linear($ep)) . "|";
-		$newline = $newline . sprintf("%.0f", $hums->linear($ep)) . "|";
-		my $wdir = 0;
-		$wdir = $winddirs->linear($ep);
-		if ( $wdir >= 0 && $wdir <= 22 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'}) }; # North
-		if ( $wdir > 22 && $wdir <= 68 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NE'}) }; # NorthEast
-		if ( $wdir > 68 && $wdir <= 112 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_E'}) }; # East
-		if ( $wdir > 112 && $wdir <= 158 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_SE'}) }; # SouthEast
-		if ( $wdir > 158 && $wdir <= 202 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_S'}) }; # South
-		if ( $wdir > 202 && $wdir <= 248 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_SW'}) }; # SouthWest
-		if ( $wdir > 248 && $wdir <= 292 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_W'}) }; # West
-		if ( $wdir > 292 && $wdir <= 338 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NW'}) }; # NorthWest
-		if ( $wdir > 338 && $wdir <= 360 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'}) }; # North
-		$newline = $newline . $wdirdes . "|";
-		$newline = $newline . sprintf("%.1f", $wdir) . "|";
-		$newline = $newline . sprintf("%.1f", $winds->linear($ep)) . "|";
-		$newline = $newline . sprintf("%.1f", $fltemps->linear($ep)) . "|";
-		$newline = $newline . sprintf("%.1f", $pressures->linear($ep)) . "|";
-		$newline = $newline . sprintf("%.1f", $dewps->linear($ep)) . "|";
-		$newline = $newline . sprintf("%.0f", $clouds->linear($ep)) . "|";
-		$newline = $newline . "-9999" . "|";
-		$newline = $newline . sprintf("%.0f", $uvis->linear($ep)) . "|";
-		$newline = $newline . sprintf("%.2f", $precs->linear($ep)) . "|";
-		$newline = $newline . "-9999" . "|";
-		$newline = $newline . sprintf("%.0f", $pops->linear($ep)) . "|";
-        # Get nearest weather code
-		my $weatherdes;
-		if ( $codes{$ep} ) {
-			$wwo_id = $codes{$ep};
-			$weatherdes = $weatherdess{$ep};
-		} elsif ( $codes{$ep-3600} ) {
-			$wwo_id = $codes{$ep-3600};
-			$weatherdes = $weatherdess{$ep-3600};
-		} elsif ( $codes{$ep+3600} ) {
-			$wwo_id = $codes{$ep+3600};
-			$weatherdes = $weatherdess{$ep+3600};
-		} elsif ( $codes{$ep-7200} ) {
-			$wwo_id = $codes{$ep-7200};
-			$weatherdes = $weatherdess{$ep-7200};
-		} else {
-            $wwo_id = 113; # Default to clear
-            $weatherdes = Encode::decode("UTF-8", "Unknown");
-        }
-        # Convert WTTR weather code into Loxone Weather Code (picto-code) and weather symbol name
-	    ($code, $icon) = wttr_to_lox($wwo_id);
-		$newline = $newline . "$icon" . "|";
-		$newline = $newline . "$code" . "|";
-		$newline = $newline . "$weatherdes" . "|";
-		$newline = $newline . "-9999" . "|";
-		$newline = $newline . "-9999" . "|";
-		$newline = $newline . sprintf("%.1f", $viss->linear($ep)) . "|";
-		# dfc0_moon_p
-		my ( $moonphase,
-		  $moonillum,
-		  $moonage,
-		  $moondist,
-		  $moonang,
-		  $sundist,
-		  $sunang ) = phase($ep);
-		$newline = $newline . sprintf("%.2f",$moonillum*100) . "|";
-		$newline = $newline . sprintf("%.2f",$moonage) . "|";
-		$newline = $newline . sprintf("%.2f",$moonphase*100) . "|";
-		# Collect hourly record for direct JSON construction
-		{
-			push @hourly_json_data, {
-				period              => $i,
-				epoch               => $ep,
-				datetime            => _epoch_to_iso($ep, $h_tz_long),
-				temperature         => sprintf("%.1f", $temps->linear($ep)),
-				feelslike           => sprintf("%.1f", $fltemps->linear($ep)),
-				heat_index          => sprintf("%.1f", $his->linear($ep)),
-				humidity            => sprintf("%.0f", $hums->linear($ep)),
-				wind_direction_desc => wind_direction_text($winddirs->linear($ep), \%L),
-				wind_direction_deg  => sprintf("%.1f", $winddirs->linear($ep)),
-				wind_speed          => sprintf("%.1f", $winds->linear($ep)),
-				windchill           => sprintf("%.1f", $fltemps->linear($ep)),
-				pressure            => sprintf("%.1f", $pressures->linear($ep)),
-				dewpoint            => sprintf("%.1f", $dewps->linear($ep)),
-				sky_percent         => sprintf("%.0f", $clouds->linear($ep)),
-				sky_description     => -9999,
-				uv_index            => sprintf("%.0f", $uvis->linear($ep)),
-				precip_mm           => sprintf("%.2f", $precs->linear($ep)),
-				snow_cm             => -9999,
-				precip_probability  => sprintf("%.0f", $pops->linear($ep)),
-				weather_icon        => $icon,
-				weather_code        => $code,
-				weather_description => $weatherdes,
-				ozone               => -9999,
-				solar_radiation     => -9999,
-				visibility          => sprintf("%.1f", $viss->linear($ep)),
-				moon_percent        => sprintf("%.2f", $moonillum * 100),
-				moon_age            => sprintf("%.2f", $moonage),
-				moon_phase          => sprintf("%.2f", $moonphase * 100),
-			};
-		}
-		# Save new line / dataset
-		print F "$i|$ep|";
-		$t = Time::Piece->new ($ep);
-		print F sprintf("%02d", $t->mday) . "|";
-		print F sprintf("%02d", $t->mon) . "|";
-		my @month = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_MONTH'}) );
-		$t->mon_list(@month);
-		print F $t->monname . "|";
-		@month = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_MONTH_SH'}) );
-		$t->mon_list(@month);
-		print F $t->monname . "|";
-		print F $t->year . "|";
-		print F sprintf("%02d", $t->hour) . "|";
-		print F sprintf("%02d", $t->min) . "|";
-		my @days = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_DAYS'}) );
-		$t->day_list(@days);
-		print F $t->wdayname . "|";
-		@days = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_DAYS_SH'}) );
-		$t->day_list(@days);
-		print F $t->wdayname . "|";
-		print F "$newline\n";
-		$i++;
-	}
-	# Fill data to have at least 72h of forecast data for the weather emulator - otherwise Loxone app
-	# scrambles the webdata... :-(
-	$i--;
-	while ($i < 75) { # Use 75 datasets just to be sure...
-		$i++;
-		$ep += 3600;
-		print F "$i|$ep|";
-		$t = Time::Piece->new ($ep);
-		print F sprintf("%02d", $t->mday) . "|";
-		print F sprintf("%02d", $t->mon) . "|";
-		my @month = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_MONTH'}) );
-		$t->mon_list(@month);
-		print F $t->monname . "|";
-		@month = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_MONTH_SH'}) );
-		$t->mon_list(@month);
-		print F $t->monname . "|";
-		print F $t->year . "|";
-		print F sprintf("%02d", $t->hour) . "|";
-		print F sprintf("%02d", $t->min) . "|";
-		my @days = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_DAYS'}) );
-		$t->day_list(@days);
-		print F $t->wdayname . "|";
-		@days = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_DAYS_SH'}) );
-		$t->day_list(@days);
-		print F $t->wdayname . "|";
-		print F "$newline\n";
-	}
-  flock(F,8);
-close(F);
-
-
-LOGOK "Saving hourly forecast data to $lbplogdir/hourlyforecast.dat.tmp successfully.";
-
-LOGDEB "Database content:";
-open(F,"<$lbplogdir/hourlyforecast.dat.tmp");
-	@filecontent = <F>;
-	foreach (@filecontent) {
-		chomp ($_);
-		LOGDEB "$_";
-	}
-close (F);
-
-} # end hourly
-
-# Clean Up Databases
+##########################################################################
 
 if ( $current ) {
 
-LOGINF "Cleaning $lbplogdir/current.dat.tmp";
-open(F,"+<$lbplogdir/current.dat.tmp");
-  flock(F,2);
-	@filecontent = <F>;
-	seek(F,0,0);
-	truncate(F,0);
-	foreach (@filecontent){
-		s/[\n\r]//g;
-		if($_ =~ /^#/) {
-		  print F "$_\n";
-		  next;
-		}
-		LOGDEB "Original: $_";
-		s/\|null\|/"|0|"/eg;
-		s/\|--\|/"|0|"/eg;
-		s/\|na\|/"|-9999.00|"/eg;
-		s/\|NA\|/"|-9999.00|"/eg;
-		s/\|n\/a\|/"|-9999.00|"/eg;
-		s/\|N\/A\|/"|-9999.00|"/eg;
-		LOGDEB "Cleaned:  $_";
-		print F "$_\n";
-	}
-  flock(F,8);
-close(F);
-my $currentname = "$lbplogdir/current.dat.tmp";
-my $currentsize = -s ($currentname);
-if ($currentsize > 100) {
-        move($currentname, "$lbplogdir/current.dat");
-}
+    my $cur = $decoded_json->{current_condition}[0];
 
-}
+    LOGINF "Reading current weather data from API response into W4L structure.";
+
+    # time
+    my %time;
+    $time{datetime} = _epochToIso($currentEpoch, $timezone);
+    $time{epoch}    = $currentEpoch;
+    $time{timezone} = $timezone;
+    $time{tzShort}  = $tzShort;
+    $time{tzOffset} = $tzOffset;
+
+    # sunrise / sunset from astronomy data
+    my ($sunrise, $sunset);
+    eval {
+        my $sr_t = Time::Piece->strptime($decoded_json->{weather}[0]->{astronomy}[0]{sunrise}, "%R %p");
+        $sunrise = sprintf("%02d:%02d", $sr_t->hour, $sr_t->min);
+    };
+    eval {
+        my $ss_t = Time::Piece->strptime($decoded_json->{weather}[0]->{astronomy}[0]{sunset}, "%R %p");
+        $sunset = sprintf("%02d:%02d", $ss_t->hour, $ss_t->min);
+    };
+
+    # temperature
+    my %temperature;
+    $temperature{air}       = defined $cur->{temp_C}     ? sprintf("%.1f", $cur->{temp_C}) + 0     : undef;
+    $temperature{feelsLike} = defined $cur->{FeelsLikeC} ? sprintf("%.1f", $cur->{FeelsLikeC}) + 0 : undef;
+    $temperature{windChill} = defined $cur->{FeelsLikeC} ? sprintf("%.1f", $cur->{FeelsLikeC}) + 0 : undef;
+    $temperature{heatIndex} = undef;  # not available from wttr.in current
+
+    # wind
+    my %wind;
+    my $wdeg = $cur->{winddirDegree};
+    $wind{direction} = defined $wdeg ? $wdeg + 0 : undef;
+    $wind{dirLabel}  = getWindDirectionLabel($wdeg, \%L);
+    $wind{speed}     = defined $cur->{windspeedKmph} ? sprintf("%.1f", $cur->{windspeedKmph}) + 0 : undef;
+    $wind{gust}      = undef;  # wttr.in current has no gust data
+
+    # precipitation
+    my %precipitation;
+    $precipitation{rainToday}    = undef;  # not available
+    $precipitation{rain1hr}      = defined $cur->{precipMM} ? sprintf("%.2f", $cur->{precipMM}) + 0 : undef;
+    $precipitation{probability}  = undef;  # not available from current
+    $precipitation{type}         = "none";
+    $precipitation{snowToday}    = undef;
+    $precipitation{snow1h}       = undef;
+
+    # weather codes
+    my %weatherCode;
+    my $wwo_id = $cur->{weatherCode};
+    my ($loxoneCode, $w4lCode) = wttr_to_lox($wwo_id);
+    $weatherCode{loxone}      = "$loxoneCode";
+    $weatherCode{weather4lox} = $w4lCode;
+    my $wdes = $cur->{'lang_' . $lang}[0]{value};
+    $wdes = $cur->{weatherDesc}[0]{value} if !$wdes;
+    $weatherCode{description} = $wdes;
+    $weatherCode{image}       = undef;  # wttr.in has no image field
+    $weatherCode{metar}       = getMetarCode($w4lCode);
+
+    # moon
+    my %moon;
+    my ($moonphase, $moonillum, $moonage) = (phase())[0,1,2];
+    $moon{age}       = sprintf("%.2f", $moonage) + 0;
+    $moon{percent}   = sprintf("%.2f", $moonillum * 100) + 0;
+    $moon{phase}     = sprintf("%.2f", $moonphase * 100) + 0;
+    $moon{direction} = getMoonDirection($moonage);
+
+    # Build current data hash
+    my %currentData = (
+        time           => \%time,
+        sunrise        => $sunrise,
+        sunset         => $sunset,
+        temperature    => \%temperature,
+        humidity       => defined $cur->{humidity} ? $cur->{humidity} + 0 : undef,
+        wind           => \%wind,
+        pressure       => defined $cur->{pressure} ? sprintf("%.0f", $cur->{pressure}) + 0 : undef,
+        dewpoint       => undef,  # not available from wttr.in current
+        visibility     => defined $cur->{visibility} ? sprintf("%.0f", $cur->{visibility}) + 0 : undef,
+        solarRadiation => undef,
+        uvIndex        => defined $cur->{uvIndex} ? sprintf("%.0f", $cur->{uvIndex}) + 0 : undef,
+        precipitation  => \%precipitation,
+        weatherCode    => \%weatherCode,
+        ozone          => undef,
+        cloudCover     => defined $cur->{cloudcover} ? $cur->{cloudcover} + 0 : undef,
+        moon           => \%moon,
+        isNight        => undef,  # wttr.in does not provide day/night info
+    );
+
+    # Build envelope and write JSON to file
+    my $weatherKey = "current";
+    my $envelope = {
+        refresh     => $refresh,
+        location    => $location,
+        $grabberKey => {
+            filename      => "$lbplogdir/$weatherKey.json",
+            generatedAt   => $generatedAt,
+            grabberLabel  => $grabberLabel,
+            grabberScript => $grabberFile,
+            schemaVersion => "v1.0",
+        },
+        $weatherKey => \%currentData,
+    };
+    writeJsonFile($lbplogdir, $weatherKey, $envelope);
+
+} # End current
+
+##########################################################################
+# Fetch daily data
+##########################################################################
 
 if ( $daily ) {
 
-LOGINF "Cleaning $lbplogdir/dailyforecast.dat.tmp";
-open(F,"+<$lbplogdir/dailyforecast.dat.tmp");
-  flock(F,2);
-	@filecontent = <F>;
-	seek(F,0,0);
-	truncate(F,0);
-	foreach (@filecontent){
-		s/[\n\r]//g;
-		if($_ =~ /^#/) {
-		  print F "$_\n";
-		  next;
-		}
-		LOGDEB "Original: $_";
-		s/\|null\|/"|0|"/eg;
-		s/\|--\|/"|0|"/eg;
-		s/\|na\|/"|-9999.00|"/eg;
-		s/\|NA\|/"|-9999.00|"/eg;
-		s/\|n\/a\|/"|-9999.00|"/eg;
-		s/\|N\/A\|/"|-9999.00|"/eg;
-		LOGDEB "Cleaned:  $_";
-		print F "$_\n";
-	}
-  flock(F,8);
-close(F);
-my $dailyname = "$lbplogdir/dailyforecast.dat.tmp";
-my $dailysize = -s ($dailyname);
-if ($dailysize > 100) {
-        move($dailyname, "$lbplogdir/dailyforecast.dat");
-}
+    my @dailyData;
+    my $i = 0;
 
-}
+    LOGINF "Reading daily weather data from API response into W4L structure.";
+
+    for my $results ( @{$decoded_json->{weather}} ) {
+
+        my $dt = Time::Piece->strptime($results->{date}, "%Y-%m-%d");
+
+        # time
+        my %time;
+        $time{datetime} = _epochToIso($dt->epoch, $timezone);
+        $time{epoch}    = $dt->epoch;
+
+        # sunrise / sunset from astronomy data
+        my ($sunrise, $sunset);
+        eval {
+            my $sr_t = Time::Piece->strptime($results->{astronomy}[0]{sunrise}, "%R %p");
+            $sunrise = sprintf("%02d:%02d", $sr_t->hour, $sr_t->min);
+        };
+        eval {
+            my $ss_t = Time::Piece->strptime($results->{astronomy}[0]{sunset}, "%R %p");
+            $sunset = sprintf("%02d:%02d", $ss_t->hour, $ss_t->min);
+        };
+
+        # Aggregate hourly values for min/max/avg calculations
+        my @d_pops;
+        my $d_prec = 0;
+        my @d_gusts;
+        my @d_winds;
+        my @d_winddirs;
+        my @d_hums;
+        my @d_pressures;
+        my @d_dewps;
+        my @d_viss;
+        for my $hr ( @{$results->{hourly}} ) {
+            push @d_pops, $hr->{chanceofrain} if $hr->{chanceofrain};
+            $d_prec += $hr->{precipMM} * 3 if $hr->{precipMM};  # 3-hourly FC
+            push @d_gusts, $hr->{WindGustKmph} if $hr->{WindGustKmph};
+            push @d_winds, $hr->{windspeedKmph} if $hr->{windspeedKmph};
+            push @d_winddirs, $hr->{winddirDegree} if $hr->{winddirDegree};
+            push @d_hums, $hr->{humidity} if $hr->{humidity};
+            push @d_pressures, $hr->{pressure} if $hr->{pressure};
+            push @d_dewps, $hr->{DewPointC} if $hr->{DewPointC};
+            push @d_viss, $hr->{visibility} if $hr->{visibility};
+        }
+        @d_pops = sort { $a <=> $b } @d_pops;
+        @d_gusts = sort { $a <=> $b } @d_gusts;
+        @d_winds = sort { $a <=> $b } @d_winds;
+        @d_winddirs = sort { $a <=> $b } @d_winddirs;
+        @d_hums = sort { $a <=> $b } @d_hums;
+        @d_pressures = sort { $a <=> $b } @d_pressures;
+        @d_dewps = sort { $a <=> $b } @d_dewps;
+        @d_viss = sort { $a <=> $b } @d_viss;
+
+        my $d_windavg = @d_winds ? eval(join("+", @d_winds)) / @d_winds : undef;
+        my $d_wdiravg = @d_winddirs ? eval(join("+", @d_winddirs)) / @d_winddirs : undef;
+        my $d_humavg = @d_hums ? eval(join("+", @d_hums)) / @d_hums : undef;
+        my $d_pressavg = @d_pressures ? eval(join("+", @d_pressures)) / @d_pressures : undef;
+        my $d_dewpavg = @d_dewps ? eval(join("+", @d_dewps)) / @d_dewps : undef;
+        my $d_visavg = @d_viss ? eval(join("+", @d_viss)) / @d_viss : undef;
+
+        # temperature
+        my %tempMax;
+        $tempMax{air}       = defined $results->{maxtempC} ? sprintf("%.1f", $results->{maxtempC}) + 0 : undef;
+        $tempMax{feelsLike} = undef;  # not available per-day from wttr.in
+        $tempMax{heatIndex} = undef;
+
+        my %tempMin;
+        $tempMin{air}       = defined $results->{mintempC} ? sprintf("%.1f", $results->{mintempC}) + 0 : undef;
+        $tempMin{feelsLike} = undef;
+        $tempMin{windChill} = undef;
+
+        # wind avg
+        my %windAvg;
+        $windAvg{direction} = defined $d_wdiravg ? sprintf("%.0f", $d_wdiravg) + 0 : undef;
+        $windAvg{dirLabel}  = getWindDirectionLabel($d_wdiravg, \%L);
+        $windAvg{speed}     = defined $d_windavg ? sprintf("%.0f", $d_windavg) + 0 : undef;
+        $windAvg{gust}      = undef;
+
+        # wind max (gust-based)
+        my %windMax;
+        $windMax{direction} = undef;  # no separate max wind direction from wttr.in
+        $windMax{dirLabel}  = undef;
+        $windMax{speed}     = $d_gusts[-1] ? sprintf("%.0f", $d_gusts[-1]) + 0 : undef;
+        $windMax{gust}      = undef;
+
+        # humidity
+        my %humidity;
+        $humidity{avg} = defined $d_humavg ? sprintf("%.0f", $d_humavg) + 0 : undef;
+        $humidity{max} = $d_hums[-1] ? sprintf("%.0f", $d_hums[-1]) + 0 : undef;
+        $humidity{min} = $d_hums[0]  ? sprintf("%.0f", $d_hums[0]) + 0  : undef;
+
+        # precipitation
+        my %precipitation;
+        $precipitation{probability} = $d_pops[-1] ? sprintf("%.0f", $d_pops[-1]) + 0 : undef;
+        $precipitation{rainHigh}    = $d_prec > 0 ? sprintf("%.2f", $d_prec) + 0 : undef;
+        $precipitation{rainLow}     = undef;
+        $precipitation{snowHigh}    = defined $results->{totalSnow_cm} && $results->{totalSnow_cm} > 0
+                                        ? sprintf("%.1f", $results->{totalSnow_cm}) + 0 : undef;
+        $precipitation{snowLow}     = undef;
+        $precipitation{duration}    = undef;
+        $precipitation{type}        = "none";
+
+        # weather codes - use noon (index 4) hourly data
+        my %weatherCode;
+        my $d_wwo_id = $results->{hourly}[4]->{weatherCode};
+        my ($loxoneCode, $w4lCode) = wttr_to_lox($d_wwo_id);
+        $weatherCode{loxone}      = "$loxoneCode";
+        $weatherCode{weather4lox} = $w4lCode;
+        my $wdes = $results->{hourly}[4]->{'lang_' . $lang}[0]{value};
+        $wdes = $results->{hourly}[4]->{weatherDesc}[0]{value} if !$wdes;
+        $weatherCode{description} = $wdes;
+        $weatherCode{image}       = undef;
+        $weatherCode{metar}       = getMetarCode($w4lCode);
+
+        # moon
+        my %moon;
+        my ($moonphase, $moonillum, $moonage) = (phase($dt->epoch))[0,1,2];
+        $moon{age}       = sprintf("%.2f", $moonage) + 0;
+        $moon{percent}   = sprintf("%.2f", $moonillum * 100) + 0;
+        $moon{phase}     = sprintf("%.2f", $moonphase * 100) + 0;
+        $moon{direction} = getMoonDirection($moonage);
+        $moon{rise}      = undef;  # not available from wttr.in
+        $moon{set}       = undef;
+
+        push @dailyData, {
+            day            => $i,
+            time           => \%time,
+            sunrise        => $sunrise,
+            sunset         => $sunset,
+            temperature    => { max => \%tempMax, min => \%tempMin },
+            wind           => { avg => \%windAvg, max => \%windMax },
+            humidity       => \%humidity,
+            pressure       => defined $d_pressavg ? sprintf("%.0f", $d_pressavg) + 0 : undef,
+            dewpoint       => defined $d_dewpavg  ? sprintf("%.1f", $d_dewpavg) + 0  : undef,
+            precipitation  => \%precipitation,
+            weatherCode    => \%weatherCode,
+            moon           => \%moon,
+            uvIndex        => defined $results->{uvIndex} ? sprintf("%.1f", $results->{uvIndex}) + 0 : undef,
+            visibility     => defined $d_visavg ? sprintf("%.1f", $d_visavg) + 0 : undef,
+            solarRadiation => undef,
+            heatIndex      => undef,
+            ozone          => undef,
+            cloudCover     => undef,
+        };
+        $i++;
+    }
+
+    # Build envelope and write JSON to file
+    my $weatherKey = "dailyforecast";
+    my $envelope = {
+        refresh     => $refresh,
+        location    => $location,
+        $grabberKey => {
+            filename      => "$lbplogdir/$weatherKey.json",
+            generatedAt   => $generatedAt,
+            grabberLabel  => $grabberLabel,
+            grabberScript => $grabberFile,
+            schemaVersion => "v1.0",
+        },
+        $weatherKey => \@dailyData,
+    };
+    writeJsonFile($lbplogdir, $weatherKey, $envelope);
+
+} # End daily
+
+##########################################################################
+# Fetch hourly data
+##########################################################################
 
 if ( $hourly ) {
 
-LOGINF "Cleaning $lbplogdir/hourlyforecast.dat.tmp";
-open(F,"+<$lbplogdir/hourlyforecast.dat.tmp");
-  flock(F,2);
-	@filecontent = <F>;
-	seek(F,0,0);
-	truncate(F,0);
-	foreach (@filecontent){
-		s/[\n\r]//g;
-		if($_ =~ /^#/) {
-		  print F "$_\n";
-		  next;
-		}
-		LOGDEB "Original: $_";
-		s/\|null\|/"|0|"/eg;
-		s/\|--\|/"|0|"/eg;
-		s/\|na\|/"|-9999.00|"/eg;
-		s/\|NA\|/"|-9999.00|"/eg;
-		s/\|n\/a\|/"|-9999.00|"/eg;
-		s/\|N\/A\|/"|-9999.00|"/eg;
-		LOGDEB "Cleaned:  $_";
-		print F "$_\n";
-	}
-  flock(F,8);
-close(F);
-my $hourlyname = "$lbplogdir/hourlyforecast.dat.tmp";
-my $hourlysize = -s ($hourlyname);
-if ($hourlysize > 100) {
-        move($hourlyname, "$lbplogdir/hourlyforecast.dat");
-}
+    my @hourlyData;
+    my $i = 0;
 
-}
+    LOGINF "Reading hourly weather data from API response into W4L structure.";
 
-# Write JSON files directly from API data (no .dat round-trip)
-if ($current && %current_json_data) {
-    eval { write_current_json($lbplogdir, data => \%current_json_data, source => "wttr.in", grabber => "grabber_wttrin.pl") };
-    LOGWARN "JSON write failed (current): $@" if $@;
-}
-if ($daily && @daily_json_data) {
-    eval { write_daily_json($lbplogdir, data => \@daily_json_data, source => "wttr.in", grabber => "grabber_wttrin.pl") };
-    LOGWARN "JSON write failed (daily): $@" if $@;
-}
-if ($hourly && @hourly_json_data) {
-    eval { write_hourly_json($lbplogdir, data => \@hourly_json_data, source => "wttr.in", grabber => "grabber_wttrin.pl") };
-    LOGWARN "JSON write failed (hourly): $@" if $@;
-}
+    # Parse 3-hourly data into interpolation hashes
+    my %temps;  my $temps;
+    my %fltemps; my $fltemps;
+    my %hums;   my $hums;
+    my %winddirs; my $winddirs;
+    my %winds;  my $winds;
+    my %gusts;  my $gusts;
+    my %pressures; my $pressures;
+    my %dewps;  my $dewps;
+    my %clouds; my $clouds;
+    my %uvis;   my $uvis;
+    my %his;    my $his;
+    my %precs;  my $precs;
+    my %pops;   my $pops;
+    my %codes;
+    my %weatherdess;
+    my %viss;   my $viss;
+    my @epoches;
+
+    for my $daily_entry ( @{$decoded_json->{weather}} ) {
+        for my $hr ( @{$daily_entry->{hourly}} ) {
+            my $datetime = $daily_entry->{date} . " " . $hr->{time}/100 . ":00";
+            my $t = Time::Piece->strptime($datetime, "%Y-%m-%d %H:%M");
+            my $ep = $t->epoch;
+            push ( @epoches, $ep );
+            $temps{$ep} = $hr->{tempC};
+            $temps = Math::Function::Interpolator::Linear->new( points => \%temps );
+            $fltemps{$ep} = $hr->{FeelsLikeC};
+            $fltemps = Math::Function::Interpolator::Linear->new( points => \%fltemps );
+            $hums{$ep} = $hr->{humidity};
+            $hums = Math::Function::Interpolator::Linear->new( points => \%hums );
+            $winddirs{$ep} = $hr->{winddirDegree};
+            $winddirs = Math::Function::Interpolator::Linear->new( points => \%winddirs );
+            $winds{$ep} = $hr->{windspeedKmph};
+            $winds = Math::Function::Interpolator::Linear->new( points => \%winds );
+            $gusts{$ep} = $hr->{WindGustKmph};
+            $gusts = Math::Function::Interpolator::Linear->new( points => \%gusts );
+            $pressures{$ep} = $hr->{pressure};
+            $pressures = Math::Function::Interpolator::Linear->new( points => \%pressures );
+            $dewps{$ep} = $hr->{DewPointC};
+            $dewps = Math::Function::Interpolator::Linear->new( points => \%dewps );
+            $clouds{$ep} = $hr->{cloudcover};
+            $clouds = Math::Function::Interpolator::Linear->new( points => \%clouds );
+            $uvis{$ep} = $hr->{uvIndex};
+            $uvis = Math::Function::Interpolator::Linear->new( points => \%uvis );
+            $his{$ep} = $hr->{HeatIndexC};
+            $his = Math::Function::Interpolator::Linear->new( points => \%his );
+            $precs{$ep} = $hr->{precipMM};
+            $precs = Math::Function::Interpolator::Linear->new( points => \%precs );
+            $pops{$ep} = $hr->{chanceofrain};
+            $pops = Math::Function::Interpolator::Linear->new( points => \%pops );
+            $codes{$ep} = $hr->{weatherCode};
+            if ($hr->{'lang_' . $lang}[0]->{value}) {
+                $weatherdess{$ep} = $hr->{'lang_' . $lang}[0]->{value};
+            } else {
+                $weatherdess{$ep} = $hr->{weatherDesc}[0]->{value};
+            }
+            $viss{$ep} = $hr->{visibility};
+            $viss = Math::Function::Interpolator::Linear->new( points => \%viss );
+        }
+    }
+
+    # Create hourly data set with interpolation from 3-hourly data
+    my $now = time();
+    @epoches = sort { $a <=> $b } @epoches;
+    my $startep = $epoches[0];
+    my $endep = $epoches[-1];
+
+    for (my $ep = $startep; $ep <= $endep; $ep += 3600) {
+        next if $now >= $ep;  # skip past hours
+
+        # time
+        my %time;
+        $time{datetime} = _epochToIso($ep, $timezone);
+        $time{epoch}    = $ep;
+
+        # temperature
+        my %temperature;
+        $temperature{air}       = sprintf("%.1f", $temps->linear($ep)) + 0;
+        $temperature{feelsLike} = sprintf("%.1f", $fltemps->linear($ep)) + 0;
+        $temperature{heatIndex} = undef;
+        $temperature{windChill} = undef;
+
+        # wind
+        my %wind;
+        my $wdeg = $winddirs->linear($ep);
+        $wind{direction} = defined $wdeg ? sprintf("%.0f", $wdeg) + 0 : undef;
+        $wind{dirLabel}  = getWindDirectionLabel($wdeg, \%L);
+        $wind{speed}     = sprintf("%.1f", $winds->linear($ep)) + 0;
+        $wind{gust}      = undef;  # wttr.in gust data is unreliable for interpolated hours
+
+        # precipitation
+        my %precipitation;
+        $precipitation{probability} = sprintf("%.0f", $pops->linear($ep)) + 0;
+        $precipitation{rainHigh}    = sprintf("%.2f", $precs->linear($ep)) + 0;
+        $precipitation{rainHigh}    = undef if $precipitation{rainHigh} == 0;
+        $precipitation{rainLow}     = undef;
+        $precipitation{snowHigh}    = undef;
+        $precipitation{snowLow}     = undef;
+        $precipitation{duration}    = undef;
+        $precipitation{type}        = "none";
+
+        # Get nearest weather code (codes are not interpolatable)
+        my ($wwo_id, $weatherdes);
+        if ( $codes{$ep} ) {
+            $wwo_id = $codes{$ep};
+            $weatherdes = $weatherdess{$ep};
+        } elsif ( $codes{$ep-3600} ) {
+            $wwo_id = $codes{$ep-3600};
+            $weatherdes = $weatherdess{$ep-3600};
+        } elsif ( $codes{$ep+3600} ) {
+            $wwo_id = $codes{$ep+3600};
+            $weatherdes = $weatherdess{$ep+3600};
+        } elsif ( $codes{$ep-7200} ) {
+            $wwo_id = $codes{$ep-7200};
+            $weatherdes = $weatherdess{$ep-7200};
+        } else {
+            $wwo_id = 113;
+            $weatherdes = Encode::decode("UTF-8", "Unknown");
+        }
+
+        # weather codes
+        my %weatherCode;
+        my ($loxoneCode, $w4lCode) = wttr_to_lox($wwo_id);
+        $weatherCode{loxone}      = "$loxoneCode";
+        $weatherCode{weather4lox} = $w4lCode;
+        $weatherCode{description} = $weatherdes;
+        $weatherCode{metar}       = getMetarCode($w4lCode);
+
+        # moon
+        my %moon;
+        my ($moonphase, $moonillum, $moonage) = (phase($ep))[0,1,2];
+        $moon{age}       = sprintf("%.2f", $moonage) + 0;
+        $moon{percent}   = sprintf("%.2f", $moonillum * 100) + 0;
+        $moon{phase}     = sprintf("%.2f", $moonphase * 100) + 0;
+        $moon{direction} = getMoonDirection($moonage);
+
+        push @hourlyData, {
+            hour           => $i,
+            time           => \%time,
+            temperature    => \%temperature,
+            humidity       => sprintf("%.0f", $hums->linear($ep)) + 0,
+            wind           => \%wind,
+            pressure       => sprintf("%.0f", $pressures->linear($ep)) + 0,
+            dewpoint       => sprintf("%.1f", $dewps->linear($ep)) + 0,
+            visibility     => sprintf("%.1f", $viss->linear($ep)) + 0,
+            solarRadiation => undef,
+            uvIndex        => sprintf("%.0f", $uvis->linear($ep)) + 0,
+            precipitation  => \%precipitation,
+            weatherCode    => \%weatherCode,
+            ozone          => undef,
+            cloudCover     => sprintf("%.0f", $clouds->linear($ep)) + 0,
+            moon           => \%moon,
+            isNight        => undef,
+        };
+        $i++;
+    }
+
+    # Build envelope and write JSON to file
+    my $weatherKey = "hourlyforecast";
+    my $envelope = {
+        refresh     => $refresh,
+        location    => $location,
+        $grabberKey => {
+            filename      => "$lbplogdir/$weatherKey.json",
+            generatedAt   => $generatedAt,
+            grabberLabel  => $grabberLabel,
+            grabberScript => $grabberFile,
+            schemaVersion => "v1.0",
+        },
+        $weatherKey => \@hourlyData,
+    };
+    writeJsonFile($lbplogdir, $weatherKey, $envelope);
+
+} # End hourly
 
 # Give OK status to client.
 LOGOK "Current Data and Forecasts saved successfully.";
