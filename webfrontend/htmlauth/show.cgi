@@ -181,9 +181,9 @@ ${"cur_hi"} = !$metric ? $cur->{heatIndex}*1.8+32 : $cur->{heatIndex};
 ${"cur_uvi"} = $cur->{uvIndex};
 ${"cur_pop"} = $cur->{precipitation}{probability};
 # TODO: Verify names
-${"cur_prec_today"} = !$metric ? $cur->{precipitation}{rain_today_mm}*0.0393700787 : $cur->{precipitation}{rain_today_mm};
-${"cur_prec_1hr"} = !$metric ? $cur->{precipitation}{rain_1hr_mm}*0.0393700787 : $cur->{precipitation}{rain_1hr_mm};
-${"cur_snow"} = !$metric ? $cur->{precipitation}{snow_today_cm}*0.393700787 : $cur->{precipitation}{snow_today_cm};
+${"cur_prec_today"} = !$metric ? $cur->{precipitation}{rainToday}*0.0393700787 : $cur->{precipitation}{rainToday};
+${"cur_prec_1hr"} = !$metric ? $cur->{precipitation}{rain1hr}*0.0393700787 : $cur->{precipitation}{rain1hr};
+${"cur_snow"} = !$metric ? $cur->{precipitation}{snowToday}*0.393700787 : $cur->{precipitation}{snowToday};
 ${"cur_we_code"} = $cur->{weatherCode}{loxone};
 ${"cur_we_des"} = encode_utf8($cur->{weatherCode}{description});
 ${"cur_moon_p"} = $cur->{moon}{percent};

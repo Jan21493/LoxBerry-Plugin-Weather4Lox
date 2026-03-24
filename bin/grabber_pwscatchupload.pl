@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Grabber for overwriting data by WeatherUnderground data
+# Grabber for overwriting data by PWSCatchUpload data
 
 # Copyright 2016-2023 Michael Schlenstedt, michael@loxberry.de
 #                     Christian Fenzl, christian@loxberry.de
@@ -26,12 +26,12 @@ use warnings;
 
 use LoxBerry::System;
 use LoxBerry::Log;
-#use LWP::UserAgent;
-use JSON qw( decode_json );
-use File::Copy;
+use JSON::PP;
+use File::Basename qw(basename);
+use utf8;
+use Encode qw(encode_utf8);
 use Getopt::Long;
-use Encode qw(decode encode);
-#use Time::Piece;
+use Time::Piece;
 #use Data::Dumper;
 
 require "$lbpbindir/grabber_utils.pl";
@@ -43,9 +43,15 @@ require "$lbpbindir/grabber_utils.pl";
 # Version of this script
 my $version = LoxBerry::System::pluginversion();
 
-my $currentnametmp 	= "$lbplogdir/current.dat.tmp";
-my $currentname    	= "$lbplogdir/current.dat";
-my $file		= "/dev/shm/pwscatchupload_w4l.json";
+# params from config
+my $pcfg = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
+
+my $file = "/dev/shm/pwscatchupload_w4l.json";
+
+# names for JSON
+my $grabberFile     = basename(__FILE__);
+my $grabberLabel    = "PWSCatchUpload";
+my $grabberKey      = "pwscatchupload";
 
 # Read language phrases
 my %L = LoxBerry::System::readlanguage("language.ini");
@@ -63,7 +69,6 @@ my $verbose = '';
 GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 });
 
-# Due to a bug in the Logging routine, set the loglevel fix to 3
 if ($verbose) {
 	$log->stdout(1);
 	$log->loglevel(7);
@@ -81,134 +86,66 @@ if (!$json) {
   LOGOK "Data read successfully.";
 }
 
-# Decode JSON response from server
-my $decoded_json = decode_json( $json );
-#print Dumper $decoded_json;
+# Decode JSON response
+my $decoded_json = JSON::PP->new->utf8->decode($json);
 
-# Write location data into database
+# Read existing current.json envelope
+my $weatherKey = "current";
+my $envelope = readJsonFile($lbplogdir, $weatherKey);
+my $cur = $envelope->{$weatherKey} // {};
+
+LOGDEB "Adding/overwriting PWSCatchUpload data to $weatherKey weather data.";
+
 my $t = localtime($decoded_json->{cur_date});
 LOGINF "Saving new Data for Timestamp $t to database.";
 
-my %wu_weather;
-my @wu_weather_arr;
-my %wu_response;
+# Temperature
+my $temp = defined $decoded_json->{cur_tt} ? sprintf("%.1f", $decoded_json->{cur_tt}) : undef;
+$cur->{temperature}{air} = $temp if defined $temp;                           # cur_tt - air temperature (C)
 
-# ColNr beginning with 0
-# See data/current.format
-%wu_weather = (
-	"cur_tt" => 11,
-	"cur_hu" => 13,
-	"cur_w_dirdes" => 14,
-	"cur_w_dir" => 15,
-	"cur_w_sp" => 16,
-	"cur_w_gu" => 17,
-	"cur_w_ch" => 18,
-	"cur_pr" => 19,
-	"cur_dp" => 20,
-	"cur_sr" => 22
-);
-
-# Generate array from hash
-@wu_weather_arr = ( keys %wu_weather );
-
-LOGDEB "Data to request: " . join(', ', @wu_weather_arr);
-
-# Grab data from FOSHK
-$wu_response{cur_tt} = sprintf("%.1f",$decoded_json->{cur_tt}) if $decoded_json->{cur_tt};
-$wu_response{cur_hu} = $decoded_json->{cur_hu} if $decoded_json->{cur_hu};
-if ($decoded_json->{cur_w_dir}) {
-  $wu_response{cur_w_dir} = $decoded_json->{cur_w_dir};
-  my $wdir = $wu_response{cur_w_dir};
-  my $wdirdes;
-  if ($wu_response{cur_w_dir}) {
-	if ( $wdir >= 0 && $wdir <= 22 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'}) }; # North
-	if ( $wdir > 22 && $wdir <= 68 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NE'}) }; # NorthEast
-	if ( $wdir > 68 && $wdir <= 112 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_E'}) }; # East
-	if ( $wdir > 112 && $wdir <= 158 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_SE'}) }; # SouthEast
-	if ( $wdir > 158 && $wdir <= 202 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_S'}) }; # South
-	if ( $wdir > 202 && $wdir <= 248 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_SW'}) }; # SouthWest
-	if ( $wdir > 248 && $wdir <= 292 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_W'}) }; # West
-	if ( $wdir > 292 && $wdir <= 338 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NW'}) }; # NorthWest
-	if ( $wdir > 338 && $wdir <= 360 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'}) }; # North
-	$wdirdes = Encode::decode("UTF-8", $wdirdes);
-	$wu_response{cur_w_dirdes} = $wdirdes;
-  }
-}
-$wu_response{cur_w_sp} = $decoded_json->{cur_w_sp} if $decoded_json->{cur_w_sp};
-$wu_response{cur_w_gu} = $decoded_json->{cur_w_gu} if $decoded_json->{cur_w_gu};
-$wu_response{cur_w_ch} = sprintf("%.1f",$decoded_json->{cur_w_ch}) if $decoded_json->{cur_w_ch};
-$wu_response{cur_pr} = $decoded_json->{cur_pr} if $decoded_json->{cur_pr};
-$wu_response{cur_dp} = $decoded_json->{cur_dp} if $decoded_json->{cur_dp};
-$wu_response{cur_sr} = $decoded_json->{cur_sr} if $decoded_json->{cur_sr};
-
-LOGDEB "Copying current.dat to current.dat.tmp";
-copy($currentname, $currentnametmp);
-
-LOGINF "Reading current.dat.tmp";
-my $datafile_str = LoxBerry::System::read_file($currentnametmp);
-chomp($datafile_str);
-
-LOGDEB "Old line: $datafile_str";
-my @values = split /\|/, $datafile_str;
-
-foreach my $resp (keys %wu_weather ) {
-	#print STDERR "Object $resp has value " . $wu_response{$resp} . "\n";
-	if(defined($wu_response{$resp}) and $wu_response{$resp} ne "-9999") {
-		my $col = $wu_weather{$resp};
-		$values[$col] = $wu_response{$resp};
-		$values[$col] =~ s/^([-\d\.]+).*/$1/g;
-		LOGDEB "  Response from $resp (value $values[$col]) is set to column $col";
-	}
+# Wind chill
+my $windChill = defined $decoded_json->{cur_w_ch} ? sprintf("%.1f", $decoded_json->{cur_w_ch}) : undef;
+if (defined $windChill && defined $temp && abs($windChill - $temp) > 0.1 || !defined $cur->{temperature}{windChill}) {
+    $cur->{temperature}{windChill} = $windChill;                             # cur_w_ch - wind chill (C)
 }
 
-# Joining line
-my $newline = join('|', @values);
-
-LOGDEB "New line: $newline";
-
-# Write patched file
-eval {
-	open(my $fh, ">$currentnametmp");
-	binmode $fh, ':encoding(UTF-8)';
-	print $fh Encode::decode("UTF-8", $newline);
-	close $fh;
+# Wind data
+my $windDir = $decoded_json->{cur_w_dir};
+if (defined $windDir) {
+    $cur->{wind} = {
+        direction  => sprintf("%.0f", $windDir),                             # cur_w_dir    - wind direction (degree)
+        dirLabel   => getWindDirectionLabel($windDir, \%L),                  # cur_w_dirdes - wind direction description
+        speed      => defined $decoded_json->{cur_w_sp} ? sprintf("%.2f", $decoded_json->{cur_w_sp}) : undef,  # cur_w_sp - wind speed (km/h)
+        gust       => defined $decoded_json->{cur_w_gu} ? sprintf("%.2f", $decoded_json->{cur_w_gu}) : undef,  # cur_w_gu - wind gust (km/h)
+    };
 }
-or do {
-    LOGCRIT "Could not write $currentnametmp: $@";
-	exit 2;
+
+# Other weather data
+$cur->{humidity}        = sprintf("%.1f", $decoded_json->{cur_hu})  if defined $decoded_json->{cur_hu};   # cur_hu - humidity (%)
+$cur->{pressure}        = sprintf("%.0f", $decoded_json->{cur_pr})  if defined $decoded_json->{cur_pr};   # cur_pr - air pressure (hPa)
+$cur->{dewpoint}        = sprintf("%.1f", $decoded_json->{cur_dp})  if defined $decoded_json->{cur_dp};   # cur_dp - dew point (C)
+$cur->{solarRadiation}  = sprintf("%.0f", $decoded_json->{cur_sr})  if defined $decoded_json->{cur_sr};   # cur_sr - solar radiation (W/m2)
+
+# Add grabber metadata
+my $dtCurrent = localtime;
+$envelope->{$grabberKey} = {
+    filename        => "$lbplogdir/$weatherKey.json",
+    generatedAt     => $dtCurrent->datetime(),
+    grabberLabel    => $grabberLabel,
+    grabberScript   => $grabberFile,
+    schemaVersion   => "v1.0",
 };
+$envelope->{$weatherKey} = $cur;
 
-# Test file
-my $currentsize = -s ($currentnametmp);
-if ($currentsize > 100) {
-        move($currentnametmp, $currentname);
-} else {
-	LOGCRIT "File size below 100 bytes - no new file created: $currentnametmp";
-	exit 2;
-}
+# Add refresh interval from CRON_PATCH config
+my $cronMinutes = $pcfg->param("SERVER.CRON_PATCH") // 1;
+$envelope->{refresh} = $cronMinutes * 60;
+
+# Write JSON back to file
+writeJsonFile($lbplogdir, $weatherKey, $envelope);
 
 # Give OK status to client.
 LOGOK "Current Data saved successfully.";
-
-# Write current.json directly from API data (not via .dat roundabout)
-my %current_data = (
-    epoch              => $decoded_json->{cur_date},
-    temperature        => sprintf("%.1f", $decoded_json->{cur_tt})    // undef,
-    humidity           => $decoded_json->{cur_hu},
-    wind_direction_desc => wind_direction_text($decoded_json->{cur_w_dir}, \%L),
-    wind_direction_deg => $decoded_json->{cur_w_dir},
-    wind_speed         => $decoded_json->{cur_w_sp},
-    wind_gust          => $decoded_json->{cur_w_gu},
-    windchill          => sprintf("%.1f", $decoded_json->{cur_w_ch})  // undef,
-    pressure           => $decoded_json->{cur_pr},
-    dewpoint           => $decoded_json->{cur_dp},
-    solar_radiation    => $decoded_json->{cur_sr},
-);
-eval { write_current_json($lbplogdir,
-    data    => \%current_data,
-    source  => "PWSCatchUpload",
-    grabber => "grabber_pwscatchupload.pl") };
-LOGWARN "JSON write failed: $@" if $@;
 
 # Exit
 exit;

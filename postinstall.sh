@@ -37,17 +37,15 @@ ln -s REPLACELBPBINDIR/weather4lox_cronjob.sh $LBHOMEDIR/system/cron/cron.hourly
 
 # Copy Dummy files
 echo "<INFO> Copy dummy data files"
-if [ ! -e $LBPLOG/$ARGV3/current.dat ]; then
-	cp $LBPDATA/$ARGV3/dummies/current.dat $LBPLOG/$ARGV3/ > /dev/null 2>&1
+# JSON dummy files for fresh installations
+if [ ! -e $LBPLOG/$ARGV3/current.json ]; then
+	cp $LBPDATA/$ARGV3/dummies/current.json $LBPLOG/$ARGV3/ > /dev/null 2>&1
 fi
-if [ ! -e $LBPLOG/REPLACELBPPLUGINDIR/dailyforecast.dat ]; then
-	cp $LBPDATA/$ARGV3/dummies/dailyforecast.dat $LBPLOG/$ARGV3/ > /dev/null 2>&1
+if [ ! -e $LBPLOG/REPLACELBPPLUGINDIR/dailyforecast.json ]; then
+	cp $LBPDATA/$ARGV3/dummies/dailyforecast.json $LBPLOG/$ARGV3/ > /dev/null 2>&1
 fi
-if [ ! -e $LBPLOG/REPLACELBPPLUGINDIR/hourlyforecast.dat ]; then
-	cp $LBPDATA/$ARGV3/dummies/hourlyforecast.dat $LBPLOG/$ARGV3/ > /dev/null 2>&1
-fi
-if [ ! -e $LBPLOG/REPLACELBPPLUGINDIR/hourlyhistory.dat ]; then
-	cp $LBPDATA/$ARGV3/dummies/hourlyhistory.dat $LBPLOG/$ARGV3/ > /dev/null 2>&1
+if [ ! -e $LBPLOG/REPLACELBPPLUGINDIR/hourlyforecast.json ]; then
+	cp $LBPDATA/$ARGV3/dummies/hourlyforecast.json $LBPLOG/$ARGV3/ > /dev/null 2>&1
 fi
 if [ ! -e $LBPLOG/REPLACELBPPLUGINDIR/webpage.html ]; then
 	cp $LBPDATA/$ARGV3/dummies/webpage.html $LBPLOG/$ARGV3/ > /dev/null 2>&1
@@ -80,7 +78,6 @@ ln -s $LBPLOG/REPLACELBPPLUGINDIR/index.txt $LBHOMEDIR/webfrontend/html/plugins/
 ln -s $LBPLOG/REPLACELBPPLUGINDIR/current.json $LBHOMEDIR/webfrontend/html/plugins/REPLACELBPPLUGINDIR/current.json > /dev/null 2>&1
 ln -s $LBPLOG/REPLACELBPPLUGINDIR/dailyforecast.json $LBHOMEDIR/webfrontend/html/plugins/REPLACELBPPLUGINDIR/dailyforecast.json > /dev/null 2>&1
 ln -s $LBPLOG/REPLACELBPPLUGINDIR/hourlyforecast.json $LBHOMEDIR/webfrontend/html/plugins/REPLACELBPPLUGINDIR/hourlyforecast.json > /dev/null 2>&1
-ln -s $LBPLOG/REPLACELBPPLUGINDIR/airquality_pollen.json $LBHOMEDIR/webfrontend/html/plugins/REPLACELBPPLUGINDIR/airquality_pollen.json > /dev/null 2>&1
 
 ### TEMPORARY workaround since old cronjobs are not deleted by LoxBerry V3
 # if [ -e $ARGV5/system/cron/cron.01min/$ARGV3 ]; then
