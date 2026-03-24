@@ -163,13 +163,13 @@
       "iconDay": "tstorms_day",
       "iconNight": "tstorms_night"
     },
-    "cloudy_fog": {
-      "iconDay": "fog_day",
-      "iconNight": "fog_night"
+    "overcast_icepellets": {
+      "iconDay": "sleet_day",
+      "iconNight": "sleet_night"
     },
-    "overcast_fog": {
-      "iconDay": "fog_day",
-      "iconNight": "fog_night"
+    "overcast_graupel": {
+      "iconDay": "sleet_day",
+      "iconNight": "sleet_night"
     },
     "overcast_hail_1": {
       "iconDay": "sleet_day",
@@ -179,13 +179,49 @@
       "iconDay": "sleet_day",
       "iconNight": "sleet_night"
     },
-    "overcast_hail_3": {
-      "iconDay": "sleet_day",
-      "iconNight": "sleet_night"
+    "mist": {
+      "iconDay": "fog_day",
+      "iconNight": "fog_night"
+    },
+    "smoke": {
+      "iconDay": "fog_day",
+      "iconNight": "fog_night"
+    },
+    "haze": {
+      "iconDay": "fog_day",
+      "iconNight": "fog_night"
+    },
+    "dust_whirls": {
+      "iconDay": "fog_day",
+      "iconNight": "fog_night"
+    },
+    "fog": {
+      "iconDay": "fog_day",
+      "iconNight": "fog_night"
+    },
+    "sand": {
+      "iconDay": "fog_day",
+      "iconNight": "fog_night"
+    },
+    "dust": {
+      "iconDay": "fog_day",
+      "iconNight": "fog_night"
+    },
+    "volcanic_ash": {
+      "iconDay": "fog_day",
+      "iconNight": "fog_night"
+    },
+    "squalls": {
+      "iconDay": "tstorms_day",
+      "iconNight": "tstorms_night"
+    },
+    "tornado": {
+      "iconDay": "tstorms_day",
+      "iconNight": "tstorms_night"
     },
     "no_data": {
-      "iconDay": "no_data",
-      "iconNight": "no_data"
+      "iconDay": "no_data_day",
+      "iconNight": "no_data_night"
     }
   }
 }

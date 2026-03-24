@@ -308,7 +308,7 @@ sub getTimeFormatted {
     my $dt = eval { DateTime::Format::ISO8601->parse_datetime($iso_time) };
     return undef unless $dt;
 
-    # all times are local times, so global variable must be set in grabber
+    # all times are local times
     if ($timezone eq '') {
         $timezone = 'UTC';
     }
@@ -317,6 +317,31 @@ sub getTimeFormatted {
     return $dt->strftime('%H:%M');
 }
 
+##########################################################################
+# Get a formatted time value (numbers only) from decoded JSON, used for rounding
+# Parameters:
+#   $fmt      - sprintf format, e.g. '%H:%M'
+#   $root     - root data structure
+#   @path     - path elements passed to getValue
+# Returns:
+#   time information (e.g. 23:10) or undef if value missing/invalid
+
+sub getTimeFromEpochFormatted {
+    my ($fmt, $timezone, $root, @path) = @_;
+
+    # Get value and verify if it is not empty
+    my $epoch_time = getValue($root, @path);
+    return undef unless defined $epoch_time && $epoch_time ne '';
+
+    # all times are local times
+    if (!defined $timezone || $timezone eq '') {
+        $timezone = 'UTC';
+    }
+    my $dt = DateTime->from_epoch( epoch => $epoch_time, time_zone => $timezone );
+    return undef unless $dt;
+
+    return $dt->strftime('%H:%M');
+}
 ##########################################################################
 # Get a percentage value by calling getFormatted and multiplying the result by 100.
 # Parameters:

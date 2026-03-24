@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
-# grabber for fetching data from wetteronline.de
-# fetches weather data (current and forecast) from wetteronline.de
+# grabber for fetching data from openweathermap.org
+# fetches weather data (current and forecast) from openweathermap.org
 
 # Copyright 2016-2023 Michael Schlenstedt, michael@loxberry.de
 #
@@ -28,16 +28,12 @@ use LoxBerry::System;
 use LoxBerry::Log;
 use LWP::UserAgent;
 use JSON::PP;
-#use JSON qw( decode_json );
 use File::Copy;
 use File::Basename qw(basename);
 use Getopt::Long;
 use Time::Piece;
-#use Math::Function::Interpolator;
 use HTTP::Request;
 use DateTime;
-#use DateTime::TimeZone;
-#use DateTime::Format::ISO8601;
 use Astro::MoonPhase;
 use utf8;
 use Encode qw(encode_utf8);
@@ -55,24 +51,24 @@ my $version = LoxBerry::System::pluginversion();
 
 # params from config
 my $pcfg             = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
-my $city             = $pcfg->param("WETTERONLINE.STATIONID");
+my $url          = $pcfg->param("OPENWEATHER.URL");
+my $apikey       = $pcfg->param("OPENWEATHER.APIKEY");
+my $lang         = $pcfg->param("OPENWEATHER.LANG");
+my $stationid    = "lat=" . $pcfg->param("OPENWEATHER.COORDLAT") . "&lon=" . $pcfg->param("OPENWEATHER.COORDLONG");
+my $city         = $pcfg->param("OPENWEATHER.STATION");
+my $country      = $pcfg->param("OPENWEATHER.COUNTRY");
 
 # names for JSON 
 my $grabberFile     = basename(__FILE__);
-my $grabberLabel    = "Wetter Online";
-my $grabberKey      = "wetteronline";          # name in JSONs
+my $grabberLabel    = "OpenWeather";
+my $grabberKey      = "openweather";          # name in JSONs
 
 my $weatherKey;
 
 # params for API calls
-my $apiKey           = "av=2&mv=13&c=d2ViOmFxcnhwWDR3ZWJDSlRuWeb=";
-my $apiKeyCurrent    = "c=d293ZWI6QzhMNFRINmVUbkRoVWFqYg==";
+my $oneCallURI       = "$url/3.0/onecall?appid=$apikey&$stationid&lang=$lang&units=metric";
+my $fc3hrURI.        = "$url/2.5/forecast?appid=$apikey&$stationid&lang=$lang&units=metric&cnt=40";
 my $userAgentLocal   = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
-my $urlGeoRaw        = "https://www.wetteronline.de/wetter/";
-my $uriUvRaw         = "?prefpar=sun";
-my $urlCurrentRaw    = "https://api-web.wo-cloud.com/weather/nowcast/v10?";
-my $urlDailyRaw      = "https://api-app.wetteronline.de/app/weather/forecast?";
-my $urlHourlyRaw     = "https://api-app.wetteronline.de/app/weather/hourcast?";
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 
@@ -142,80 +138,13 @@ if ($hourly) {
     requireOrLogdie('Math::Function::Interpolator::Linear');
 }
 
-##########################################################################
-# Searching for GID for selected city
-sub findGid {
-    my ($city, $body) = @_;
-    
-    if ($body =~ /gid : "([^"]+)"/s) {
-        my $gid = $1;
-        LOGDEB "The GID of city $city is $gid.";
-        return $gid;
-    } else {
-        LOGCRIT "Failed to fetch GID for $city";
-        die "Quit fetching GID.";
-    }
-}
-
-#########################################################################
-# Getting GEO data first to get lat and long for the API call for weather data
-
-my $geodataMatch = apiCall(
-    url => "$urlGeoRaw$city",
-    # maskkeys => $maskKeys,    # no masking needed here as there are no secret API keys
-    # keyparam => 'appid',
-    # apikey => $apiKey, 
-    info => "for Location $city (GEO data only)",
-    match => qr/WO\.geo = (\{(?:[^{}"]|"(?:[^"\\]|\\.)*"|(?1))*\});/s,
-);
-
-$geodataMatch = decode_entities($geodataMatch);
-$geodataMatch = encode_utf8($geodataMatch);
-my $resGeodata = $json->decode($geodataMatch);
-my $lat = $resGeodata->{lat};
-my $long = $resGeodata->{lon};
-my $altitude = $resGeodata->{alt};
-
-if ($geodataMatch) {
-    LOGDEB("Extracted GEO data:\n$geodataMatch");
-    LOGDEB("-" x 80);
-}
-# my $gid = findGid($city, $geodataMatch); 
-my $gid = $resGeodata->{gid}; 
-if ($gid) {
-    LOGDEB "The GID of city $city is $gid.";
-} else {
-    LOGCRIT "Failed to fetch GID for $city";
-    die "Quit fetching GID.";
-}
-
 # Get weather data from wetteronline.de (API request) for current conditions
-my $resCurrent = apiCall(
-    url => "$urlCurrentRaw$apiKeyCurrent&grid_longitude=$long&grid_latitude=$lat&location_id=$gid&astro_longitude=$long" .
-        "&astro_latitude=$lat&latitude=$lat&longitude=$long&timezone=$timezone&language=de-DE&timeformat=HH:mm&windunit=kmh" .
-        "&system_of_measurement=metric&altitude=$altitude",
-    # maskkeys => $maskKeys,    # no masking needed here as there are no secret API keys
-    # keyparam => 'appid',
-    # apikey => $apiKey,
+my $results = apiCall(
+    url => $oneCallURI,
+    maskkeys => $maskKeys,
+    keyparam => 'appid',
+    # apikey => $apiKey,      # Key is not included in output JSON, so no masking needed here
     info => "for Location $city (Current Weather Data)",
-);
-
-# Get weather data from wetteronline.de (API request) for daily conditions
-my $resDaily = apiCall(
-    url => "$urlDailyRaw$apiKey&location_id=$gid&timezone=$timezone",
-    # maskkeys => $maskKeys,    # no masking needed here as there are no secret API keys
-    # keyparam => 'appid',
-    # apikey => $apiKey,
-    info => "for Location $city (Daily Weather Data)",
-);
-
-# Get weather data from wetteronline.de (API request) for hourly conditions
-my $resHourly = apiCall(
-    url => "$urlHourlyRaw$apiKey&location_id=$gid&timezone=$timezone",
-    # maskkeys => $maskKeys,    # no masking needed here as there are no secret API keys
-    # keyparam => 'appid',
-    # apikey => $apiKey,
-    info => "for Location $city (Hourly Weather Data)",
 );
 
 my $t;
@@ -228,319 +157,288 @@ my $wdirdes;
 my @filecontent;
 my $i;
 
-# Mapping: Wetteronline codes => [Loxone code, Weather4Lox code] # Description
-# Weather codes with meaning: https://www.wetteronline.de/symbole
+# Mapping: OpenWeatherMap weather codes => [Loxone Code, Weather4Lox code] # Description
+# Weather codes with meaning: https://openweathermap.org/weather-conditions
 # --> Using https://wiki.loxberry.de/plugins/weather4loxone/start#wetter-codes
-        
 
-# Position: 1 2 3 4 5 6
-# Beispiel: m d s n 1 _
+# Mapping table for conversion of OpenWeatherMap weather codes to Loxone weather Picto-Codes and Weather4Lox short names for weather symbols
+my %owmToLox = (
+    # OWM => [Picto-Code, Weather4Lox-Symbol] # Beschreibung (alte Beschreibung) -> neue Weather4Lox-Symbolbeschreibung
+    200 => [18, "overcast_thunderstorm_1"],   # thunderstorm with light rain -> Gewitter mit leichtem Regen
+    201 => [19, "overcast_thunderstorm_2"],   # thunderstorm with rain -> Kräftiges Gewitter mit Regen
+    202 => [19, "overcast_thunderstorm_3"],   # thunderstorm with heavy rain -> Kräftiges Gewitter mit Starkregen
+    210 => [18, "overcast_thunderstorm_1"],   # light thunderstorm -> Leichtes Gewitter
+    211 => [18, "overcast_thunderstorm_2"],   # thunderstorm -> Gewitter
+    212 => [19, "overcast_thunderstorm_3"],   # heavy thunderstorm -> Kräftiges Gewitter
+    221 => [19, "overcast_thunderstorm_3"],   # ragged thunderstorm -> Kräftiges Gewitter (unbeständig)
+    230 => [18, "overcast_thunderstorm_1"],   # thunderstorm with light drizzle -> Gewitter mit leichtem Nieseln
+    231 => [18, "overcast_thunderstorm_2"],   # thunderstorm with drizzle -> Gewitter mit Nieseln
+    232 => [19, "overcast_thunderstorm_3"],   # thunderstorm with heavy drizzle -> Kräftiges Gewitter mit Starknieseln
 
-# Position 1-2: Tageszeit + Bewölkung
+    300 => [13, "overcast_rain_1"],           # light intensity drizzle -> Leichter Nieselregen
+    301 => [13, "overcast_rain_2"],           # drizzle -> Nieselregen
+    302 => [13, "overcast_rain_3"],           # heavy intensity drizzle -> Kräftiger Nieselregen
+    310 => [10, "overcast_rain_1"],           # light intensity drizzle rain -> Leichter Regen
+    311 => [11, "overcast_rain_2"],           # drizzle rain -> Regen
+    312 => [12, "overcast_rain_3"],           # heavy intensity drizzle rain -> Kräftiger Regen
+    313 => [16, "cloudy_shower_1"],           # shower rain and drizzle -> Regenschauer mit Nieseln
+    314 => [17, "cloudy_shower_2"],           # heavy shower rain and drizzle -> Kräftige Regenschauer mit Nieseln
+    321 => [13, "cloudy_shower_1"],           # shower drizzle -> Nieselschauer
 
-# Code    Bedeutung
-# so      Sonnig (Tag)
-# mo      Klar (Nacht)
+    500 => [10, "overcast_rain_1"],           # light rain -> Leichter Regen
+    501 => [11, "overcast_rain_2"],           # moderate rain -> Regen
+    502 => [12, "overcast_rain_3"],           # heavy intensity rain -> Kräftiger Regen
+    503 => [12, "overcast_rain_3"],           # very heavy rain -> Sehr starker Regen
+    504 => [12, "overcast_rain_3"],           # extreme rain -> Extrem starker Regen
+    511 => [15, "overcast_freezingrain_2"],   # freezing rain -> Gefrierender Regen
+    520 => [16, "cloudy_shower_1"],           # light intensity shower rain -> Leichter Regenschauer
+    521 => [17, "cloudy_shower_2"],           # shower rain -> Kräftiger Regenschauer
+    522 => [17, "overcast_shower_3"],         # heavy intensity shower rain -> Sehr kräftiger Regenschauer
+    531 => [17, "overcast_shower_3"],         # ragged shower rain -> Unbeständiger kräftiger Regenschauer
 
-# wb      Leicht bewölkt (Tag)
-# mb      Leicht bewölkt (Nacht)
+    600 => [20, "overcast_snow_1"],           # light snow -> Leichter Schneefall
+    601 => [21, "overcast_snow_2"],           # snow -> Schneefall
+    602 => [22, "overcast_snow_3"],           # heavy snow -> Starker Schneefall
+    611 => [26, "overcast_sleet_2"],          # sleet -> Schneeregen
+    612 => [28, "cloudy_sleet_1"],            # light shower sleet -> Leichter Schneeregenschauer
+    613 => [29, "cloudy_sleet_2"],            # shower sleet -> Kräftiger Schneeregenschauer
+    615 => [25, "overcast_sleet_1"],          # light rain and snow -> Leichter Schneeregen
+    616 => [27, "overcast_sleet_2"],          # rain and snow -> Kräftiger Schneeregen
+    620 => [23, "cloudy_snow_1"],             # light shower snow -> Leichter Schneeschauer
+    621 => [23, "cloudy_snow_2"],             # shower snow -> Schneeschauer
+    622 => [24, "overcast_snow_3"],           # heavy shower snow -> Starker Schneeschauer
 
-# bw      Bewölkt (Tag)
-# mw      Bewölkt (Nacht)
+    701 => [6,  "mist"],                      # mist -> Nebel (leicht)
+    711 => [6,  "smoke"],                     # smoke -> Rauch
+    721 => [7,  "haze"],                      # haze -> Dunst / Hochnebel
+    731 => [5,  "dust_whirls"],               # sand/dust whirls -> Staubwirbel
+    741 => [6,  "fog"],                       # fog -> Nebel
+    751 => [5,  "sand"],                      # sand -> Sandsturm
+    761 => [5,  "dust"],                      # dust -> Staub
+    762 => [5,  "volcanic_ash"],              # volcanic ash -> Vulkanasche
+    771 => [12, "squalls"],                   # squalls -> Starke Windböen mit Regen
+    781 => [19, "tornado"],                   # tornado -> Tornados
 
-# bd      Bedeckt (Tag)
-# md      Bedeckt (Nacht)
-
-# ns      Nebel (Tag)
-# nm      Nebel (Nacht)
-# nb      Nebel
-
-# Position 3-6: Niederschlagsart, aufgefüllt mit Unterstrichen, wenn kein Niederschlag oder Code kürzer ist
-
-# Code    Bedeutung
-# ____    Kein Niederschlag
-
-# für alle Bewölkungsarten:
-#   wb, mb - leicht bewölkt mit Symbol für Tag und Nacht (Wolken sind keiner als Sonne/Mond)
-#   bw, mw - bewölkt mit Symbol für Tag und Nacht (Wolken sind größer als Sonne/Mond)
-#   bd, md - bedeckt, haben gleiches Symbol für Tag und Nacht (nur Woklen, keine Sonne/Mond)
-
-# gibt es die Kombination mit Niederschlag in unterschiedlichen Intensitäten/Varianten
-#  s1-s3       Schauer (Intensität 1-3 - Leicht, Mittel, Stark), Intensität 1-3 wird durch Anzahl der Tropfen im Symbol dargestellt
-#  r1-r3       Regen (Intensität 1-3 - Leicht, Mittel, Stark), Symbole wie s1-s3
-#  g1-g3       Gewitter (Intensität 1-3 - Leicht, Mittel, Stark), Symbol mit einem Blitz, Intensität 1-2 wird durch Anzahl der Tropfen im Symbol dargestellt, bei 3 zusätzlich Warndreieck
-#  sn1-sn3     Schneefall (Intensität 1-3 - Leicht, Mittel, Stark), Intensität 1-3 wird durch Anzahl der Schneeflocken im Symbol dargestellt
-#  sr1-sr3     Schneeregen (Intensität 1-3 - Leicht, Mittel, Stark), bei allen Intensitäten immer ein Tropfen und eine Schneeflocke im Symbol
-#  snr1-snr3   Schneeregen, siehe sr1-sr3
-#  srs1-srs3   Schneeregenschauer, Symbole wie sr
-
-#  gr1-gr2     Gefrierender Regen (Intensität 1-2 - Leicht, Stark)
-#  gs1-gs2     Graupelschauer (Intensität 1-2 - Leicht, Stark)
-#  hs1-hs2     Hagelschauer (Intensität 1-2 - Leicht, Stark)
-
-#  ek    Eiskörner
-#  sg    Schneegestöber (Schneegewitter), Symbol mit Schneeflocke und Blitz
-
-# mapping is created from https://www.wetteronline.de/symbole
-# additional symbols that are not listed in the overview but are used in practice were added after verifying symbol, e.g. "bw___", "mw___"
-my %wetteronlineToLox = (
-
-    # in Farbe: https://st.wetteronline.de/dr/1.1.617/city/prozess/graphiken/symbole/standard/farbe/png/50x35/so____.png
-    # in SW:    https://st.wetteronline.de/dr/1.1.617/city/prozess/graphiken/symbole/wom/standard/sw/gif/so____.gif
-    # aktuelles Wetter in Farbe: https://st.wetteronline.de/dr/1.1.617/aktuell/prozess/graphiken/symbole/standard/farbe/gif/so____.gif
-
-    # clouds in steps from clear to overcast, each with code for day and night (kept in mapping for clarity)
-    "so____" => ["1", "clear", "Sonnig"],                                        # sonnig bzw. klar / wolkenlos (Tag)
-    "mo____" => ["1", "clear", "Klar"],                                          # sonnig bzw. klar / wolkenlos (Nacht)
-    "wb____" => ["2", "partly_cloudy", "Teilweise bewölkt"],                     # leicht bewölkt (Tag)
-  # "mb____" => ["2", "partly_cloudy", "Teilweise bewölkt"],                     # leicht bewölkt (Nacht)
-    "bw____" => ["3", "cloudy", "Bewölkt"],                                      # Bewölkt (Tag)
-  # "mw____" => ["3", "cloudy", "Bewölkt"],                                      # Bewölkt (Nacht)
-    "bd____" => ["5", "overcast", "Bedeckt"],                                    # bedeckt (Tag)
-  # "md____" => ["5", "overcast", "Bedeckt"],                                    # Bedeckt (Nacht)
-
-    # fog/haze
-    "ns____" => ["6", "cloudy_fog", "Teils neblig"],                             # teils neblig (Tag)
-  # "nm____" => ["6", "cloudy_fog", "Teils neblig"],                             # teils neblig (Nacht)
-    "nb____" => ["6", "overcast_fog", "Nebelig"],                                # neblig / Nebel
-
-	# Schauer
-
-    # Schauer (mit Tag und Nacht) bei leicht bewölkt
-    "wbs1__" => ["16", "cloudy_shower_1", "Leicht bewölkt mit vereinzelten Regenschauern"],  # leicht bewölkt und vereinzelt Schauer
-    "wbs2__" => ["16", "cloudy_shower_1", "Leicht bewölkt mit Regenschauern"],               # leicht bewölkt und Schauer
-    "wbs3__" => ["12", "cloudy_shower_2", "Leicht bewölkt mit starken Regenschauern"],       # leicht bewölkt und Starke Regenschauer 
-
-    # Schauer (mit Tag und Nacht) bei bewölkt
-    "bws1__" => ["16", "cloudy_shower_1", "Bewölkt mit vereinzelten Regenschauern"],         # bewölkt und vereinzelt Schauer
-    "bws2__" => ["16", "cloudy_shower_2", "Bewölkt mit Regenschauern"],                      # bewölkt und Schauer
-    "bws3__" => ["12", "cloudy_shower_3", "Bewölkt mit starken Regenschauern"],              # bewölkt und Starke Regenschauer
-
-    # Schauer (mit Tag und Nacht) bei bedeckt
-    "bds1__" => ["10", "overcast_shower_1", "Bedeckt mit vereinzelten Regenschauern"],       # Leichter Regenschauer
-    "bds2__" => ["11", "overcast_shower_2", "Bedeckt mit Regenschauern"],                    # Regenschauer
-    "bds3__" => ["12", "overcast_shower_3", "Bedeckt mit starken Regenschauern"],            # Starker Regenschauer
-
-	# Regen
-
-    # Regen (Tag und Nacht) bei leicht bewölkt
-    "wbr1__" => ["16", "cloudy_rain_1", "Leicht bewölkt mit leichtem Regen"],                # leicht bewölkt und leichter Regen
-    "wbr2__" => ["11", "cloudy_rain_1", "Leicht bewölkt mit Regen"],                         # leicht bewölkt und Regen
-    "wbr3__" => ["12", "cloudy_rain_2", "Leicht bewölkt mit starker Regen"],                 # leicht bewölkt und Starker Regen
-
-    # Regen (Tag und Nacht) bei bewölkt
-    "bwr1__" => ["16", "cloudy_rain_1", "Bewölkt mit leichtem Regen"],                       # bewölkt und leichter Regen
-    "bwr2__" => ["11", "cloudy_rain_2", "Bewölkt mit Regen"],                                # bewölkt und Regen
-    "bwr3__" => ["12", "cloudy_rain_2", "Bewölkt mit starker Regen"],                        # bewölkt und Starker Regen
-
-    # Regen (Tag und Nacht) bei bedeckt
-    "bdr1__" => ["16", "overcast_rain_1", "Bedeckt mit Regenschauern"],                      # bedeckt, etwas Regen oder vereinzelt Schauer
-    "bdr2__" => ["11", "overcast_rain_2", "Bedeckt mit Regen"],                              # bedeckt, Regen oder Schauer
-    "bdr3__" => ["12", "overcast_rain_3", "Bedeckt mit ergiebigem Regen"],                   # bedeckt und ergiebiger Regen
-
-	# Schneeregenschauer
-
-    # Schneeregenschauer (Tag und Nacht) bei leicht bewölkt
-    "wbsrs1" => ["28", "cloudy_sleet_1", "Leicht bewölkt mit vereinzelten Schneeregenschauern"],                  # leicht bewölkt und vereinzelt Schneeregenschauer
-    "wbsrs2" => ["28", "cloudy_sleet_1", "Leicht bewölkt mit Schneeregenschauern"],                              # leicht bewölkt und Schneeregenschauer
-    "wbsrs3" => ["29", "cloudy_sleet_2", "Leicht bewölkt mit starken Schneeregenschauern"],                       # leicht bewölkt und Schneeregenschauer
-
-    # Schneeregenschauer (Tag und Nacht) bei bewölkt
-    "bwsrs1" => ["28", "cloudy_sleet_1", "Bewölkt mit vereinzelten Schneeregenschauern"],                  # bewölkt und vereinzelt Schneeregenschauer
-    "bwsrs2" => ["28", "cloudy_sleet_2", "Bewölkt mit Schneeregenschauern"],                              # bewölkt und Schneeregenschauer
-    "bwsrs3" => ["29", "cloudy_sleet_2", "Bewölkt mit starken Schneeregenschauern"],                       # bewölkt und Schneeregenschauer
-
-    # Schneeregenschauer (Tag und Nacht) bei bedeckt
-    "bdsrs1" => ["25", "overcast_sleet_1", "Bedeckt mit Leichten Schneeregenschauern"],                    # bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer
-    "bdsrs2" => ["26", "overcast_sleet_2", "Bedeckt mit Schneeregenschauern"],                            # bedeckt, Schneeregen oder Schneeregenschauer
-    "bdsrs3" => ["27", "overcast_sleet_3", "Bedeckt mit ergiebigen Schneeregenschauern"],                  # bedeckt und ergiebiger Schneeregen
-
-    # Schneeregen
-
-    # leicht bewölkt und Schneeregen (Tag und Nacht)
-    "wbsr1_" => ["25", "cloudy_sleet_1", "Leicht bewölkt mit leichtem Schneeregen"],                            # leicht bewölkt und vereinzelt Schneeregen (Tag)
-    "wbsr2_" => ["26", "cloudy_sleet_2", "Leicht bewölkt mit Schneeregen"],                                     # leicht bewölkt und Schneeregen (Tag)
-    "wbsr3_" => ["27", "cloudy_sleet_2", "Leicht bewölkt mit starkem Schneeregen"],                             # leicht bewölkt und ergiebiger Schneeregen (Tag)
-
-    # bewölkt und Schneeregen (Tag und Nacht)
-    "bwsr1_" => ["25", "cloudy_sleet_1", "Bewölkt mit leichtem Schneeregen"],                            # bewölkt und vereinzelt Schneeregen (Tag)
-    "bwsr2_" => ["26", "cloudy_sleet_2", "Bewölkt mit Schneeregen"],                                     # bewölkt und Schneeregen (Tag)
-    "bwsr3_" => ["27", "cloudy_sleet_2", "Bewölkt mit starkem Schneeregen"],                             # bewölkt und ergiebiger Schneeregen (Tag)
-
-    # bedeckt und Schneeregen (Tag und Nacht)
-    "bdsr1_" => ["25", "overcast_sleet_1", "Bedeckt mit leichtem Schneeregen"],                          # bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer
-    "bdsr2_" => ["26", "overcast_sleet_2", "Bedeckt mit Schneeregen"],                                   # bedeckt, Schneeregen oder Schneeregenschauer
-    "bdsr3_" => ["27", "overcast_sleet_3", "Bedeckt mit ergiebigem Schneeregen"],                        # bedeckt und ergiebiger Schneeregen
-
-    # Schneeschauer
-
-    # leicht bewölkt und Schneeschauer
-    "wbsns1" => ["23", "cloudy_snow_1", "Leicht bewölkt mit leichten Schneeschauern"],                        # leicht bewölkt und vereinzelt Schneeschauer (Tag)
-    "wbsns2" => ["24", "cloudy_snow_1", "Leicht bewölkt mit Schneeschauern"],                                 # leicht bewölkt und Schneeschauer (Tag)
-    "wbsns3" => ["24", "cloudy_snow_2", "Leicht bewölkt mit starken Schneeschauern"],                         # leicht bewölkt und starke Schneeschauer (Tag)
-
-    # bewölkt und Schneeschauer
-    "bwsns1" => ["23", "cloudy_snow_1", "Bewölkt mit leichten Schneeschauern"],                        # bewölkt und vereinzelt Schneeschauer (Tag)
-    "bwsns2" => ["24", "cloudy_snow_2", "Bewölkt mit Schneeschauern"],                                 # bewölkt und Schneeschauer (Tag)
-    "bwsns3" => ["24", "cloudy_snow_2", "Bewölkt mit starken Schneeschauern"],                         # bewölkt und starke Schneeschauer (Tag)
-
-    # bedeckt und Schneeschauer
-    "bdsns1" => ["23", "overcast_snow_1", "Bedeckt mit leichten Schneeschauern"],                        # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer
-    "bdsns2" => ["24", "overcast_snow_2", "Bedeckt mit Schneeschauern"],                                 # bedeckt, Schneefall oder Schneeschauer
-    "bdsns3" => ["24", "overcast_snow_3", "Bedeckt mit starken Schneeschauern"],                         # bedeckt und ergiebiger Schneefall
-
-    # Schneefall
-
-    # leicht bewölkt und Schneefall
-    "wbsn1_" => ["20", "cloudy_snow_1", "Leicht bewölkt mit leichtem Schneefall"],                           # leicht bewölkt und vereinzelt Schneefall (Tag)
-    "wbsn2_" => ["21", "cloudy_snow_2", "Leicht bewölkt mit Schneefall"],                                    # leicht bewölkt und Schneefall (Tag)
-    "wbsn3_" => ["22", "cloudy_snow_2", "Leicht bewölkt mit starkem Schneefall"],                            # leicht bewölkt und starker Schneefall (Tag)
-
-    # bewölkt und Schneefall
-    "bwsn1_" => ["20", "cloudy_snow_1", "Bewölkt mit leichtem Schneefall"],                           # bewölkt und vereinzelt Schneefall (Tag)
-    "bwsn2_" => ["21", "cloudy_snow_2", "Bewölkt mit Schneefall"],                                    # bewölkt und Schneefall (Tag)
-    "bwsn3_" => ["22", "cloudy_snow_2", "Bewölkt mit starkem Schneefall"],                            # bewölkt und starker Schneefall (Tag)
-
-    # bedeckt und Schneefall
-    "bdsn1_" => ["20", "overcast_snow_1", "Bedeckt mit leichtem Schneefall"],                           # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer (Tag)
-    "bdsn2_" => ["21", "overcast_snow_2", "Bedeckt mit Schneefall"],                                    # bedeckt, Schneefall oder Schneeschauer (Tag)
-    "bdsn3_" => ["22", "overcast_snow_3", "Bedeckt mit ergiebigem Schneefall"],                         # bedeckt und ergiebiger Schneefall (Tag)
-
-    # Schnegewitter
-
-    # leicht bewölkt und Schneegewitter
-    "wbsg__" => ["24", "cloudy_snowthunderstorm_1", "Leicht bewölkt mit vereinzelten Wintergewittern"],                     # leicht bewölkt und Schneegewitter (Tag)
-
-    # bewölkt und Schneegewitter
-    "bwsg__" => ["24", "cloudy_snowthunderstorm_2", "Bewölkt mit Wintergewittern"],                                # bewölkt und Schneegewitter (Tag)
-
-    # bedeckt und Schneegewitter
-    "bdsg__" => ["24", "cloudy_snowthunderstorm_2", "Bedeckt mit Wintergewittern"],                                # bedeckt und Schneegewitter (Tag)
-
-    # Gewitter
-
-    # leicht bewölkt mit Gewitter (Tag und Nacht)
-    "wbg1__" => ["18", "cloudy_thunderstorm_1", "Leicht bewölkt mit vereinzelten Gewittern"],                        # leicht bewölkt, vereinzelt Schauer und Gewitter (Tag)
-    "wbg2__" => ["18", "cloudy_thunderstorm_2", "Leicht bewölkt mit Gewittern"],                                   # leicht bewölkt, Schauer und Gewitter (Tag)
-    "wbg3__" => ["19", "cloudy_thunderstorm_3", "Leicht bewölkt mit kräftigen Gewittern"],                         # leicht bewölkt, Schauer und Gewitter (Tag)
-
-    # Bewölkt mit Gewitter (Tag und Nacht)
-    "bwg1__" => ["18", "cloudy_thunderstorm_1", "Bewölkt mit vereinzelten Gewittern"],                        # bewölkt, vereinzelt Schauer und Gewitter (Tag)
-    "bwg2__" => ["18", "cloudy_thunderstorm_2", "Bewölkt mit Gewittern"],                                   # Gewitter (Tag)
-    "bwg3__" => ["19", "cloudy_thunderstorm_3", "Bewölkt mit kräftigen Gewittern"],                         # starke Gewitter (Tag)
-
-    # Bedeckt mit Gewitter (Tag und Nacht)
-    "bdg1__" => ["18", "overcast_thunderstorm_1", "Bedeckt mit vereinzelten Gewittern"],                                   # bedeckt, vereinzelt Schauer und Gewitter
-    "bdg2__" => ["18", "overcast_thunderstorm_2", "Bedeckt mit Gewittern"],                                   # bedeckt, Schauer und Gewitter (Tag)
-
-    # gefrierender Regen
-
-    # leicht Bewölkt mit gefrierendem Regen (Tag und Nacht)
-    "wbgr1_" => ["14", "cloudy_freezingrain_1", "Leicht bewölkt mit gefrierendem Sprühregen"],            # bewölkt und gefrierender Sprühregen (Tag)
-    "wbgr2_" => ["14", "cloudy_freezingrain_2", "Leicht bewölkt mit gefrierendem Regen"],                 # bewölkt und gefrierender Regen (Tag)
-
-    # Bewölkt mit gefrierendem Regen (Tag und Nacht)
-    "bwgr1_" => ["14", "cloudy_freezingrain_1", "Bewölkt mit gefrierendem Sprühregen"],                   # bewölkt und gefrierender Sprühregen (Tag)
-    "bwgr2_" => ["14", "cloudy_freezingrain_2", "Bewölkt mit gefrierendem Regen"],                        # bewölkt und gefrierender Regen (Tag)
-
-    # Bedeckt mit gefrierendem Regen (Tag und Nacht)
-    "bdgr1_" => ["14", "overcast_freezingrain_1", "Bedeckt mit gefrierendem Sprühregen"],                 # bedeckt und gefrierender Sprühregen (Tag)
-    "bdgr2_" => ["14", "overcast_freezingrain_2", "Bedeckt mit gefrierendem Regen"],                      # bedeckt und gefrierender Regen (Tag)
-
-    # Graupel, Hagel und Eiskörner (Tag und Nacht)
-    "bwgs1_" => ["28", "overcast_graupel", "Leichte Graupelschauer"],                                     # leichte Graupelschauer
-    "bwgs2_" => ["26", "overcast_graupel", "Graupelschauer"],                                             # Graupelschauer
-
-    "bwhs1_" => ["28", "overcast_hail_1", "Leichte Hagelschauer"],                                        # leichte Hagelschauer
-    "bwhs2_" => ["26", "overcast_hail_2", "Hagelschauer"],                                                # Hagelschauer
-
-    "bwek__" => ["26", "overcast_icepellets", "Eiskörner"],                                               # Eiskörner
+    800 => [1,  "clear"],                     # clear sky -> Klar, wolkenlos
+    801 => [2,  "fair"],                      # few clouds: 11-25% -> Heiter
+    802 => [3,  "partly_cloudy"],             # scattered clouds: 25-50% -> Wolkig
+    803 => [4,  "cloudy"],                    # broken clouds: 51-84% -> Stark bewölkt
+    804 => [5,  "overcast"],                  # overcast clouds: 85-100% -> Bedeckt
 );
 
-# Convert night symbols with clouds to day symbols to reduce the lookup table
-my %nightToDayPrefix = (
-    'mb' => 'wb',  # lightly cloudy night -> lightly cloudy day
-    'mw' => 'bw',  # cloudy night -> cloudy day
-    'md' => 'bd',  # overcast night -> overcast day
-    'nm' => 'ns',  # partly foggy night -> partly foggy day
+# Anmerkungen zur Mapping-Tabelle:
+# - Drizzle (3xx): Weather4Lox unterscheidet nicht zwischen Nieselregen und normalem Regen, daher wurden alle Drizzle-Codes in die Regenkategorien (10-17) eingestuft, je nach Intensität.
+# - Besonderheit 27: OWM hat keinen expliziten Code für "starken Schneeregen" (nur Schauer oder normal).
+# - Nebel vs. Hochnebel (6 & 7): Mist und Fog sind klassischer Nebel (6). Haze (Dunst) mappt am besten auf Hochnebel (7), da es eine diffuse Trübung beschreibt, die oft nicht direkt am Boden als "Nässe" wahrgenommen wird.
+# - Staub, Sand & Asche (711–762): Da diese in der Liste von Loxone nicht vorkommen, ist ID 5 (bedeckt) die beste Wahl, da die Lichtdurchlässigkeit massiv reduziert ist, ähnlich einer geschlossenen Wolkendecke.
+# - Extreme (771 & 781): Squalls treten fast immer mit massivem Regen auf (12), ein Tornado ist das extremste Wettereignis und passt daher am ehesten in die Kategorie des kräftigen Gewitters (19), da er meist aus solchen Zellen entsteht.
+
+
+sub owmToLox {
+    my ($owmId) = @_;
+    my $data = $owmToLox{$owmId} // [99, "No data"];  # Default fallback for unknown codes
+    
+    if (!exists $owmToLox{$owmId}) {
+        LOGWARN "Unknown ID from OpenWeatherMap: $owmId. Please check! Using fallback 'No data'.";
+    }
+    return @$data; # Returns (Loxone-Picto code, Weather4Lox symbol)
+}
+
+# Mapping of Weather4Lox codes to sky coverage (in percentages)
+
+# TODO: table is not used yet
+my %skyConditionByW4lCode = (
+    # Klarer Himmel oder wolkenlos
+    'clear'                      => [   0 ],   # klar/sonnig
+
+    # Leicht bewölkt/heiter
+    'fair'                       => [  15 ],   # heiter, wenige Wolken
+
+    # Teilweise bewölkt
+    'partly_cloudy'              => [  40 ],   # wechselnd bewölkt, ca. 25-50%
+
+    # Mäßig bis stark bewölkt
+    'cloudy'                     => [  65 ],   # meist bewölkt, 50-80% 
+
+    # Bedeckt
+    'overcast'                   => [  95 ],   # bedeckt, >85%
+
+    # Verschiedene Schauer/Starkregencodes – meist stark bewölkt bis bedeckt
+    'cloudy_shower_1'            => [  75 ],   # Regenschauer, eher stark bewölkt
+    'cloudy_shower_2'            => [  80 ],   # kräftiger Regenschauer, stark bewölkt
+    'overcast_shower_1'          => [  95 ],   # Schauer bei bedecktem Himmel
+    'overcast_shower_2'          => [  98 ],   # starker Schauer bei bedecktem Himmel
+    'overcast_shower_3'          => [ 100 ],   # extremer Schauer, vollständig bedeckt
+
+    # Regen
+    'cloudy_rain_1'              => [  70 ],   # leichter Regen, stark bewölkt
+    'cloudy_rain_2'              => [  80 ],   # kräftiger Regen, stark bewölkt
+    'overcast_rain_1'            => [  95 ],   # Regen bei bedeckt
+    'overcast_rain_2'            => [  98 ],   # starker Regen, bedeckt
+    'overcast_rain_3'            => [ 100 ],   # sehr starker/extremer Regen
+
+    # Schneeregen/Sleet
+    'cloudy_sleet_1'             => [  70 ],
+    'cloudy_sleet_2'             => [  80 ],
+    'overcast_sleet_1'           => [  95 ],
+    'overcast_sleet_2'           => [  98 ],
+    'overcast_sleet_3'           => [ 100 ],
+
+    # Schnee
+    'cloudy_snow_1'              => [  75 ],
+    'cloudy_snow_2'              => [  85 ],
+    'overcast_snow_1'            => [  95 ],
+    'overcast_snow_2'            => [  98 ],
+    'overcast_snow_3'            => [ 100 ],
+
+    # Gefrierender Regen (Freezing Rain)
+    'cloudy_freezingrain_1'      => [  70 ],
+    'cloudy_freezingrain_2'      => [  80 ],
+    'overcast_freezingrain_1'    => [  95 ],
+    'overcast_freezingrain_2'    => [  98 ],
+    'overcast_freezingrain_3'    => [ 100 ],
+
+    # Gewitter (Thunderstorm)
+    'cloudy_thunderstorm_1'      => [  80 ],
+    'cloudy_thunderstorm_2'      => [  90 ],
+    'overcast_thunderstorm_1'    => [  98 ],
+    'overcast_thunderstorm_2'    => [ 100 ],
+    'overcast_thunderstorm_3'    => [ 100 ],
+
+    # Schneegewitter (Snow-Thunderstorm)
+    'cloudy_snowthunderstorm_1'  => [  90 ],
+    'cloudy_snowthunderstorm_2'  => [  95 ],
+    'overcast_snowthunderstorm_1'=> [  98 ],
+    'overcast_snowthunderstorm_2'=> [ 100 ],
+    'overcast_snowthunderstorm_3'=> [ 100 ],
+
+    # Hagel/Graupel
+    'overcast_graupel'           => [ 100 ],
+    'overcast_hail_1'            => [  98 ],
+    'overcast_hail_2'            => [ 100 ],
+
+    # Eisregen (Ice) – keine eigene Wolkenbelegung, aber immer bedeckt
+    'overcast_ice'               => [ 100 ],
+
+    # Nebel, Dunst, andere Sichtminimierungen – meist sehr hohe Luftfeuchtigkeit, oft mit dichter Decke
+    'cloudy_fog'                 => [  80 ],  # Dunst/Nebel, meist viele Wolken aber manchmal auch Lücken
+    'overcast_fog'               => [  98 ],  # dichter/bodennaher Nebel, fast immer bedeckt
+
+    'mist'                       => [  80 ],  # leichter Nebel (Synonym)
+    'smoke'                      => [  80 ],  # Rauch, wie Dunst
+    'haze'                       => [  75 ],  # Dunst
+    'dust_whirls'                => [  70 ],  # Staub – meist trüb, aber nicht immer voll bedeckt
+    'fog'                        => [  98 ],  # starker Nebel
+    'sand'                       => [  98 ],  # Sand
+    'dust'                       => [  98 ],  # Staub
+    'volcanic_ash'               => [ 100 ],  # Vulkanasche
+
+    # Squalls, tornado – Extremwetter, immer voll bedeckt
+    'squalls'                    => [ 100 ],  
+    'tornado'                    => [ 100 ],  
+
+    # Wenn keine Daten verfügbar, sicherheitshalber voll bedeckt („error fallback“)
+    'no_data'                    => [ 100 ],
 );
 
-# TODO: second value is not used anymore
-my %skyConditionByPrefix = (
-  # Clear / (mostly) sunny
-  'so' => [  0, 'clear' ],          # sunny
-  'mo' => [  0, 'clear' ],          # clear
+# Mapping of OpenWeatherMap weather codes to sky coverage (in percentages)
 
-  # cloudy - wetteronline does not provide 5 codes for cloudiness as METAR
-  'wb' => [ 33, 'fair' ],           # mostly sunny to partly cloudy
-  'bw' => [ 66, 'cloudy' ],         # partly cloudy to cloudy
+my %skyCoverageByOwmCode = (
+    # Thunderstorm codes
+    200 => 90,   # thunderstorm with light rain
+    201 => 95,   # thunderstorm with rain
+    202 => 100,  # thunderstorm with heavy rain
+    210 => 80,   # light thunderstorm
+    211 => 90,   # thunderstorm
+    212 => 100,  # heavy thunderstorm
+    221 => 100,  # ragged thunderstorm
+    230 => 90,   # thunderstorm with light drizzle
+    231 => 90,   # thunderstorm with drizzle
+    232 => 100,  # thunderstorm with heavy drizzle
 
-  # overcast
-  'bd' => [100, 'overcast' ],       # overcast
+    # Drizzle codes
+    300 => 75,   # light intensity drizzle
+    301 => 80,   # drizzle
+    302 => 85,   # heavy intensity drizzle
+    310 => 80,   # light intensity drizzle rain
+    311 => 85,   # drizzle rain
+    312 => 90,   # heavy intensity drizzle rain
+    313 => 85,   # shower rain and drizzle
+    314 => 90,   # heavy shower rain and drizzle
+    321 => 80,   # shower drizzle
 
-  # Fog / haze (treat as overcast-like sky condition)
-  'ns' => [100, 'fog' ],            # partly foggy
-  'nb' => [100, 'fog' ],            # fog
+    # Rain codes
+    500 => 80,   # light rain
+    501 => 85,   # moderate rain
+    502 => 90,   # heavy intensity rain
+    503 => 95,   # very heavy rain
+    504 => 100,  # extreme rain
+    511 => 90,   # freezing rain
+    520 => 85,   # light intensity shower rain
+    521 => 90,   # shower rain
+    522 => 95,   # heavy intensity shower rain
+    531 => 100,  # ragged shower rain
+
+    # Snow codes
+    600 => 70,   # light snow
+    601 => 80,   # snow
+    602 => 90,   # heavy snow
+    611 => 85,   # sleet
+    612 => 80,   # light shower sleet
+    613 => 85,   # shower sleet
+    615 => 75,   # light rain and snow
+    616 => 85,   # rain and snow
+    620 => 80,   # light shower snow
+    621 => 85,   # shower snow
+    622 => 95,   # heavy shower snow
+
+    # Atmosphere codes
+    701 => 60,   # mist
+    711 => 60,   # smoke
+    721 => 40,   # haze
+    731 => 65,   # sand/dust whirls
+    741 => 90,   # fog
+    751 => 80,   # sand
+    761 => 80,   # dust
+    762 => 100,  # volcanic ash
+    771 => 95,   # squalls
+    781 => 100,  # tornado
+
+    # Clear, clouds
+    800 => 0,    # clear sky
+    801 => 20,   # few clouds: 11-25%
+    802 => 40,   # scattered clouds: 25-50%
+    803 => 65,   # broken clouds: 51-84%
+    804 => 100,  # overcast clouds: 85-100%
 );
 
-sub skyConditionFromWoCode {
-    my ($woCode) = @_;
+
+sub skyConditionFromOwmCode {
+    my ($owmCode) = @_;
 
     # Check for empty/undefined values
-    if (!defined $woCode || length($woCode) < 2) {
-        LOGWARN "Wetteronline symbol '$woCode' (to calculate sky condition) is undefined!";
-        return (undef);
-    }
-    # only the first two characters are relevant for sky condition
-    my $prefix = substr($woCode, 0, 2);
-    # Convert night symbols to day symbols for sky condition calculation
-    if (exists $nightToDayPrefix{$prefix}) {
-        $prefix = $nightToDayPrefix{$prefix};
-    }
-    my $entry  = $skyConditionByPrefix{$prefix};
+    if (defined $owmCode) {
+        my $entry  = $skyCoverageByOwmCode{$owmCode};
 
-    if ($entry && ref($entry) eq 'ARRAY' && @$entry >= 2) {
-        return ($entry->[0]);
+        if ($entry) {
+            return ($entry);
     }
 
-    LOGWARN "Unknown Wetteronline symbol prefix '$prefix' for sky condition, using 'Unknown' as fallback.";
+    LOGWARN "Unknown OpenWeatherMap code '$owmCode' for sky condition.";
     return (undef);
 }
 
-sub wetteronlineToLox {
-    my ($woCode) = @_;
-    
-    # Check for empty/undefined values
-    if (!defined $woCode || $woCode eq "") {
-        LOGWARN "Wetteronline symbol is empty or was not found in data set!";
-        return ("1", "clear", "No data");  # Default fallback
-    }
 
-    if (defined $woCode && length($woCode) >= 2) {
-        $woCode =~ s/^(.{2})snr(.)$/${1}sr${2}_/;  # Convert "snr" to "sr" for Schneeregen
-        my $prefix = substr($woCode, 0, 2);
-        if (exists $nightToDayPrefix{$prefix}) {
-            substr($woCode, 0, 2, $nightToDayPrefix{$prefix});
-        }
-    }
-    
-    # Lookup in the table
-    my $result = $wetteronlineToLox{$woCode};
-    
-    if ($result) {
-        return @$result;  # Returns (code, icon, description)
-    } else {
-        LOGWARN "Unknown weather symbol from Wetteronline: '$woCode', using 'clear' as fallback.";
-        return ("1", "clear", "No data");  # Default fallback
-    }
-}
-
-my %nightSymbol = map { $_ => 1 } qw(mo mb mw md nm);  # Define night symbols for quick lookup
-
+# Determine if it's currently nighttime based on current time and sunrise/sunset times, all in HH:MM format
 sub isNighttime {
-    my ($symbol) = @_;
+    my ($time, $timezone, $sunrise, $sunset) = @_;
+    my $isNighttime = 0;
 
-    return ($nightSymbol{ substr($symbol, 0, 2) });  # Return 1 if it's a night symbol
+    if ($time lt $sunrise || $time gt $sunset) {
+        $isNighttime = 1;
+    }
+    return ($isNighttime);
+
 }
 
 
@@ -548,29 +446,55 @@ sub isNighttime {
 # Fetch common data
 ##########################################################################
 
-# date/time in different ways for different use cases in W4L (e.g. epoch for calculations, ISO format for display, timezone info for reference)
-my $dtCurrent = DateTime::Format::ISO8601->parse_datetime($resCurrent->{current}->{date});
-$dtCurrent->set_time_zone($timezone);
+my $timezoneFromApi = getValue($results, 'timezone');
+if ($timezone ne $timezoneFromApi) {
+    LOGWARN "Timezone for location '$city' ($timezoneFromApi) does not match the system timezone of your LoxBerry ($timezone). Time differences may occur!";
+}
+
+# date/time from API response
+my $dtCurrent = DateTime->from_epoch( epoch => $results->{current}{dt}, time_zone => $timezoneFromApi );
+
+
 
 # location information
-my $cityName = getValue($resGeodata, 'locationname');
-if (defined getValue($resGeodata, 'sublocationname') && 
-    getValue($resGeodata, 'sublocationname') ne "") {
-        $cityName .= ", " . getValue($resGeodata, 'sublocationname');
+my %countryNameToCode = (
+    # Germany
+    "Germany"      => "DE",
+    "Deutschland"  => "DE",
+
+    # Spain
+    "Spain"        => "ES",
+    "Spanien"      => "ES",
+    "España"       => "ES",
+
+    # Slovakia
+    "Slovakia"     => "SK",
+    "Slovensko"    => "SK",
+
+    # Netherlands
+    "Netherlands"  => "NL",
+    "Nederland"    => "NL",
+
+    # Austria
+    "Austria"      => "AT",
+    "Österreich"   => "AT",
+);
+
+sub getCountryCode {
+    my $name = shift;
+    return $countryNameToCode{$name} // undef;
 }
-my $path = getValue($resGeodata, 'path');                  
-my @locpath = $path ? split(/;/, $path) : ();
-my $country = $locpath[5] // undef; 
+
 
 # add location information once
 my $location = {
-    city         => $cityName,                                                           # cur_loc_n, e.g. "Schwarzenbek"
+    city         => $city,                                                               # cur_loc_n, e.g. "Schwarzenbek"
     country      => $country,                                                            # country name, e.g. Deutschland
-    countryCode  => getValue($resGeodata, 'location_info', 'geoObject', 'iso-3166-1'),   # country code
-    elevation    => getFormatted('%.0f', $resGeodata, 'alt'),                           # altitude in meters
-    latitude     => getFormatted('%.3f', $resGeodata, 'lat'),                           # latitude
-    longitude    => getFormatted('%.3f', $resGeodata, 'lon'),                           # longitude
-    timezone     => $timezone,                                                           # timezone string (e.g. "Europe/Berlin")
+    countryCode  => getCountryCode($country),                                            # country code
+    elevation    => undef,                                                               # altitude in meters
+    latitude     => getFormatted('%.3f', $results, 'lat'),                               # latitude
+    longitude    => getFormatted('%.3f', $results, 'lon'),                               # longitude
+    timezone     => $timezoneFromApi,                                                    # timezone string (e.g. "Europe/Berlin"), from API response
     tzShort      => $dtCurrent->strftime('%Z'),                                          # timezone abbreviation (e.g. "CET")
     tzOffset     => $dtCurrent->strftime('%z'),                                          # timezone offset (e.g. "+0100")
 };
@@ -588,77 +512,69 @@ if ( $current ) {
     LOGINF "Reading current weather data from API response into W4L structure at $dtCurrent.";
 
     my %time;
-    # $time{date}      = getValue($resCurrent, 'current', 'date');
-    $time{datetime}  = _epochToIso($dtCurrent->epoch, $timezone);                                                            # cur_date_des
+    $time{datetime}  = _epochToIso($dtCurrent->epoch, $timezoneFromApi);;                                                      # cur_date_des
     $time{epoch}     = $dtCurrent->epoch;                                                                                      # cur_date
-    $time{timezone}  = $timezone;                                                                                              # cur_date_tz_des
+    $time{timezone}  = $timezoneFromApi;                                                                                       # cur_date_tz_des
     $time{tzShort}  = $dtCurrent->strftime('%Z');                                                                              # cur_date_tz_des_sh, e.g. "CET"
     $time{tzOffset} = $dtCurrent->strftime('%z');                                                                              # cur_date_tz, e.g. "+0100"
 
     $currentData{time} = \%time;
 
     # sunrise and set in local time, e.g. 05:47 and 17:39
-    $currentData{sunrise} = getTimeFormatted('%H:%M', $timezone, $resCurrent, 'current', 'sun', 'rise');                       # cur_sun_r 
-    $currentData{sunset}  = getTimeFormatted('%H:%M', $timezone, $resCurrent, 'current', 'sun', 'set');                        # cur_sun_s
+    $currentData{sunrise} = getTimeFromEpochFormatted('%H:%M', $timezone, $results, 'current', 'sunrise');                     # cur_sun_r 
+    $currentData{sunset}  = getTimeFromEpochFormatted('%H:%M', $timezone, $results, 'current', 'sunset');                      # cur_sun_s
 
     # temperatures
     my %temperature;
 
-    $temperature{air}        = getFormatted('%.1f', $resCurrent, 'current', 'temperature', 'air');                             # cur_tt.    - air temperature in °C
-    $temperature{feelsLike}  = getFormatted('%.1f', $resCurrent, 'current', 'temperature', 'apparent');                        # cur_tt_fl  - feels like temperature in °C
+    $temperature{air}        = getFormatted('%.1f', $results, 'current', 'temp');                                              # cur_tt.    - air temperature in °C
+    $temperature{feelsLike}  = getFormatted('%.1f', $results, 'current', 'feels_like');                                        # cur_tt_fl  - feels like temperature in °C
     $temperature{windChill}  = undef;                                                                                          # cur_w_ch   - wind chill (not present), feel-like temperature considering wind, only relevant for low temperatures
     $temperature{heatIndex}  = undef;                                                                                          # cur_hi.    - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
 
     $currentData{temperature} = \%temperature;
 
     # humidity
-    $currentData{humidity} = getPercentage('%.2f', $resCurrent, 'current', 'humidity');                                        # cur_hu, in percentage
+    $currentData{humidity} = getPercentage('%.2f', $results, 'current', 'humidity');                                           # cur_hu, in percentage
     
     # wind
     my %wind;
 
-    my $windDirection = getValue($resCurrent, 'current', 'wind', 'direction');
+    my $windDirection = getValue($results, 'current', 'wind_deg');
 
     $wind{direction}      = $windDirection;                                                                                    # cur_w_dir, wind direction in degrees
     $wind{dirLabel}       = getWindDirectionLabel($windDirection, \%L);                                                        # cur_w_dirdes, wind direction description, e.g. "Süden",
-    $wind{speed}          = getFormatted('%.1f', $resCurrent, 'current', 'wind', 'speed', 'kilometer_per_hour', 'value');      # cur_w_sp, wind speed in km/h
-    $wind{gust}           = getFormatted('%.1f', $resCurrent, 'current', 'wind', 'speed', 'kilometer_per_hour', 'max_gust');   # cur_w_gu, gust speed in km/h
+    $wind{speed}          = getFormatted('%.1f', $results, 'current', 'wind_speed');                                           # cur_w_sp, wind speed in km/h
+    $wind{gust}           = getFormatted('%.1f', $results, 'current', 'wind_gust');                                            # cur_w_gu, gust speed in km/h
 
     $currentData{wind} = \%wind;
 
     # air pressure
-    $currentData{pressure} = getFormatted('%.0f', $resCurrent, 'current', 'air_pressure', 'hpa');                              # cur_pr, air pressure in hPa
+    $currentData{pressure} = getFormatted('%.0f', $results, 'current', '_pressure');                                           # cur_pr, air pressure in hPa
 
     # dew point
-    $currentData{dewpoint} = getFormatted('%.1f', $resCurrent, 'current', 'dew_point', 'celsius');                             # cur_dp, dew point in °C
+    $currentData{dewpoint} = getFormatted('%.1f', $results, 'current', 'dew_point');                                           # cur_dp, dew point in °C
 
     # visibility - not provided by API
-    $currentData{visibility} = getFormatted('%.0f', $resCurrent, 'hours', 0, 'visibility');                                    # cur_vis, visibility in meters
+    $currentData{visibility} = getFormatted('%.0f', $results, 'current', 'visibility');                                        # cur_vis, visibility in meters
 
     # solar radiation
     $currentData{solarRadiation} = undef;                                                                                      # cur_sr 
 
-    # there is no UV index in the API response for current weather data, nor on the web page itself or 
-    # hourly forecast data, but there is one for daily forecast
-    # not sure if this should be the UV index for the current time or the day (maximum)
-    $currentData{uvIndex} = do {
-        my $v = eval { $resDaily->[0]{uv_index}{value} };
-        defined $v ? ( sprintf("%.0f", $v ) + 0 ) : undef;
-    };                                                                                                                         # cur_uvi
+    $currentData{uvIndex} = getFormatted('%.0f', $results, 'current', 'uvi');                                                  # cur_uvi
 
     # precipitation
     my %precipitation;
 
-    $precipitation{rainToday} = getFormatted('%.2f', $resCurrent, 
-        'trend', 'items', 0, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_end');                     # cur_prec_today, today precipitation in mm
+    $precipitation{rainToday} = getFormatted('%.2f', $results, 
+        'daily', 0, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_end');                     # cur_prec_today, today precipitation in mm
 
-    $precipitation{rain1hr} = getFormatted('%.2f', $resCurrent, 
-        'hours', 'items', 0, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_end');                     # cur_prec_1h, 1-hour precipitation in mm
-    $precipitation{probability} = getPercentage('%.2f', $resCurrent, 'current', 'precipitation', 'probability');               # cur_pop, probability in percent
-    $precipitation{type} = getValue($resCurrent, 'current', 'precipitation', 'type');                                          # type of precipitation (rain, snow), undef, if it is currently not raining/snowing
-    $precipitation{snowToday} = getFormatted('%.2f', $resCurrent, 
+    $precipitation{rain1hr} = getFormatted('%.2f', $results, 'rain', '1h');                                                    # cur_prec_1h, 1-hour precipitation in mm
+    $precipitation{probability} = getPercentage('%.2f', $results, 'current', 'precipitation', 'probability');               # cur_pop, probability in percent
+    $precipitation{type} = getValue($results, 'current', 'precipitation', 'type');                                          # type of precipitation (rain, snow), undef, if it is currently not raining/snowing
+    $precipitation{snowToday} = getFormatted('%.2f', $results, 
         'trend', 'items', 0, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end');                         # cur_snow_today, today snow in cm
-    $precipitation{snow1h} = getFormatted('%.2f', $resCurrent, 
+    $precipitation{snow1h} = getFormatted('%.2f', $results, 
         'hours', 'items', 0, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end');                         # cur_snow_1h, 1-hour snow in cm
 
     $currentData{precipitation} = \%precipitation;
@@ -668,7 +584,7 @@ if ( $current ) {
 
     # Mapping: Wetteronline Symbol => [Loxone code, Weather4Lox code, description]
     my ($loxoneCode, $w4lCode, $desc);
-    my $symbol = getValue($resCurrent, 'current', 'symbol');
+    my $symbol = getValue($results, 'current', 'symbol');
     if (!defined $symbol) {
         LOGWARN "Wetteronline symbol for current weather is undefined!";
         ($loxoneCode, $w4lCode, $desc) = (5, 'no_data', 'No description for weather symbol');  # Default fallback
@@ -679,7 +595,7 @@ if ( $current ) {
     $weatherCode{loxone}      = $loxoneCode;                                                                                  # cur_code
     $weatherCode{weather4lox} = $w4lCode;                                                                                     # cur_icon
     $weatherCode{description} = $desc;                                                                                        # cur_des
-    $weatherCode{image}       = getValue($resCurrent, 'current', 'weather_condition_image');                                  # future use, e.g. as background image
+    $weatherCode{image}       = getValue($results, 'current', 'weather_condition_image');                                  # future use, e.g. as background image
     $weatherCode{metar}       = getMetarCode($w4lCode);                                                                       # future use, e.g. scientific theme
 
     $currentData{weatherCode} = \%weatherCode;
@@ -695,7 +611,7 @@ if ( $current ) {
 
     my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = phase();
     # age is delivered by API, , but makes no sense as phase() delivers all values
-    # $moon{age} = getFormatted('%.2f', $resCurrent, 'moon', 0, 'age');
+    # $moon{age} = getFormatted('%.2f', $results, 'moon', 0, 'age');
     $moon{age} = sprintf("%.2f",$moonage) + 0;                                                                                 # cur_moon_a, moon age in days
     $moon{percent} = sprintf("%.2f",$moonillum * 100) + 0;                                                                     # cur_moon_p, moon illumination in percent
     $moon{phase} = sprintf("%.2f",$moonphase * 100) + 0;                                                                       # cur_moon_ph, moon phase in percent (0% = new moon, 50% = half moon, 100% = full moon)

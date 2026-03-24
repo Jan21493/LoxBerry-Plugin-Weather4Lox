@@ -203,14 +203,14 @@
       "iconNight": "overcast_snowthunderstorm_3_night",
       "moonPhases": 0
     },
-    "cloudy_fog": {
-      "iconDay": "cloudy_fog_day",
-      "iconNight": "cloudy_fog_night",
-      "moonPhases": 5
+    "overcast_icepellets": {
+      "iconDay": "overcast_icepellets_day",
+      "iconNight": "overcast_icepellets_night",
+      "moonPhases": 0
     },
-    "overcast_fog": {
-      "iconDay": "overcast_fog_day",
-      "iconNight": "overcast_fog_night",
+    "overcast_graupel": {
+      "iconDay": "overcast_icepellets_day",
+      "iconNight": "overcast_icepellets_night",
       "moonPhases": 0
     },
     "overcast_hail_1": {
@@ -223,9 +223,54 @@
       "iconNight": "overcast_hail_2_night",
       "moonPhases": 0
     },
-    "overcast_hail_3": {
-      "iconDay": "overcast_hail_3_day",
-      "iconNight": "overcast_hail_3_night",
+    "mist": {
+      "iconDay": "cloudy_mist_day",
+      "iconNight": "cloudy_mist_night",
+      "moonPhases": 5
+    },
+    "smoke": {
+      "iconDay": "fog_day",
+      "iconNight": "fog_night",
+      "moonPhases": 0
+    },
+    "haze": {
+      "iconDay": "fog_day",
+      "iconNight": "fog_night",
+      "moonPhases": 0
+    },
+    "dust_whirls": {
+      "iconDay": "fog_day",
+      "iconNight": "fog_night",
+      "moonPhases": 0
+    },
+    "fog": {
+      "iconDay": "fog_day",
+      "iconNight": "fog_night",
+      "moonPhases": 0
+    },
+    "sand": {
+      "iconDay": "fog_day",
+      "iconNight": "fog_night",
+      "moonPhases": 0
+    },
+    "dust": {
+      "iconDay": "fog_day",
+      "iconNight": "fog_night",
+      "moonPhases": 0
+    },
+    "volcanic_ash": {
+      "iconDay": "fog_day",
+      "iconNight": "fog_night",
+      "moonPhases": 0
+    },
+    "squalls": {
+      "iconDay": "overcast_rain_3_day",
+      "iconNight": "overcast_rain_3_night",
+      "moonPhases": 0
+    },
+    "tornado": {
+      "iconDay": "overcast_thunderstorm_3_day",
+      "iconNight": "overcast_thunderstorm_3_night",
       "moonPhases": 0
     },
     "no_data": {
