@@ -94,7 +94,7 @@ LOGDEB "This is $0 Version $version";
 # API: https://weatherflow.github.io/Tempest/api/swagger/#/forecast
 # Note: the forecast data also contains current conditions, but these are not as accurate as the station observations
 # For that reason, we also query the station observations (see below)
-my $forecast_json = api_call(
+my $forecast_json = apiCall(
 	url => "$url\/better_forecast?station_id=$stationid&api_key=$apikey",
 	maskkeys => $maskkeys,
 	keyparam => 'api_key',
@@ -204,7 +204,7 @@ if ( $current ) {
     # Get current station observation from Weatherflow Server
     # API : https://weatherflow.github.io/Tempest/api/swagger/#!/observations/getStationObservation
     # Docs: https://apidocs.tempestwx.com/reference/get_better-forecast-1
-    $current_observation_json = api_call(
+    $current_observation_json = apiCall(
         url => "$url\/observations/station/$stationid?token=$apikey",
         maskkeys => $maskkeys,
         keyparam => 'token',

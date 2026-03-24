@@ -152,7 +152,7 @@ sub wttr_to_lox {
 }
 
 # Get weather data from WTTR.in (API request)
-my $decoded_json = api_call(
+my $decoded_json = apiCall(
 	url => "$url/$stationid?lang=$lang&M&3&format=j1",
 	info => "for Location $stationid (Current, Daily, and Hourly Weather Data)",
 );

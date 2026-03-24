@@ -89,7 +89,7 @@ LOGSTART "Weather4Lox GRABBER_VISUALCROSSING process started";
 LOGDEB "This is $0 Version $version";
 
 # Get data from www.visualcrossing.com (API request) for current conditions, daily and hourly forecasts
-my $decoded_json = api_call(
+my $decoded_json = apiCall(
 	url => "$url/$stationid?unitGroup=metric&lang=$lang&iconSet=icons2&include=days,hours,current&key=$apikey&contentType=json",
 	maskkeys => $maskkeys,
 	keyparam => 'key',

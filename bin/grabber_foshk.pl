@@ -80,7 +80,7 @@ LOGSTART "Weather4Lox GRABBER_FOSHK process started";
 LOGDEB "This is $0 Version $version";
 
 # Get data from FOSHK Plugin Server for current conditions
-my $decoded_json = api_call(
+my $decoded_json = apiCall(
 	url => "http://$server\:$port/$url",
 	info => "from FOSHK Plugin at $server\:$port (Current Weather Data)",
 );
