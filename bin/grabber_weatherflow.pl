@@ -87,7 +87,7 @@ if ($verbose) {
 	$log->loglevel(7);
 }
 
-LOGSTART "Weather4Lox GRABBER_WEATHERFLOW process started";
+LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
 # Get forecast data from Weatherflow Server
@@ -251,7 +251,7 @@ if ( $current ) {
     my %wind;
     my $wdeg = $cur->{wind_direction};
     $wind{direction} = defined $wdeg ? $wdeg + 0 : undef;
-    $wind{dirLabel}  = getWindDirectionLabel($wdeg, \%L);
+    $wind{cardinal}  = getWindDirCardinal($wdeg);
     $wind{speed}     = defined $cur->{wind_avg}  ? sprintf("%.1f", $cur->{wind_avg} * 3.6) + 0  : undef;
     $wind{gust}      = defined $cur->{wind_gust} ? sprintf("%.1f", $cur->{wind_gust} * 3.6) + 0 : undef;
 
@@ -474,7 +474,7 @@ if ( $hourly ) {
         my %wind;
         my $wdeg = $h->{wind_direction};
         $wind{direction} = defined $wdeg ? $wdeg + 0 : undef;
-        $wind{dirLabel}  = getWindDirectionLabel($wdeg, \%L);
+        $wind{cardinal}  = getWindDirCardinal($wdeg);
         $wind{speed}     = defined $h->{wind_avg} ? sprintf("%.1f", $h->{wind_avg} * 3.6) + 0 : undef;
         $wind{gust}      = undef;  # not available from WeatherFlow hourly
 

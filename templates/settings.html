@@ -1152,13 +1152,13 @@
 															<label id="labelURL"><TMPL_VAR SETTINGS.LABEL_LINK></label>
 														</td>
 														<td width="50%">
-															<a href="<TMPL_VAR WEBSITE>" target=_blank"><TMPL_VAR WEBSITE></a>
+															<a href="<TMPL_VAR WEBSITE>" target=_blank"><TMPL_VAR WEBSITE></a>&nbsp;<TMPL_VAR SETTINGS.OPTIONS_LINK>
 														</td>
 														<td width="5%">
 															&nbsp;
 														</td>
 														<td width="20%">
-															&nbsp;
+															<font size="-1"><TMPL_VAR SETTINGS.HINT_LINK></font>
 														</td>
 													</tr>
 													<tr>
@@ -1200,7 +1200,7 @@
 															&nbsp;
 														</td>
 														<td width="20%">
-															&nbsp;
+															<font size="-1"><TMPL_VAR SETTINGS.HINT_THEMELANG></font>
 														</td>
 													</tr>
 													<tr>
@@ -1216,8 +1216,8 @@
 									<p>
 										<center>
 											<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="./index.cgi?form=3"><TMPL_VAR SETTINGS.BUTTON_CANCEL></a>
-												<a href="#" data-role="button" id="preview1" data-inline="true" data-mini="true" data-icon="eye" onClick="preview();"><TMPL_VAR SETTINGS.LABEL_PREVIEW></a>
 												<button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SETTINGS.BUTTON_SAVE></button>
+												<a href="#" data-role="button" id="preview1" data-inline="true" data-mini="true" data-icon="eye" onClick="preview();"><TMPL_VAR SETTINGS.LABEL_PREVIEW></a>
 												<a href="#" data-role="button" id="btnweathercodes" data-inline="true" data-mini="true" data-icon="info" onClick="openWeathercodes();"><TMPL_VAR SETTINGS.BUTTON_WEATHERCODES></a>
 										</center>
 									</form>

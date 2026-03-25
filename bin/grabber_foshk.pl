@@ -61,7 +61,7 @@ my %L = LoxBerry::System::readlanguage("language.ini");
 # Create a logging object
 my $log = LoxBerry::Log->new (
 	package => 'weather4lox',
-	name => 'grabber_foshk',
+	name => "$grabberLabel",
 	logdir => "$lbplogdir",
 );
 
@@ -76,13 +76,13 @@ if ($verbose) {
 	$log->loglevel(7);
 }
 
-LOGSTART "Weather4Lox GRABBER_FOSHK process started";
+LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
 # Get data from FOSHK Plugin Server for current conditions
 my $decoded_json = apiCall(
 	url => "http://$server\:$port/$url",
-	info => "from FOSHK Plugin at $server\:$port (Current Weather Data)",
+	info => "from $grabberLabel at $server\:$port (Current Weather Data)",
 );
 
 # Read existing current.json envelope
@@ -90,7 +90,7 @@ my $weatherKey = "current";
 my $envelope = readJsonFile($lbplogdir, $weatherKey);
 my $cur = $envelope->{$weatherKey} // {};
 
-LOGDEB "Adding/overwriting FOSHK data to $weatherKey weather data.";
+LOGDEB "Adding $grabberLabel data to $weatherKey weather data (existing values for same keys will be overwritten).";
 
 # Shorthand for FOSHK observations
 my $obs   = $decoded_json->{observations}->[0];
@@ -113,7 +113,7 @@ if (defined $windChill && defined $temp && abs($windChill - $temp) > 0.1 || !def
 my $windDir = getFormatted('%.0f', $obs, 'winddir');
 $cur->{wind} = {
     direction  => $windDir,                                                    # cur_w_dir    - wind direction (degree)
-    dirLabel   => getWindDirectionLabel($windDir, \%L),                        # cur_w_dirdes - wind direction description
+    cardinal   => getWindDirCardinal($windDir),                                # to calculate cur_w_dirdes - wind direction description from (N, NE, E, SE, S, SW, W, NW)
     speed      => getFormatted('%.2f', $obs, 'metric', 'windSpeed'),           # cur_w_sp     - wind speed (km/h)
     gust       => getFormatted('%.2f', $obs, 'metric', 'windGust'),            # cur_w_gu     - wind gust (km/h)
 };

@@ -108,7 +108,7 @@ my %L = LoxBerry::System::readlanguage("language.ini");
 # Create a logging object
 my $log = LoxBerry::Log->new (
     package => 'weather4lox',
-    name => "$grabberFile",
+    name => "$grabberLabel",
     logdir => "$lbplogdir",
     #filename => "$lbplogdir/weather4lox.log",
     #append => 1,
@@ -622,7 +622,7 @@ if ( $current ) {
     my $windDirection = getValue($resCurrent, 'current', 'wind', 'direction');
 
     $wind{direction}      = $windDirection;                                                                                    # cur_w_dir, wind direction in degrees
-    $wind{dirLabel}       = getWindDirectionLabel($windDirection, \%L);                                                        # cur_w_dirdes, wind direction description, e.g. "Süden",
+    $wind{cardinal}       = getWindDirCardinal($windDirection);                                                                # to calculate cur_w_dirdes, wind direction description, e.g. "Süden",
     $wind{speed}          = getFormatted('%.1f', $resCurrent, 'current', 'wind', 'speed', 'kilometer_per_hour', 'value');      # cur_w_sp, wind speed in km/h
     $wind{gust}           = getFormatted('%.1f', $resCurrent, 'current', 'wind', 'speed', 'kilometer_per_hour', 'max_gust');   # cur_w_gu, gust speed in km/h
 
@@ -748,16 +748,6 @@ if ( $daily ) {
         $dtResult = DateTime::Format::ISO8601->parse_datetime(getValue($results, 'date'));   # ISO date from API in UTC, e.g. 2026-03-13T23:00:00+00:00
         $dtResult->set_time_zone($timezone);
         
-        # no longer needed, TODO: verify and clean up
-        # my @label_month = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_MONTH'}) );
-        # my $monthname  = $label_month[$dtResult->month - 1];
-        # my @label_month_sh = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_MONTH_SH'}) );
-        # my $monthshort = $label_month_sh[$dtResult->month - 1];
-        # my @label_days = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_DAYS'}) );
-        # my $wdayname   = $label_days[$dtResult->day_of_week % 7];
-        # my @label_days_sh = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_DAYS_SH'}) );
-        # my $wdayshort  = $label_days_sh[$dtResult->day_of_week % 7];
-
         # wind
         my $windDirAvg = getFormatted('%.0f', $results, 'wind', 'direction'); 
 
@@ -863,13 +853,13 @@ if ( $daily ) {
             wind => {
                 avg => {
                     direction       => $windDirAvg,                                                                            # dfc<X>_w_dir_a     - wind direction (degree, average)
-                    dirLabel        => getWindDirectionLabel($windDirAvg, \%L),                                                # dfc<X>_w_dirdes_a  - wind direction description (average)
+                    cardinal        => getWindDirCardinal($windDirAvg),                                                        # to calculate dfc<X>_w_dirdes_a  - wind direction description (average)
                     speed           => getFormatted('%.2f', $results, 'wind', 'speed', 'kilometer_per_hour', 'value'),         # dfc<X>_w_sp_a      - wind speed average (km/h)
                     gust            => getFormatted('%.2f', $results, 'wind', 'speed', 'kilometer_per_hour', 'max_gust'),      # dfc<X>_w_gu_a      - wind gust average (km/h)
                 },
                 max => {
                     direction       => $windDirMax,                                                                            # dfc<X>_w_dir_h     - wind direction (degree, max)
-                    dirLabel        => getWindDirectionLabel($windDirMax, \%L),                                                # dfc<X>_w_dirdes_h  - wind direction description (max)
+                    cardinal        => getWindDirCardinal($windDirMax),                                                        # to calculate dfc<X>_w_dirdes_h  - wind direction description (max)
                     speed           => $windSpeedMax,                                                                          # dfc<X>_w_sp_h      - wind speed max (km/h)
                     gust            => $windGustMax,                                                                           # dfc<X>_w_gu_h      - wind gust max (km/h)
                 }
@@ -1002,8 +992,8 @@ if ( $hourly ) {
                 windChill      => undef,                                                        # hfc<X>_w_ch      - wind chill (not present), feel-like temperature considering wind, only relevant for low temperatures
             },
             wind => {
-                direction     => $windDir,                                                                                  # hfc<X>_w_dir     - wind direction (degree)
-                dirLabel      => getWindDirectionLabel($windDir, \%L),                                                      # hfc<X>_w_dirdes  - wind direction description
+                direction     => $windDir,                                                                                   # hfc<X>_w_dir     - wind direction (degree)
+                cardinal      => getWindDirCardinal($windDir),                                                               # to calculate hfc<X>_w_dirdes  - wind direction description
                 speed         => getFormatted('%.2f', $results, 'wind', 'speed', 'kilometer_per_hour', 'value'),             # hfc<X>_w_sp      - wind speed (km/h)
                 gust          => getFormatted('%.2f', $results, 'wind', 'speed', 'kilometer_per_hour', 'max_gust'),          # hfc<X>_w_gu      - wind gust (km/h)
             },
@@ -1079,25 +1069,25 @@ if ( $hourly ) {
 			push @dpEpochs, $ep;
 
 			# Temperatures
-			$t_air{$ep} = getFormatted('%.1f', $dayPart, 'temperature', 'air') + 0;
-			$t_app{$ep} = getFormatted('%.1f', $dayPart, 'temperature', 'apparent') + 0;
+			$t_air{$ep} = getFormatted('%.1f', $dayPart, 'temperature', 'air') // 0;
+			$t_app{$ep} = getFormatted('%.1f', $dayPart, 'temperature', 'apparent') // 0;
 
 			# Humidity (0..1) -> store as percent (0..100) and interpolate in that domain
 			$hum{$ep} = getPercentage('%.2f', $dayPart, 'humidity');
 
 			# Wind direction (deg) and speed (km/h)
-			$w_dir{$ep}    = getFormatted('%.0f', $dayPart, 'wind', 'direction');
-			$w_sp_kmh{$ep} = getFormatted('%.2f', $dayPart, 'wind', 'speed', 'kilometer_per_hour', 'value') + 0;
-			$w_gu_kmh{$ep} = getFormatted('%.2f', $dayPart, 'wind', 'speed', 'kilometer_per_hour', 'max_gust') + 0;
+			$w_dir{$ep}    = getFormatted('%.0f', $dayPart, 'wind', 'direction') // 0;
+			$w_sp_kmh{$ep} = getFormatted('%.2f', $dayPart, 'wind', 'speed', 'kilometer_per_hour', 'value') // 0;
+			$w_gu_kmh{$ep} = getFormatted('%.2f', $dayPart, 'wind', 'speed', 'kilometer_per_hour', 'max_gust') // 0;
 
 			# Pressure / dew point
-			$pr_hpa{$ep} = getFormatted('%.0f', $dayPart, 'air_pressure', 'hpa') + 0;
-			$dp_c{$ep}   = getFormatted('%.1f', $dayPart, 'dew_point', 'celsius') + 0;
+			$pr_hpa{$ep} = getFormatted('%.0f', $dayPart, 'air_pressure', 'hpa') // 0;
+			$dp_c{$ep}   = getFormatted('%.1f', $dayPart, 'dew_point', 'celsius') // 0;
 
 			# Rain amount: mean of interval begin/end (if present)
 			if ($dayPart->{precipitation}{details}{rainfall_amount}{millimeter}) {
-				my $rf = (getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_begin') +
-						  getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_end')) / 2;
+				my $rf = (getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_begin') // 0 +
+						  getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_end') // 0) / 2;
 				$prec_mm{$ep} = $rf;
 			} else {
 				$prec_mm{$ep} = 0;                
@@ -1105,17 +1095,17 @@ if ( $hourly ) {
 
 			# Snow height (cm)
 			if ($dayPart->{precipitation}{details}{snow_height}{centimeter}) {
-				$snow_cm{$ep} = (getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_begin') +
-						         getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end')) / 2;
+				$snow_cm{$ep} = (getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_begin') // 0 +
+						         getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end') // 0) / 2;
 			}  else {
                 $snow_cm{$ep} = 0;
             }
 
 			# precipitation duration in minutes.  TODO: verify if daypart include duration and units
-			$prec_dur{$ep} = getFormatted('%.2f', $dayPart, 'precipitation', 'duration', 'minutes')  + 0 // 0;
+			$prec_dur{$ep} = getFormatted('%.2f', $dayPart, 'precipitation', 'duration', 'minutes') // 0;
 
 			# precipitation probability (0..1) -> percent (0..100)
-			$pop_pct{$ep} = getPercentage('%.2f', $dayPart, 'precipitation', 'probability') + 0 // 0;
+			$pop_pct{$ep} = getPercentage('%.2f', $dayPart, 'precipitation', 'probability') // 0;
 
             # uv index
             $uvidx{$ep} = getFormatted('%.1f', $dayPart, 'uv_index', 'value') // 0;
@@ -1233,14 +1223,14 @@ if ( $hourly ) {
                 epoch         => $epochTime,                                        # hfc<X>_date       - UNIX timestamp
             },
             temperature => {
-                air           => sprintf("%.1f", $t_air_i->linear($epochTime)),     # hfc<X>_tt        - hourly temperature (°C)
-                feelsLike     => sprintf("%.1f", $t_app_i->linear($epochTime)),     # hfc<X>_tt_fl     - min feels-like temperature
+                air           => sprintf("%.1f", $t_air_i->linear($epochTime)) + 0,     # hfc<X>_tt        - hourly temperature (°C)
+                feelsLike     => sprintf("%.1f", $t_app_i->linear($epochTime)) + 0,     # hfc<X>_tt_fl     - min feels-like temperature
                 heatIndex     => undef,                                             # hfc<X>_hi        - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
                 windChill     => undef,                                             # hfc<X>_w_ch      - wind chill (not present), feel-like temperature considering wind, only relevant for low temperatures
             },
             wind => {
                 direction     => $w_dir{$stepEp},                                   # hfc<X>_w_dir     - wind direction (degree)
-                dirLabel      => getWindDirectionLabel($w_dir{$stepEp}, \%L),       # hfc<X>_w_dirdes  - wind direction description
+                cardinal      => getWindDirCardinal($w_dir{$stepEp}),               # hfc<X>_w_dirdes  - wind direction description
                 speed         => sprintf("%.2f", $w_sp_i->linear($epochTime)) + 0,  # hfc<X>_w_sp      - wind speed (km/h)
                 gust          => sprintf("%.2f", $w_gu_i->linear($epochTime)) + 0,  # hfc<X>_w_gu      - wind gust (km/h)
             },

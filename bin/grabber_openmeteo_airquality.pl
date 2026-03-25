@@ -49,6 +49,11 @@ my $pcfg   = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $lat    = $pcfg->param("OPENMETEOAIRQUALITY.COORDLAT");
 my $lon    = $pcfg->param("OPENMETEOAIRQUALITY.COORDLONG");
 
+# names for JSON
+my $grabberFile     = basename(__FILE__);
+my $grabberLabel    = "Open-Meteo Air Quality and Pollen";
+my $grabberKey      = "openmeteo_airquality";              # name in JSONs
+
 # Determine system timezone (Debian / DietPi)
 my $timezone = $ENV{TZ} // '';
 
@@ -69,7 +74,7 @@ if (!$timezone || !-f "/usr/share/zoneinfo/$timezone") {
 # Create a logging object
 my $log = LoxBerry::Log->new (
 	package => 'weather4lox',
-	name => 'grabber_openmeteo_airquality',
+	name => "$grabberLabel",
 	logdir => "$lbplogdir",
 );
 
@@ -84,7 +89,7 @@ if ($verbose) {
 	$log->loglevel(7);
 }
 
-LOGSTART "Weather4Lox GRABBER_OPENMETEO_AIRQUALITY process started";
+LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
 # Validate coordinates
@@ -206,6 +211,8 @@ LOGINF "Current AQI: european=" . ($resOM->{current}{european_aqi} // 0)
      . " us=" . ($resOM->{current}{us_aqi} // 0)
      . " pm10=" . ($resOM->{current}{pm10} // 0)
      . " pm2_5=" . ($resOM->{current}{pm2_5} // 0);
+
+LOGDEB "Adding $grabberLabel data to current, daily and hourly weather data (existing values for same keys will be overwritten).";
 
 ##########################################################################
 # Merge into current.json

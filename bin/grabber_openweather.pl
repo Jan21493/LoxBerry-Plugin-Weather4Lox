@@ -106,7 +106,7 @@ my %L = LoxBerry::System::readlanguage("language.ini");
 # Create a logging object
 my $log = LoxBerry::Log->new (
     package => 'weather4lox',
-    name => "$grabberFile",
+    name => "$grabberLabel",
     logdir => "$lbplogdir",
     #filename => "$lbplogdir/weather4lox.log",
     #append => 1,
@@ -547,7 +547,7 @@ if ( $current ) {
     my $windDirection = getValue($results, 'current', 'wind_deg');
 
     $wind{direction}      = $windDirection;                                                                                    # cur_w_dir, wind direction in degrees
-    $wind{dirLabel}       = getWindDirectionLabel($windDirection, \%L);                                                        # cur_w_dirdes, wind direction description, e.g. "Süden",
+    $wind{cardinal}       = getWindDirCardinal($windDirection);                                                                # to calculate cur_w_dirdes, wind direction description, e.g. "Süden",
     $wind{speed}          = getFormatted('%.1f', $results, 'current', 'wind_speed');                                           # cur_w_sp, wind speed in km/h
     $wind{gust}           = getFormatted('%.1f', $results, 'current', 'wind_gust');                                            # cur_w_gu, gust speed in km/h
 
@@ -781,13 +781,13 @@ if ( $daily ) {
             wind => {
                 avg => {
                     direction       => $windDirAvg,                                                                            # dfc<X>_w_dir_a     - wind direction (degree, average)
-                    dirLabel        => getWindDirectionLabel($windDirAvg, \%L),                                                # dfc<X>_w_dirdes_a  - wind direction description (average)
+                    cardinal        => getWindDirCardinal($windDirAvg),                                                        # to calculate dfc<X>_w_dirdes_a  - wind direction description (average)
                     speed           => getFormatted('%.2f', $results, 'wind', 'speed', 'kilometer_per_hour', 'value'),         # dfc<X>_w_sp_a      - wind speed average (km/h)
                     gust            => getFormatted('%.2f', $results, 'wind', 'speed', 'kilometer_per_hour', 'max_gust'),      # dfc<X>_w_gu_a      - wind gust average (km/h)
                 },
                 max => {
                     direction       => $windDirMax,                                                                            # dfc<X>_w_dir_h     - wind direction (degree, max)
-                    dirLabel        => getWindDirectionLabel($windDirMax, \%L),                                                # dfc<X>_w_dirdes_h  - wind direction description (max)
+                    cardinal        => getWindDirCardinal($windDirMax),                                                        # to calculate dfc<X>_w_dirdes_h  - wind direction description (max)
                     speed           => $windSpeedMax,                                                                          # dfc<X>_w_sp_h      - wind speed max (km/h)
                     gust            => $windGustMax,                                                                           # dfc<X>_w_gu_h      - wind gust max (km/h)
                 }
@@ -920,8 +920,8 @@ if ( $hourly ) {
                 windChill      => undef,                                                        # hfc<X>_w_ch      - wind chill (not present), feel-like temperature considering wind, only relevant for low temperatures
             },
             wind => {
-                direction     => $windDir,                                                                                  # hfc<X>_w_dir     - wind direction (degree)
-                dirLabel      => getWindDirectionLabel($windDir, \%L),                                                      # hfc<X>_w_dirdes  - wind direction description
+                direction     => $windDir,                                                                                   # hfc<X>_w_dir     - wind direction (degree)
+                cardinal      => getWindDirCardinal($windDir),                                                               # to calculate hfc<X>_w_dirdes  - wind direction description
                 speed         => getFormatted('%.2f', $results, 'wind', 'speed', 'kilometer_per_hour', 'value'),             # hfc<X>_w_sp      - wind speed (km/h)
                 gust          => getFormatted('%.2f', $results, 'wind', 'speed', 'kilometer_per_hour', 'max_gust'),          # hfc<X>_w_gu      - wind gust (km/h)
             },
@@ -1158,7 +1158,7 @@ if ( $hourly ) {
             },
             wind => {
                 direction     => $w_dir{$stepEp},                                   # hfc<X>_w_dir     - wind direction (degree)
-                dirLabel      => getWindDirectionLabel($w_dir{$stepEp}, \%L),       # hfc<X>_w_dirdes  - wind direction description
+                cardinal      => getWindDirCardinal($w_dir{$stepEp}),               # to calculate hfc<X>_w_dirdes  - wind direction description
                 speed         => sprintf("%.2f", $w_sp_i->linear($epochTime)) + 0,  # hfc<X>_w_sp      - wind speed (km/h)
                 gust          => sprintf("%.2f", $w_gu_i->linear($epochTime)) + 0,  # hfc<X>_w_gu      - wind gust (km/h)
             },

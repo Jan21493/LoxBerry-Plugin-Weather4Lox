@@ -50,7 +50,7 @@ my $file = "/dev/shm/pwscatchupload_w4l.json";
 
 # names for JSON
 my $grabberFile     = basename(__FILE__);
-my $grabberLabel    = "PWSCatchUpload";
+my $grabberLabel    = "PWS WU Upload Catcher";
 my $grabberKey      = "pwscatchupload";
 
 # Read language phrases
@@ -59,7 +59,7 @@ my %L = LoxBerry::System::readlanguage("language.ini");
 # Create a logging object
 my $log = LoxBerry::Log->new (
 	package => 'weather4lox',
-	name => 'grabber_pwscatchupload',
+	name => "$grabberLabel",
 	logdir => "$lbplogdir",
 );
 
@@ -74,7 +74,7 @@ if ($verbose) {
 	$log->loglevel(7);
 }
 
-LOGSTART "Weather4Lox GRABBER_PWSCATCHUPLOAD process started";
+LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
 LOGINF "Reading data from $file";
@@ -94,7 +94,7 @@ my $weatherKey = "current";
 my $envelope = readJsonFile($lbplogdir, $weatherKey);
 my $cur = $envelope->{$weatherKey} // {};
 
-LOGDEB "Adding/overwriting PWSCatchUpload data to $weatherKey weather data.";
+LOGDEB "Adding $grabberLabel data to $weatherKey weather data (existing values for same keys will be overwritten).";
 
 my $t = localtime($decoded_json->{cur_date});
 LOGINF "Saving new Data for Timestamp $t to database.";
@@ -114,7 +114,7 @@ my $windDir = $decoded_json->{cur_w_dir};
 if (defined $windDir) {
     $cur->{wind} = {
         direction  => sprintf("%.0f", $windDir),                             # cur_w_dir    - wind direction (degree)
-        dirLabel   => getWindDirectionLabel($windDir, \%L),                  # cur_w_dirdes - wind direction description
+        cardinal   => getWindDirectionLabel($windDir, \%L),                  # to calculate cur_w_dirdes - wind direction description
         speed      => defined $decoded_json->{cur_w_sp} ? sprintf("%.2f", $decoded_json->{cur_w_sp}) : undef,  # cur_w_sp - wind speed (km/h)
         gust       => defined $decoded_json->{cur_w_gu} ? sprintf("%.2f", $decoded_json->{cur_w_gu}) : undef,  # cur_w_gu - wind gust (km/h)
     };

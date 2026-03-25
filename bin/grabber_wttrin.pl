@@ -61,7 +61,7 @@ my %L = LoxBerry::System::readlanguage("language.ini");
 # Create a logging object
 my $log = LoxBerry::Log->new (
 	package => 'weather4lox',
-	name => 'grabber_wttr.in',
+	name => "$grabberLabel",
 	logdir => "$lbplogdir",
 );
 
@@ -81,7 +81,7 @@ if ($verbose) {
 	$log->loglevel(7);
 }
 
-LOGSTART "Weather4Lox GRABBER_WTTRIN process started";
+LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
 # Mapping table for conversion of WTTR.in weather codes to Loxone weather Picto-Codes and short names for weather symbols
@@ -235,7 +235,7 @@ if ( $current ) {
     my %wind;
     my $wdeg = $cur->{winddirDegree};
     $wind{direction} = defined $wdeg ? $wdeg + 0 : undef;
-    $wind{dirLabel}  = getWindDirectionLabel($wdeg, \%L);
+    $wind{cardinal}  = getWindDirCardinal($wdeg);
     $wind{speed}     = defined $cur->{windspeedKmph} ? sprintf("%.1f", $cur->{windspeedKmph}) + 0 : undef;
     $wind{gust}      = undef;  # wttr.in current has no gust data
 
@@ -389,14 +389,14 @@ if ( $daily ) {
         # wind avg
         my %windAvg;
         $windAvg{direction} = defined $d_wdiravg ? sprintf("%.0f", $d_wdiravg) + 0 : undef;
-        $windAvg{dirLabel}  = getWindDirectionLabel($d_wdiravg, \%L);
+        $windAvg{cardinal}  = getWindDirCardinal($d_wdiravg);
         $windAvg{speed}     = defined $d_windavg ? sprintf("%.0f", $d_windavg) + 0 : undef;
         $windAvg{gust}      = undef;
 
         # wind max (gust-based)
         my %windMax;
         $windMax{direction} = undef;  # no separate max wind direction from wttr.in
-        $windMax{dirLabel}  = undef;
+        $windMax{cardinal}  = undef;
         $windMax{speed}     = $d_gusts[-1] ? sprintf("%.0f", $d_gusts[-1]) + 0 : undef;
         $windMax{gust}      = undef;
 
@@ -578,7 +578,7 @@ if ( $hourly ) {
         my %wind;
         my $wdeg = $winddirs->linear($ep);
         $wind{direction} = defined $wdeg ? sprintf("%.0f", $wdeg) + 0 : undef;
-        $wind{dirLabel}  = getWindDirectionLabel($wdeg, \%L);
+        $wind{cardinal}  = getWindDirCardinal($wdeg);
         $wind{speed}     = sprintf("%.1f", $winds->linear($ep)) + 0;
         $wind{gust}      = undef;  # wttr.in gust data is unreliable for interpolated hours
 

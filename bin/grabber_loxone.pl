@@ -56,7 +56,7 @@ my %L = LoxBerry::System::readlanguage("language.ini");
 # Create a logging object
 my $log = LoxBerry::Log->new (
 	package => 'weather4lox',
-	name => 'grabber_loxone',
+	name => "$grabberLabel",
 	logdir => "$lbplogdir",
 );
 
@@ -71,7 +71,7 @@ if ($verbose) {
 	$log->loglevel(7);
 }
 
-LOGSTART "Weather4Lox GRABBER_LOXONE process started";
+LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
 
@@ -121,7 +121,7 @@ my $weatherKey = "current";
 my $envelope = readJsonFile($lbplogdir, $weatherKey);
 my $cur = $envelope->{$weatherKey} // {};
 
-LOGDEB "Adding/overwriting Loxone data to $weatherKey weather data.";
+LOGDEB "Adding $grabberLabel data to $weatherKey weather data (existing values for same keys will be overwritten).";
 
 # Helper: extract numeric value from Loxone response, skip -9999 sentinel
 sub loxVal {
@@ -142,8 +142,8 @@ $cur->{temperature}{windChill} = loxVal('w4l_cur_tt_fl', '%.1f')    # cur_tt_fl 
 # wind data
 my $windDir = loxVal('w4l_cur_w_dir', '%.0f');
 $cur->{wind} = {
-	direction  => $windDir,                                                    # cur_w_dir    - wind direction (degree)
-	dirLabel   => getWindDirectionLabel($windDir, \%L),                        # cur_w_dirdes - wind direction description
+	direction  => $windDir,                                                   # cur_w_dir    - wind direction (degree)
+	cardinal   => getWindDirCardinal($windDir),                               # to calculate cur_w_dirdes - wind direction description from (N, NE, E, SE, S, SW, W, NW)
 	speed      => loxVal('w4l_cur_w_sp', '%.2f'),                             # cur_w_sp     - wind speed (km/h)
 	gust       => loxVal('w4l_cur_w_gu', '%.2f'),                             # cur_w_gu     - wind gust (km/h)
 };
