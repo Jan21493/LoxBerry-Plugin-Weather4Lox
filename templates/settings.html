@@ -591,6 +591,12 @@
 										// Activate on Load
 										disable();
 
+										// Expand collapsible for currently selected weather service
+										var currentService = '<TMPL_VAR CURRENT_WEATHERSERVICE>';
+										if (currentService) {
+											$('#section-' + currentService).collapsible('expand');
+										}
+
 										// Validates
 										validate_enable('#wustationid');
 										validate_enable('#foshkserver');
@@ -602,6 +608,31 @@
 										validate_enable('#weatherflowapikey');
 										validate_enable('#weatherflowstationid');
 										validate_enable('#udpport');
+									});
+
+									// Auto-expand collapsible on weather service change
+									$(document).on('change', '#weatherservice', function() {
+										$('.service-collapsible').collapsible('collapse');
+										var selected = $(this).val();
+										if (selected) {
+											$('#section-' + selected).collapsible('expand');
+										}
+									});
+
+									// Expand collapsible when alternate DFC service changes
+									$(document).on('change', '#weatherservicedfc', function() {
+										var selected = $(this).val();
+										if (selected && $("select[name=usealternatedfc]").val() === "1") {
+											$('#section-' + selected).collapsible('expand');
+										}
+									});
+
+									// Expand collapsible when alternate HFC service changes
+									$(document).on('change', '#weatherservicehfc', function() {
+										var selected = $(this).val();
+										if (selected && $("select[name=usealternatehfc]").val() === "1") {
+											$('#section-' + selected).collapsible('expand');
+										}
 									});
 
 									// Add some attributes PERL::CGI doesn't provide
