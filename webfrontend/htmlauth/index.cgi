@@ -60,6 +60,23 @@ $cfg->param("OPENMETEOAIRQUALITY.URL", "https://air-quality-api.open-meteo.com/v
 
 $cfg->save();
 
+# Upgrade fallback: populate SERVER.CITY/COUNTRY from existing per-service values
+if (!$cfg->param("SERVER.CITY")) {
+	my $fallback_city = $cfg->param("VISUALCROSSING.STATION")
+		|| $cfg->param("OPENWEATHER.STATION")
+		|| $cfg->param("WEATHERFLOW.CITY")
+		|| "";
+	my $fallback_country = $cfg->param("VISUALCROSSING.COUNTRY")
+		|| $cfg->param("OPENWEATHER.COUNTRY")
+		|| $cfg->param("WEATHERFLOW.COUNTRY")
+		|| "";
+	if ($fallback_city) {
+		$cfg->param("SERVER.CITY", $fallback_city);
+		$cfg->param("SERVER.COUNTRY", $fallback_country);
+		$cfg->save();
+	}
+}
+
 #########################################################################
 # Parameter
 #########################################################################
@@ -194,21 +211,15 @@ if ($R::saveformdata1) {
 	$cfg->param("OPENWEATHER.COORDLAT", "$central_lat");
 	$cfg->param("OPENWEATHER.COORDLONG", "$central_long");
 	$cfg->param("OPENWEATHER.LANG", "$R::serverlang");
-	$cfg->param("OPENWEATHER.STATION", "$R::openweathercity");
-	$cfg->param("OPENWEATHER.COUNTRY", "$R::openweathercountry");
 
 	$cfg->param("WEATHERFLOW.APIKEY", "$R::weatherflowapikey");
 	$cfg->param("WEATHERFLOW.LANG", "$R::serverlang");
-	$cfg->param("WEATHERFLOW.CITY", "$R::weatherflowcity");
-	$cfg->param("WEATHERFLOW.COUNTRY", "$R::weatherflowcountry");
 	$cfg->param("WEATHERFLOW.STATIONID", "$R::weatherflowstationid");
 
 	$cfg->param("VISUALCROSSING.APIKEY", "$R::visualcrossingapikey");
 	$cfg->param("VISUALCROSSING.COORDLAT", "$central_lat");
 	$cfg->param("VISUALCROSSING.COORDLONG", "$central_long");
 	$cfg->param("VISUALCROSSING.LANG", "$R::serverlang");
-	$cfg->param("VISUALCROSSING.STATION", "$R::visualcrossingcity");
-	$cfg->param("VISUALCROSSING.COUNTRY", "$R::visualcrossingcountry");
 
 	$cfg->param("WTTRIN.LANG", "$R::serverlang");
 	$cfg->param("WTTRIN.STATIONID", "$R::wttrinstationid");
@@ -242,6 +253,15 @@ if ($R::saveformdata1) {
 	$cfg->param("SERVER.WEATHERSERVICEHFC", "$R::weatherservicehfc");
 	$cfg->param("SERVER.MASKKEYS", "$R::maskkeys");
 
+	# Global city/country -> propagate to all services
+	$cfg->param("SERVER.CITY", "$R::city");
+	$cfg->param("SERVER.COUNTRY", "$R::country");
+	$cfg->param("VISUALCROSSING.STATION", "$R::city");
+	$cfg->param("VISUALCROSSING.COUNTRY", "$R::country");
+	$cfg->param("OPENWEATHER.STATION", "$R::city");
+	$cfg->param("OPENWEATHER.COUNTRY", "$R::country");
+	$cfg->param("WEATHERFLOW.CITY", "$R::city");
+	$cfg->param("WEATHERFLOW.COUNTRY", "$R::country");
 
 	$cfg->save();
 
@@ -364,6 +384,7 @@ if ($R::form eq "1" || !$R::form) {
 
   $navbar{1}{active} = 1;
   $template->param( "FORM1", 1);
+  $template->param("CURRENT_WEATHERSERVICE", $cfg->param("SERVER.WEATHERSERVICE"));
 
   my @values;
   my %labels;
