@@ -150,8 +150,13 @@ if ($search) {
   } else { 
     $i = 1;
       for $results( @{$decoded_json} ){
-	$city = $results->{address}->{city};
-	$country = $results->{address}->{country};
+	$city = $results->{address}->{city}
+		|| $results->{address}->{town}
+		|| $results->{address}->{village}
+		|| $results->{address}->{hamlet}
+		|| $results->{address}->{municipality}
+		|| "";
+	$country = $results->{address}->{country} || "";
 	$lat = sprintf "%.6f", $results->{lat};
 	$long = sprintf "%.6f", $results->{lon};
 	# Build field ID prefix: for "server" service, coord fields have no prefix
