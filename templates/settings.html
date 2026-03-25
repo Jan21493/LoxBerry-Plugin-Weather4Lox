@@ -244,17 +244,16 @@
 															<font size="-1"><TMPL_VAR SETTINGS.HINT_FREE_ACCOUNT></font>
 														</td>
 													</tr>
+												</table>
+											</div>
+
+											<div data-role="collapsible" data-collapsed="true" id="section-grabber">
+												<h3><TMPL_VAR SETTINGS.LABEL_SECTION_GRABBER></h3>
+												<table class="formtable" border="0" width="100%" cellpadding="10">
 													<tr>
 														<td colspan="4">
-															<hr>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<h2><TMPL_VAR SETTINGS.LABEL_SECTION_GRABBER></h2>
 															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_GRABBER></i></font>
 														</td>
-														<td align="right">&nbsp;</td>
 													</tr>
 													<tr>
 														<td width="25%">
@@ -329,18 +328,15 @@
 															<font size="-1"><TMPL_VAR SETTINGS.HINT_LOXGRABBER></font>
 														</td>
 													</tr>
+												</table>
+											</div>
+
+											<div data-role="collapsible" data-collapsed="true" id="section-pollen">
+												<h3><a href="https://open-meteo.com/" target="_blank"><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/openmeteo.svg" style="height:1.2em;vertical-align:middle;margin-right:8px"></a><TMPL_VAR SETTINGS.LABEL_SECTION_POLLEN_AIRQUALITY></h3>
+												<table class="formtable" border="0" width="100%" cellpadding="10">
 													<tr>
 														<td colspan="4">
-															<hr>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<h2><TMPL_VAR SETTINGS.LABEL_SECTION_POLLEN_AIRQUALITY></h2>
 															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_POLLEN_AIRQUALITY></i></font>
-														</td>
-														<td align="right">
-															<a href="https://open-meteo.com/" target="_blank"><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/openmeteo.svg"></a>
 														</td>
 													</tr>
 													<!-- Open-Meteo Air Quality / Pollen Grabber -->
@@ -427,19 +423,12 @@
 														<td width="5%">&nbsp;</td>
 														<td width="20%">&nbsp;</td>
 													</tr>
-													<tr>
-														<td colspan="4">
-															<hr>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<h2><TMPL_VAR SETTINGS.LABEL_VISUALCROSSING_SETTINGS></h2>
-														</td>
-														<td align="right">
-															<a href="https://www.visualcrossing.com/" target="_blank"><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/visualcrossing.svg"></a>
-														</td>
-													</tr>
+												</table>
+											</div>
+
+											<div data-role="collapsible" data-collapsed="true" class="service-collapsible" id="section-visualcrossing">
+												<h3><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/visualcrossing.svg" style="height:1.2em;vertical-align:middle;margin-right:8px"><TMPL_VAR SETTINGS.LABEL_VISUALCROSSING_SETTINGS></h3>
+												<table class="formtable" border="0" width="100%" cellpadding="10">
 													<tr>
 														<td colspan=4>
 															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_VISUALCROSSING_DESC></i></font>
@@ -456,19 +445,12 @@
 														<td width="20%">&nbsp;</td>
 													</tr>
 													
-													<tr>
-														<td colspan=4>
-														<hr>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<h2><TMPL_VAR SETTINGS.LABEL_OPENWEATHER_SETTINGS></h2>
-														</td>
-														<td align="right">
-															<a href="https://openweathermap.org/" target="_blank"><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/openweather_200.png"></a>
-														</td>
-													</tr>
+												</table>
+											</div>
+
+											<div data-role="collapsible" data-collapsed="true" class="service-collapsible" id="section-openweather">
+												<h3><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/openweather_200.png" style="height:1.2em;vertical-align:middle;margin-right:8px"><TMPL_VAR SETTINGS.LABEL_OPENWEATHER_SETTINGS></h3>
+												<table class="formtable" border="0" width="100%" cellpadding="10">
 													<tr>
 														<td colspan=4>
 															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_OPENWEATHER_DESC></i></font>
@@ -484,19 +466,12 @@
 														<td width="5%">&nbsp;</td>
 														<td width="20%">&nbsp;</td>
 													</tr>
-													<tr>
-														<td colspan=4>
-														<hr>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<h2><TMPL_VAR SETTINGS.LABEL_WTTRIN_SETTINGS></h2>
-														</td>
-														<td align="right">
-															<a href="https://wttr.in/" target="_blank"><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/wttrin.png"></a>
-														</td>
-													</tr>
+												</table>
+											</div>
+
+											<div data-role="collapsible" data-collapsed="true" class="service-collapsible" id="section-wttrin">
+												<h3><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/wttrin.png" style="height:1.2em;vertical-align:middle;margin-right:8px"><TMPL_VAR SETTINGS.LABEL_WTTRIN_SETTINGS></h3>
+												<table class="formtable" border="0" width="100%" cellpadding="10">
 													<tr>
 														<td colspan=4>
 															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_WTTRIN_DESC></i></font>
@@ -522,19 +497,12 @@
 															<font size="-1"><TMPL_VAR SETTINGS.HINT_WTTRINSTATIONID></font>
 														</td>
 													</tr>
-													<tr>
-														<td colspan=4>
-														<hr>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<h2><TMPL_VAR SETTINGS.LABEL_WETTERONLINE_SETTINGS></h2>
-														</td>
-														<td align="right">
-															<a href="https://www.wetteronline.de/" target="_blank"><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/wetteronline_logo.png"></a>
-														</td>
-													</tr>
+												</table>
+											</div>
+
+											<div data-role="collapsible" data-collapsed="true" class="service-collapsible" id="section-wetteronline">
+												<h3><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/wetteronline_logo.png" style="height:1.2em;vertical-align:middle;margin-right:8px"><TMPL_VAR SETTINGS.LABEL_WETTERONLINE_SETTINGS></h3>
+												<table class="formtable" border="0" width="100%" cellpadding="10">
 													<tr>
 														<td colspan=4>
 															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_WETTERONLINE_DESC></i></font>
@@ -559,19 +527,12 @@
 															<font size="-1"><TMPL_VAR SETTINGS.HINT_WETTERONLINESTATIONID></font>
 														</td>
 													</tr>
-													<tr>
-														<td colspan=4>
-														<hr>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<h2><TMPL_VAR SETTINGS.LABEL_WEATHERFLOW_SETTINGS></h2>
-														</td>
-														<td align="right">
-															<a href="https://weatherflow.com/" target="_blank"><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/weatherflow.svg"></a>
-														</td>
-													</tr>
+												</table>
+											</div>
+
+											<div data-role="collapsible" data-collapsed="true" class="service-collapsible" id="section-weatherflow">
+												<h3><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/weatherflow.svg" style="height:1.2em;vertical-align:middle;margin-right:8px"><TMPL_VAR SETTINGS.LABEL_WEATHERFLOW_SETTINGS></h3>
+												<table class="formtable" border="0" width="100%" cellpadding="10">
 													<tr>
 														<td colspan=4>
 															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_WEATHERFLOW_DESC></i></font>
@@ -612,6 +573,7 @@
 													</tr>
 												</table>
 											</div>
+
 									<p>
 										&nbsp;
 									</p>
