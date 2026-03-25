@@ -53,6 +53,67 @@
 													</tr>
 													<tr>
 														<td colspan=3 width="75%">
+															<h2><TMPL_VAR SETTINGS.LABEL_SECTION_GLOBAL_LOCATION></h2>
+															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_GLOBAL_LOCATION></i></font>
+														</td>
+														<td align="right">&nbsp;</td>
+													</tr>
+													<tr>
+														<td width="25%">
+															<label id="labelcoordinates"><TMPL_VAR SETTINGS.LABEL_COORDINATES></label>
+														</td>
+														<td width="50%">
+															<table border="0" width="100%">
+															<tr>
+																<td align="right"><label id="labelcoordlat"><TMPL_VAR SETTINGS.LABEL_LATITUDE></label></td>
+																<td><input id="coordlat" name="coordlat" type="text" data-validation-rule="special:number-min-max-value:-90:90" class="textfield" value="<TMPL_VAR SERVER.COORDLAT>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_LATITUDE>"></td>
+																<td align="right"><label id="labelcoordlong"><TMPL_VAR SETTINGS.LABEL_LONGITUDE></label></td>
+																<td><input id="coordlong" name="coordlong" type="text" data-validation-rule="special:number-min-max-value:-180:180" class="textfield" value="<TMPL_VAR SERVER.COORDLONG>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_LONGITUDE>"></td>
+															</tr>
+															</table>
+														</td>
+														<td width="5%">&nbsp;</td>
+														<td width="20%">
+															<a id="coordaddresssearch" data-role="button" data-inline="true" data-mini="true" href="#" onClick="window.open('/admin/plugins/<TMPL_VAR LBPPLUGINDIR>/geolocation.cgi?service=server','NewWindow2','scrollbars=true,toolbar=no,location=no,directories=no,status=no,menubar=no,copyhistory=no,width=900,height=600')">
+																<font size="-1"><TMPL_VAR SETTINGS.LABEL_ADDRESSSEARCH></font>
+															</a><br>
+															<font size="-1"><TMPL_VAR SETTINGS.HINT_ADDRESSSEARCH></font>
+														</td>
+													</tr>
+													<tr>
+														<td width="25%">
+															<label id="labelcity"><TMPL_VAR SETTINGS.LABEL_CITY> / <TMPL_VAR SETTINGS.LABEL_COUNTRY></label>
+														</td>
+														<td width="50%">
+															<table border="0" width="100%"><tr>
+																<td width="50%"><input id="city" name="city" type="text" class="textfield" value="<TMPL_VAR SERVER.CITY>"></td>
+																<td width="50%"><input id="country" name="country" type="text" class="textfield" value="<TMPL_VAR SERVER.COUNTRY>"></td>
+															</tr></table>
+														</td>
+														<td width="5%">
+															&nbsp;
+														</td>
+														<td width="20%">
+															<font size="-1"><TMPL_VAR SETTINGS.HINT_JUSTFORWEBPAGE></font>
+														</td>
+													</tr>
+													<tr>
+														<td width="25%">
+															<label id="labelserverlang"><TMPL_VAR SETTINGS.LABEL_LANG></label>
+														</td>
+														<td width="50%">
+															<TMPL_VAR SERVERLANG>
+														</td>
+														<td width="5%">&nbsp;</td>
+														<td width="20%">&nbsp;</td>
+													</tr>
+													<tr>
+														<td colspan="4">
+															<hr>
+														</td>
+													</tr>
+													<tr>
+														<td colspan=3 width="75%">
 															<h2><TMPL_VAR SETTINGS.LABEL_SECTION_STANDARD_WEATHER></h2>
 															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_STANDARD_WEATHER></i></font>
 														</td>
@@ -89,6 +150,34 @@
 														</td>
 														<td width="20%">
 															<font size="-1"><TMPL_VAR SETTINGS.HINT_FREE_ACCOUNT></font>
+														</td>
+													</tr>
+													<tr>
+														<td width="25%">
+															<label id="labelmetric"><TMPL_VAR SETTINGS.LABEL_UNITS></label>
+														</td>
+														<td width="50%">
+															<TMPL_VAR METRIC>
+														</td>
+														<td width="5%">
+															&nbsp;
+														</td>
+														<td width="20%">
+															&nbsp;
+														</td>
+													</tr>
+													<tr>
+														<td width="25%">
+															<label id="labelmaskkeys"><TMPL_VAR SETTINGS.LABEL_MASKKEYS></label>
+														</td>
+														<td width="50%">
+															<TMPL_VAR MASKKEYS>
+														</td>
+														<td width="5%">
+															&nbsp;
+														</td>
+														<td width="20%">
+															<font size="-1"><TMPL_VAR SETTINGS.HINT_MASKKEYS></font>
 														</td>
 													</tr>
 													<tr>
@@ -153,78 +242,6 @@
 														</td>
 														<td width="20%">
 															<font size="-1"><TMPL_VAR SETTINGS.HINT_FREE_ACCOUNT></font>
-														</td>
-													</tr>
-													<tr>
-														<td colspan="4">
-															<hr>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<h2><TMPL_VAR SETTINGS.LABEL_SECTION_GENERAL_SETTINGS></h2>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_GENERAL_SETTINGS></i></font>
-														</td>
-														<td align="right">&nbsp;</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelmetric"><TMPL_VAR SETTINGS.LABEL_UNITS></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR METRIC>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															&nbsp;
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelserverlang"><TMPL_VAR SETTINGS.LABEL_LANG></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR SERVERLANG>
-														</td>
-														<td width="5%">&nbsp;</td>
-														<td width="20%">&nbsp;</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelcoordinates"><TMPL_VAR SETTINGS.LABEL_COORDINATES></label>
-														</td>
-														<td width="50%">
-															<table border="0" width="100%">
-															<tr>
-																<td align="right"><label id="labelcoordlat"><TMPL_VAR SETTINGS.LABEL_LATITUDE></label></td>
-																<td><input id="coordlat" name="coordlat" type="text" data-validation-rule="special:number-min-max-value:-90:90" class="textfield" value="<TMPL_VAR SERVER.COORDLAT>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_LATITUDE>"></td>
-																<td align="right"><label id="labelcoordlong"><TMPL_VAR SETTINGS.LABEL_LONGITUDE></label></td>
-																<td><input id="coordlong" name="coordlong" type="text" data-validation-rule="special:number-min-max-value:-180:180" class="textfield" value="<TMPL_VAR SERVER.COORDLONG>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_LONGITUDE>"></td>
-															</tr>
-															</table>
-														</td>
-														<td width="5%">&nbsp;</td>
-														<td width="20%">
-															<a id="coordaddresssearch" data-role="button" data-inline="true" data-mini="true" href="#" onClick="window.open('/admin/plugins/<TMPL_VAR LBPPLUGINDIR>/geolocation.cgi?service=server','NewWindow2','scrollbars=true,toolbar=no,location=no,directories=no,status=no,menubar=no,copyhistory=no,width=900,height=600')">
-																<font size="-1"><TMPL_VAR SETTINGS.LABEL_ADDRESSSEARCH></font>
-															</a><br>
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_ADDRESSSEARCH></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelmaskkeys"><TMPL_VAR SETTINGS.LABEL_MASKKEYS></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR MASKKEYS>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_MASKKEYS></font>
 														</td>
 													</tr>
 													<tr>
@@ -438,23 +455,6 @@
 														<td width="5%">&nbsp;</td>
 														<td width="20%">&nbsp;</td>
 													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelvisualcrossingcity"><TMPL_VAR SETTINGS.LABEL_CITY> / <TMPL_VAR SETTINGS.LABEL_COUNTRY></label>
-														</td>
-														<td width="50%">
-															<table border="0" width="100%"><tr>
-																<td width="50%"><input id="visualcrossingcity" name="visualcrossingcity" type="text" class="textfield" value="<TMPL_VAR VISUALCROSSING.STATION>"></td>
-																<td width="50%"><input id="visualcrossingcountry" name="visualcrossingcountry" type="text" class="textfield" value="<TMPL_VAR VISUALCROSSING.COUNTRY>"></td>
-															</tr></table>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_JUSTFORWEBPAGE></font>
-														</td>
-													</tr>
 													
 													<tr>
 														<td colspan=4>
@@ -484,24 +484,6 @@
 														<td width="5%">&nbsp;</td>
 														<td width="20%">&nbsp;</td>
 													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelopenweathercity"><TMPL_VAR SETTINGS.LABEL_CITY> / <TMPL_VAR SETTINGS.LABEL_COUNTRY></label>
-														</td>
-														<td width="50%">
-															<table border="0" width="100%"><tr>
-																<td width="50%"><input id="openweathercity" name="openweathercity" type="text" class="textfield" value="<TMPL_VAR OPENWEATHER.STATION>"></td>
-																<td width="50%"><input id="openweathercountry" name="openweathercountry" type="text" class="textfield" value="<TMPL_VAR OPENWEATHER.COUNTRY>"></td>
-															</tr></table>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_JUSTFORWEBPAGE></font>
-														</td>
-													</tr>
-													
 													<tr>
 														<td colspan=4>
 														<hr>
@@ -609,24 +591,6 @@
 															&nbsp;
 														</td>
 													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelweatherflowcity"><TMPL_VAR SETTINGS.LABEL_CITY> / <TMPL_VAR SETTINGS.LABEL_COUNTRY></label>
-														</td>
-														<td width="50%">
-															<table border="0" width="100%"><tr>
-																<td width="50%"><input id="weatherflowcity" name="weatherflowcity" type="text" class="textfield" value="<TMPL_VAR WEATHERFLOW.CITY>"></td>
-																<td width="50%"><input id="weatherflowcountry" name="weatherflowcountry" type="text" class="textfield" value="<TMPL_VAR WEATHERFLOW.COUNTRY>"></td>
-															</tr></table>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_JUSTFORWEBPAGE></font>
-														</td>
-													</tr>
-													
 													<tr>
 														<td width="25%">
 															<label id="labelweatherflowstationid"><TMPL_VAR SETTINGS.LABEL_STATIONID></label>
