@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Grabber for overwriting data by WeatherUnderground data
+# Grabber for overwriting data by FOSHK Plugin data
 
 # Copyright 2016-2023 Michael Schlenstedt, michael@loxberry.de
 #                     Christian Fenzl, christian@loxberry.de
@@ -27,8 +27,10 @@ use warnings;
 use LoxBerry::System;
 use LoxBerry::Log;
 use LWP::UserAgent;
-use JSON qw( decode_json );
-use File::Copy;
+use JSON::PP;
+use File::Basename qw(basename);
+use utf8;
+use Encode qw(encode_utf8);
 use Getopt::Long;
 use Time::Piece;
 #use Data::Dumper;
@@ -42,12 +44,16 @@ require "$lbpbindir/grabber_utils.pl";
 # Version of this script
 my $version = LoxBerry::System::pluginversion();
 
-my $pcfg		= new Config::Simple("$lbpconfigdir/weather4lox.cfg");
-my $url			= $pcfg->param("FOSHK.URL");
-my $server		= $pcfg->param("FOSHK.SERVER");
-my $port		= $pcfg->param("FOSHK.PORT");
-my $currentnametmp 	= "$lbplogdir/current.dat.tmp";
-my $currentname    	= "$lbplogdir/current.dat";
+# params from config
+my $pcfg        = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
+my $url         = $pcfg->param("FOSHK.URL");
+my $server      = $pcfg->param("FOSHK.SERVER");
+my $port        = $pcfg->param("FOSHK.PORT");
+
+# names for JSON
+my $grabberFile     = basename(__FILE__);
+my $grabberLabel    = "FOSHK";
+my $grabberKey      = "foshk";              # name in JSONs
 
 # Read language phrases
 my %L = LoxBerry::System::readlanguage("language.ini");
@@ -55,7 +61,7 @@ my %L = LoxBerry::System::readlanguage("language.ini");
 # Create a logging object
 my $log = LoxBerry::Log->new (
 	package => 'weather4lox',
-	name => 'grabber_foshk',
+	name => "$grabberLabel",
 	logdir => "$lbplogdir",
 );
 
@@ -65,164 +71,92 @@ my $verbose = '';
 GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 });
 
-# Due to a bug in the Logging routine, set the loglevel fix to 3
 if ($verbose) {
 	$log->stdout(1);
 	$log->loglevel(7);
 }
 
-LOGSTART "Weather4Lox GRABBER_FOSHK process started";
+LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
 # Get data from FOSHK Plugin Server for current conditions
-my $decoded_json = api_call(
+my $decoded_json = apiCall(
 	url => "http://$server\:$port/$url",
-	#maskkeys => $maskkeys, # not needed here
-	#keyparam => 'api_key',
-	# apikey => $apikey,
-	info => "from FOSHK Plugin at $server\:$port (Current Weather Data)",
+	info => "from $grabberLabel at $server\:$port (Current Weather Data)",
 );
 
-# Write location data into database
-my $t = localtime($decoded_json->{observations}->[0]->{epoch});
+# Read existing current.json envelope
+my $weatherKey = "current";
+my $envelope = readJsonFile($lbplogdir, $weatherKey);
+my $cur = $envelope->{$weatherKey} // {};
+
+LOGDEB "Adding $grabberLabel data to $weatherKey weather data (existing values for same keys will be overwritten).";
+
+# Shorthand for FOSHK observations
+my $obs   = $decoded_json->{observations}->[0];
+my $obs_m = $obs->{metric} // {};
+
+my $t = localtime($obs->{epoch});
 LOGINF "Saving new Data for Timestamp $t to database.";
 
-my %wu_weather;
-my @wu_weather_arr;
-my %wu_response;
+# real (air) temperature, feels like / wind chill
+my $temp      = getFormatted('%.1f', $obs, 'metric', 'temp');
+my $windChill = getFormatted('%.1f', $obs, 'metric', 'windChill');
 
-# ColNr beginning with 0
-# See data/current.format
-%wu_weather = (
-	"cur_tt" => 11,
-	"cur_tt_fl" => 12,
-	"cur_hu" => 13,
-	"cur_w_dirdes" => 14,
-	"cur_w_dir" => 15,
-	"cur_w_sp" => 16,
-	"cur_w_gu" => 17,
-	"cur_w_ch" => 18,
-	"cur_pr" => 19,
-	"cur_dp" => 20,
-	"cur_sr" => 22,
-	"cur_uvi" => 24,
-	"cur_prec_today" => 25,
-	"cur_prec_1hr" => 26
-);
-
-# Generate array from hash
-@wu_weather_arr = ( keys %wu_weather );
-
-LOGDEB "Data to request: " . join(', ', @wu_weather_arr);
-
-# Grab data from FOSHK
-$wu_response{cur_tt} = sprintf("%.1f",$decoded_json->{observations}->[0]->{metric}->{temp}) if ($decoded_json->{observations}->[0]->{metric}->{temp} ne "null");
-$wu_response{cur_tt_fl}	= sprintf("%.1f",$decoded_json->{observations}->[0]->{metric}->{windChill}) if ($decoded_json->{observations}->[0]->{metric}->{windChill} ne "null");
-$wu_response{cur_hu} = $decoded_json->{observations}->[0]->{humidity} if ($decoded_json->{observations}->[0]->{humidity} ne "null");
-$wu_response{cur_w_dir}	= $decoded_json->{observations}->[0]->{winddir} if ($decoded_json->{observations}->[0]->{winddir} ne "null");
-my $wdir = $wu_response{cur_w_dir};
-my $wdirdes;
-if ($wu_response{cur_w_dir} ne "null") {
-	if ( $wdir >= 0 && $wdir <= 22 ) { $wdirdes =  $L{'GRABBER.LABEL_N'} }; # North
-	if ( $wdir > 22 && $wdir <= 68 ) { $wdirdes =  $L{'GRABBER.LABEL_NE'} }; # NorthEast
-	if ( $wdir > 68 && $wdir <= 112 ) { $wdirdes = $L{'GRABBER.LABEL_E'} }; # East
-	if ( $wdir > 112 && $wdir <= 158 ) { $wdirdes = $L{'GRABBER.LABEL_SE'} }; # SouthEast
-	if ( $wdir > 158 && $wdir <= 202 ) { $wdirdes = $L{'GRABBER.LABEL_S'} }; # South
-	if ( $wdir > 202 && $wdir <= 248 ) { $wdirdes = $L{'GRABBER.LABEL_SW'} }; # SouthWest
-	if ( $wdir > 248 && $wdir <= 292 ) { $wdirdes = $L{'GRABBER.LABEL_W'} }; # West
-	if ( $wdir > 292 && $wdir <= 338 ) { $wdirdes = $L{'GRABBER.LABEL_NW'} }; # NorthWest
-	if ( $wdir > 338 && $wdir <= 360 ) { $wdirdes = $L{'GRABBER.LABEL_N'} }; # North
-	$wdirdes = $wdirdes;
-	$wu_response{cur_w_dirdes} = $wdirdes;
-}
-$wu_response{cur_w_sp} = $decoded_json->{observations}->[0]->{metric}->{windSpeed} if ($decoded_json->{observations}->[0]->{metric}->{windSpeed} ne "null");
-$wu_response{cur_w_gu} = $decoded_json->{observations}->[0]->{metric}->{windGust} if ($decoded_json->{observations}->[0]->{metric}->{windGust} ne "null");
-$wu_response{cur_w_ch} = sprintf("%.1f",$decoded_json->{observations}->[0]->{metric}->{windChill}) if ($decoded_json->{observations}->[0]->{metric}->{windChill} ne "null");
-$wu_response{cur_pr} = $decoded_json->{observations}->[0]->{metric}->{pressure} if ($decoded_json->{observations}->[0]->{metric}->{pressure} ne "null");
-$wu_response{cur_dp} = $decoded_json->{observations}->[0]->{metric}->{dewpt} if ($decoded_json->{observations}->[0]->{metric}->{dewpt} ne "null");
-$wu_response{cur_sr} = sprintf("%.0f",$decoded_json->{observations}->[0]->{solarRadiation}) if ($decoded_json->{observations}->[0]->{solarRadiation} ne "null"); # For FOSHKplugin < V0.06
-$wu_response{cur_sr} = sprintf("%.0f",$decoded_json->{observations}->[0]->{solarradiation}) if ($decoded_json->{observations}->[0]->{solarradiation} ne "null"); # For FOSHKplugin >= V0.06
-$wu_response{cur_uvi} = $decoded_json->{observations}->[0]->{uv} if ($decoded_json->{observations}->[0]->{uv} ne "null"); # For FOSHKplugin < V0.05
-$wu_response{cur_uvi} = $decoded_json->{observations}->[0]->{UV} if ($decoded_json->{observations}->[0]->{UV} ne "null"); # For FOSHKplugin >= V0.05
-$wu_response{cur_prec_today} = $decoded_json->{observations}->[0]->{metric}->{precipTotal} if ($decoded_json->{observations}->[0]->{metric}->{precipTotal} ne "null");
-$wu_response{cur_prec_1hr} = $decoded_json->{observations}->[0]->{metric}->{precipRate} if ($decoded_json->{observations}->[0]->{metric}->{precipRate} ne "null");
-
-LOGDEB "Copying current.dat to current.dat.tmp";
-copy($currentname, $currentnametmp);
-
-LOGINF "Reading current.dat.tmp";
-
-my $datafile_str = LoxBerry::System::read_file($currentnametmp);
-chomp($datafile_str);
-
-LOGDEB "Old line: $datafile_str";
-
-my @values = split /\|/, $datafile_str;
-
-foreach my $resp (keys %wu_weather ) {
-	#print STDERR "Object $resp has value " . $wu_response{$resp} . "\n";
-	if(defined($wu_response{$resp}) and $wu_response{$resp} ne "-9999") {
-		my $col = $wu_weather{$resp};
-		$values[$col] = $wu_response{$resp};
-		$values[$col] =~ s/^([-\d\.]+).*/$1/g;
-		LOGDEB "  Response from $resp (value $values[$col]) is set to column $col";
-	}
+$cur->{temperature}{air}       = $temp;                        # cur_tt  - air temperature (°C)
+# Windchill is only relevant if it differs significantly from the actual temperature
+if (defined $windChill && defined $temp && abs($windChill - $temp) > 0.1 || !defined $cur->{temperature}{windChill}) {
+    $cur->{temperature}{windChill} = $windChill;               # cur_w_ch / cur_tt_fl - wind chill (°C)
 }
 
-# Joining line
-my $newline = join('|', @values);
-
-LOGDEB "New line: $newline";
-
-# Write patched file
-eval {
-	open(my $fh, ">$currentnametmp");
-	binmode $fh, ':encoding(UTF-8)';
-	print $fh Encode::decode("UTF-8", $newline);
-	close $fh;
-}
-or do {
-    LOGCRIT "Could not write $currentnametmp: $@";
-	exit 2;
+# wind data
+my $windDir = getFormatted('%.0f', $obs, 'winddir');
+$cur->{wind} = {
+    direction  => $windDir,                                                    # cur_w_dir    - wind direction (degree)
+    cardinal   => getWindDirCardinal($windDir),                                # to calculate cur_w_dirdes - wind direction description from (N, NE, E, SE, S, SW, W, NW)
+    speed      => getFormatted('%.2f', $obs, 'metric', 'windSpeed'),           # cur_w_sp     - wind speed (km/h)
+    gust       => getFormatted('%.2f', $obs, 'metric', 'windGust'),            # cur_w_gu     - wind gust (km/h)
 };
 
-# Test file
-my $currentsize = -s ($currentnametmp);
-if ($currentsize > 100) {
-        move($currentnametmp, $currentname);
-} else {
-	LOGCRIT "File size below 100 bytes - no new file created: $currentnametmp";
-	exit 2;
-}
+# other weather data
+$cur->{humidity}        = getFormatted('%.1f', $obs, 'humidity');              # cur_hu  - humidity (%)
+$cur->{pressure}        = getFormatted('%.0f', $obs, 'metric', 'pressure');    # cur_pr  - air pressure (hPa)
+$cur->{dewpoint}        = getFormatted('%.1f', $obs, 'metric', 'dewpt');       # cur_dp  - dew point (°C)
+
+# Solar radiation: FOSHKplugin >= V0.06 uses lowercase, older uses camelCase
+$cur->{solarRadiation}  = getFormatted('%.0f', $obs, 'solarradiation')
+                       // getFormatted('%.0f', $obs, 'solarRadiation');        # cur_sr  - solar radiation (W/m²)
+
+# UV index: FOSHKplugin >= V0.05 uses uppercase, older uses lowercase
+$cur->{uvIndex}         = getFormatted('%.1f', $obs, 'UV')
+                       // getFormatted('%.1f', $obs, 'uv');                    # cur_uvi - UV index
+
+# precipitation
+my %precipitation = %{ $cur->{precipitation} // {} };
+$precipitation{rainToday} = getFormatted('%.2f', $obs, 'metric', 'precipTotal');   # cur_prec_today - today precipitation (mm)
+$precipitation{rain1hr}   = getFormatted('%.2f', $obs, 'metric', 'precipRate');    # cur_prec_1hr   - 1h precipitation rate (mm)
+$cur->{precipitation} = \%precipitation;
+
+# Add grabber metadata
+my $dtCurrent = localtime;
+$envelope->{$grabberKey} = {
+    filename        => "$lbplogdir/$weatherKey.json",
+    generatedAt     => $dtCurrent->datetime(),
+    grabberLabel    => $grabberLabel,
+    grabberScript   => $grabberFile,
+    schemaVersion   => "v1.0",
+};
+$envelope->{$weatherKey} = $cur;
+
+# Add refresh interval from CRON_PATCH config
+my $cronMinutes = $pcfg->param("SERVER.CRON_PATCH") // 1;
+$envelope->{refresh} = $cronMinutes * 60;
+
+# Write JSON back to file
+writeJsonFile($lbplogdir, $weatherKey, $envelope);
 
 # Give OK status to client.
 LOGOK "Current Data saved successfully.";
-
-# Write current.json directly from API data (not via .dat roundabout)
-my $obs = $decoded_json->{observations}->[0];
-my $obs_m = $obs->{metric} // {};
-my %current_data = (
-    epoch              => $obs->{epoch},
-    temperature        => sprintf("%.1f", $obs_m->{temp})        // undef,
-    feelslike          => sprintf("%.1f", $obs_m->{windChill})    // undef,
-    humidity           => $obs->{humidity},
-    wind_direction_desc => wind_direction_text($obs->{winddir}, \%L),
-    wind_direction_deg => $obs->{winddir},
-    wind_speed         => $obs_m->{windSpeed},
-    wind_gust          => $obs_m->{windGust},
-    windchill          => sprintf("%.1f", $obs_m->{windChill})    // undef,
-    pressure           => $obs_m->{pressure},
-    dewpoint           => $obs_m->{dewpt},
-    solar_radiation    => sprintf("%.0f", $obs->{solarradiation} // $obs->{solarRadiation} // 0),
-    uv_index           => $obs->{UV} // $obs->{uv},
-    precip_today_mm    => $obs_m->{precipTotal},
-    precip_1hr_mm      => $obs_m->{precipRate},
-);
-eval { write_current_json($lbplogdir,
-    data    => \%current_data,
-    source  => "FOSHK",
-    grabber => "grabber_foshk.pl") };
-LOGWARN "JSON write failed: $@" if $@;
 
 # Exit
 exit;

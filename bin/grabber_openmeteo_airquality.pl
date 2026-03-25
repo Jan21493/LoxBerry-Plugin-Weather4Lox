@@ -2,6 +2,7 @@
 
 # grabber for fetching air quality and pollen data from Open-Meteo Air Quality API
 # fetches air quality and pollen forecast data from air-quality-api.open-meteo.com
+# merges AQ data into current.json and pollen data into all 3 JSON files
 
 # Copyright 2016-2023 Michael Schlenstedt, michael@loxberry.de
 #
@@ -48,6 +49,11 @@ my $pcfg   = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $lat    = $pcfg->param("OPENMETEOAIRQUALITY.COORDLAT");
 my $lon    = $pcfg->param("OPENMETEOAIRQUALITY.COORDLONG");
 
+# names for JSON
+my $grabberFile     = basename(__FILE__);
+my $grabberLabel    = "Open-Meteo Air Quality and Pollen";
+my $grabberKey      = "openmeteo_airquality";              # name in JSONs
+
 # Determine system timezone (Debian / DietPi)
 my $timezone = $ENV{TZ} // '';
 
@@ -68,7 +74,7 @@ if (!$timezone || !-f "/usr/share/zoneinfo/$timezone") {
 # Create a logging object
 my $log = LoxBerry::Log->new (
 	package => 'weather4lox',
-	name => 'grabber_openmeteo_airquality',
+	name => "$grabberLabel",
 	logdir => "$lbplogdir",
 );
 
@@ -83,7 +89,7 @@ if ($verbose) {
 	$log->loglevel(7);
 }
 
-LOGSTART "Weather4Lox GRABBER_OPENMETEO_AIRQUALITY process started";
+LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
 # Validate coordinates
@@ -93,6 +99,19 @@ if ( !defined $lat || $lat eq '' || !defined $lon || $lon eq '' ) {
 }
 
 LOGINF "Using coordinates: lat=$lat, lon=$lon";
+
+##########################################################################
+# Pollen sensitivity from config [POLLEN] section
+##########################################################################
+
+my %pollenSensitivity = (
+    ALDER   => $pcfg->param("POLLEN.ALDER")   // 0,
+    BIRCH   => $pcfg->param("POLLEN.BIRCH")    // 0,
+    GRASS   => $pcfg->param("POLLEN.GRASS")    // 0,
+    MUGWORT => $pcfg->param("POLLEN.MUGWORT")  // 0,
+    OLIVE   => $pcfg->param("POLLEN.OLIVE")    // 0,
+    RAGWEED => $pcfg->param("POLLEN.RAGWEED")  // 0,
+);
 
 ##########################################################################
 # Fetch data from Open-Meteo Air Quality API
@@ -111,179 +130,231 @@ my $resOM = apiCall(
 );
 
 ##########################################################################
-# Process pollen data
+# Pollen helpers
 ##########################################################################
 
-# Pollen level thresholds (grains/m³) -> level 0-4
-# Returns level 0-4 for a given concentration value
+# Pollen level thresholds (grains/m3) -> level 0-7
 sub pollenLevel {
-	my ($type, $value) = @_;
-	return 0 unless defined $value && $value ne '' && $value ne 'null';
-	$value = 0 + $value; # numeric
+    my ($type, $value) = @_;
+    return 0 unless defined $value && $value > 0;
+    $value = 0 + $value;
 
-	if ( $type eq 'alder' || $type eq 'birch' || $type eq 'olive' ) {
-		return 0 if $value == 0;
-		return 1 if $value <= 10;
-		return 2 if $value <= 50;
-		return 3 if $value <= 200;
-		return 4;
-	} elsif ( $type eq 'grass' || $type eq 'mugwort' || $type eq 'ragweed' ) {
-		return 0 if $value == 0;
-		return 1 if $value <= 5;
-		return 2 if $value <= 20;
-		return 3 if $value <= 50;
-		return 4;
-	}
-	return 0;
+    if ($type eq 'alder' || $type eq 'birch' || $type eq 'olive') {
+        return 1 if $value <= 5;
+        return 2 if $value <= 15;
+        return 3 if $value <= 30;
+        return 4 if $value <= 60;
+        return 5 if $value <= 100;
+        return 6 if $value <= 200;
+        return 7;
+    } elsif ($type eq 'grass' || $type eq 'mugwort' || $type eq 'ragweed') {
+        return 1 if $value <= 2;
+        return 2 if $value <= 5;
+        return 3 if $value <= 10;
+        return 4 if $value <= 20;
+        return 5 if $value <= 35;
+        return 6 if $value <= 50;
+        return 7;
+    }
+    return 0;
 }
 
-# Get hourly timestamps and pollen values
+# Weighted personal mix from pollen levels and config sensitivities
+sub calculatePersonalMix {
+    my ($pollenLevels, $sensitivities) = @_;
+    my $weightedSum = 0;
+    my $totalWeight = 0;
+    for my $type (keys %$pollenLevels) {
+        my $configKey = uc($type);
+        my $weight = $sensitivities->{$configKey} // 0;
+        next unless $weight > 0;
+        $weightedSum += $pollenLevels->{$type} * $weight;
+        $totalWeight += $weight;
+    }
+    return 0 unless $totalWeight > 0;
+    return int($weightedSum / $totalWeight + 0.5);
+}
+
+##########################################################################
+# Extract hourly pollen data from API response
+##########################################################################
+
 my $times = $resOM->{hourly}{time}          // [];
-my %hourly_pollen = (
-	alder   => $resOM->{hourly}{alder_pollen}   // [],
-	birch   => $resOM->{hourly}{birch_pollen}   // [],
-	grass   => $resOM->{hourly}{grass_pollen}   // [],
-	mugwort => $resOM->{hourly}{mugwort_pollen} // [],
-	olive   => $resOM->{hourly}{olive_pollen}   // [],
-	ragweed => $resOM->{hourly}{ragweed_pollen} // [],
-);
-
-# Determine today and tomorrow date strings from the first timestamp
-my ( $todayDate, $tomorrowDate );
-if ( @$times ) {
-	# timestamps are like "2026-03-01T00:00"
-	$todayDate    = substr($times->[0], 0, 10);
-	# compute tomorrow
-	my ($y, $m, $d) = split(/-/, $todayDate);
-	# Simple date increment
-	my @daysInMonth = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
-	# leap year check
-	$daysInMonth[2] = 29 if ($y % 4 == 0 && ($y % 100 != 0 || $y % 400 == 0));
-	$d++;
-	if ($d > $daysInMonth[$m]) {
-		$d = 1;
-		$m++;
-		if ($m > 12) { $m = 1; $y++; }
-	}
-	$tomorrowDate = sprintf("%04d-%02d-%02d", $y, $m, $d);
-}
-
-LOGINF "Today: $todayDate, Tomorrow: $tomorrowDate";
-
-# For each pollen type compute todayAvg, todayMax, tomorrowAvg, tomorrowMax
-my %pollenResult;
 my @pollenTypes = qw(alder birch grass mugwort olive ragweed);
 
-for my $ptype (@pollenTypes) {
-	my @todayLevels    = ();
-	my @tomorrowLevels = ();
-
-	for my $i (0 .. $#$times) {
-		my $ts    = $times->[$i];
-		my $date  = substr($ts, 0, 10);
-		my $raw   = $hourly_pollen{$ptype}[$i];
-		my $level = pollenLevel($ptype, $raw);
-
-		if ($date eq $todayDate) {
-			push @todayLevels, $level;
-		} elsif ($date eq $tomorrowDate) {
-			push @tomorrowLevels, $level;
-		}
-	}
-
-	my $todayAvg    = 0;
-	my $todayMax    = 0;
-	my $tomorrowAvg = 0;
-	my $tomorrowMax = 0;
-
-	if (@todayLevels) {
-		my $sum = 0;
-		for my $l (@todayLevels) { $sum += $l; $todayMax = $l if $l > $todayMax; }
-		$todayAvg = int($sum / scalar(@todayLevels) + 0.5);
-	}
-	if (@tomorrowLevels) {
-		my $sum = 0;
-		for my $l (@tomorrowLevels) { $sum += $l; $tomorrowMax = $l if $l > $tomorrowMax; }
-		$tomorrowAvg = int($sum / scalar(@tomorrowLevels) + 0.5);
-	}
-
-	$pollenResult{$ptype} = {
-		todayAvg    => $todayAvg,
-		todayMax    => $todayMax,
-		tomorrowAvg => $tomorrowAvg,
-		tomorrowMax => $tomorrowMax,
-	};
-
-	LOGDEB "Pollen $ptype: todayAvg=$todayAvg todayMax=$todayMax tomorrowAvg=$tomorrowAvg tomorrowMax=$tomorrowMax";
-}
-
-# Overall today and tomorrow (max of all todayMax / tomorrowMax)
-my $overallToday    = 0;
-my $overallTomorrow = 0;
-for my $ptype (@pollenTypes) {
-	$overallToday    = $pollenResult{$ptype}{todayMax}    if $pollenResult{$ptype}{todayMax}    > $overallToday;
-	$overallTomorrow = $pollenResult{$ptype}{tomorrowMax} if $pollenResult{$ptype}{tomorrowMax} > $overallTomorrow;
-}
-
-##########################################################################
-# Current AQI values
-##########################################################################
-
-my $europeanAqi  = $resOM->{current}{european_aqi} // 0;
-my $usAqi        = $resOM->{current}{us_aqi}       // 0;
-my $pm10         = $resOM->{current}{pm10}         // 0;
-my $pm2_5        = $resOM->{current}{pm2_5}        // 0;
-
-LOGINF "Current AQI: european=$europeanAqi us=$usAqi pm10=$pm10 pm2_5=$pm2_5";
-
-##########################################################################
-# Build result and write JSON file
-##########################################################################
-
-# Current timestamp
-my @lt = localtime(time);
-my $retrieved_at = sprintf("%04d-%02d-%02dT%02d:%02d:%02d",
-	$lt[5]+1900, $lt[4]+1, $lt[3], $lt[2], $lt[1], $lt[0]);
-
-my %result = (
-	source       => "Open-Meteo Air Quality API",
-	retrieved_at => $retrieved_at,
-	coordinates  => { lat => $lat + 0, lon => $lon + 0 },
-	current_aqi  => {
-		europeanAqi => $europeanAqi + 0,
-		usAqi       => $usAqi + 0,
-		pm10        => $pm10 + 0,
-		pm2_5       => $pm2_5 + 0,
-	},
-	pollen           => \%pollenResult,
-	overallToday     => $overallToday,
-	overallTomorrow  => $overallTomorrow,
+my %hourlyPollen = (
+    alder   => $resOM->{hourly}{alder_pollen}   // [],
+    birch   => $resOM->{hourly}{birch_pollen}    // [],
+    grass   => $resOM->{hourly}{grass_pollen}    // [],
+    mugwort => $resOM->{hourly}{mugwort_pollen}  // [],
+    olive   => $resOM->{hourly}{olive_pollen}    // [],
+    ragweed => $resOM->{hourly}{ragweed_pollen}  // [],
 );
 
-my $jsonObj  = JSON->new->pretty->canonical;
-my $jsonText = $jsonObj->encode(\%result);
+# Find the index matching the current hour in the hourly time array
+sub findCurrentHourIndex {
+    my ($timesRef) = @_;
+    my @lt = localtime(time);
+    my $nowHour = sprintf("%04d-%02d-%02dT%02d", $lt[5]+1900, $lt[4]+1, $lt[3], $lt[2]);
+    for my $i (0 .. $#$timesRef) {
+        return $i if substr($timesRef->[$i], 0, 13) eq $nowHour;
+    }
+    return 0;  # fallback to first entry
+}
 
-# Write atomically: write to .tmp, then rename
-my $outfile = "$lbplogdir/airquality_pollen.json";
-my $tmpfile = "$outfile.tmp";
+# Current timestamp for metadata
+my @lt = localtime(time);
+my $generatedAt = sprintf("%04d-%02d-%02dT%02d:%02d:%02d",
+    $lt[5]+1900, $lt[4]+1, $lt[3], $lt[2], $lt[1], $lt[0]);
 
-open(my $fh, '>', $tmpfile) or do {
-	LOGCRIT "Cannot write to $tmpfile: $!";
-	exit 1;
-};
-print $fh $jsonText;
-close($fh);
+LOGINF "Current AQI: european=" . ($resOM->{current}{european_aqi} // 0)
+     . " us=" . ($resOM->{current}{us_aqi} // 0)
+     . " pm10=" . ($resOM->{current}{pm10} // 0)
+     . " pm2_5=" . ($resOM->{current}{pm2_5} // 0);
 
-File::Copy::move($tmpfile, $outfile) or do {
-	LOGCRIT "Cannot rename $tmpfile to $outfile: $!";
-	exit 1;
-};
+LOGDEB "Adding $grabberLabel data to current, daily and hourly weather data (existing values for same keys will be overwritten).";
 
-# Legacy: keep airquality_pollen.json for backward compatibility
-LOGOK "Air quality and pollen data written to $outfile";
+##########################################################################
+# Merge into current.json
+##########################################################################
 
-# AQ/pollen data stays exclusively in airquality_pollen.json (written above).
-# No merge into current.json — pollen data is separate by design.
+my $curEnvelope = readJsonFile($lbplogdir, "current");
+if ($curEnvelope && $curEnvelope->{current}) {
+    my $cur = $curEnvelope->{current};
+
+    # AirQuality (from API current values)
+    $cur->{airQuality} = {
+        aqiEu => ($resOM->{current}{european_aqi} // 0) + 0,
+        aqiUs => ($resOM->{current}{us_aqi} // 0) + 0,
+        pm10  => ($resOM->{current}{pm10} // 0) + 0,
+        pm25  => ($resOM->{current}{pm2_5} // 0) + 0,
+    };
+
+    # Pollen (current hour level)
+    my $nowIdx = findCurrentHourIndex($times);
+    my %curPollen;
+    for my $type (@pollenTypes) {
+        $curPollen{$type} = pollenLevel($type, $hourlyPollen{$type}[$nowIdx]);
+    }
+    $curPollen{personalMix} = calculatePersonalMix(\%curPollen, \%pollenSensitivity);
+    $cur->{pollen} = \%curPollen;
+
+    # Grabber metadata
+    $curEnvelope->{openmeteoAq} = {
+        filename      => "$lbplogdir/current.json",
+        generatedAt   => $generatedAt,
+        grabberLabel  => "Open-Meteo Air Quality",
+        grabberScript => "grabber_openmeteo_airquality.pl",
+        schemaVersion => "v1.0",
+    };
+
+    writeJsonFile($lbplogdir, "current", $curEnvelope);
+    LOGOK "Merged airQuality + pollen into current.json";
+} else {
+    LOGWARN "Could not read current.json or missing 'current' key - skipping AQ merge";
+}
+
+##########################################################################
+# Merge pollen into hourlyforecast.json
+##########################################################################
+
+my $hfcEnvelope = readJsonFile($lbplogdir, "hourlyforecast");
+if ($hfcEnvelope && $hfcEnvelope->{hourlyforecast}) {
+    for my $h (@{$hfcEnvelope->{hourlyforecast}}) {
+        my $hDatetime = $h->{time}{datetime} // '';
+        # Match by truncating to hour: "2026-03-24T21"
+        my $hHour = substr($hDatetime, 0, 13);
+        my $matchIdx;
+        for my $i (0 .. $#$times) {
+            if (substr($times->[$i], 0, 13) eq $hHour) {
+                $matchIdx = $i;
+                last;
+            }
+        }
+        if (defined $matchIdx) {
+            my %hPollen;
+            for my $type (@pollenTypes) {
+                $hPollen{$type} = pollenLevel($type, $hourlyPollen{$type}[$matchIdx]);
+            }
+            $hPollen{personalMix} = calculatePersonalMix(\%hPollen, \%pollenSensitivity);
+            $h->{pollen} = \%hPollen;
+        } else {
+            $h->{pollen} = undef;
+        }
+        $h->{airQuality} = undef;  # no hourly AQ from API
+    }
+
+    # Grabber metadata
+    $hfcEnvelope->{openmeteoAq} = {
+        filename      => "$lbplogdir/hourlyforecast.json",
+        generatedAt   => $generatedAt,
+        grabberLabel  => "Open-Meteo Air Quality",
+        grabberScript => "grabber_openmeteo_airquality.pl",
+        schemaVersion => "v1.0",
+    };
+
+    writeJsonFile($lbplogdir, "hourlyforecast", $hfcEnvelope);
+    LOGOK "Merged pollen into hourlyforecast.json";
+} else {
+    LOGWARN "Could not read hourlyforecast.json or missing 'hourlyforecast' key - skipping pollen merge";
+}
+
+##########################################################################
+# Merge pollen into dailyforecast.json (aggregated from hourly)
+##########################################################################
+
+my $dfcEnvelope = readJsonFile($lbplogdir, "dailyforecast");
+if ($dfcEnvelope && $dfcEnvelope->{dailyforecast}) {
+    for my $d (@{$dfcEnvelope->{dailyforecast}}) {
+        my $dayDate = substr($d->{time}{datetime} // '', 0, 10);
+        next unless $dayDate;
+
+        # Collect hourly levels for this day
+        my %dayLevels;
+        for my $i (0 .. $#$times) {
+            next unless substr($times->[$i], 0, 10) eq $dayDate;
+            for my $type (@pollenTypes) {
+                push @{$dayLevels{$type}}, pollenLevel($type, $hourlyPollen{$type}[$i]);
+            }
+        }
+
+        if (%dayLevels) {
+            my %dPollen;
+            for my $type (@pollenTypes) {
+                my @levels = @{$dayLevels{$type} // []};
+                next unless @levels;
+                my ($sum, $max) = (0, 0);
+                for my $l (@levels) { $sum += $l; $max = $l if $l > $max; }
+                $dPollen{$type} = { avg => int($sum / scalar(@levels) + 0.5), max => $max };
+            }
+            # personalMix for avg and max separately
+            my %avgLevels = map { $_ => $dPollen{$_}{avg} } grep { exists $dPollen{$_} } @pollenTypes;
+            my %maxLevels = map { $_ => $dPollen{$_}{max} } grep { exists $dPollen{$_} } @pollenTypes;
+            $dPollen{personalMix} = {
+                avg => calculatePersonalMix(\%avgLevels, \%pollenSensitivity),
+                max => calculatePersonalMix(\%maxLevels, \%pollenSensitivity),
+            };
+            $d->{pollen} = \%dPollen;
+        } else {
+            $d->{pollen} = undef;
+        }
+        $d->{airQuality} = undef;
+    }
+
+    # Grabber metadata
+    $dfcEnvelope->{openmeteoAq} = {
+        filename      => "$lbplogdir/dailyforecast.json",
+        generatedAt   => $generatedAt,
+        grabberLabel  => "Open-Meteo Air Quality",
+        grabberScript => "grabber_openmeteo_airquality.pl",
+        schemaVersion => "v1.0",
+    };
+
+    writeJsonFile($lbplogdir, "dailyforecast", $dfcEnvelope);
+    LOGOK "Merged pollen into dailyforecast.json";
+} else {
+    LOGWARN "Could not read dailyforecast.json or missing 'dailyforecast' key - skipping pollen merge";
+}
 
 exit;
 

@@ -52,8 +52,10 @@ my $stationid   = $pcfg->param("WUNDERGROUND.STATIONID");
 
 # names for JSON 
 my $grabberFile     = basename(__FILE__);
-my $grabberLabel    = "Weather Underground ";
+my $grabberLabel    = "Weather Underground";
 my $grabberKey      = "wunderground";          # name in JSONs
+my $cronMinutes     = $pcfg->param("SERVER.CRON_PATCH") // 1;
+my $refresh         = $cronMinutes * 60;
 
 # Get the public API key from the WU website
 # curl -Ss https://www.wunderground.com/dashboard/pws/ISACHSEN347 | grep apiKey | sed -r 's/.*apiKey=([0-9a-z]*)\&.*/\1/g'
@@ -66,7 +68,7 @@ my %L = LoxBerry::System::readlanguage("language.ini");
 # Create a logging object
 my $log = LoxBerry::Log->new (
     package => 'weather4lox',
-    name => 'grabber_wu',
+    name => "$grabberLabel",
     logdir => "$lbplogdir",
 );
 
@@ -81,7 +83,7 @@ if ($verbose) {
     $log->loglevel(7);
 }
 
-LOGSTART "Weather4Lox GRABBER_WUNDERGROUND process started";
+LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
 requireOrLogdie('DateTime::Format::ISO8601');
@@ -102,8 +104,8 @@ my $apikey = apiCall(
 # Get data from Wunderground Server (API request) for current conditions
 my $resCurrent = apiCall(
     url => "$wuurl?apiKey=$apikey&stationId=$stationid&format=json&units=m&numericPrecision=decimal",
-    #maskkeys => $maskkeys, # not needed here 
-    #keyparam => 'appid',
+    # maskkeys => $maskkeys, # no masking needed here, because key was retrieved from public web page 
+    # keyparam => 'apiKey',
     # apikey => $apikey,
     info => "for PWS station ID $stationid (Current Weather Data)",
 );
@@ -113,7 +115,7 @@ my $weatherKey = "current";
 my $envelope = readJsonFile($lbplogdir, $weatherKey);
 my $cur = $envelope->{$weatherKey} // {};
 
-LOGDEB "Adding/overwriting WU data to $weatherKey weather data.";
+LOGDEB "Adding $grabberLabel data to $weatherKey weather data (existing values for same keys will be overwritten).";
 
 # real (air) temperature, feels like, wind chill and heat index
 my $temp = getFormatted('%.1f', $resCurrent, 'observations', 0, 'metric', 'temp');
@@ -134,7 +136,7 @@ if (defined $heatIndex && defined $temp && abs($heatIndex - $temp) > 0.1 || !def
 my $windDir = getFormatted('%.0f', $resCurrent, 'observations', 0, 'winddir'); 
 $cur->{wind} = {
     direction       => $windDir,                                                                    # cur_w_dir     - wind direction (degree)
-    dirLabel       => getWindDirectionLabel($windDir, \%L),                                         # cur_w_dirdes  - wind direction description
+    cardinal        => getWindDirCardinal($windDir),                                                # to calculate cur_w_dirdes  - wind direction description
     speed           => getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'windSpeed'), # cur_w_sp      - wind speed (km/h)
     gust            => getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'windGust'),  # cur_w_gu      - wind gust (km/h)
 };
@@ -172,6 +174,7 @@ $envelope->{$grabberKey} = {
     schemaVersion   => "v1.0",
 };
 $envelope->{$weatherKey} = $cur;
+$envelope->{refresh} = $refresh;
 
 # Write JSON back to file
 writeJsonFile($lbplogdir, $weatherKey, $envelope);

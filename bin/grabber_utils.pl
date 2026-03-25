@@ -361,20 +361,19 @@ sub getPercentage {
 }
 
 ##########################################################################
-# Get label for a wind direction in degrees
+# Get label for a wind direction in cardinal directions (N, NE, E, SE, S, SW, W, NW)
 # Parameters:
 #   $deg  - wind direction in degrees (number from 0 to 360 expected)
-#   $Lref - optional hashref to localization hash (e.g. \%L)
 # Return:
-#   $label or (undef, undef) on invalid input
+#   N NE E SE S SW W NW or undef on invalid input
 
-sub getWindDirectionLabel {
-    my ($deg, $Lref) = @_;
+sub getWindDirCardinal {
+    my ($deg) = @_;
 
     # validate/normalize input
-    return (undef, undef) unless defined $deg;
+    return undef unless defined $deg;
     $deg =~ s/^\s+|\s+$//g if !ref $deg;
-    return (undef, undef) unless $deg =~ /^-?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
+    return undef unless $deg =~ /^-?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
 
     $deg += 0;                              # numericify
     $deg = ($deg % 360 + 360) % 360;        # 0..359.999...
@@ -384,6 +383,20 @@ sub getWindDirectionLabel {
 
     # calculate section on eight‑point compass rose
     my $wdir = $dirs[int((($deg + 22.5) / 45)) % 8];
+
+    return $wdir;
+}
+
+
+sub getWindDirectionLabel {
+    my ($deg, $Lref) = @_;
+
+    # calculate section on eight‑point compass rose
+    my $wdir = getWindDirCardinal($deg);
+
+    if (!defined $wdir) {
+        return undef;
+    }
 
     # take localized labels (either from provided hashref or from global %L)
     my $L = $Lref // \%main::L;
@@ -613,6 +626,20 @@ sub toLoxEpoch {
     else {
         $date = DateTime::Format::ISO8601->parse_datetime($dtInput);
     }
+
+    # see https://www.loxforum.com/forum/german/software-konfiguration-programm-und-visualisierung/451911-arbeitsweise-der-neueren-zähler?p=452490#post452490
+    # for discussion about Loxone epoch "zero point"
+    # Base: January 1, 2009, 00:00:00 UTC
+    # my $loxone_ref = DateTime->new(
+    #     year   => 2009,
+    #     month  => 1,
+    #     day    => 1,
+    #     hour   => 0,
+    #     minute => 0,
+    #     second => 0,
+    #     time_zone => 'MEZ'     # time reference is Kollerschlag time (MEZ/UTC+1) according to findings, not UTC!
+    # );
+    # my $loxone_epoch = $date->epoch - $loxone_ref->epoch;
 
     my $loxone_ref = 1230764400;                        # time reference is Kollerschlag time (MEZ/UTC+1) according to findings, not UTC!
     my $loxone_epoch = $date->epoch - $loxone_ref;

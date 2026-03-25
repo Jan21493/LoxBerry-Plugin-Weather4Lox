@@ -27,9 +27,10 @@ use warnings;
 use LoxBerry::System;
 use LoxBerry::Log;
 use LoxBerry::IO;
-#use LWP::UserAgent;
-#use JSON qw( decode_json );
-use File::Copy;
+use JSON::PP;
+use File::Basename qw(basename);
+use utf8;
+use Encode qw(encode_utf8);
 use Getopt::Long;
 use Time::Piece;
 
@@ -42,10 +43,12 @@ require "$lbpbindir/grabber_utils.pl";
 # Version of this script
 my $version = LoxBerry::System::pluginversion();
 
-my $currentnametmp = "$lbplogdir/current.dat.tmp";
-my $currentname    = "$lbplogdir/current.dat";
-
 my $pcfg         = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
+
+# names for JSON
+my $grabberFile     = basename(__FILE__);
+my $grabberLabel    = "Loxone";
+my $grabberKey      = "loxone";              # name in JSONs
 
 # Read language phrases
 my %L = LoxBerry::System::readlanguage("language.ini");
@@ -53,10 +56,8 @@ my %L = LoxBerry::System::readlanguage("language.ini");
 # Create a logging object
 my $log = LoxBerry::Log->new (
 	package => 'weather4lox',
-	name => 'grabber_loxone',
+	name => "$grabberLabel",
 	logdir => "$lbplogdir",
-	#filename => "$lbplogdir/weather4lox.log",
-	#append => 1,
 );
 
 # Commandline options
@@ -65,55 +66,45 @@ my $verbose = '';
 GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 });
 
-# Due to a bug in the Logging routine, set the loglevel fix to 3
-#$log->loglevel(3);
 if ($verbose) {
 	$log->stdout(1);
 	$log->loglevel(7);
 }
 
-LOGSTART "Weather4Lox GRABBER_LOXONE process started";
+LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
 
 LOGINF "Fetching weather data from Loxone Miniserver";
 
 my %lox_response;
-my %lox_weather_vi;
 my @lox_weather_arr;
 my $response_success;
 
-# VI-Name => ColNr.
-# ColNr beginning with 0
-# See data/current.format
-%lox_weather_vi = (
-	"w4l_cur_tt" => 11,
-	"w4l_cur_tt_fl" => 12,
-	"w4l_cur_hu" => 13,
-	"w4l_cur_w_dirdes" => 14,
-	"w4l_cur_w_dir" => 15,
-	"w4l_cur_w_sp" => 16,
-	"w4l_cur_w_gu" => 17,
-	"w4l_cur_w_ch" => 18,
-	"w4l_cur_pr" => 19,
-	"w4l_cur_dp" => 20,
-	"w4l_cur_sr" => 22,
-	"w4l_cur_we_code" => 28
+# VI names to request from Miniserver
+my @lox_vi_names = qw(
+	w4l_cur_tt
+	w4l_cur_tt_fl
+	w4l_cur_hu
+	w4l_cur_w_dir
+	w4l_cur_w_sp
+	w4l_cur_w_gu
+	w4l_cur_w_ch
+	w4l_cur_pr
+	w4l_cur_dp
+	w4l_cur_sr
+	w4l_cur_we_code
 );
 
-# Generate VI array from hash
-@lox_weather_arr = ( keys %lox_weather_vi );
-
-LOGDEB "VI's to request: " . join(', ', @lox_weather_arr);
+LOGDEB "VI's to request: " . join(', ', @lox_vi_names);
 
 # Fetching data from Miniserver
 my $msno = defined $pcfg->param("SERVER.MSNO") ? $pcfg->param("SERVER.MSNO") : 1;
 LOGINF "Using Miniserver no. $msno";
-%lox_response = LoxBerry::IO::mshttp_get($msno, @lox_weather_arr);
+%lox_response = LoxBerry::IO::mshttp_get($msno, @lox_vi_names);
 
-# Checking the response - if nothing is OK, no patching of current.dat required
+# Checking the response - if nothing is OK, no patching required
 foreach my $resp (keys %lox_response) {
-    # print STDERR "Object $resp has value " . $lox_response{$resp};
 	if($lox_response{$resp}) {
 		$response_success = 1;
 		last;
@@ -125,94 +116,68 @@ if( !$response_success ) {
 	exit 0;
 };
 
-LOGDEB "Copying current.dat to current.dat.tmp";
-copy($currentname, $currentnametmp);
+# Read existing current.json envelope
+my $weatherKey = "current";
+my $envelope = readJsonFile($lbplogdir, $weatherKey);
+my $cur = $envelope->{$weatherKey} // {};
 
-LOGINF "Reading current.dat.tmp";
+LOGDEB "Adding $grabberLabel data to $weatherKey weather data (existing values for same keys will be overwritten).";
 
-my $datafile_str = LoxBerry::System::read_file($currentnametmp);
-chomp($datafile_str);
-
-LOGDEB "Old line: $datafile_str";
-
-my @values = split /\|/, $datafile_str;
-
-# Add WinDir Description w4l_cur_w_dir
-my $wdir = $lox_response{w4l_cur_w_dir};
-my $wdirdes;
-if (defined($wdir) and $wdir ne "-9999") {
-	if ( $wdir >= 0 && $wdir <= 22 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'}) }; # North
-	if ( $wdir > 22 && $wdir <= 68 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NE'}) }; # NorthEast
-	if ( $wdir > 68 && $wdir <= 112 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_E'}) }; # East
-	if ( $wdir > 112 && $wdir <= 158 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_SE'}) }; # SouthEast
-	if ( $wdir > 158 && $wdir <= 202 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_S'}) }; # South
-	if ( $wdir > 202 && $wdir <= 248 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_SW'}) }; # SouthWest
-	if ( $wdir > 248 && $wdir <= 292 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_W'}) }; # West
-	if ( $wdir > 292 && $wdir <= 338 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_NW'}) }; # NorthWest
-	if ( $wdir > 338 && $wdir <= 360 ) { $wdirdes = Encode::decode("UTF-8", $L{'GRABBER.LABEL_N'}) }; # North
-	$wdirdes = Encode::decode("UTF-8", $wdirdes);
-	$lox_response{cur_w_dirdes} = $wdirdes;
+# Helper: extract numeric value from Loxone response, skip -9999 sentinel
+sub loxVal {
+	my ($key, $fmt) = @_;
+	my $v = $lox_response{$key};
+	return undef unless defined $v && $v ne "-9999";
+	$v =~ s/^([-\d\.]+).*/$1/g;                   # strip trailing non-numeric
+	return undef unless Scalar::Util::looks_like_number($v);
+	return sprintf($fmt, $v) + 0 if defined $fmt;
+	return $v + 0;
 }
 
-foreach my $resp (keys %lox_response) {
-    # print STDERR "Object $resp has value " . $lox_response{$resp};
-	if(defined($lox_response{$resp}) and $lox_response{$resp} ne "-9999" and defined($lox_weather_vi{$resp}) ) {
-		my $col = $lox_weather_vi{$resp};
-		$values[$col] = $lox_response{$resp};
-		$values[$col] =~ s/^([-\d\.]+).*/$1/g;
-		LOGDEB "  Response from $resp (value $values[$col]) is set to column $col";
-	}
-}
+# temperature
+$cur->{temperature}{air}       = loxVal('w4l_cur_tt',    '%.1f');   # cur_tt  - air temperature (°C)
+$cur->{temperature}{windChill} = loxVal('w4l_cur_tt_fl', '%.1f')    # cur_tt_fl - feels like (°C)
+                              // loxVal('w4l_cur_w_ch',  '%.1f');   # cur_w_ch  - wind chill fallback
 
-# Joining line
-my $newline = join('|', @values);
-
-LOGDEB "New line: $newline";
-
-# Write patched file
-eval {
-	open(my $fh, ">$currentnametmp");
-	binmode $fh, ':encoding(UTF-8)';
-	print $fh Encode::decode("UTF-8", $newline);
-	close $fh;
-}
-or do {
-    LOGCRIT "Could not write $currentnametmp: $@";
-	exit 2;
+# wind data
+my $windDir = loxVal('w4l_cur_w_dir', '%.0f');
+$cur->{wind} = {
+	direction  => $windDir,                                                   # cur_w_dir    - wind direction (degree)
+	cardinal   => getWindDirCardinal($windDir),                               # to calculate cur_w_dirdes - wind direction description from (N, NE, E, SE, S, SW, W, NW)
+	speed      => loxVal('w4l_cur_w_sp', '%.2f'),                             # cur_w_sp     - wind speed (km/h)
+	gust       => loxVal('w4l_cur_w_gu', '%.2f'),                             # cur_w_gu     - wind gust (km/h)
 };
 
-# Test file
-my $currentsize = -s ($currentnametmp);
-if ($currentsize > 100) {
-        move($currentnametmp, $currentname);
-} else {
-	LOGCRIT "File size below 100 bytes - no new file created: $currentnametmp";
-	exit 2;
-}
+# other weather data
+$cur->{humidity}        = loxVal('w4l_cur_hu',      '%.1f');        # cur_hu  - humidity (%)
+$cur->{pressure}        = loxVal('w4l_cur_pr',      '%.0f');        # cur_pr  - air pressure (hPa)
+$cur->{dewpoint}        = loxVal('w4l_cur_dp',      '%.1f');        # cur_dp  - dew point (°C)
+$cur->{solarRadiation}  = loxVal('w4l_cur_sr',      '%.0f');        # cur_sr  - solar radiation (W/m²)
+$cur->{weatherCode}     = loxVal('w4l_cur_we_code', '%.0f');        # cur_we_code - weather code
+
+# Enrich with normalized weatherId from legacy code
+_enrichWeatherId($cur);
+
+# Add grabber metadata
+my $dtCurrent = localtime;
+$envelope->{$grabberKey} = {
+	filename        => "$lbplogdir/$weatherKey.json",
+	generatedAt     => $dtCurrent->datetime(),
+	grabberLabel    => $grabberLabel,
+	grabberScript   => $grabberFile,
+	schemaVersion   => "v1.0",
+};
+$envelope->{$weatherKey} = $cur;
+
+# Add refresh interval from CRON_PATCH config
+my $cronMinutes = $pcfg->param("SERVER.CRON_PATCH") // 1;
+$envelope->{refresh} = $cronMinutes * 60;
+
+# Write JSON back to file
+writeJsonFile($lbplogdir, $weatherKey, $envelope);
 
 # Give OK status to client.
 LOGOK "Current Data saved successfully.";
-
-# Write current.json directly from Miniserver data (not via .dat roundabout)
-my %current_data = (
-    temperature        => $lox_response{w4l_cur_tt},
-    feelslike          => $lox_response{w4l_cur_tt_fl},
-    humidity           => $lox_response{w4l_cur_hu},
-    wind_direction_desc => wind_direction_text($lox_response{w4l_cur_w_dir}, \%L),
-    wind_direction_deg => $lox_response{w4l_cur_w_dir},
-    wind_speed         => $lox_response{w4l_cur_w_sp},
-    wind_gust          => $lox_response{w4l_cur_w_gu},
-    windchill          => $lox_response{w4l_cur_w_ch},
-    pressure           => $lox_response{w4l_cur_pr},
-    dewpoint           => $lox_response{w4l_cur_dp},
-    solar_radiation    => $lox_response{w4l_cur_sr},
-    weather_code       => $lox_response{w4l_cur_we_code},
-);
-eval { write_current_json($lbplogdir,
-    data    => \%current_data,
-    source  => "Loxone",
-    grabber => "grabber_loxone.pl") };
-LOGWARN "JSON write failed: $@" if $@;
 
 # Exit
 exit;
