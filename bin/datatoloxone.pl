@@ -933,7 +933,7 @@ sub mqttconnect
   };
 
   # Update Plugin Status
-  $topic = "weather4lox" if !$topic;; # Use standard if not defined
+  $topic = "w4lx" if !$topic;; # Use standard if not defined
   LOGINF "Publishing " . $topic . "/plugin/lastupdate_epoche" . " " . time();
   $mqtt->retain($topic . "/plugin/lastupdate_epoche", time());
 
