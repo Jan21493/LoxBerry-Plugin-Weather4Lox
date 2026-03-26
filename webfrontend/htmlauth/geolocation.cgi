@@ -150,15 +150,23 @@ if ($search) {
   } else { 
     $i = 1;
       for $results( @{$decoded_json} ){
-	$city = $results->{address}->{city};
-	$country = $results->{address}->{country};
+	$city = $results->{address}->{city}
+		|| $results->{address}->{town}
+		|| $results->{address}->{village}
+		|| $results->{address}->{hamlet}
+		|| $results->{address}->{municipality}
+		|| "";
+	$country = $results->{address}->{country} || "";
 	$lat = sprintf "%.6f", $results->{lat};
 	$long = sprintf "%.6f", $results->{lon};
 	# Build field ID prefix: for "server" service, coord fields have no prefix
 	my $coord_prefix = ($service eq "server") ? "" : $service;
-	# Add City and Country update (skip for "server" which has no city/country fields)
+	# Add City and Country update
 	  $addon = "";
-	  if ($service ne "server") {
+	  if ($service eq "server") {
+	    $addon = ";window.opener.document.getElementById('city').value = '$city'";
+	    $addon = $addon . ";window.opener.document.getElementById('country').value = '$country'";
+	  } else {
 	    $addon = ";window.opener.document.getElementById('" . $service . "city').value = '$city'";
 	    $addon = $addon . ";window.opener.document.getElementById('" . $service . "country').value = '$country'";
 	  }
