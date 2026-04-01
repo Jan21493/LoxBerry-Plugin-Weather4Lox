@@ -591,9 +591,69 @@
                                     </form>
                                     </p>
 
+                                    <!-- Inline save result (hidden by default, shown during/after AJAX save) -->
+                                    <div id="save-overlay" style="display:none;">
+                                      <center>
+                                        <table border="0" style="max-width: 900px; width: 100%;">
+                                          <tr>
+                                            <td align="center">
+                                              <h2 id="save-heading"><TMPL_VAR SETTINGS.HINT_SAVING></h2>
+                                              <pre id="save-log" style="text-align:left; white-space:pre-wrap; background:#fff; color:#333; padding:10px; border-radius:6px; border:1px solid #ccc; min-height:200px;"></pre>
+                                              <p id="save-back" style="display:none; margin-top:15px;">
+                                                <a data-role="button" data-inline="true" data-mini="true" data-icon="back" href="./index.cgi?form=1"><TMPL_VAR SETTINGS.BUTTON_OK></a>
+                                              </p>
+                                            </td>
+                                          </tr>
+                                        </table>
+                                      </center>
+                                    </div>
+
                                     <script>
 
                                     $( document ).ready(function() {
+                                        // Intercept Form 1 submit: POST to ajax-save.cgi synchronously
+                                        $("#main_form").on("submit", function(e) {
+                                            e.preventDefault();
+                                            var $form = $(this);
+
+                                            // Hide form, show save overlay
+                                            $form.hide();
+                                            $("#btncancel").closest("p").hide();
+                                            $("#save-overlay").show();
+                                            $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_SAVING>");
+                                            $("#save-log").text("<TMPL_VAR SETTINGS.SAVING_STARTING>");
+                                            $("#save-log").css("color", "#333");
+                                            $("#save-back").hide();
+
+                                            $.ajax({
+                                                url: "./ajax-save.cgi",
+                                                type: "POST",
+                                                dataType: "json",
+                                                data: $form.serialize() + "&form=1",
+                                                cache: false
+                                            }).done(function(resp) {
+                                                if (resp && resp.checks) {
+                                                    $("#save-log").text(resp.checks.join("\n"));
+                                                }
+                                                if (resp && resp.ok) {
+                                                    $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_OK>");
+                                                    $("#save-log").css("color", "#080");
+                                                } else {
+                                                    $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_ERROR>");
+                                                    $("#save-log").css("color", "#c00");
+                                                    if (resp && resp.error) {
+                                                        $("#save-log").append("\n\n" + resp.error);
+                                                    }
+                                                }
+                                                $("#save-back").show();
+                                            }).fail(function(xhr) {
+                                                $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_ERROR>");
+                                                $("#save-log").text("<TMPL_VAR SETTINGS.SAVING_ERR_START>" + "\n" + (xhr.responseText || ""));
+                                                $("#save-log").css("color", "#c00");
+                                                $("#save-back").show();
+                                            });
+                                        });
+
                                         // Activate on Load
                                         disable();
 
@@ -1405,82 +1465,4 @@
                                         </table>
                                     </center>
 </TMPL_IF>
-<TMPL_IF SAVING>
-  <center>
-    <table border="0" style="max-width: 900px; width: 100%;">
-      <tr>
-        <td align="center">
-          <h2 id="savinghint"><TMPL_VAR SETTINGS.HINT_SAVING></h2>
-          <p id="savingmsg"><TMPL_VAR SAVINGMESSAGE></p>
-
-          <pre id="savinglog" style="text-align:left; white-space:pre-wrap; background:#fff; color:#333; padding:10px; border-radius:6px; border:1px solid #ccc; min-height:200px;"></pre>
-          <p id="savingback" style="display:none; margin-top:15px;">
-            <a data-role="button" data-inline="true" data-mini="true" data-icon="back" href="./index.cgi?form=<TMPL_VAR FORMNO>"><TMPL_VAR SETTINGS.BUTTON_OK></a>
-          </p>
-        </td>
-      </tr>
-    </table>
-  </center>
-
-  <script>
-    // These are set by index.cgi:
-    var saveToken = "<TMPL_VAR SAVETOKEN>";
-    var saveForm  = "<TMPL_VAR FORMNO>";
-
-    function pollStatus() {
-        $.ajax({
-            url: "./ajax-save.cgi",
-            data: { status: saveToken },
-            dataType: "json",
-            cache: false
-        }).done(function(resp){
-            if(resp && resp.log !== undefined) {
-                $("#savinglog").text(resp.log);
-            }
-            if(resp && resp.done) {
-                if(resp.has_error) {
-                    $("#savinghint").text("<TMPL_VAR SETTINGS.HINT_ERROR>");
-                    $("#savingmsg").text("");
-                    $("#savinglog").css("color", "#c00");
-                } else {
-                    $("#savinghint").text("<TMPL_VAR SETTINGS.HINT_OK>");
-                    $("#savingmsg").text("<TMPL_VAR SETTINGS.OK_SETTINGS_SAVED>");
-                    $("#savinglog").css("color", "#080");
-                }
-                $("#savingback").show();
-            } else {
-                setTimeout(pollStatus, 500);
-            }
-        }).fail(function(){
-            setTimeout(pollStatus, 1000);
-        });
-    }
-
-    function startSave() {
-        $.ajax({
-            url: "./ajax-save.cgi",
-            type: "POST",
-            dataType: "json",
-            data: { start: 1, form: saveForm, token: saveToken },
-            cache: false
-        }).done(function(resp){
-            if(resp && resp.ok) {
-                // polling is already running via pollStatus()
-            } else {
-                $("#savinglog").text("<TMPL_VAR SETTINGS.SAVING_ERR_START>" + "\n" + (resp && resp.error ? resp.error : ""));
-                $("#savinglog").css("color", "#c00");
-                $("#savingback").show();
-            }
-        }).fail(function(xhr){
-            $("#savinglog").text("<TMPL_VAR SETTINGS.SAVING_ERR_START>" + "\n" + (xhr.responseText||""));
-            $("#savinglog").css("color", "#c00");
-            $("#savingback").show();
-        });
-    }
-
-    $(document).ready(function(){
-      pollStatus();
-      startSave();
-    });
-  </script>
-</TMPL_IF>
+ 
