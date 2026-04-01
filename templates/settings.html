@@ -1438,13 +1438,13 @@
                 $("#savinglog").text(resp.log);
             }
             if(resp && resp.done) {
-                $("#savinghint").hide();
-                $("#savingmsg").hide();
                 if(resp.has_error) {
-                    // Show error – keep the log visible, add a back-link
+                    $("#savinghint").text("<TMPL_VAR SETTINGS.HINT_ERROR>");
+                    $("#savingmsg").text("");
                     $("#savinglog").css("color", "#c00");
                 } else {
-                    // Success – keep the log visible so user can read messages
+                    $("#savinghint").text("<TMPL_VAR SETTINGS.HINT_OK>");
+                    $("#savingmsg").text("<TMPL_VAR SETTINGS.OK_SETTINGS_SAVED>");
                     $("#savinglog").css("color", "#080");
                 }
                 $("#savingback").show();
@@ -1464,9 +1464,7 @@
             data: { start: 1, form: saveForm, token: saveToken },
             cache: false
         }).done(function(resp){
-            if(resp && resp.ok) {
-                pollStatus();
-            } else {
+            if(!resp || !resp.ok) {
                 $("#savinglog").text("<TMPL_VAR SETTINGS.SAVING_ERR_START>" + "\n" + (resp && resp.error ? resp.error : ""));
                 $("#savinglog").css("color", "#c00");
                 $("#savingback").show();
@@ -1479,6 +1477,7 @@
     }
 
     $(document).ready(function(){
+      pollStatus();
       startSave();
     });
   </script>
