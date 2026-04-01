@@ -1413,7 +1413,7 @@
           <h2><TMPL_VAR SETTINGS.HINT_SAVING></h2>
           <p><TMPL_VAR SAVINGMESSAGE></p>
 
-          <pre id="savinglog" style="text-align:left; white-space:pre-wrap; background:#111; color:#0f0; padding:10px; border-radius:6px; min-height:200px;"></pre>
+          <pre id="savinglog" style="text-align:left; white-space:pre-wrap; background:#fff; color:#333; padding:10px; border-radius:6px; border:1px solid #ccc; min-height:200px;"></pre>
           <p id="savingback" style="display:none; margin-top:15px;">
             <a data-role="button" data-inline="true" data-mini="true" data-icon="back" href="./index.cgi?form=<TMPL_VAR FORMNO>"><TMPL_VAR SETTINGS.BUTTON_OK></a>
           </p>
@@ -1440,10 +1440,10 @@
             if(resp && resp.done) {
                 if(resp.has_error) {
                     // Show error – keep the log visible, add a back-link
-                    $("#savinglog").css("color", "#f44");
+                    $("#savinglog").css("color", "#c00");
                 } else {
                     // Success – keep the log visible so user can read messages
-                    $("#savinglog").css("color", "#0f0");
+                    $("#savinglog").css("color", "#080");
                 }
                 $("#savingback").show();
             } else {
@@ -1465,13 +1465,13 @@
             if(resp && resp.ok) {
                 pollStatus();
             } else {
-                $("#savinglog").text("Konnte Speichervorgang nicht starten.\n" + (resp && resp.error ? resp.error : ""));
-                $("#savinglog").css("color", "#f44");
+                $("#savinglog").text("<TMPL_VAR SETTINGS.SAVING_ERR_START>" + "\n" + (resp && resp.error ? resp.error : ""));
+                $("#savinglog").css("color", "#c00");
                 $("#savingback").show();
             }
         }).fail(function(xhr){
-            $("#savinglog").text("Konnte Speichervorgang nicht starten.\n" + (xhr.responseText||""));
-            $("#savinglog").css("color", "#f44");
+            $("#savinglog").text("<TMPL_VAR SETTINGS.SAVING_ERR_START>" + "\n" + (xhr.responseText||""));
+            $("#savinglog").css("color", "#c00");
             $("#savingback").show();
         });
     }

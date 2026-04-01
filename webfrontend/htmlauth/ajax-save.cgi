@@ -28,6 +28,9 @@ use LoxBerry::Web;
 
 my $cgi = CGI->new;
 
+# Load language strings (no template required for JSON API)
+my %L = LoxBerry::System::readlanguage("language.ini");
+
 sub no_cache_json_header {
     return $cgi->header(
         -type => "application/json",
@@ -106,7 +109,7 @@ if (defined $cgi->param('start')) {
     my ($logfile, $donefile, $errfile, $jsonfile) = log_paths($token);
     unlink $logfile; unlink $donefile; unlink $errfile;
 
-    # Params müssen bereits von index.cgi als JSON abgelegt worden sein
+    # Params must have been saved as JSON by index.cgi
     if (!-e $jsonfile) {
         json_out({ ok => 0, error => "Missing params file $jsonfile (index.cgi must create it)" });
     }
@@ -145,8 +148,7 @@ sub run_worker {
     my $raw = LoxBerry::System::read_file($jsonfile);
     my $R = decode_json($raw);
 
-    # Template language (optional; for error strings)
-    # We'll keep it simple: English/German fallback texts.
+    # Load language strings (available via LoxBerry::System in the forked worker)
     my $cfg = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 
     # Ensure URLs exist
@@ -173,7 +175,7 @@ sub run_worker {
         LoxBerry::System::write_file($logfile, $old);
     }
 
-    logline("Einstellungen werden gespeichert...");
+    logline($L{'SETTINGS.SAVING_SETTINGS'});
 
     # normalize coordinates
     for my $k (qw(wucoordlat wucoordlong coordlat coordlong)) {
@@ -188,7 +190,7 @@ sub run_worker {
     my $apicheck_error;
 
     if (($R->{weatherservice} // '') eq "openweather") {
-        logline("Prüfe OpenWeather API...");
+        logline($L{'SETTINGS.SAVING_CHECK_OPENWEATHER'});
         my $url        = $cfg->param("OPENWEATHER.URL");
         my $apikey     = $R->{openweatherapikey} // '';
         my $stationid  = "lat=" . ($central_lat // '') . "&lon=" . ($central_long // '');
@@ -197,7 +199,7 @@ sub run_worker {
     }
 
     if (!$apicheck_error && (($R->{weatherservice} // '') eq "weatherflow")) {
-        logline("Prüfe WeatherFlow API...");
+        logline($L{'SETTINGS.SAVING_CHECK_WEATHERFLOW'});
         my $url       = $cfg->param("WEATHERFLOW.URL");
         my $apikey    = $R->{weatherflowapikey} // '';
         my $stationid = $R->{weatherflowstationid} // '';
@@ -206,7 +208,7 @@ sub run_worker {
     }
 
     if (!$apicheck_error && (($R->{weatherservice} // '') eq "visualcrossing")) {
-        logline("Prüfe VisualCrossing API...");
+        logline($L{'SETTINGS.SAVING_CHECK_VISUALCROSSING'});
         my $url       = $cfg->param("VISUALCROSSING.URL");
         my $apikey    = $R->{visualcrossingapikey} // '';
         my $stationid = ($central_lat // '') . "," . ($central_long // '');
@@ -215,7 +217,7 @@ sub run_worker {
     }
 
     if (!$apicheck_error && (($R->{weatherservice} // '') eq "wttrin")) {
-        logline("Prüfe wttr.in...");
+        logline($L{'SETTINGS.SAVING_CHECK_WTTRIN'});
         my $url       = $cfg->param("WTTRIN.URL");
         my $stationid = $R->{wttrinstationid} // '';
         my $queryURL  = "$url/$stationid?format=j1";
@@ -223,7 +225,7 @@ sub run_worker {
     }
 
     if (!$apicheck_error && (($R->{weatherservice} // '') eq "wetteronline")) {
-        logline("Prüfe WetterOnline...");
+        logline($L{'SETTINGS.SAVING_CHECK_WETTERONLINE'});
         my $url       = $cfg->param("WETTERONLINE.URL-CURRENT");
         my $stationid = $R->{wetteronlinestationid} // '';
         my $queryURL  = "$url$stationid";
@@ -234,7 +236,7 @@ sub run_worker {
     }
 
     if (!$apicheck_error && ($R->{wugrabber} // '') ne '' && ($R->{wugrabber} // '') ne '0') {
-        logline("Prüfe Wunderground...");
+        logline($L{'SETTINGS.SAVING_CHECK_WUNDERGROUND'});
         my $url       = $cfg->param("WUNDERGROUND.URL");
         my $stationid = $R->{wustationid} // '';
         my $dashURL   = "https://www.wunderground.com/dashboard/pws/$stationid";
@@ -250,7 +252,7 @@ sub run_worker {
         my $queryURL = "$url?apiKey=$apikey&stationId=$stationid&format=json&units=m";
         ($response, $apicheck_error) = verifyApiCall(url => $queryURL);
         } else {
-        $apicheck_error = "Keine Daten gefunden.";
+        $apicheck_error = $L{'SETTINGS.SAVING_NO_DATA'};
         }
     }
 
@@ -258,9 +260,9 @@ sub run_worker {
         die $apicheck_error;
     }
 
-    logline("Schreibe Konfiguration...");
+    logline($L{'SETTINGS.SAVING_WRITE_CONFIG'});
 
-    # Write configuration file(s) – wie in deinem index.cgi
+    # Write configuration file(s)
     $cfg->param("WUNDERGROUND.APIKEY", $R->{wuapikey} // "");
     $cfg->param("WUNDERGROUND.STATIONTYP", $R->{wustationtyp} // "");
     $cfg->param("WUNDERGROUND.STATIONID", $R->{wustationid} // "");
@@ -325,7 +327,7 @@ sub run_worker {
 
     $cfg->save();
 
-    logline("Speichere Pollen-Einstellungen...");
+    logline($L{'SETTINGS.SAVING_POLLEN'});
 
     $cfg->param("POLLEN.ALDER",   ( $R->{pollen_alder}   // 0 ) + 0);
     $cfg->param("POLLEN.BIRCH",   ( $R->{pollen_birch}   // 0 ) + 0);
@@ -335,7 +337,7 @@ sub run_worker {
     $cfg->param("POLLEN.RAGWEED", ( $R->{pollen_ragweed} // 0 ) + 0);
     $cfg->save();
 
-    logline("Konfiguriere Cronjob...");
+    logline($L{'SETTINGS.SAVING_CRONJOB'});
 
     if (($R->{getdata} // "") eq "1") {
         system("ln -sf $lbpbindir/cronjob.pl $lbhomedir/system/cron/cron.01min/$lbpplugindir");
@@ -343,7 +345,7 @@ sub run_worker {
         unlink("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
     }
 
-    logline("Fertig.");
+    logline($L{'SETTINGS.SAVING_DONE'});
     LoxBerry::System::write_file($donefile, "1\n");
 }
 
@@ -364,11 +366,11 @@ sub verifyApiCall {
     my $urlstatuscode = substr($urlstatus, 0, 3);
 
     if ($urlstatuscode eq "401") {
-        return (undef, "API Key ungültig (401). URL: $url");
+        return (undef, $L{'SETTINGS.SAVING_ERR_API_KEY'} . " URL: $url");
     } elsif ($urlstatuscode eq "440") {
-        return (undef, "Keine Wetterstation gefunden (440). URL: $url");
+        return (undef, $L{'SETTINGS.SAVING_ERR_NO_STATION'} . " URL: $url");
     } elsif ($urlstatuscode ne "200") {
-        return (undef, "Keine Daten (HTTP $urlstatuscode). URL: $url");
+        return (undef, sprintf($L{'SETTINGS.SAVING_ERR_NO_DATA'}, $urlstatuscode) . " URL: $url");
     }
 
     if (defined $match && length $match) {
