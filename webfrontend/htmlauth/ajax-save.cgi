@@ -18,8 +18,10 @@ use strict;
 use warnings;
 
 use CGI;
-use JSON qw(encode_json decode_json);
+#use JSON qw(encode_json decode_json);
+use JSON::PP;
 use Encode qw(decode_utf8);
+use HTML::Entities qw(decode_entities);
 use IO::Handle ();
 use Scalar::Util qw(looks_like_number);
 use LWP::UserAgent;
@@ -190,17 +192,24 @@ sub run_worker {
     my $response;
     my $apicheck_error;
 
-    if (($R->{weatherservice} // '') eq "openweather") {
-        logline($L{'SETTINGS.SAVING_CHECK_OPENWEATHER'});
+    if ( ( ($R->{weatherservice}    // '') eq "openweather") || 
+         ( ($R->{weatherservicedfc} // '') eq "openweather") || 
+         ( ($R->{weatherservicehfc} // '') eq "openweather") ) {
+        logline("\n" . $L{'SETTINGS.SAVING_CHECK_OPENWEATHER'});
         my $url        = $cfg->param("OPENWEATHER.URL");
         my $apikey     = $R->{openweatherapikey} // '';
         my $stationid  = "lat=" . ($central_lat // '') . "&lon=" . ($central_long // '');
         my $oneCallURL = "$url/3.0/onecall?appid=$apikey&$stationid";
+        logline(" - Checking API call to OpenWeather One Call API with URL: $oneCallURL");
+
+        # Verify API call and check if response contains expected 'lat' element
         ($response, $apicheck_error) = verifyApiCall(url => $oneCallURL, path => ['lat']);
     }
 
-    if (!$apicheck_error && (($R->{weatherservice} // '') eq "weatherflow")) {
-        logline($L{'SETTINGS.SAVING_CHECK_WEATHERFLOW'});
+    if (!$apicheck_error && ( ( ($R->{weatherservice}    // '') eq "weatherflow") || 
+                              ( ($R->{weatherservicedfc} // '') eq "weatherflow") || 
+                              ( ($R->{weatherservicehfc} // '') eq "weatherflow") ) ) {
+        logline("\n" . $L{'SETTINGS.SAVING_CHECK_WEATHERFLOW'});
         my $url       = $cfg->param("WEATHERFLOW.URL");
         my $apikey    = $R->{weatherflowapikey} // '';
         my $stationid = $R->{weatherflowstationid} // '';
@@ -208,8 +217,10 @@ sub run_worker {
         ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['station_id']);
     }
 
-    if (!$apicheck_error && (($R->{weatherservice} // '') eq "visualcrossing")) {
-        logline($L{'SETTINGS.SAVING_CHECK_VISUALCROSSING'});
+    if (!$apicheck_error && ( ( ($R->{weatherservice}    // '') eq "visualcrossing") || 
+                              ( ($R->{weatherservicedfc} // '') eq "visualcrossing") || 
+                              ( ($R->{weatherservicehfc} // '') eq "visualcrossing") ) ) {
+        logline("\n" . $L{'SETTINGS.SAVING_CHECK_VISUALCROSSING'});
         my $url       = $cfg->param("VISUALCROSSING.URL");
         my $apikey    = $R->{visualcrossingapikey} // '';
         my $stationid = ($central_lat // '') . "," . ($central_long // '');
@@ -217,27 +228,32 @@ sub run_worker {
         ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['latitude']);
     }
 
-    if (!$apicheck_error && (($R->{weatherservice} // '') eq "wttrin")) {
-        logline($L{'SETTINGS.SAVING_CHECK_WTTRIN'});
+    if (!$apicheck_error && ( ( ($R->{weatherservice}    // '') eq "wttrin") || 
+                              ( ($R->{weatherservicedfc} // '') eq "wttrin") || 
+                              ( ($R->{weatherservicehfc} // '') eq "wttrin") ) ) {
+        logline("\n" . $L{'SETTINGS.SAVING_CHECK_WTTRIN'});
         my $url       = $cfg->param("WTTRIN.URL");
         my $stationid = $R->{wttrinstationid} // '';
         my $queryURL  = "$url/$stationid?format=j1";
         ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['current_condition', 0, 'weatherCode']);
     }
 
-    if (!$apicheck_error && (($R->{weatherservice} // '') eq "wetteronline")) {
-        logline($L{'SETTINGS.SAVING_CHECK_WETTERONLINE'});
+    if (!$apicheck_error && ( ( ($R->{weatherservice}    // '') eq "wetteronline") || 
+                              ( ($R->{weatherservicedfc} // '') eq "wetteronline") || 
+                              ( ($R->{weatherservicehfc} // '') eq "wetteronline") ) ) {
+        logline("\n" . $L{'SETTINGS.SAVING_CHECK_WETTERONLINE'});
         my $url       = $cfg->param("WETTERONLINE.URL-CURRENT");
         my $stationid = $R->{wetteronlinestationid} // '';
         my $queryURL  = "$url$stationid";
         ($response, $apicheck_error) = verifyApiCall(
         url   => $queryURL,
-        match => qr/WO\.geo = (\{(?:[^{}"]|"(?:[^"\\]|\\.)*"|(?1))*\});/s
+        match => qr/WO\.geo = (\{(?:[^{}"]|"(?:[^"\\]|\\.)*"|(?1))*\});/s,
+        path => ['gid']
         );
     }
 
     if (!$apicheck_error && ($R->{wugrabber} // '') ne '' && ($R->{wugrabber} // '') ne '0') {
-        logline($L{'SETTINGS.SAVING_CHECK_WUNDERGROUND'});
+        logline("\n" . $L{'SETTINGS.SAVING_CHECK_WUNDERGROUND'});
         my $url       = $cfg->param("WUNDERGROUND.URL");
         my $stationid = $R->{wustationid} // '';
         my $dashURL   = "https://www.wunderground.com/dashboard/pws/$stationid";
@@ -248,12 +264,13 @@ sub run_worker {
         );
 
         if ($wu_err) {
-        $apicheck_error = $wu_err;
+            $apicheck_error = $wu_err;
         } elsif ($apikey) {
-        my $queryURL = "$url?apiKey=$apikey&stationId=$stationid&format=json&units=m";
-        ($response, $apicheck_error) = verifyApiCall(url => $queryURL);
+            logline(" - Found API key for Wunderground: $apikey, checking if it works with API URL...");
+            my $queryURL = "$url?apiKey=$apikey&stationId=$stationid&format=json&units=m";
+            ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['observations', 0, 'stationID']);
         } else {
-        $apicheck_error = $L{'SETTINGS.SAVING_NO_DATA'};
+            $apicheck_error = $L{'SETTINGS.SAVING_NO_DATA'};
         }
     }
 
@@ -261,7 +278,7 @@ sub run_worker {
         die $apicheck_error;
     }
 
-    logline($L{'SETTINGS.SAVING_WRITE_CONFIG'});
+    logline("\n" . $L{'SETTINGS.SAVING_WRITE_CONFIG'});
 
     # Write configuration file(s)
     $cfg->param("WUNDERGROUND.APIKEY", $R->{wuapikey} // "");
@@ -350,22 +367,35 @@ sub run_worker {
     LoxBerry::System::write_file($donefile, "1\n");
 }
 
-# verifyApiCall (copy from your index.cgi logic)
+##########################################################################
+# Verify API call for different weather services
+# Parameters:
+# - url: API URL to call
+# - match: regular expression to extract specific part of response (e.g. API key, station ID, geo coordinates, etc.) or '' to skip match
+# - path: path elements (tree and param to retrieve) from API response, used to check if response contains this element
+# Returns:
+# - decoded JSON response from API call, matched part of response (if match is defined), or value of path element (if path is defined and match is not defined)
+# - error message: if API call fails, match is defined but not found in response, or if decoded JSON does not contain expected path element
+
 sub verifyApiCall {
-    my (%p)   = @_;
-    my $url   = $p{url}   // '';
-    my $match = $p{match} // '';
-    my @path  = @{ $p{path} // [] };
+    my (%p)          = @_;
+    my $url          = $p{url}   // '';
+    my $matchPattern = $p{match} // '';
+    my @path         = @{ $p{path} // [] };
 
     my $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
 
+    # Perform the API call
     my $ua  = LWP::UserAgent->new( agent => $userAgent );
     my $res = $ua->get($url);
     my $content = $res->decoded_content();
 
+    # Check status of request
     my $urlstatus = $res->status_line;
     my $urlstatuscode = substr($urlstatus, 0, 3);
+    logline(" - HTTP status: $urlstatus");
 
+    # return error if API call fails
     if ($urlstatuscode eq "401") {
         return (undef, $L{'SETTINGS.SAVING_ERR_API_KEY'} . " URL: $url");
     } elsif ($urlstatuscode eq "440") {
@@ -373,37 +403,61 @@ sub verifyApiCall {
     } elsif ($urlstatuscode ne "200") {
         return (undef, sprintf($L{'SETTINGS.SAVING_ERR_NO_DATA'}, $urlstatuscode) . " URL: $url");
     }
+    my $decodedJson;
+    my $match;
+    my $json = JSON::PP->new->relaxed;
+    $json = $json->utf8(1);
+    $json = $json->relaxed(1);
+    $json = $json->allow_barekey(1);
 
-    if (defined $match && length $match) {
-        if ($content =~ $match) {
-        return ($1, undef);
+    # do regular expression match (if match is defined) and return matched part only, used e.g. by WetterOnline to retrieve API keys, station ID and geo coordinates
+    if (defined $matchPattern && length $matchPattern) {
+        logline(" - Searching for pattern match in response: $matchPattern");
+        if ($content =~ $matchPattern) {
+            $match = decode_entities($1);
+            $match = decode_utf8($match);
+            my $is_json = 0;
+            eval {
+                $decodedJson = $json->decode($match);
+                $is_json = 1;
+            };
+            if ($is_json) {
+                logline(" - Found match in response (JSON), continuing...");
+            } else {
+                # if match is found but not JSON, return matched part directly without trying to decode JSON, used e.g. by Wunderground to retrieve API key from public dashboard page
+                return ($match, undef);
+            }
         } else {
-        return (undef, "No match found in response for regex. URL: $url");
+            return (undef, "Match NOT found in response for regex. URL: $url");
         }
+    } else {
+        $decodedJson = $json->decode("$content");
     }
 
-    my $decodedJson = decode_json("$content");
-
+    # if path is not defined, return whole decoded JSON response
     if (@path == 0) {
+        logline(" - Returning JSON response, done!");
         return ($decodedJson, undef);
     }
 
+    # check if decoded JSON contains expected path element and return its value
     my $cur = $decodedJson;
+    logline(" - Looking for path element(s) in JSON response: " . join(" -> ", @path));
     for my $p (@path) {
-        return (undef, "Missing expected path element") unless defined $cur;
+        return (undef, "Path element(s) NOT found: Missing expected path element") unless defined $cur;
 
         if (ref $cur eq 'ARRAY') {
-        return (undef, "Invalid array index") unless defined $p && looks_like_number($p);
+        return (undef, "Path element(s) NOT found: Invalid array index") unless defined $p && looks_like_number($p);
         my $idx = int($p);
-        return (undef, "Array index out of bounds") if $idx < 0 || $idx > $#$cur;
+        return (undef, "Path element(s) NOT found: Array index out of bounds") if $idx < 0 || $idx > $#$cur;
         $cur = $cur->[$idx];
         } elsif (ref $cur eq 'HASH') {
-        return (undef, "Missing key $p") unless exists $cur->{$p};
+        return (undef, "Path element(s) NOT found: Missing key $p") unless exists $cur->{$p};
         $cur = $cur->{$p};
         } else {
-        return (undef, "Unexpected JSON structure");
+        return (undef, "Path element(s) NOT found: Unexpected JSON structure");
         }
     }
-
+    logline(" - Found value for path element(s): $cur, done with this check!");
     return ($cur, undef);
 }

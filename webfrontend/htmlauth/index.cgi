@@ -93,7 +93,6 @@ if (!$cfg->param("SERVER.CITY")) {
 #########################################################################
 
 my $error;
-my $message = "";       # used by saving()
 
 ##########################################################################
 # Main program
@@ -920,90 +919,6 @@ LoxBerry::Web::lbfooter();
 exit;
 
 
-##########################################################################
-# Verify API call for different weather services
-# Parameters:
-# - url: API URL to call
-# - match: regular expression to extract specific part of response (e.g. API key, station ID, geo coordinates, etc.) or '' to skip match
-# - path: path elements (tree and param to retrieve) from API response, used to check if response contains this element
-# Returns:
-# - decoded JSON response from API call, matched part of response (if match is defined), or value of path element (if path is defined and match is not defined)
-# - error message: if API call fails, match is defined but not found in response, or if decoded JSON does not contain expected path element
-
-sub verifyApiCall {
-    my (%p)       = @_;
-    my $url       = $p{url}     // '';
-    my $match     = $p{match}   // '';
-    my @path      = @{ $p{path} // [] };
-
-    my $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
-    my $error     = undef;
-
-    # Perform the API call
-    my $ua  = LWP::UserAgent->new( agent => $userAgent );
-    my $res = $ua->get($url);
-    my $content = $res->decoded_content();
-
-    # Check status of request
-    my $urlstatus = $res->status_line;
-    my $urlstatuscode = substr($urlstatus,0,3);
-
-    # return error if API call fails
-    if ($urlstatuscode eq "401" ) {
-        $error = $L{'SETTINGS.ERR_API_KEY'} . "<br><br><b>URL:</b> $url<br><b>STATUS CODE:</b> $urlstatuscode";
-        return (undef, $error);
-    } elsif ($urlstatuscode eq "440") {
-        $error = $L{'SETTINGS.ERR_NO_WEATHERSTATION'} . "<br><br><b>URL:</b> $url<br><b>STATUS CODE:</b> $urlstatuscode";
-        return (undef, $error);
-    } elsif ($urlstatuscode ne "200") {
-        $error = $L{'SETTINGS.ERR_NO_DATA'} . "<br><br><b>URL:</b> $url<br><b>STATUS CODE:</b> $urlstatuscode";
-        return (undef, $error);
-    }
-
-    # do regular expression match (if match is defined) and return matched part only, used e.g. by WetterOnline to retrieve API keys, station ID and geo coordinates
-    if (defined $match && length $match) {
-        if ($content =~ $match) {
-            $content = $1; # return only the matched part of the response
-            return ($content, undef);
-        } else {
-            $error = $L{'SETTINGS.ERR_NO_DATA'} . "<br><br><b>URL:</b> $url<br><b>STATUS CODE:</b> $urlstatuscode<br><b>NOTE:</b> No match found in response for regex: $match";
-            return (undef, $error);
-        }
-    }
-
-    my $decodedJson = decode_json("$content");
-
-    # if path is not defined, return whole decoded JSON response
-    if (@path == 0) {
-        return ($decodedJson, undef);
-    }
-
-    # check if decoded JSON contains expected path element and return its value
-    my $cur = $decodedJson;
-    $error = $L{'SETTINGS.ERR_NO_WEATHERSTATION'};
-
-    for my $p (@path) {
-        return (undef, $error) unless defined $cur;
-
-        if (ref $cur eq 'ARRAY') {
-            # only accept numeric indices for arrays
-            return (undef, $error) unless defined $p && looks_like_number($p);
-            my $idx = int($p);
-            return (undef, $error) if $idx < 0 || $idx > $#$cur;    # out of bounds
-            $cur = $cur->[$idx];
-        }
-        elsif (ref $cur eq 'HASH') {
-            return (undef, $error) unless exists $cur->{$p};
-            $cur = $cur->{$p};
-        }
-        else {
-            return (undef, $error);
-        }
-    }
-
-    return ($cur, undef);
-}
-
 # globals:
 my $saving_page_started = 0;
 
@@ -1058,59 +973,4 @@ sub save {
     STDOUT->flush();
     LoxBerry::Web::lbfooter();
     exit;
-}
-
-##########################################################################
-# Saving (progress)
-##########################################################################
-
-sub saving {
-    my ($newmsg) = @_;
-
-    # Init saving page once
-    if (!$saving_page_started) {
-        $saving_page_started = 1;
-
-        $template->param("SAVING", 1);
-        $template->param("SAVE", 0);
-        $template->param("ERROR", 0);
-        $template->param("SAVINGMESSAGE", ""); # start empty
-
-        # Header + page skeleton (only once)
-        LoxBerry::Web::lbheader($L{'SETTINGS.LABEL_PLUGINTITLE'} . " V$version",
-                               "https://wiki.loxberry.de/plugins/weather4loxone/start",
-                               "help.html");
-
-        # IMPORTANT: output template once
-        print $template->output();
-
-        # Add a status box we can append to (if your template doesn't already have one)
-        print qq{
-          <div id="savinglog" style="margin:15px auto; max-width:900px; font-family:monospace; white-space:pre-line;"></div>
-        };
-
-        # Force browser to start rendering
-        print ("\n" . (" " x 4096) . "\n");
-        STDOUT->flush();
-        return;
-    }
-
-    # Subsequent updates: append only one line of JS that updates the DOM
-    $newmsg //= '';
-    $newmsg =~ s/\\/\\\\/g;
-    $newmsg =~ s/"/\\"/g;
-    $newmsg =~ s/\r?\n/\\n/g;
-
-    print qq{
-      <script>
-        (function(){
-          var el = document.getElementById('savinglog');
-          if(el){ el.textContent += "$newmsg\\n"; window.scrollTo(0, document.body.scrollHeight); }
-        })();
-      </script>
-    };
-
-    # padding to beat buffering
-    print ("\n" . (" " x 2048) . "\n");
-    STDOUT->flush();
 }
