@@ -65,6 +65,18 @@ sub log_paths {
     );
 }
 
+# Remove stale temp files from previous save sessions
+sub cleanup_stale_files {
+    my ($exclude_token) = @_;
+    my @stale = grep { /^\/tmp\/weather4lox_save_.*\.(log|done|err|json)$/ }
+                glob("/tmp/weather4lox_save_*");
+    for my $f (@stale) {
+        # Skip files belonging to the current save session
+        next if defined $exclude_token && $f =~ /\Q$exclude_token\E/;
+        unlink $f;
+    }
+}
+
 # ---------- STATUS ----------
 if (defined $cgi->param('status')) {
     my $token = $cgi->param('status');
@@ -97,6 +109,19 @@ if (defined $cgi->param('status')) {
     json_out({ done => $done, log => $log, has_error => $has_error });
 }
 
+# ---------- CLEANUP ----------
+if (defined $cgi->param('cleanup')) {
+    my $token = $cgi->param('cleanup');
+
+    if (!valid_token($token)) {
+        json_out({ ok => 0, error => "Invalid token" });
+    }
+
+    my ($logfile, $donefile, $errfile, $jsonfile) = log_paths($token);
+    unlink $logfile, $donefile, $errfile, $jsonfile;
+    json_out({ ok => 1 });
+}
+
 # ---------- START ----------
 if (defined $cgi->param('start')) {
     my $token = $cgi->param('token') // '';
@@ -108,6 +133,9 @@ if (defined $cgi->param('start')) {
     if ($form ne '1') {
         json_out({ ok => 0, error => "Only form=1 supported" });
     }
+
+    # Remove any leftover temp files from previous save sessions
+    cleanup_stale_files($token);
 
     my ($logfile, $donefile, $errfile, $jsonfile) = log_paths($token);
     unlink $logfile; unlink $donefile; unlink $errfile;
@@ -150,6 +178,9 @@ sub run_worker {
     # load original POST params saved by index.cgi
     my $raw = LoxBerry::System::read_file($jsonfile);
     my $R = decode_json($raw);
+
+    # Remove the JSON params file now that it has been read
+    unlink $jsonfile;
 
     # Load language strings (available via LoxBerry::System in the forked worker)
     my $cfg = new Config::Simple("$lbpconfigdir/weather4lox.cfg");

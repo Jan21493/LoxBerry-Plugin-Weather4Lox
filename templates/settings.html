@@ -1447,12 +1447,23 @@
                     $("#savingmsg").text("<TMPL_VAR SETTINGS.OK_SETTINGS_SAVED>");
                     $("#savinglog").css("color", "#080");
                 }
+                cleanupTempFiles();
                 $("#savingback").show();
             } else {
                 setTimeout(pollStatus, 500);
             }
         }).fail(function(){
             setTimeout(pollStatus, 1000);
+        });
+    }
+
+    function cleanupTempFiles() {
+        $.ajax({
+            url: "./ajax-save.cgi",
+            type: "POST",
+            dataType: "json",
+            data: { cleanup: saveToken },
+            cache: false
         });
     }
 
