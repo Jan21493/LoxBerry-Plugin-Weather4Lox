@@ -29,8 +29,12 @@ use LoxBerry::Web;
 
 my $cgi = CGI->new;
 
-# Load language strings
+# Load language strings and decode UTF-8 bytes to Perl character strings
+# (readlanguage returns raw UTF-8 bytes; encode_json would double-encode them)
 my %L = LoxBerry::System::readlanguage("language.ini");
+for my $k (keys %L) {
+    $L{$k} = Encode::decode('UTF-8', $L{$k}) unless Encode::is_utf8($L{$k});
+}
 
 sub no_cache_json_header {
     return $cgi->header(
@@ -115,7 +119,7 @@ eval {
         my $apikey    = $R->{weatherflowapikey} // '';
         my $stationid = $R->{weatherflowstationid} // '';
         my $queryURL  = "$url/observations/station/$stationid?token=$apikey";
-        logline(" - Checking WeatherFlow API: $queryURL");
+        push @checks, " - Checking WeatherFlow API: $queryURL";
 
         # Verify API call and check if response contains expected 'station_id' element
         ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['station_id']);
@@ -129,7 +133,7 @@ eval {
         my $apikey    = $R->{visualcrossingapikey} // '';
         my $stationid = ($central_lat // '') . "," . ($central_long // '');
         my $queryURL  = "$url/$stationid?unitGroup=metric&include=current&key=$apikey&contentType=json";
-        logline(" - Checking Visual Crossing API: $queryURL");
+        push @checks, " - Checking Visual Crossing API: $queryURL";
 
         # Verify API call and check if response contains expected 'latitude' element
         ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['latitude']);
@@ -142,7 +146,7 @@ eval {
         my $url       = $cfg->param("WTTRIN.URL");
         my $stationid = $R->{wttrinstationid} // '';
         my $queryURL  = "$url/$stationid?format=j1";
-        logline(" - Checking WTTR.in API: $queryURL");
+        push @checks, " - Checking WTTR.in API: $queryURL";
 
         # Verify API call and check if response contains expected 'weatherCode' element
         ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['current_condition', 0, 'weatherCode']);
@@ -155,7 +159,7 @@ eval {
         my $url       = $cfg->param("WETTERONLINE.URL-CURRENT");
         my $stationid = $R->{wetteronlinestationid} // '';
         my $queryURL  = "$url$stationid";
-        logline(" - Checking WetterOnline API: $queryURL");
+        push @checks, " - Checking WetterOnline API: $queryURL";
 
         # Verify API call and check if response contains expected 'gid' element
         ($response, $apicheck_error) = verifyApiCall(
@@ -170,7 +174,7 @@ eval {
         my $url       = $cfg->param("WUNDERGROUND.URL");
         my $stationid = $R->{wustationid} // '';
         my $dashURL   = "https://www.wunderground.com/dashboard/pws/$stationid";
-        logline(" - 1. Checking Wunderground Dashboard: $dashURL");
+        push @checks, " - 1. Checking Wunderground Dashboard: $dashURL";
 
         my ($apikey, $wu_err) = verifyApiCall(
             url   => $dashURL,
@@ -182,7 +186,7 @@ eval {
         } elsif ($apikey) {
             push @checks, " - Found API key for Wunderground: $apikey.";
             my $queryURL = "$url?apiKey=$apikey&stationId=$stationid&format=json&units=m";
-            logline(" - 2. Checking if it works with API URL: $queryURL");
+            push @checks, " - 2. Checking if it works with API URL: $queryURL";
 
             # Verify API call and check if response contains expected 'obsTime' element
             ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['observations', 0, 'stationID']);
