@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 ##########################################################################
 # Modules
 ##########################################################################
@@ -26,8 +25,20 @@ use LWP::UserAgent;
 use JSON qw( decode_json );
 use LoxBerry::System;
 use LoxBerry::Web;
-#use warnings;
-#use strict;
+
+use strict;
+use warnings;
+
+use IO::Handle ();                 # for STDOUT->autoflush
+use Scalar::Util qw(looks_like_number);
+
+##########################################################################
+# Unbuffered output (important for "saving" progress)
+##########################################################################
+BEGIN {
+    $| = 1;                          # autoflush for currently selected filehandle (STDOUT)
+    STDOUT->autoflush(1);
+}
 
 ##########################################################################
 # Variables
@@ -62,19 +73,19 @@ $cfg->save();
 
 # Upgrade fallback: populate SERVER.CITY/COUNTRY from existing per-service values
 if (!$cfg->param("SERVER.CITY")) {
-	my $fallback_city = $cfg->param("VISUALCROSSING.STATION")
-		|| $cfg->param("OPENWEATHER.STATION")
-		|| $cfg->param("WEATHERFLOW.CITY")
-		|| "";
-	my $fallback_country = $cfg->param("VISUALCROSSING.COUNTRY")
-		|| $cfg->param("OPENWEATHER.COUNTRY")
-		|| $cfg->param("WEATHERFLOW.COUNTRY")
-		|| "";
-	if ($fallback_city) {
-		$cfg->param("SERVER.CITY", $fallback_city);
-		$cfg->param("SERVER.COUNTRY", $fallback_country);
-		$cfg->save();
-	}
+    my $fallback_city = $cfg->param("VISUALCROSSING.STATION")
+        || $cfg->param("OPENWEATHER.STATION")
+        || $cfg->param("WEATHERFLOW.CITY")
+        || "";
+    my $fallback_country = $cfg->param("VISUALCROSSING.COUNTRY")
+        || $cfg->param("OPENWEATHER.COUNTRY")
+        || $cfg->param("WEATHERFLOW.COUNTRY")
+        || "";
+    if ($fallback_city) {
+        $cfg->param("SERVER.CITY", $fallback_city);
+        $cfg->param("SERVER.COUNTRY", $fallback_country);
+        $cfg->save();
+    }
 }
 
 #########################################################################
@@ -82,6 +93,7 @@ if (!$cfg->param("SERVER.CITY")) {
 #########################################################################
 
 my $error;
+my $message = "";       # used by saving()
 
 ##########################################################################
 # Main program
@@ -99,271 +111,95 @@ my $template = HTML::Template->new(
 # Language
 my %L = LoxBerry::Web::readlanguage($template, "language.ini");
 
+##########################################################################
 # Save Form 1 (Server Settings)
+##########################################################################
 if ($R::saveformdata1) {
 
-  	$template->param( FORMNO => '1' );
-	$R::wucoordlat =~ tr/,/./;
-	$R::wucoordlong =~ tr/,/./;
-	$R::coordlat =~ tr/,/./;
-	$R::coordlong =~ tr/,/./;
+    # Wir rendern NUR sofort die SAVING-Seite und starten den Save im Browser via AJAX.
+    $template->param( FORMNO => '1' );
 
-	# Central coordinates → propagate to all services
-	my $central_lat  = $R::coordlat;
-	my $central_long = $R::coordlong;
+    # Token: kurz, URL-safe, mit genug Entropie
+    my $token = time() . "-" . int(rand(1000000)) . "-" . $$;
+    $template->param( SAVETOKEN => $token );
 
-	# Check for Station : OPENWEATHER
-	if ($R::weatherservice eq "openweather") {
-		our $url = $cfg->param("OPENWEATHER.URL");
-		our $querystation = "lat=" . $central_lat . "&lon=" . $central_long;
-		# 1. attempt to query OpenWeather
-		&openweatherquery;
-		$found = 0;
-		if ( !$error && $decoded_json->{lat} ) {
-			$found = 1;
-		}
-		if ( !$error && !$found ) {
-			$error = $L{'SETTINGS.ERR_NO_WEATHERSTATION'};
-		}
-	}
+    $template->param( "SAVING", 1 );
+    $template->param( "SAVE", 0 );
+    $template->param( "ERROR", 0 );
+    $template->param( "SAVINGMESSAGE", "Speichervorgang wird gestartet..." );
 
-	# Check for Station : WEATHERFLOW
-	if ($R::weatherservice eq "weatherflow") {
-		our $url = $cfg->param("WEATHERFLOW.URL");
-		#our $querystation = "lat=" . $R::weatherflowcoordlat . "&lon=" . $R::weatherflowcoordlong;
-		# 1. attempt to query OpenWeather
-		&weatherflowquery;
-		$found = 0;
-		if ( !$error && $decoded_json->{station_id} ) {
-			$found = 1;
-		}
-		if ( !$error && !$found ) {
-			$error = $L{'SETTINGS.ERR_NO_WEATHERSTATION'};
-		}
-	}
-
-	# Check for Station : VISUALCROSSING
-	if ($R::weatherservice eq "visualcrossing") {
-		our $url = $cfg->param("VISUALCROSSING.URL");
-		our $querystation = $central_lat . "," . $central_long;
-		# 1. attempt to query VisualCrossing
-		&visualcrossingquery;
-		$found = 0;
-		if ( !$error && $decoded_json->{latitude} ) {
-			$found = 1;
-		}
-		if ( !$error && !$found ) {
-			$error = $L{'SETTINGS.ERR_NO_WEATHERSTATION'};
-		}
-	}
-
-	# Check for Station : WTTRIN
-	if ($R::weatherservice eq "wttrin") {
-		our $url = $cfg->param("WTTRIN.URL");
-		our $querystation = $R::wttrinstationid;
-		# 1. attempt to query wttr.in
-		&wttrinquery;
-		$found = 0;
-		if ( !$error && $decoded_json->{current_condition}[0]->{weatherCode} ) {
-			$found = 1;
-		}
-		if ( !$error && !$found ) {
-			$error = $L{'SETTINGS.ERR_NO_WEATHERSTATION'};
-		}
-	}
-
-	# Check for Station : WETTERONLINE
-	if ($R::weatherservice eq "wetteronline") {
-		our $url = $cfg->param("WETTERONLINE.URL-CURRENT");
-		our $querystation = $R::wetteronlinestationid;
-		# 1. attempt to query WetterOnline
-		&wetteronlinequery;
-		if ( $error ) {
-			$error = $L{'SETTINGS.ERR_NO_WEATHERSTATION'};
-		}
-	}
-
-	# Check for Station : WUNDERGROUND
-	if ($R::wugrabber) {
-		our $url = $cfg->param("WUNDERGROUND.URL");
-		$querystation = $R::wustationid;
-		&wuquery;
-		$found = 0;
-		if ( !$error && $decoded_json->{observations}->[0]->{epoch} ) {
-			$found = 1;
-		}
-		if ( !$error && !$found ) {
-			$error = $L{'SETTINGS.ERR_NO_WEATHERSTATION'};
-		}
-	}
-
-	# OK - now installing...
-
-	# Write configuration file(s)
-	$cfg->param("WUNDERGROUND.APIKEY", "$R::wuapikey");
-	$cfg->param("WUNDERGROUND.STATIONTYP", "$R::wustationtyp");
-	$cfg->param("WUNDERGROUND.STATIONID", "$R::wustationid");
-	$cfg->param("WUNDERGROUND.COORDLAT", "$R::wucoordlat");
-	$cfg->param("WUNDERGROUND.COORDLONG", "$R::wucoordlong");
-	$cfg->param("WUNDERGROUND.LANG", "$R::wulang");
-
-	$cfg->param("OPENWEATHER.APIKEY", "$R::openweatherapikey");
-	$cfg->param("OPENWEATHER.COORDLAT", "$central_lat");
-	$cfg->param("OPENWEATHER.COORDLONG", "$central_long");
-	$cfg->param("OPENWEATHER.LANG", "$R::serverlang");
-
-	$cfg->param("WEATHERFLOW.APIKEY", "$R::weatherflowapikey");
-	$cfg->param("WEATHERFLOW.LANG", "$R::serverlang");
-	$cfg->param("WEATHERFLOW.STATIONID", "$R::weatherflowstationid");
-
-	$cfg->param("VISUALCROSSING.APIKEY", "$R::visualcrossingapikey");
-	$cfg->param("VISUALCROSSING.COORDLAT", "$central_lat");
-	$cfg->param("VISUALCROSSING.COORDLONG", "$central_long");
-	$cfg->param("VISUALCROSSING.LANG", "$R::serverlang");
-
-	$cfg->param("WTTRIN.LANG", "$R::serverlang");
-	$cfg->param("WTTRIN.STATIONID", "$R::wttrinstationid");
-
-	$cfg->param("WETTERONLINE.STATIONID", "$R::wetteronlinestationid");
-	$cfg->param("WETTERONLINE.APIKEY", "av=2&mv=13&c=d2ViOmFxcnhwWDR3ZWJDSlRuWeb=");
-	$cfg->param("WETTERONLINE.USERAGENT", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36");
-
-	$cfg->param("FOSHK.SERVER", "$R::foshkserver");
-	$cfg->param("FOSHK.PORT", "$R::foshkport");
-
-	$cfg->param("SERVER.PWSCATCHUPLOADGRABBER", "$R::pwscatchuploadgrabber");
-	$cfg->param("SERVER.WUGRABBER", "$R::wugrabber");
-	$cfg->param("SERVER.WUGRABBER", "$R::wugrabber");
-	$cfg->param("SERVER.LOXGRABBER", "$R::loxgrabber");
-	$cfg->param("SERVER.FOSHKGRABBER", "$R::foshkgrabber");
-	$cfg->param("SERVER.OPENMETEOAIRQUALITYGRABBER", "$R::openmeteoairqualitygrabber");
-	$cfg->param("OPENMETEOAIRQUALITY.COORDLAT", "$central_lat");
-	$cfg->param("OPENMETEOAIRQUALITY.COORDLONG", "$central_long");
-	$cfg->param("SERVER.USEALTERNATEDFC", "$R::usealternatedfc");
-	$cfg->param("SERVER.USEALTERNATEHFC", "$R::usealternatehfc");
-	$cfg->param("SERVER.GETDATA", "$R::getdata");
-	$cfg->param("SERVER.CRON", "$R::cron");
-	$cfg->param("SERVER.CRON_ALTERNATE", "$R::cron_alternate");
-	$cfg->param("SERVER.METRIC", "$R::metric");
-	$cfg->param("SERVER.COORDLAT", "$central_lat");
-	$cfg->param("SERVER.COORDLONG", "$central_long");
-	$cfg->param("SERVER.LANG", "$R::serverlang");
-	$cfg->param("SERVER.WEATHERSERVICE", "$R::weatherservice");
-	$cfg->param("SERVER.WEATHERSERVICEDFC", "$R::weatherservicedfc");
-	$cfg->param("SERVER.WEATHERSERVICEHFC", "$R::weatherservicehfc");
-	$cfg->param("SERVER.MASKKEYS", "$R::maskkeys");
-
-	# Global city/country -> propagate to all services
-	$cfg->param("SERVER.CITY", "$R::city");
-	$cfg->param("SERVER.COUNTRY", "$R::country");
-	$cfg->param("VISUALCROSSING.STATION", "$R::city");
-	$cfg->param("VISUALCROSSING.COUNTRY", "$R::country");
-	$cfg->param("OPENWEATHER.STATION", "$R::city");
-	$cfg->param("OPENWEATHER.COUNTRY", "$R::country");
-	$cfg->param("WEATHERFLOW.CITY", "$R::city");
-	$cfg->param("WEATHERFLOW.COUNTRY", "$R::country");
-
-	$cfg->save();
-
-	# Save pollen sensitivity settings to config
-	$cfg->param("POLLEN.ALDER",   $R::pollen_alder + 0);
-	$cfg->param("POLLEN.BIRCH",   $R::pollen_birch + 0);
-	$cfg->param("POLLEN.GRASS",   $R::pollen_grasses + 0);
-	$cfg->param("POLLEN.MUGWORT", $R::pollen_mugwort + 0);
-	$cfg->param("POLLEN.OLIVE",   $R::pollen_olive + 0);
-	$cfg->param("POLLEN.RAGWEED", $R::pollen_ragweed + 0);
-	$cfg->save();
-
-	# Create Cronjob
-	if ($R::getdata eq "1"){
-		system ("ln -s $lbpbindir/cronjob.pl $lbhomedir/system/cron/cron.01min/$lbpplugindir");
-	} else {
-		unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
-	}
-
-	# Error template
-	if ($error) {
-		# Template output
-		&error;
-
-	# Save template
-	} else {
-		# Template output
-		&save;
-	}
-	exit;
-
+    LoxBerry::Web::lbheader($L{'SETTINGS.LABEL_PLUGINTITLE'} . " V$version",
+                            "https://wiki.loxberry.de/plugins/Weather4Loxone/start",
+                            "help.html");
+    print $template->output();
+    LoxBerry::Web::lbfooter();
+    exit;
 }
 
+##########################################################################
 # Save Form 2 (Miniserver)
+##########################################################################
 if ($R::saveformdata2) {
 
-  	$template->param( FORMNO => '2' );
+    $template->param( FORMNO => '2' );
 
-	my $dfc;
-	for (my $i=1;$i<=8;$i++) {
-		if ( ${"R::dfc$i"} ) {
-			if ( !$dfc ) {
-				$dfc = $i;
-			} else {
-				$dfc = $dfc . ";" . $i;
-			}
-		}
-	}
-	my $hfc;
-	for ($i=1;$i<=48;$i++) {
-		if ( ${"R::hfc$i"} ) {
-			if ( !$hfc ) {
-				$hfc = $i;
-			} else {
-				$hfc = $hfc . ";" . $i;
-			}
-		}
-	}
+    my $dfc;
+    for (my $i=1;$i<=8;$i++) {
+        if ( ${"R::dfc$i"} ) {
+            $dfc = $dfc ? "$dfc;$i" : $i;
+        }
+    }
 
-	# Write configuration file(s)
-	$cfg->param("SERVER.SENDDFC", "$dfc");
-	$cfg->param("SERVER.SENDHFC", "$hfc");
-	$cfg->param("SERVER.SENDUDP", "$R::sendudp");
-	$cfg->param("SERVER.UDPPORT", "$R::udpport");
-	$cfg->param("SERVER.MSNO", "$R::msno");
-	$cfg->param("SERVER.TOPIC", "$R::mqtttopic");
+    my $hfc;
+    for (my $i=1;$i<=48;$i++) {
+        if ( ${"R::hfc$i"} ) {
+            $hfc = $hfc ? "$hfc;$i" : $i;
+        }
+    }
 
-	$cfg->save();
+    # Write configuration file(s)
+    $cfg->param("SERVER.SENDDFC", "$dfc");
+    $cfg->param("SERVER.SENDHFC", "$hfc");
+    $cfg->param("SERVER.SENDUDP", "$R::sendudp");
+    $cfg->param("SERVER.UDPPORT", "$R::udpport");
+    $cfg->param("SERVER.MSNO", "$R::msno");
+    $cfg->param("SERVER.TOPIC", "$R::mqtttopic");
 
-	# Template output
-	&save;
+    $cfg->save();
 
-	exit;
-
+    save();
+    exit;
 }
 
+##########################################################################
 # Save Form 3 (Website)
+##########################################################################
 if ($R::saveformdata3) {
 
-  	$template->param( FORMNO => '3' );
+    $template->param( FORMNO => '3' );
 
-	# Write configuration file(s)
-	$cfg->param("SERVER.EMU", "$R::emu");
-	$cfg->param("WEB.THEME", "$R::theme");
-	$cfg->param("WEB.ICONSET", "$R::iconset");
-	$cfg->param("WEB.LANG", "$R::themelang");
+    # Write configuration file(s)
+    $cfg->param("SERVER.EMU", "$R::emu");
+    $cfg->param("WEB.THEME", "$R::theme");
+    $cfg->param("WEB.ICONSET", "$R::iconset");
+    $cfg->param("WEB.LANG", "$R::themelang");
 
-	$cfg->save();
+    $cfg->save();
 
-	# Enable/Disable CloudEmu
-	if ( $R::emu ) {
-		system("sudo $lbpbindir/cloudemu enable > /dev/null 2>&1");
-	} else {
-		system("sudo $lbpbindir/cloudemu disable > /dev/null 2>&1");
-	}
+    # Enable/Disable CloudEmu
+    if ( $R::emu ) {
+        system("sudo $lbpbindir/cloudemu enable > /dev/null 2>&1");
+    } else {
+        system("sudo $lbpbindir/cloudemu disable > /dev/null 2>&1");
+    }
 
-	# Template output
-	&save;
-
-	exit;
-
+    save();
+    exit;
 }
+
+##########################################################################
+# Normal page rendering (menus)
+##########################################################################
 
 # Navbar
 our %navbar;
@@ -382,14 +218,16 @@ $navbar{99}{URL} = 'index.cgi?form=99';
 # Menu: Server
 if ($R::form eq "1" || !$R::form) {
 
-  $navbar{1}{active} = 1;
-  $template->param( "FORM1", 1);
-  $template->param("CURRENT_WEATHERSERVICE", $cfg->param("SERVER.WEATHERSERVICE"));
+    $navbar{1}{active} = 1;
+    $template->param( "FORM1", 1);
+
 
   my @values;
   my %labels;
 
   # Weather Service
+  $template->param("CURRENT_WEATHERSERVICE", $cfg->param("SERVER.WEATHERSERVICE"));
+
   @values = ( 'visualcrossing', 'openweather', 'wttrin', 'wetteronline', 'weatherflow', );
   %labels = (
         'visualcrossing' => 'Visual Crossing',
@@ -402,12 +240,14 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'weatherservice',
         -id      => 'weatherservice',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.WEATHERSERVICE'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.WEATHERSERVICE'),
     );
   $template->param( WEATHERSERVICE => $wservice );
 
   # DFC Weather Service
+  $template->param("CURRENT_WEATHERSERVICEDFC", $cfg->param("SERVER.WEATHERSERVICEDFC"));
+
   @values = ( 'visualcrossing', 'openweather', 'wttrin', 'wetteronline', 'weatherflow', );
   %labels = (
         'visualcrossing' => 'Visual Crossing',
@@ -420,8 +260,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'weatherservicedfc',
         -id      => 'weatherservicedfc',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.WEATHERSERVICEDFC'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.WEATHERSERVICEDFC'),
     );
   $template->param( WEATHERSERVICEDFC => $wservicedfc );
 
@@ -435,12 +275,14 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'usealternatedfc',
         -id      => 'usealternatedfc',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.USEALTERNATEDFC'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.USEALTERNATEDFC'),
     );
   $template->param( USEALTERNATEDFC => $usealternatedfc );
 
   # HFC Weather Service
+  $template->param("CURRENT_WEATHERSERVICEHFC", $cfg->param("SERVER.WEATHERSERVICEHFC"));
+
   @values = ( 'visualcrossing', 'openweather', 'wttrin', 'wetteronline', 'weatherflow', );
   %labels = (
         'visualcrossing' => 'Visual Crossing',
@@ -453,8 +295,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'weatherservicehfc',
         -id      => 'weatherservicehfc',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.WEATHERSERVICEHFC'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.WEATHERSERVICEHFC'),
     );
   $template->param( WEATHERSERVICEHFC => $wservicehfc );
 
@@ -468,8 +310,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'usealternatehfc',
         -id      => 'usealternatehfc',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.USEALTERNATEHFC'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.USEALTERNATEHFC'),
     );
   $template->param( USEALTERNATEHFC => $usealternatehfc );
 
@@ -483,8 +325,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'metric',
         -id      => 'metric',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.METRIC'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.METRIC'),
     );
   $template->param( METRIC => $metric );
 
@@ -498,8 +340,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'loxgrabber',
         -id      => 'loxgrabber',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.LOXGRABBER'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.LOXGRABBER'),
     );
   $template->param( LOXGRABBER => $loxgrabber );
 
@@ -513,8 +355,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'wugrabber',
         -id      => 'wugrabber',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.WUGRABBER'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.WUGRABBER'),
     );
   $template->param( WUGRABBER => $wugrabber );
 
@@ -528,8 +370,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'foshkgrabber',
         -id      => 'foshkgrabber',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.FOSHKGRABBER'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.FOSHKGRABBER'),
     );
   $template->param( FOSHKGRABBER => $foshkgrabber );
 
@@ -543,8 +385,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'pwscatchuploadgrabber',
         -id      => 'pwscatchuploadgrabber',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.PWSCATCHUPLOADGRABBER'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.PWSCATCHUPLOADGRABBER'),
     );
   $template->param( PWSCATCHUPLOADGRABBER => $pwscatchuploadgrabber );
 
@@ -558,8 +400,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'openmeteoairqualitygrabber',
         -id      => 'openmeteoairqualitygrabber',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.OPENMETEOAIRQUALITYGRABBER'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.OPENMETEOAIRQUALITYGRABBER'),
     );
   $template->param( OPENMETEOAIRQUALITYGRABBER => $openmeteoairqualitygrabber );
 
@@ -590,8 +432,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'pollen_grasses',
         -id      => 'pollen_grasses',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $pollen_defaults{grasses},
+    -labels  => \%labels,
+    -default => $pollen_defaults{grasses},
     );
   $template->param( POLLEN_GRASSES => $pollen_grasses );
 
@@ -599,8 +441,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'pollen_birch',
         -id      => 'pollen_birch',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $pollen_defaults{birch},
+    -labels  => \%labels,
+    -default => $pollen_defaults{birch},
     );
   $template->param( POLLEN_BIRCH => $pollen_birch );
 
@@ -608,8 +450,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'pollen_alder',
         -id      => 'pollen_alder',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $pollen_defaults{alder},
+    -labels  => \%labels,
+    -default => $pollen_defaults{alder},
     );
   $template->param( POLLEN_ALDER => $pollen_alder );
 
@@ -617,8 +459,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'pollen_mugwort',
         -id      => 'pollen_mugwort',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $pollen_defaults{mugwort},
+    -labels  => \%labels,
+    -default => $pollen_defaults{mugwort},
     );
   $template->param( POLLEN_MUGWORT => $pollen_mugwort );
 
@@ -626,8 +468,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'pollen_olive',
         -id      => 'pollen_olive',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $pollen_defaults{olive},
+    -labels  => \%labels,
+    -default => $pollen_defaults{olive},
     );
   $template->param( POLLEN_OLIVE => $pollen_olive );
 
@@ -635,8 +477,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'pollen_ragweed',
         -id      => 'pollen_ragweed',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $pollen_defaults{ragweed},
+    -labels  => \%labels,
+    -default => $pollen_defaults{ragweed},
     );
   $template->param( POLLEN_RAGWEED => $pollen_ragweed );
 
@@ -650,8 +492,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'maskkeys',
         -id      => 'maskkeys',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.MASKKEYS'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.MASKKEYS'),
     );
   $template->param( MASKKEYS => $maskkeys );
 
@@ -665,8 +507,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'getdata',
         -id      => 'getdata',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.GETDATA'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.GETDATA'),
     );
   $template->param( GETDATA => $getdata );
 
@@ -685,8 +527,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'cron',
         -id      => 'cron',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.CRON'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.CRON'),
     );
   $template->param( CRON => $cron );
 
@@ -706,8 +548,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'cron_alternate',
         -id      => 'cron_alternate',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.CRON_ALTERNATE'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.CRON_ALTERNATE'),
     );
   $template->param( CRON_ALTERNATE => $cron_alternate );
 
@@ -715,60 +557,60 @@ if ($R::form eq "1" || !$R::form) {
   @values = ('af', 'ar', 'az', 'bg', 'ca', 'cz', 'da', 'de', 'el', 'en', 'es', 'eu', 'fa', 'fi', 'fr', 'gl', 'he', 'hi', 'hr', 'hu', 'id', 'it', 'ja', 'kr', 'la', 'lt', 'mk', 'no', 'nl', 'pl', 'pt', 'pt_br', 'ro', 'ru', 'se', 'sk', 'sl', 'sr', 'th', 'tr', 'uk', 'vi', 'zh_cn', 'zh_tw', 'zu');
 
   %labels = (
-	'af' => 'Africaans',
-	'ar' => 'Arabic',
-	'az' => 'Azerbaijani',
-	'bg' => 'Bulgarian',
-	'ca' => 'Catalan',
-	'ca' => 'Catalan',
-	'cz' => 'Czech',
-	'da' => 'Danish',
-	'de' => 'German',
-	'el' => 'Greek',
-	'en' => 'English',
-	'es' => 'Spanish',
-	'eu' => 'Basque',
-	'fa' => 'Persian (Farsi)',
-	'fi' => 'Finnish',
-	'fr' => 'French',
-	'hr' => 'Croatian',
-	'ga' => 'Galician',
-	'he' => 'Hebrew',
-	'hi' => 'Hindi',
-	'hr' => 'Croatian',
-	'hu' => 'Hungarian',
-	'id' => 'Indonesian',
-	'it' => 'Italian',
-	'ja' => 'Japanese',
-	'kr' => 'Korean',
-	'la' => 'Latvian',
-	'lt' => 'Lithuanian',
-	'mk' => 'Macedonian',
-	'no' => 'Norwegian',
-	'nl' => 'Dutch',
-	'pl' => 'Polish',
-	'pt' => 'Portuguese',
-	'pt_br' => 'Portuguese Brasil',
-	'ro' => 'Romanian',
-	'ru' => 'Russian',
-	'se' => 'Swedish',
-	'sk' => 'Slovak',
-	'sl' => 'Slovenian',
-	'sr' => 'Serbian',
-	'th' => 'Thai',
-	'tr' => 'Turkish',
-	'uk' => 'Ukrainian',
-	'vi' => 'Vietnamese',
-	'zh_cn' => 'simplified Chinese',
-	'zh_tw' => 'traditional Chinese',
-	'zu' => 'Zulu',
+    'af' => 'Africaans',
+    'ar' => 'Arabic',
+    'az' => 'Azerbaijani',
+    'bg' => 'Bulgarian',
+    'ca' => 'Catalan',
+    'ca' => 'Catalan',
+    'cz' => 'Czech',
+    'da' => 'Danish',
+    'de' => 'German',
+    'el' => 'Greek',
+    'en' => 'English',
+    'es' => 'Spanish',
+    'eu' => 'Basque',
+    'fa' => 'Persian (Farsi)',
+    'fi' => 'Finnish',
+    'fr' => 'French',
+    'hr' => 'Croatian',
+    'ga' => 'Galician',
+    'he' => 'Hebrew',
+    'hi' => 'Hindi',
+    'hr' => 'Croatian',
+    'hu' => 'Hungarian',
+    'id' => 'Indonesian',
+    'it' => 'Italian',
+    'ja' => 'Japanese',
+    'kr' => 'Korean',
+    'la' => 'Latvian',
+    'lt' => 'Lithuanian',
+    'mk' => 'Macedonian',
+    'no' => 'Norwegian',
+    'nl' => 'Dutch',
+    'pl' => 'Polish',
+    'pt' => 'Portuguese',
+    'pt_br' => 'Portuguese Brasil',
+    'ro' => 'Romanian',
+    'ru' => 'Russian',
+    'se' => 'Swedish',
+    'sk' => 'Slovak',
+    'sl' => 'Slovenian',
+    'sr' => 'Serbian',
+    'th' => 'Thai',
+    'tr' => 'Turkish',
+    'uk' => 'Ukrainian',
+    'vi' => 'Vietnamese',
+    'zh_cn' => 'simplified Chinese',
+    'zh_tw' => 'traditional Chinese',
+    'zu' => 'Zulu',
     );
   my $openweatherlang = $cgi->popup_menu(
         -name    => 'openweatherlang',
         -id      => 'openweatherlang',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('OPENWEATHER.LANG'),
+    -labels  => \%labels,
+    -default => $cfg->param('OPENWEATHER.LANG'),
     );
   $template->param( OPENWEATHERLANG => $openweatherlang );
 
@@ -776,14 +618,14 @@ if ($R::form eq "1" || !$R::form) {
   @values = ('en');
 
   %labels = (
-	'en' => 'English',
+    'en' => 'English',
     );
   my $weatherflowlang = $cgi->popup_menu(
         -name    => 'weatherflowlang',
         -id      => 'weatherflowlang',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('WEATHERFLOW.LANG'),
+    -labels  => \%labels,
+    -default => $cfg->param('WEATHERFLOW.LANG'),
     );
   $template->param( WEATHERFLOWLANG => $weatherflowlang );
 
@@ -791,26 +633,26 @@ if ($R::form eq "1" || !$R::form) {
   @values = ('de', 'en', 'es', 'fi', 'fr', 'it', 'ja', 'ko', 'pt', 'ru', 'nl', 'sr', 'zh');
 
   %labels = (
-	'de' => 'German',
-	'en' => 'English',
-	'es' => 'Spanish',
-	'fi' => 'Finnish',
-	'fr' => 'French',
-	'it' => 'Italian',
-	'ja' => 'Japanese',
-	'ko' => 'Korean',
-	'nl' => 'Netherlands',
-	'pt' => 'Portuguese',
-	'ru' => 'Russian',
-	'sr' => 'Serbian',
-	'zh' => 'simplified Chinese',
+    'de' => 'German',
+    'en' => 'English',
+    'es' => 'Spanish',
+    'fi' => 'Finnish',
+    'fr' => 'French',
+    'it' => 'Italian',
+    'ja' => 'Japanese',
+    'ko' => 'Korean',
+    'nl' => 'Netherlands',
+    'pt' => 'Portuguese',
+    'ru' => 'Russian',
+    'sr' => 'Serbian',
+    'zh' => 'simplified Chinese',
     );
   my $visualcrossinglang = $cgi->popup_menu(
         -name    => 'visualcrossinglang',
         -id      => 'visualcrossinglang',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('VISUALCROSSING.LANG'),
+    -labels  => \%labels,
+    -default => $cfg->param('VISUALCROSSING.LANG'),
     );
   $template->param( VISUALCROSSINGLANG => $visualcrossinglang );
 
@@ -818,80 +660,80 @@ if ($R::form eq "1" || !$R::form) {
   @values = ('af', 'am', 'ar', 'be', 'bn', 'ca', 'da', 'de', 'el', 'en', 'et', 'fa', 'fr', 'gl', 'hi', 'hu', 'ia', 'id', 'it', 'lt', 'mg', 'nb', 'nl', 'oc', 'pl', 'pt-br', 'ro', 'ru', 'ta', 'th', 'tr', 'uk', 'vi', 'zh-cn', 'zh-tw');
 
   %labels = (
-	'af' => 'Africaans',
-	'am' => 'Amharic',
-	'ar' => 'Arabic',
-	'be' => 'Belarusian',
-	'bn' => 'Bengali',
-	'ca' => 'Catalan',
-	'da' => 'Danish',
-	'de' => 'German',
-	'el' => 'Greek',
-	'en' => 'English',
-	'et' => 'Estonian',
-	'fa' => 'Persian (Farsi)',
-	'fr' => 'French',
-	'gl' => 'Galician',
-	'hi' => 'Hindi',
-	'ia' => 'Interlingua',
-	'id' => 'Indonesian',
-	'it' => 'Italian',
-	'lt' => 'Lithuanian',
-	'mg' => 'Malagasy',
-	'nb' => 'Norwegian Bokmal',
-	'nl' => 'Dutch',
-	'oc' => 'Occitan',
-	'pl' => 'Polish',
-	'pt-br' => 'Portuguese Brasil',
-	'ro' => 'Romanian',
-	'ru' => 'Russian',
-	'ta' => 'Tamil',
-	'th' => 'Thai',
-	'tr' => 'Turkish',
-	'uk' => 'Ukrainian',
-	'vi' => 'Vietnamese',
-	'zh-cn' => 'simplified Chinese',
-	'zh-tw' => 'traditional Chinese',
+    'af' => 'Africaans',
+    'am' => 'Amharic',
+    'ar' => 'Arabic',
+    'be' => 'Belarusian',
+    'bn' => 'Bengali',
+    'ca' => 'Catalan',
+    'da' => 'Danish',
+    'de' => 'German',
+    'el' => 'Greek',
+    'en' => 'English',
+    'et' => 'Estonian',
+    'fa' => 'Persian (Farsi)',
+    'fr' => 'French',
+    'gl' => 'Galician',
+    'hi' => 'Hindi',
+    'ia' => 'Interlingua',
+    'id' => 'Indonesian',
+    'it' => 'Italian',
+    'lt' => 'Lithuanian',
+    'mg' => 'Malagasy',
+    'nb' => 'Norwegian Bokmal',
+    'nl' => 'Dutch',
+    'oc' => 'Occitan',
+    'pl' => 'Polish',
+    'pt-br' => 'Portuguese Brasil',
+    'ro' => 'Romanian',
+    'ru' => 'Russian',
+    'ta' => 'Tamil',
+    'th' => 'Thai',
+    'tr' => 'Turkish',
+    'uk' => 'Ukrainian',
+    'vi' => 'Vietnamese',
+    'zh-cn' => 'simplified Chinese',
+    'zh-tw' => 'traditional Chinese',
     );
   my $wttrinweatherlang = $cgi->popup_menu(
         -name    => 'wttrinlang',
         -id      => 'wttrinlang',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('WTTRIN.LANG'),
+    -labels  => \%labels,
+    -default => $cfg->param('WTTRIN.LANG'),
     );
   $template->param( WTTRINLANG => $wttrinweatherlang );
 
   # Central language selector (used by all services)
   @values = ('de', 'en', 'da', 'el', 'es', 'fa', 'fr', 'hi', 'hu', 'id', 'it', 'lt', 'nl', 'pl', 'ro', 'ru', 'th', 'tr', 'uk', 'vi');
   %labels = (
-	'da' => 'Danish',
-	'de' => 'German',
-	'el' => 'Greek',
-	'en' => 'English',
-	'es' => 'Spanish',
-	'fa' => 'Persian',
-	'fr' => 'French',
-	'hi' => 'Hindi',
-	'hu' => 'Hungarian',
-	'id' => 'Indonesian',
-	'it' => 'Italian',
-	'lt' => 'Lithuanian',
-	'nl' => 'Dutch',
-	'pl' => 'Polish',
-	'ro' => 'Romanian',
-	'ru' => 'Russian',
-	'th' => 'Thai',
-	'tr' => 'Turkish',
-	'uk' => 'Ukrainian',
-	'vi' => 'Vietnamese',
+    'da' => 'Danish',
+    'de' => 'German',
+    'el' => 'Greek',
+    'en' => 'English',
+    'es' => 'Spanish',
+    'fa' => 'Persian',
+    'fr' => 'French',
+    'hi' => 'Hindi',
+    'hu' => 'Hungarian',
+    'id' => 'Indonesian',
+    'it' => 'Italian',
+    'lt' => 'Lithuanian',
+    'nl' => 'Dutch',
+    'pl' => 'Polish',
+    'ro' => 'Romanian',
+    'ru' => 'Russian',
+    'th' => 'Thai',
+    'tr' => 'Turkish',
+    'uk' => 'Ukrainian',
+    'vi' => 'Vietnamese',
   );
   my $serverlang = $cgi->popup_menu(
         -name    => 'serverlang',
         -id      => 'serverlang',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.LANG') || 'en',
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.LANG') || 'en',
   );
   $template->param( SERVERLANG => $serverlang );
 
@@ -907,8 +749,8 @@ if ($R::form eq "1" || !$R::form) {
   $template->param( MINISERVER => $mshtml );
 
   # SendUDP
-  @values = ('0', '1' );
-  %labels = (
+  my @values = ('0', '1' );
+  my %labels = (
         '0' => $L{'SETTINGS.LABEL_OFF'},
         '1' => $L{'SETTINGS.LABEL_ON'},
     );
@@ -916,8 +758,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'sendudp',
         -id      => 'sendudp',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.SENDUDP'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.SENDUDP'),
     );
   $template->param( SENDUDP => $sendudp );
 
@@ -937,9 +779,9 @@ if ($R::form eq "1" || !$R::form) {
     $dfc .= $cgi->checkbox(
         -name    => "dfc$i",
         -id      => "dfc$i",
-	-checked => $checked,
+    -checked => $checked,
         -value   => '1',
-	-label   => "+$n $L{'SETTINGS.LABEL_DAYS'}",
+    -label   => "+$n $L{'SETTINGS.LABEL_DAYS'}",
       );
   }
   $template->param( DFC => $dfc );
@@ -947,7 +789,7 @@ if ($R::form eq "1" || !$R::form) {
   # HFC
   my $hfc;
   @fields = split(/;/,$cfg->param('SERVER.SENDHFC'));
-  for ($i=1;$i<=48;$i++) {
+  for (my $i=1;$i<=48;$i++) {
     $checked = 0;
     foreach ( split( /;/,$cfg->param('SERVER.SENDHFC') ) ) {
       if ($_ eq $i) {
@@ -957,9 +799,9 @@ if ($R::form eq "1" || !$R::form) {
     $hfc .= $cgi->checkbox(
         -name    => "hfc$i",
         -id      => "hfc$i",
-	-checked => $checked,
+    -checked => $checked,
         -value   => '1',
-	-label   => "+$i $L{'SETTINGS.LABEL_HOURS'}",
+    -label   => "+$i $L{'SETTINGS.LABEL_HOURS'}",
       );
   }
   $template->param( HFC => $hfc );
@@ -977,8 +819,8 @@ if ($R::form eq "1" || !$R::form) {
   }
 
   # Cloudweather Emu
-  @values = ('0', '1' );
-  %labels = (
+  my @values = ('0', '1' );
+  my %labels = (
         '0' => $L{'SETTINGS.LABEL_OFF'},
         '1' => $L{'SETTINGS.LABEL_ON'},
     );
@@ -986,34 +828,34 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'emu',
         -id      => 'emu',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('SERVER.EMU'),
+    -labels  => \%labels,
+    -default => $cfg->param('SERVER.EMU'),
     );
   $template->param( EMU => $emu );
   $template->param( MYIP => LoxBerry::System::get_localip() );
 
   # Theme
-  @values = ('dark', 'light', 'fresh', 'arctic', 'ocean', 'custom' );
-  %labels = (
+  my @values = ('dark', 'light', 'fresh', 'arctic', 'ocean', 'custom' );
+  my %labels = (
         'dark' => "Dark Theme (Classic)",
         'light' => "Light Theme (Classic)",
         'fresh' => "Fresh Theme (New Style)",
-		'arctic' => "Arctic Mist Theme (New Style)",
-		'ocean' => "Deep Ocean Theme (New Style)",
+        'arctic' => "Arctic Mist Theme (New Style)",
+        'ocean' => "Deep Ocean Theme (New Style)",
         'custom' => "Custom Theme (your own)",
     );
   my $theme = $cgi->popup_menu(
         -name    => 'theme',
         -id      => 'theme',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('WEB.THEME'),
+    -labels  => \%labels,
+    -default => $cfg->param('WEB.THEME'),
     );
   $template->param( THEME => $theme );
 
   # Icon Set
-  @values = ('color', 'flat', 'dark', 'light', 'green', 'silver', 'realistic', 'naturalistic', 'custom' );
-  %labels = (
+  my @values = ('color', 'flat', 'dark', 'light', 'green', 'silver', 'realistic', 'naturalistic', 'custom' );
+  my %labels = (
         'color' => "Color Set (42 icons, PNG format, 150x150)",
         'flat' => "Flat Set (42 icons, PNG format, 150x150)",
         'dark' => "Dark Set (42 icons, PNG format, 150x150)",
@@ -1029,8 +871,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'iconset',
         -id      => 'iconset',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('WEB.ICONSET'),
+    -labels  => \%labels,
+    -default => $cfg->param('WEB.ICONSET'),
     );
   $template->param( ICONSET => $iconset );
 
@@ -1047,8 +889,8 @@ if ($R::form eq "1" || !$R::form) {
         -name    => 'themelang',
         -id      => 'themelang',
         -values  => \@values,
-	-labels  => \%labels,
-	-default => $cfg->param('WEB.LANG'),
+    -labels  => \%labels,
+    -default => $cfg->param('WEB.LANG'),
     );
   $template->param( THEMELANG => $themelang );
 
@@ -1070,255 +912,198 @@ LoxBerry::Web::lbfooter();
 
 exit;
 
-#####################################################
-# Query Wunderground
-#####################################################
 
-sub wuquery
-{
+##########################################################################
+# Verify API call for different weather services
+# Parameters:
+# - url: API URL to call
+# - match: regular expression to extract specific part of response (e.g. API key, station ID, geo coordinates, etc.) or '' to skip match
+# - path: path elements (tree and param to retrieve) from API response, used to check if response contains this element
+# Returns:
+# - decoded JSON response from API call, matched part of response (if match is defined), or value of path element (if path is defined and match is not defined)
+# - error message: if API call fails, match is defined but not found in response, or if decoded JSON does not contain expected path element
 
-	# Get the public API key from the WU website
-	my $query = "https://www.wunderground.com/dashboard/pws/$querystation";
-	print STDERR "QUERY1: $query\n";
+sub verifyApiCall {
+    my (%p)       = @_;
+    my $url       = $p{url}     // '';
+    my $match     = $p{match}   // '';
+    my @path      = @{ $p{path} // [] };
 
-	my $ua = new LWP::UserAgent;
-	my $res = $ua->get($query);
+    my $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
+    my $error     = undef;
 
-	# Check status of request
-	my $urlstatus = $res->status_line;
-	my $urlstatuscode = substr($urlstatus,0,3);
-
-	my $apikey;
-	if ($urlstatuscode ne "200") {
-	        $error = $L{'SETTINGS.ERR_NO_DATA'} . "<br><br><b>URL:</b> $query<br><b>STATUS CODE:</b> $urlstatuscode";
-	} else {
-		$apikey = $res->decoded_content;
-		$apikey =~ s/\n//g;
-		$apikey =~ s/.*apiKey=([0-9a-z]*)\&.*/$1/g;
-	}
-
-	print STDERR "API: $apikey\n";
-
-        # Get data from Wunderground Server (API request) for testing API Key and Station
-	if (!$error) {
-	        $query = "$url?apiKey=$apikey&stationId=$querystation&format=json&units=m";
-		print STDERR "QUERY2: $query\n";
-		$ua = new LWP::UserAgent;
-		$res = $ua->get($query);
-		my $json = $res->decoded_content();
-
-		# Check status of request
-		my $urlstatus = $res->status_line;
-		my $urlstatuscode = substr($urlstatus,0,3);
-
-		if ($urlstatuscode ne "200") {
-		        $error = $L{'SETTINGS.ERR_NO_DATA'} . "<br><br><b>URL:</b> $query<br><b>STATUS CODE:</b> $urlstatuscode";
-		}
-
-		# Decode JSON response from server
-		if (!$error) {
-			our $decoded_json = decode_json( $json );
-		}
-	}
-	return();
-
-}
-
-#####################################################
-# Query Openweather
-#####################################################
-
-sub openweatherquery
-{
-
-        # Get data from Weatherbit Server (API request) for testing API Key
-        my $query = "$url\/3.0/onecall?appid=$R::openweatherapikey&$querystation";
-        my $ua = new LWP::UserAgent;
-        my $res = $ua->get($query);
-        my $json = $res->decoded_content();
-
-        # Check status of request
-        my $urlstatus = $res->status_line;
-        my $urlstatuscode = substr($urlstatus,0,3);
-
-	if ($urlstatuscode ne "200" && $urlstatuscode ne "401" ) {
-	        $error = $L{'SETTINGS.ERR_NO_DATA'} . "<br><br><b>URL:</b> $query<br><b>STATUS CODE:</b> $urlstatuscode";
-	}
-
-	if ($urlstatuscode eq "401" ) {
-	        $error = $L{'SETTINGS.ERR_API_KEY'} . "<br><br><b>URL:</b> $query<br><b>STATUS CODE:</b> $urlstatuscode";
-	}
-
-        # Decode JSON response from server
-	if (!$error) {
-        	our $decoded_json = decode_json( $json );
-	}
-	return();
-
-}
-
-#####################################################
-# Query Weatherflow
-#####################################################
-
-sub weatherflowquery
-{
-
-    # Update API key to comply with Weatherflow format
-    #my $apikey = $R::weatherflowapikey;
-    #$apikey =~ s/^(.{8})(.{4})(.{4})(.{4})(.{12})/$1\-$2\-$3\-$4\-$5/;
-
-    # Get data from Weatherflow Server (API request) for testing API Key
-    my $query = "$url\/observations\/station\/$R::weatherflowstationid?token=$R::weatherflowapikey";
-    my $ua = new LWP::UserAgent;
-    my $res = $ua->get($query);
-    my $json = $res->decoded_content();
+    # Perform the API call
+    my $ua  = LWP::UserAgent->new( agent => $userAgent );
+    my $res = $ua->get($url);
+    my $content = $res->decoded_content();
 
     # Check status of request
     my $urlstatus = $res->status_line;
     my $urlstatuscode = substr($urlstatus,0,3);
 
-	if ($urlstatuscode ne "200" && $urlstatuscode ne "401" ) {
-	        $error = $L{'SETTINGS.ERR_NO_DATA'} . "<br><br><b>URL:</b> $query<br><b>STATUS CODE:</b> $urlstatuscode";
-	}
+    # return error if API call fails
+    if ($urlstatuscode eq "401" ) {
+        $error = $L{'SETTINGS.ERR_API_KEY'} . "<br><br><b>URL:</b> $url<br><b>STATUS CODE:</b> $urlstatuscode";
+        return (undef, $error);
+    } elsif ($urlstatuscode eq "440") {
+        $error = $L{'SETTINGS.ERR_NO_WEATHERSTATION'} . "<br><br><b>URL:</b> $url<br><b>STATUS CODE:</b> $urlstatuscode";
+        return (undef, $error);
+    } elsif ($urlstatuscode ne "200") {
+        $error = $L{'SETTINGS.ERR_NO_DATA'} . "<br><br><b>URL:</b> $url<br><b>STATUS CODE:</b> $urlstatuscode";
+        return (undef, $error);
+    }
 
-	if ($urlstatuscode eq "401" ) {
-	        $error = $L{'SETTINGS.ERR_API_KEY'} . "<br><br><b>URL:</b> $query<br><b>STATUS CODE:</b> $urlstatuscode";
-	}
+    # do regular expression match (if match is defined) and return matched part only, used e.g. by WetterOnline to retrieve API keys, station ID and geo coordinates
+    if (defined $match && length $match) {
+        if ($content =~ $match) {
+            $content = $1; # return only the matched part of the response
+            return ($content, undef);
+        } else {
+            $error = $L{'SETTINGS.ERR_NO_DATA'} . "<br><br><b>URL:</b> $url<br><b>STATUS CODE:</b> $urlstatuscode<br><b>NOTE:</b> No match found in response for regex: $match";
+            return (undef, $error);
+        }
+    }
 
-        # Decode JSON response from server
-	if (!$error) {
-        	our $decoded_json = decode_json( $json );
-	}
-	return();
+    my $decodedJson = decode_json("$content");
 
+    # if path is not defined, return whole decoded JSON response
+    if (@path == 0) {
+        return ($decodedJson, undef);
+    }
+
+    # check if decoded JSON contains expected path element and return its value
+    my $cur = $decodedJson;
+    $error = $L{'SETTINGS.ERR_NO_WEATHERSTATION'};
+
+    for my $p (@path) {
+        return (undef, $error) unless defined $cur;
+
+        if (ref $cur eq 'ARRAY') {
+            # only accept numeric indices for arrays
+            return (undef, $error) unless defined $p && looks_like_number($p);
+            my $idx = int($p);
+            return (undef, $error) if $idx < 0 || $idx > $#$cur;    # out of bounds
+            $cur = $cur->[$idx];
+        }
+        elsif (ref $cur eq 'HASH') {
+            return (undef, $error) unless exists $cur->{$p};
+            $cur = $cur->{$p};
+        }
+        else {
+            return (undef, $error);
+        }
+    }
+
+    return ($cur, undef);
 }
 
-#####################################################
-# Query Visualcrossing
-#####################################################
+# globals:
+my $saving_page_started = 0;
 
-sub visualcrossingquery
-{
-
-        # Get data from VisualCrossing Server (API request) for testing API Key
-	my $query = "$url/$querystation?unitGroup=metric&include=current&key=$R::visualcrossingapikey&contentType=json";
-        my $ua = new LWP::UserAgent;
-        my $res = $ua->get($query);
-        my $json = $res->decoded_content();
-
-        # Check status of request
-        my $urlstatus = $res->status_line;
-        my $urlstatuscode = substr($urlstatus,0,3);
-
-	if ($urlstatuscode ne "200" && $urlstatuscode ne "401" ) {
-	        $error = $L{'SETTINGS.ERR_NO_DATA'} . "<br><br><b>URL:</b> $query<br><b>STATUS CODE:</b> $urlstatuscode";
-	}
-
-	if ($urlstatuscode eq "401" ) {
-	        $error = $L{'SETTINGS.ERR_API_KEY'} . "<br><br><b>URL:</b> $query<br><b>STATUS CODE:</b> $urlstatuscode";
-	}
-
-        # Decode JSON response from server
-	if (!$error) {
-        	our $decoded_json = decode_json( $json );
-	}
-	return();
-
-}
-
-#####################################################
-# Query Wttr.in
-#####################################################
-
-sub wttrinquery
-{
-
-        # Get data from wttrin Server (API request) for testing API Key
-	my $query = "$url/$querystation?format=j1";
-        my $ua = new LWP::UserAgent;
-        my $res = $ua->get($query);
-        my $json = $res->decoded_content();
-
-        # Check status of request
-        my $urlstatus = $res->status_line;
-        my $urlstatuscode = substr($urlstatus,0,3);
-
-	if ($urlstatuscode ne "200" ) {
-	        $error = $L{'SETTINGS.ERR_NO_DATA'} . "<br><br><b>URL:</b> $query<br><b>STATUS CODE:</b> $urlstatuscode";
-	}
-
-	if ($urlstatuscode eq "440" ) {
-	        $error = $L{'SETTINGS.ERR_NO_WEATHERSTATION'} . "<br><br><b>URL:</b> $query<br><b>STATUS CODE:</b> $urlstatuscode";
-	}
-
-        # Decode JSON response from server
-	if (!$error) {
-        	our $decoded_json = decode_json( $json );
-	}
-	return();
-
-}
-
-#####################################################
-# Query WetterOnline
-#####################################################
-
-sub wetteronlinequery
-{
-
-	# Get data from WetterOnline to check StationID
-	my $query = "$url$querystation";
-	my $ua = LWP::UserAgent->new;
-	my $request = HTTP::Request->new(GET => $query);
-	$request->header('User-Agent' => $useragent);
-	my $response = $ua->request($request);
-
-	if ($response->is_success) {
-		$error = 0;
-		$body = $response->decoded_content;
-		# if ($body =~ /WO\.metadata\.p_city_weather\.nowcastBarMetadata = (\{.+\})$/m) {
-		if ($body =~ /WO\.metadata\.p_city_weather\.forecastTexts = (\[.+?\]);$/m) {
-			$error = 0;
-			return ();
-		} else {
-			$error = $L{'SETTINGS.ERR_NO_WEATHERSTATION'} . "<br><br><b>URL:</b> $query<br><b>STATUS CODE:</b> $urlstatuscode";
-		}
-	} else {
-		$error = $L{'SETTINGS.ERR_NO_DATA'} . "<br><br><b>URL:</b> $query<br><b>STATUS CODE:</b> $urlstatuscode";
-	}
-
-	return();
-
-}
-
-
-#####################################################
+##########################################################################
 # Error
-#####################################################
+##########################################################################
+sub error {
+    my ($err) = @_;
+    if ($saving_page_started) {
+        my $msg = $error // '';
+        $msg =~ s/\\/\\\\/g; $msg =~ s/"/\\"/g; $msg =~ s/\r?\n/\\n/g;
+        print qq{
+          <script>
+            (function(){
+              var el = document.getElementById('savinglog');
+              if(el){ el.textContent += "\\nERROR: $msg\\n"; }
+            })();
+          </script>
+        };
+        STDOUT->flush();
+        LoxBerry::Web::lbfooter();
+        exit;
+    }
 
-sub error
-{
-	$template->param( "ERROR", 1);
-	$template->param( "ERRORMESSAGE", $error);
-	LoxBerry::Web::lbheader($L{'SETTINGS.LABEL_PLUGINTITLE'} . " V$version", "http://www.loxwiki.eu/display/LOXBERRY/Weather4Loxone", "help.html");
-	print $template->output();
-	LoxBerry::Web::lbfooter();
+    $template->param( "SAVING", 0);
+    $template->param( "ERROR", 1);
+    $template->param( "ERRORMESSAGE", $err);
 
-	exit;
+    LoxBerry::Web::lbheader($L{'SETTINGS.LABEL_PLUGINTITLE'} . " V$version", "https://wiki.loxberry.de/plugins/Weather4Loxone/start", "help.html");
+    print $template->output();
+    STDOUT->flush();
+    LoxBerry::Web::lbfooter();
+    exit;
 }
 
-#####################################################
+##########################################################################
 # Save
-#####################################################
+##########################################################################
+sub save {
+    if ($saving_page_started) {
+        print qq{<script>window.location.href="./index.cgi?form=$R::form";</script>};
+        STDOUT->flush();
+        LoxBerry::Web::lbfooter();
+        exit;
+    }
 
-sub save
-{
-	$template->param( "SAVE", 1);
-	LoxBerry::Web::lbheader($L{'SETTINGS.LABEL_PLUGINTITLE'} . " V$version", "https://wiki.loxberry.de/plugins/weather4loxone/start", "help.html");
-	print $template->output();
-	LoxBerry::Web::lbfooter();
+    $template->param( "SAVING", 0);
+    $template->param( "SAVE", 1);
 
-	exit;
+    LoxBerry::Web::lbheader($L{'SETTINGS.LABEL_PLUGINTITLE'} . " V$version", "https://wiki.loxberry.de/plugins/weather4loxone/start", "help.html");
+    print $template->output();
+    STDOUT->flush();
+    LoxBerry::Web::lbfooter();
+    exit;
 }
 
+##########################################################################
+# Saving (progress)
+##########################################################################
+
+sub saving {
+    my ($newmsg) = @_;
+
+    # Init saving page once
+    if (!$saving_page_started) {
+        $saving_page_started = 1;
+
+        $template->param("SAVING", 1);
+        $template->param("SAVE", 0);
+        $template->param("ERROR", 0);
+        $template->param("SAVINGMESSAGE", ""); # start empty
+
+        # Header + page skeleton (only once)
+        LoxBerry::Web::lbheader($L{'SETTINGS.LABEL_PLUGINTITLE'} . " V$version",
+                               "https://wiki.loxberry.de/plugins/weather4loxone/start",
+                               "help.html");
+
+        # IMPORTANT: output template once
+        print $template->output();
+
+        # Add a status box we can append to (if your template doesn't already have one)
+        print qq{
+          <div id="savinglog" style="margin:15px auto; max-width:900px; font-family:monospace; white-space:pre-line;"></div>
+        };
+
+        # Force browser to start rendering
+        print ("\n" . (" " x 4096) . "\n");
+        STDOUT->flush();
+        return;
+    }
+
+    # Subsequent updates: append only one line of JS that updates the DOM
+    $newmsg //= '';
+    $newmsg =~ s/\\/\\\\/g;
+    $newmsg =~ s/"/\\"/g;
+    $newmsg =~ s/\r?\n/\\n/g;
+
+    print qq{
+      <script>
+        (function(){
+          var el = document.getElementById('savinglog');
+          if(el){ el.textContent += "$newmsg\\n"; window.scrollTo(0, document.body.scrollHeight); }
+        })();
+      </script>
+    };
+
+    # padding to beat buffering
+    print ("\n" . (" " x 2048) . "\n");
+    STDOUT->flush();
+}

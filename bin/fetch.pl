@@ -78,7 +78,7 @@ my $verbose_opt = '';
 if ($verbose) {
 	$log->stdout(1);
 	$log->loglevel(7);
-	$verbose_opt = "-v";
+	$verbose_opt = "--verbose";
 }
 
 LOGSTART "Weather4Lox FETCH process";
@@ -86,7 +86,7 @@ LOGDEB "This is $0 Version $version";
 
 my $maskkeys_opt = '';
 if ($maskkeys) {
-	$maskkeys_opt = "--maskkeys"
+	$maskkeys_opt = "--maskkeys";
 } 
 LOGINF "Weather4Lox Fetch (masking API keys in dumps is " . ($maskkeys ? "enabled" : "disabled") . ")";
 
@@ -195,7 +195,7 @@ if ( $pcfg->param("SERVER.OPENMETEOAIRQUALITYGRABBER") ) {
 # Data to Loxone
 LOGINF "Starting script datatoloxone.pl";
 $log->close;
-system ("$lbpbindir/datatoloxone.pl $verbose_opt");
+system ("$lbpbindir/datatoloxone.pl $verbose_opt  $maskkeys_opt");
 $log->open;
 
 exit;

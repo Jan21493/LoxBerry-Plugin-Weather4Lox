@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#use strict;
-#use warnings;
+use strict;
+use warnings;
 
 ##########################################################################
 # Standard Modules (no error handling in case of missing modules)
@@ -53,7 +53,7 @@ our $metric           = $pcfg->param("SERVER.METRIC");
 our $emu              = $pcfg->param("SERVER.EMU");
 our $stdtheme         = $pcfg->param("WEB.THEME");
 our $stdiconset       = $pcfg->param("WEB.ICONSET");
-our $topic            = $pcfg->param("SERVER.TOPIC");
+our $topic            = $pcfg->param("SERVER.TOPIC") // "w4lx";
 our $sendMQTT         = 0;
 our $mqtt;
 our $data;
@@ -75,9 +75,12 @@ my $log = LoxBerry::Log->new (
 
 # Commandline options
 my $verbose = '';
+my $maskKeys = 1;
 
 GetOptions ('verbose' => \$verbose,
-            'quiet'   => sub { $verbose = 0 });
+            'quiet'   => sub { $verbose = 0 },
+            'maskkeys' => \$maskKeys,
+            );
 
 # Due to a bug in the Logging routine, set the loglevel fix to 3
 #$log->loglevel(3);
@@ -116,7 +119,7 @@ flock(F,2);
 binmode F, ':encoding(UTF-8)';
 print F "<!DOCTYPE HTML>\n<html>\n<head>\n";
 print F "<meta http-equiv='Content-Type' content='text/html; charset=utf-8'>\n</head>\n<body>";
-flock(F,8);
+#flock(F,8);
 close(F);
 
 
@@ -171,11 +174,11 @@ my $curDateLoxEpoch = toLoxEpoch($curDateMidnight->epoch);
 my $doLog = 1; # log the first data set in detail, but not all subsequent ones to avoid log flooding
 
 # TODO: To be verified if + $tzseconds is correct 
-sendToLox($toMS, $doLog, "cur_date", toLoxEpoch($cur->{time}{epoch}));                                         # Loxone epoch (1.1.2009, MEZ), e.g. 542934004
-sendToLox($toMS, $doLog, "cur_date_des", $cur->{time}{datetime});                                                 # was RFC822, now ISO 8601, e.g. Mon, 16 Mar 2026 23:00:04 +0100
-sendToLox($toMS, $doLog, "cur_date_tz_des_sh", $cur->{time}{timezone});                                           # IANA timezone name, e.g. Europe/Berlin
-sendToLox($toMS, $doLog, "cur_date_tz_des", $cur->{time}{tzShort});                                              # Time Zone Abbreviation, e.g. CET
-sendToLox($toMS, $doLog, "cur_date_tz", $cur->{time}{tzOffset});                                                 # Numeric timezone offset, e.g. +0100
+sendToLox($toMS, $doLog, "cur_date", toLoxEpoch($cur->{time}{epoch}));                             # Loxone epoch (1.1.2009, MEZ), e.g. 542934004
+sendToLox($toMS, $doLog, "cur_date_des", $cur->{time}{datetime});                                  # was RFC822, now ISO 8601, e.g. Mon, 16 Mar 2026 23:00:04 +0100
+sendToLox($toMS, $doLog, "cur_date_tz_des_sh", $cur->{time}{timezone});                            # IANA timezone name, e.g. Europe/Berlin
+sendToLox($toMS, $doLog, "cur_date_tz_des", $cur->{time}{tzShort});                                # Time Zone Abbreviation, e.g. CET
+sendToLox($toMS, $doLog, "cur_date_tz", $cur->{time}{tzOffset});                                   # Numeric timezone offset, e.g. +0100
 sendToLox($toMS, $doLog, "cur_day", encode_utf8(sprintf("%02d", $curDate->day)));
 sendToLox($toMS, $doLog, "cur_month", encode_utf8(sprintf("%02d", $curDate->month)));
 sendToLox($toMS, $doLog, "cur_year", encode_utf8($curDate->year));
@@ -481,7 +484,7 @@ open(F,">>$lbplogdir/weatherdata.html");
 flock(F,2);
 binmode F, ':encoding(UTF-8)';
 print F "</body>\n</html>";
-flock(F,8);
+#flock(F,8);
 close(F);
 
 #
@@ -524,7 +527,7 @@ if (!$newstyle) {
         print F1 $_;
     }
     close(F);
-    flock(F1,8);
+    #flock(F1,8);
     close(F1);
 
     if (-e "$lbplogdir/webpage.map.html") {
@@ -546,7 +549,7 @@ if (!$newstyle) {
         print F1 $_;
     }
     close(F);
-    flock(F1,8);
+    #flock(F1,8);
     close(F1);
 
     if (-e "$lbplogdir/webpage.dfc.html") {
@@ -569,7 +572,7 @@ if (!$newstyle) {
         print F1 $_;
     }
     close(F);
-    flock(F1,8);
+    #flock(F1,8);
     close(F1);
 
     if (-e "$lbplogdir/webpage.hfc.html") {
@@ -590,7 +593,7 @@ while (<F>) {
     print F1 $_;
 }
 close(F);
-flock(F1,8);
+#flock(F1,8);
 close(F1);
 
 if (-e "$lbplogdir/webpage.html") {
@@ -751,7 +754,7 @@ if ($emu) {
     printf F "%1d;\t", 0;                                                # CAPE, Convective Available Potential Energy in J/kg, indicator for thunderstorm potential and strength (not available in Weather4Lox, so set to 0)
     printf F "%1d;\t", $loxToEmu{int($cur->{weatherCode}{loxone})};  # Picto code (mapped from Loxone code to Weather Emulator code)
     printf F "%1.2f;\n", $cur->{solarRadiation};                        # Solar radiation in W/m2
-    flock(F,8);
+    #flock(F,8);
     close(F);
 
     #############################################
@@ -809,7 +812,7 @@ if ($emu) {
     }
     print F "</station>\n";
 
-    flock(F,8);
+    #flock(F,8);
     close(F);
 
     LOGOK "Files for Cloud Weather Emulator created successfully.";
@@ -847,7 +850,7 @@ sub sendToLox {
     flock(F,2);
         binmode F, ':encoding(UTF-8)';
         print F "$name\@" . Encode::decode("UTF-8", $value) . "<br>\n";
-    flock(F,8);
+    #flock(F,8);
     close(F);
 
     return if !$toMS; # only send to miniserver if $toMS is set to 1, otherwise only create variables for themes
@@ -925,43 +928,46 @@ sub sendMQTT {
 sub mqttconnect
 {
 
-  $ENV{MQTT_SIMPLE_ALLOW_INSECURE_LOGIN} = 1;
+    $ENV{MQTT_SIMPLE_ALLOW_INSECURE_LOGIN} = 1;
 
-  # From LoxBerry 3.0 on, we have MQTT onboard
-  my $mqttcred = LoxBerry::IO::mqtt_connectiondetails();
-  my $mqtt_username = $mqttcred->{brokeruser};
-  my $mqtt_password = $mqttcred->{brokerpass};
-  my $mqttbroker = $mqttcred->{brokerhost};
-  my $mqttport = $mqttcred->{brokerport};
+    # From LoxBerry 3.0 on, we have MQTT onboard
+    my $mqttcred = LoxBerry::IO::mqtt_connectiondetails();
+    my $mqtt_username = $mqttcred->{brokeruser};
+    my $mqtt_password = $mqttcred->{brokerpass};
+    my $mqttbroker = $mqttcred->{brokerhost};
+    my $mqttport = $mqttcred->{brokerport};
 
-  if (!$mqttbroker || !$mqttport) {
-    return();
-  } else {
-    $sendMQTT = 1;
-  }
-
-  # Connect
-  eval {
-    LOGINF "Connecting to MQTT Broker";
-    $mqtt = Net::MQTT::Simple->new($mqttbroker . ":" . $mqttport);
-    if( $mqtt_username and $mqtt_password ) {
-      LOGDEB "MQTT Login with Username and Password: Sending $mqtt_username $mqtt_password";
-      $mqtt->login($mqtt_username, $mqtt_password);
+    if (!$mqttbroker || !$mqttport) {
+        return();
+    } else {
+        $sendMQTT = 1;
     }
-  };
-  if ($@ || !$mqtt) {
-    my $error = $@ || 'Unknown failure';
-    LOGERR "An error occurred - $error";
-    $sendMQTT = 0;
+
+    # Connect
+    eval {
+        LOGINF "Connecting to MQTT Broker";
+        $mqtt = Net::MQTT::Simple->new($mqttbroker . ":" . $mqttport);
+        if( $mqtt_username and $mqtt_password ) {
+            if ($maskKeys) {
+                LOGDEB "MQTT Login with Username and Password: Sending $mqtt_username ***MASKED***";
+            } else {
+                LOGDEB "MQTT Login with Username and Password: Sending $mqtt_username $mqtt_password";
+            }
+            $mqtt->login($mqtt_username, $mqtt_password);
+        }
+    };
+    if ($@ || !$mqtt) {
+        my $error = $@ || 'Unknown failure';
+        LOGERR "An error occurred - $error";
+        $sendMQTT = 0;
+        return();
+    };
+
+    # Update Plugin Status
+    LOGINF "Publishing " . $topic . "/plugin/lastupdate_epoche" . " " . time();
+    $mqtt->retain($topic . "/plugin/lastupdate_epoche", time());
+
     return();
-  };
-
-  # Update Plugin Status
-  $topic = "w4lx" if !$topic;; # Use standard if not defined
-  LOGINF "Publishing " . $topic . "/plugin/lastupdate_epoche" . " " . time();
-  $mqtt->retain($topic . "/plugin/lastupdate_epoche", time());
-
-  return();
 
 };
 

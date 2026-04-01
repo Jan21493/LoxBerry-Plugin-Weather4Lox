@@ -1,32 +1,29 @@
 #!/bin/bash
 
-if [ -e $LBPLOG/REPLACELBPPLUGINDIR/current.dat ]; then
-	cp $LBPLOG/REPLACELBPPLUGINDIR/current.dat $LBPDATA/REPLACELBPPLUGINDIR
+if [ -e $LBPLOG/weather4lox/current.json ]; then
+	cp $LBPLOG/weather4lox/current.json $LBPDATA/weather4lox
 fi
-if [ -e $LBPLOG/REPLACELBPPLUGINDIR/dailyforecast.dat ]; then
-	cp $LBPLOG/REPLACELBPPLUGINDIR/dailyforecast.dat $LBPDATA/REPLACELBPPLUGINDIR
+if [ -e $LBPLOG/weather4lox/dailyforecast.json ]; then
+	cp $LBPLOG/weather4lox/dailyforecast.json $LBPDATA/weather4lox
 fi
-if [ -e $LBPLOG/REPLACELBPPLUGINDIR/hourlyforecast.dat ]; then
-	cp $LBPLOG/REPLACELBPPLUGINDIR/hourlyforecast.dat $LBPDATA/REPLACELBPPLUGINDIR
+if [ -e $LBPLOG/weather4lox/hourlyforecast.json ]; then
+	cp $LBPLOG/weather4lox/hourlyforecast.json $LBPDATA/weather4lox
 fi
-if [ -e $LBPLOG/REPLACELBPPLUGINDIR/hourlyhistory.dat ]; then
-	cp $LBPLOG/REPLACELBPPLUGINDIR/hourlyhistory.dat $LBPDATA/REPLACELBPPLUGINDIR
+if [ -e $LBPLOG/weather4lox/webpage.html ]; then
+	cp $LBPLOG/weather4lox/webpage.html $LBPDATA/weather4lox
 fi
-if [ -e $LBPLOG/REPLACELBPPLUGINDIR/webpage.html ]; then
-	cp $LBPLOG/REPLACELBPPLUGINDIR/webpage.html $LBPDATA/REPLACELBPPLUGINDIR
+if [ -e $LBPLOG/weather4lox/webpage.map.html ]; then
+	cp $LBPLOG/weather4lox/webpage.map.html $LBPDATA/weather4lox
 fi
-if [ -e $LBPLOG/REPLACELBPPLUGINDIR/webpage.map.html ]; then
-	cp $LBPLOG/REPLACELBPPLUGINDIR/webpage.map.html $LBPDATA/REPLACELBPPLUGINDIR
+if [ -e $LBPLOG/weather4lox/webpage.dfc.html ]; then
+	cp $LBPLOG/weather4lox/webpage.dfc.html $LBPDATA/weather4lox
 fi
-if [ -e $LBPLOG/REPLACELBPPLUGINDIR/webpage.dfc.html ]; then
-	cp $LBPLOG/REPLACELBPPLUGINDIR/webpage.dfc.html $LBPDATA/REPLACELBPPLUGINDIR
+if [ -e $LBPLOG/weather4lox/webpage.hfc.html ]; then
+	cp $LBPLOG/weather4lox/webpage.hfc.html $LBPDATA/weather4lox
 fi
-if [ -e $LBPLOG/REPLACELBPPLUGINDIR/webpage.hfc.html ]; then
-	cp $LBPLOG/REPLACELBPPLUGINDIR/webpage.hfc.html $LBPDATA/REPLACELBPPLUGINDIR
+if [ -e $LBPLOG/weather4lox/weatherdata.html ]; then
+	cp $LBPLOG/weather4lox/weatherdata.html $LBPDATA/weather4lox
 fi
-if [ -e $LBPLOG/REPLACELBPPLUGINDIR/weatherdata.html ]; then
-	cp $LBPLOG/REPLACELBPPLUGINDIR/weatherdata.html $LBPDATA/REPLACELBPPLUGINDIR
-fi
-if [ -e $LBPLOG/REPLACELBPPLUGINDIR/index.txt ]; then
-	cp $LBPLOG/REPLACELBPPLUGINDIR/index.txt $LBPDATA/REPLACELBPPLUGINDIR
+if [ -e $LBPLOG/weather4lox/index.txt ]; then
+	cp $LBPLOG/weather4lox/index.txt $LBPDATA/weather4lox
 fi

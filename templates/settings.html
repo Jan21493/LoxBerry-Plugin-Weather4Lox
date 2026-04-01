@@ -1,851 +1,947 @@
-									<style>
-										td {
-											vertical-align: middle;
-										}
-										label {
-											margin: 0 10px 0 0 !important;
-										}
-										.ui-input-text {
-											margin: 0 !important;
-										}
-									</style>
+                                    <style>
+                                        td {
+                                            vertical-align: middle;
+                                        }
+                                        label {
+                                            margin: 0 10px 0 0 !important;
+                                        }
+                                        .ui-input-text {
+                                            margin: 0 !important;
+                                        }
+                                    </style>
 
 
 <!-- Form: Wetterserver -->
 
 
 <TMPL_IF FORM1>
-									<center>
-										<br>
-									</center>
-									<form method="post" data-ajax="false" name="main_form" id="main_form" action="./index.cgi?form=1">
-										<input type="hidden" name="saveformdata1" value="1">
-											<div class="form-group">
-												<table class="formtable" border="0" width="100%" cellpadding="10">
-													<tr>
-														<td colspan=3 width="75%">
-															<h2><TMPL_VAR SETTINGS.LABEL_SERVER_SETTINGS></h2>
-														</td>
-														<td align="right">
-															&nbsp;
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelfetch"><TMPL_VAR SETTINGS.LABEL_FETCH></label>
-														</td>
-														<td width="50%">
-															<a id="fetch" data-role="button" style="background-color: rgba(67, 236, 48, 0.4);" data-mini="true" href="javascript:fetchweather()"><TMPL_VAR SETTINGS.BUTTON_FETCH></a>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1">
-																<span id="fetchstate">&nbsp;</span>
-															</font>
-														</td>
-													</tr>
-													<tr>
-														<td colspan="4">
-															<hr>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<h2><TMPL_VAR SETTINGS.LABEL_SECTION_GLOBAL_LOCATION></h2>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_GLOBAL_LOCATION></i></font>
-														</td>
-														<td align="right">&nbsp;</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelcoordinates"><TMPL_VAR SETTINGS.LABEL_COORDINATES></label>
-														</td>
-														<td width="50%">
-															<table border="0" width="100%">
-															<tr>
-																<td align="right"><label id="labelcoordlat"><TMPL_VAR SETTINGS.LABEL_LATITUDE></label></td>
-																<td><input id="coordlat" name="coordlat" type="text" data-validation-rule="special:number-min-max-value:-90:90" class="textfield" value="<TMPL_VAR SERVER.COORDLAT>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_LATITUDE>"></td>
-																<td align="right"><label id="labelcoordlong"><TMPL_VAR SETTINGS.LABEL_LONGITUDE></label></td>
-																<td><input id="coordlong" name="coordlong" type="text" data-validation-rule="special:number-min-max-value:-180:180" class="textfield" value="<TMPL_VAR SERVER.COORDLONG>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_LONGITUDE>"></td>
-															</tr>
-															</table>
-														</td>
-														<td width="5%">&nbsp;</td>
-														<td width="20%">
-															<a id="coordaddresssearch" data-role="button" data-inline="true" data-mini="true" href="#" onClick="window.open('/admin/plugins/<TMPL_VAR LBPPLUGINDIR>/geolocation.cgi?service=server','NewWindow2','scrollbars=true,toolbar=no,location=no,directories=no,status=no,menubar=no,copyhistory=no,width=900,height=600')">
-																<font size="-1"><TMPL_VAR SETTINGS.LABEL_ADDRESSSEARCH></font>
-															</a><br>
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_ADDRESSSEARCH></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelcity"><TMPL_VAR SETTINGS.LABEL_CITY> / <TMPL_VAR SETTINGS.LABEL_COUNTRY></label>
-														</td>
-														<td width="50%">
-															<table border="0" width="100%"><tr>
-																<td width="50%"><input id="city" name="city" type="text" class="textfield" value="<TMPL_VAR SERVER.CITY>"></td>
-																<td width="50%"><input id="country" name="country" type="text" class="textfield" value="<TMPL_VAR SERVER.COUNTRY>"></td>
-															</tr></table>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_JUSTFORWEBPAGE></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelserverlang"><TMPL_VAR SETTINGS.LABEL_LANG></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR SERVERLANG>
-														</td>
-														<td width="5%">&nbsp;</td>
-														<td width="20%">&nbsp;</td>
-													</tr>
-													<tr>
-														<td colspan="4">
-															<hr>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<h2><TMPL_VAR SETTINGS.LABEL_SECTION_STANDARD_WEATHER></h2>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_STANDARD_WEATHER></i></font>
-														</td>
-														<td align="right">&nbsp;</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelweatherservice"><TMPL_VAR SETTINGS.LABEL_WEATHERSERVICE></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR WEATHERSERVICE>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_CONFIGUREWEATHERSERVICE></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelauto"><TMPL_VAR SETTINGS.LABEL_FETCH_DATA></label>
-														</td>
-														<td width="50%">
-															<table border="0" width="100%">
-																<tr>
-																	<td><fieldset><TMPL_VAR GETDATA></fieldset></td>
-																	<td width="100%"><TMPL_VAR CRON></td>
-																 </tr>
-															</table>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_FREE_ACCOUNT></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelmetric"><TMPL_VAR SETTINGS.LABEL_UNITS></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR METRIC>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															&nbsp;
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelmaskkeys"><TMPL_VAR SETTINGS.LABEL_MASKKEYS></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR MASKKEYS>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_MASKKEYS></font>
-														</td>
-													</tr>
-													<tr>
-														<td colspan="4">
-															<hr>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<h2><TMPL_VAR SETTINGS.LABEL_SECTION_ALTERNATE_WEATHER></h2>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_ALTERNATE_WEATHER></i></font>
-														</td>
-														<td align="right">&nbsp;</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelusealternatedfc"><TMPL_VAR SETTINGS.LABEL_USEALTERNATEDFC></label>
-														</td>
-														<td width="50%">
-															<table border="0" width="100%">
-																<tr>
-																	<td><TMPL_VAR USEALTERNATEDFC></td>
-																	<td width="100%"><TMPL_VAR WEATHERSERVICEDFC></td>
-																</tr>
-															</table>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_USEALTERNATEDFC></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelusealternatehfc"><TMPL_VAR SETTINGS.LABEL_USEALTERNATEHFC></label>
-														</td>
-														<td width="50%">
-															<table border="0" width="100%">
-																<tr>
-																	<td><TMPL_VAR USEALTERNATEHFC></td>
-																	<td width="100%"><TMPL_VAR WEATHERSERVICEHFC></td>
-																</tr>
-															</table>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_USEALTERNATEHFC></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelauto"><TMPL_VAR SETTINGS.LABEL_FETCH_DATA_ALTERNATE></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR CRON_ALTERNATE>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_FREE_ACCOUNT></font>
-														</td>
-													</tr>
-												</table>
-											</div>
+                                    <center>
+                                        <br>
+                                    </center>
+                                    <form method="post" data-ajax="false" name="main_form" id="main_form" action="./index.cgi?form=1">
+                                        <input type="hidden" name="saveformdata1" value="1">
+                                            <div class="form-group">
+                                                <table class="formtable" border="0" width="100%" cellpadding="10">
+                                                    <tr>
+                                                        <td colspan=3 width="75%">
+                                                            <h2><TMPL_VAR SETTINGS.LABEL_RETRIEVE_DATA></h2>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_RETRIEVE_DATA></i></font>
+                                                        </td>
+                                                        <td align="right">
+                                                            &nbsp;
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelfetch"><TMPL_VAR SETTINGS.LABEL_FETCH></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <a id="fetch" data-role="button" style="background-color: rgba(67, 236, 48, 0.4);" data-mini="true" href="javascript:fetchweather()"><TMPL_VAR SETTINGS.BUTTON_FETCH></a>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1">
+                                                                <span id="fetchstate">&nbsp;</span>
+                                                            </font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan="4">
+                                                            <hr>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan=3 width="75%">
+                                                            <h2><TMPL_VAR SETTINGS.LABEL_SECTION_GENERAL_SETTINGS></h2>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_GENERAL_SETTINGS></i></font>
+                                                        </td>
+                                                        <td align="right">&nbsp;</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelcoordinates"><TMPL_VAR SETTINGS.LABEL_COORDINATES></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <table border="0" width="100%">
+                                                            <tr>
+                                                                <td>&nbsp;</td>
+                                                                <td>
+                                                                    <a id="coordaddresssearch" data-role="button" data-inline="true" data-mini="true" href="#" onClick="window.open('/admin/plugins/<TMPL_VAR LBPPLUGINDIR>/geolocation.cgi?service=server','NewWindow2','scrollbars=true,toolbar=no,location=no,directories=no,status=no,menubar=no,copyhistory=no,width=900,height=600')">
+                                                                        <font size="-1"><TMPL_VAR SETTINGS.LABEL_ADDRESSSEARCH></font></a>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td align="right"><label id="labelcoordlat"><TMPL_VAR SETTINGS.LABEL_LATITUDE></label></td>
+                                                                <td><input id="coordlat" name="coordlat" type="text" data-validation-rule="special:number-min-max-value:-90:90" class="textfield" value="<TMPL_VAR SERVER.COORDLAT>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_LATITUDE>"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td align="right"><label id="labelcoordlong"><TMPL_VAR SETTINGS.LABEL_LONGITUDE></label></td>
+                                                                <td><input id="coordlong" name="coordlong" type="text" data-validation-rule="special:number-min-max-value:-180:180" class="textfield" value="<TMPL_VAR SERVER.COORDLONG>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_LONGITUDE>"></td>
+                                                            </tr>
+                                                            </table>
+                                                        </td>
+                                                        <td width="5%">&nbsp;</td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_ADDRESSSEARCH></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelcity"><TMPL_VAR SETTINGS.LABEL_CITY> / <TMPL_VAR SETTINGS.LABEL_COUNTRY></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <table border="0" width="100%"><tr>
+                                                                <td width="50%"><input id="city" name="city" type="text" class="textfield" value="<TMPL_VAR SERVER.CITY>"></td>
+                                                                <td width="50%"><input id="country" name="country" type="text" class="textfield" value="<TMPL_VAR SERVER.COUNTRY>"></td>
+                                                            </tr></table>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_JUSTFORWEBPAGE></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelserverlang"><TMPL_VAR SETTINGS.LABEL_LANG></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR SERVERLANG>
+                                                        </td>
+                                                        <td width="5%">&nbsp;</td>
+                                                        <td width="20%">&nbsp;</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelmetric"><TMPL_VAR SETTINGS.LABEL_UNITS></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR METRIC>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            &nbsp;
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelmaskkeys"><TMPL_VAR SETTINGS.LABEL_MASKKEYS></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR MASKKEYS>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_MASKKEYS></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan="4">
+                                                            <hr>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan=3 width="75%">
+                                                            <h2><TMPL_VAR SETTINGS.LABEL_SECTION_STANDARD_WEATHER></h2>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_STANDARD_WEATHER></i></font>
+                                                        </td>
+                                                        <td align="right">&nbsp;</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelweatherservice"><TMPL_VAR SETTINGS.LABEL_WEATHERSERVICE></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR WEATHERSERVICE>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_CONFIGUREWEATHERSERVICE></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelauto"><TMPL_VAR SETTINGS.LABEL_FETCH_DATA></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <table border="0" width="100%">
+                                                                <tr>
+                                                                    <td><fieldset><TMPL_VAR GETDATA></fieldset></td>
+                                                                    <td width="100%"><TMPL_VAR CRON></td>
+                                                                 </tr>
+                                                            </table>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_FREE_ACCOUNT></font>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                            <div data-role="collapsible" data-collapsed="true" id="section-alternate-weatherservice" data-content-theme="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" class="ui-collapsible ui-collapsible-inset ui-corner-all ui-collapsible-themed-content ui-collapsible-collapsed">
+                                                <h2><TMPL_VAR SETTINGS.LABEL_SECTION_ALTERNATE_WEATHER></h2>
+                                                <table class="formtable" border="0" width="100%" cellpadding="10">
+                                                    <tr>
+                                                        <td colspan="4">
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_ALTERNATE_WEATHER></i></font>
+                                                        </td>
+                                                        <td align="right">&nbsp;</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelusealternatedfc"><TMPL_VAR SETTINGS.LABEL_USEALTERNATEDFC></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <table border="0" width="100%">
+                                                                <tr>
+                                                                    <td><TMPL_VAR USEALTERNATEDFC></td>
+                                                                    <td width="100%"><TMPL_VAR WEATHERSERVICEDFC></td>
+                                                                </tr>
+                                                            </table>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_USEALTERNATEDFC></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelusealternatehfc"><TMPL_VAR SETTINGS.LABEL_USEALTERNATEHFC></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <table border="0" width="100%">
+                                                                <tr>
+                                                                    <td><TMPL_VAR USEALTERNATEHFC></td>
+                                                                    <td width="100%"><TMPL_VAR WEATHERSERVICEHFC></td>
+                                                                </tr>
+                                                            </table>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_USEALTERNATEHFC></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelauto"><TMPL_VAR SETTINGS.LABEL_FETCH_DATA_ALTERNATE></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR CRON_ALTERNATE>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_FREE_ACCOUNT></font>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
 
-											<div data-role="collapsible" data-collapsed="true" id="section-grabber">
-												<h3><TMPL_VAR SETTINGS.LABEL_SECTION_GRABBER></h3>
-												<table class="formtable" border="0" width="100%" cellpadding="10">
-													<tr>
-														<td colspan="4">
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_GRABBER></i></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelwugrabber"><TMPL_VAR SETTINGS.LABEL_WUGRABBER></label>
-														</td>
-														<td width="50%">
-															<table border="0" width="100%">
-																<tr>
-																	<td><TMPL_VAR WUGRABBER></td>
-																	<td width="20%" align="right"><label id="labelwustationid"><TMPL_VAR SETTINGS.LABEL_STATIONID></label></td>
-																	<td width="80%"><input id="wustationid" name="wustationid" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR WUNDERGROUND.STATIONID>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_STATIONID>">
-																	<font size="-1"><a id="linkwundermap" href="https://www.wunderground.com/wundermap/" target="_blank"><TMPL_VAR SETTINGS.LABEL_WUMAP></a></font></td>
-																</tr>
-															</table>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_WUGRABBER></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelloxgrabber"><TMPL_VAR SETTINGS.LABEL_FOSHKGRABBER></label>
-														</td>
-														<td width="50%">
-															<table border="0" width="100%">
-															<tr>
-																<td><TMPL_VAR FOSHKGRABBER></td>
-																<td width="10%" align="right"><label id="labelfoshkserver" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_FOSHKSERVER></label></td>
-																<td width="40%"><input id="foshkserver" name="foshkserver" type="text" data-validation-rule="special:hostname_or_ipaddr" class="textfield" value="<TMPL_VAR FOSHK.SERVER>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_FOSHKSERVER>"></td>
-																<td width="10%" align="right"><label id="labelfoshkport" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_FOSHKPORT></label></td>
-																<td width="40%"><input id="foshkport" name="foshkport" type="text" data-validation-rule="special:port" class="textfield" value="<TMPL_VAR FOSHK.PORT>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_FOSHKPORT>">
-																</td>
-															</tr>
-															</table>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_FOSHKGRABBER></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelpwscatchuploadgrabber"><TMPL_VAR SETTINGS.LABEL_PWSCATCHUPLOADGRABBER></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR PWSCATCHUPLOADGRABBER>
-														</td>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_PWSCATCHUPLOADGRABBER></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelloxgrabber"><TMPL_VAR SETTINGS.LABEL_LOXGRABBER></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR LOXGRABBER>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_LOXGRABBER></font>
-														</td>
-													</tr>
-												</table>
-											</div>
+                                            <div data-role="collapsible" data-collapsed="true" id="section-local-weatherservice" data-content-theme="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" class="ui-collapsible ui-collapsible-inset ui-corner-all ui-collapsible-themed-content ui-collapsible-collapsed">
+                                                <h2><TMPL_VAR SETTINGS.LABEL_SECTION_GRABBER></h2>
+                                                <table class="formtable" border="0" width="100%" cellpadding="10">
+                                                    <tr>
+                                                        <td colspan="4">
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_GRABBER></i></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelwugrabber"><TMPL_VAR SETTINGS.LABEL_WUGRABBER></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <table border="0" width="100%">
+                                                                <tr>
+                                                                    <td><TMPL_VAR WUGRABBER></td>
+                                                                    <td width="20%" align="right"><label id="labelwustationid"><TMPL_VAR SETTINGS.LABEL_STATIONID></label></td>
+                                                                    <td width="80%"><input id="wustationid" name="wustationid" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR WUNDERGROUND.STATIONID>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_STATIONID>">
+                                                                    <font size="-1"><a id="linkwundermap" href="https://www.wunderground.com/wundermap/" target="_blank"><TMPL_VAR SETTINGS.LABEL_WUMAP></a></font></td>
+                                                                </tr>
+                                                            </table>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_WUGRABBER></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelloxgrabber"><TMPL_VAR SETTINGS.LABEL_FOSHKGRABBER></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <table border="0" width="100%">
+                                                            <tr>
+                                                                <td><TMPL_VAR FOSHKGRABBER></td>
+                                                                <td width="10%" align="right"><label id="labelfoshkserver" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_FOSHKSERVER></label></td>
+                                                                <td width="40%"><input id="foshkserver" name="foshkserver" type="text" data-validation-rule="special:hostname_or_ipaddr" class="textfield" value="<TMPL_VAR FOSHK.SERVER>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_FOSHKSERVER>"></td>
+                                                                <td width="10%" align="right"><label id="labelfoshkport" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_FOSHKPORT></label></td>
+                                                                <td width="40%"><input id="foshkport" name="foshkport" type="text" data-validation-rule="special:port" class="textfield" value="<TMPL_VAR FOSHK.PORT>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_FOSHKPORT>">
+                                                                </td>
+                                                            </tr>
+                                                            </table>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_FOSHKGRABBER></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelpwscatchuploadgrabber"><TMPL_VAR SETTINGS.LABEL_PWSCATCHUPLOADGRABBER></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR PWSCATCHUPLOADGRABBER>
+                                                        </td>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_PWSCATCHUPLOADGRABBER></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelloxgrabber"><TMPL_VAR SETTINGS.LABEL_LOXGRABBER></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR LOXGRABBER>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_LOXGRABBER></font>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
 
-											<div data-role="collapsible" data-collapsed="true" id="section-pollen">
-												<h3><a href="https://open-meteo.com/" target="_blank"><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/openmeteo.svg" style="height:1.2em;vertical-align:middle;margin-right:8px"></a><TMPL_VAR SETTINGS.LABEL_SECTION_POLLEN_AIRQUALITY></h3>
-												<table class="formtable" border="0" width="100%" cellpadding="10">
-													<tr>
-														<td colspan="4">
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_POLLEN_AIRQUALITY></i></font>
-														</td>
-													</tr>
-													<!-- Open-Meteo Air Quality / Pollen Grabber -->
-													<tr>
-													<td width="25%">
-														<label id="labelopenmeteoairqualitygrabber"><TMPL_VAR SETTINGS.LABEL_OPENMETEOAIRQUALITYGRABBER></label>
-													</td>
-													<td width="50%">
-														<table border="0" width="100%">
-														<tr>
-															<td><TMPL_VAR OPENMETEOAIRQUALITYGRABBER></td>
-														</tr>
-														</table>
-													</td>
-													<td width="5%">&nbsp;</td>
-													<td width="20%">
-														<font size="-1"><TMPL_VAR SETTINGS.HINT_OPENMETEOAIRQUALITYGRABBER></font>
-													</td>
-													</tr>
-													<tr id="rowpollensettings">
-														<td colspan=3 width="75%">
-															<h3><TMPL_VAR SETTINGS.LABEL_POLLEN_SETTINGS></h3>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_POLLEN_SETTINGS></i></font>
-														</td>
-														<td align="right">&nbsp;</td>
-													</tr>
-													<tr class="pollen-row">
-														<td width="25%">
-															<label id="labelpollengrasses"><TMPL_VAR SETTINGS.LABEL_POLLEN_GRASSES></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR POLLEN_GRASSES>
-														</td>
-														<td width="5%">&nbsp;</td>
-														<td width="20%">&nbsp;</td>
-													</tr>
-													<tr class="pollen-row">
-														<td width="25%">
-															<label id="labelpollenbirch"><TMPL_VAR SETTINGS.LABEL_POLLEN_BIRCH></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR POLLEN_BIRCH>
-														</td>
-														<td width="5%">&nbsp;</td>
-														<td width="20%">&nbsp;</td>
-													</tr>
-													<tr class="pollen-row">
-														<td width="25%">
-															<label id="labelpollenalder"><TMPL_VAR SETTINGS.LABEL_POLLEN_ALDER></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR POLLEN_ALDER>
-														</td>
-														<td width="5%">&nbsp;</td>
-														<td width="20%">&nbsp;</td>
-													</tr>
-													<tr class="pollen-row">
-														<td width="25%">
-															<label id="labelpollenmugwort"><TMPL_VAR SETTINGS.LABEL_POLLEN_MUGWORT></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR POLLEN_MUGWORT>
-														</td>
-														<td width="5%">&nbsp;</td>
-														<td width="20%">&nbsp;</td>
-													</tr>
-													<tr class="pollen-row">
-														<td width="25%">
-															<label id="labelpollenolive"><TMPL_VAR SETTINGS.LABEL_POLLEN_OLIVE></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR POLLEN_OLIVE>
-														</td>
-														<td width="5%">&nbsp;</td>
-														<td width="20%">&nbsp;</td>
-													</tr>
-													<tr class="pollen-row">
-														<td width="25%">
-															<label id="labelpollenragweed"><TMPL_VAR SETTINGS.LABEL_POLLEN_RAGWEED></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR POLLEN_RAGWEED>
-														</td>
-														<td width="5%">&nbsp;</td>
-														<td width="20%">&nbsp;</td>
-													</tr>
-												</table>
-											</div>
+                                            <div data-role="collapsible" data-collapsed="true" id="section-pollen" data-content-theme="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" class="ui-collapsible ui-collapsible-inset ui-corner-all ui-collapsible-themed-content ui-collapsible-collapsed">
+                                                <h2><a href="https://open-meteo.com/" target="_blank"><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/openmeteo.svg" style="height:1.2em;vertical-align:middle;margin-right:8px"></a><TMPL_VAR SETTINGS.LABEL_SECTION_POLLEN_AIRQUALITY></h2>
+                                                <table class="formtable" border="0" width="100%" cellpadding="10">
+                                                    <tr>
+                                                        <td colspan="4">
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_POLLEN_AIRQUALITY></i></font>
+                                                        </td>
+                                                    </tr>
+                                                    <!-- Open-Meteo Air Quality / Pollen Grabber -->
+                                                    <tr>
+                                                    <td width="25%">
+                                                        <label id="labelopenmeteoairqualitygrabber"><TMPL_VAR SETTINGS.LABEL_OPENMETEOAIRQUALITYGRABBER></label>
+                                                    </td>
+                                                    <td width="50%">
+                                                        <table border="0" width="100%">
+                                                        <tr>
+                                                            <td><TMPL_VAR OPENMETEOAIRQUALITYGRABBER></td>
+                                                        </tr>
+                                                        </table>
+                                                    </td>
+                                                    <td width="5%">&nbsp;</td>
+                                                    <td width="20%">
+                                                        <font size="-1"><TMPL_VAR SETTINGS.HINT_OPENMETEOAIRQUALITYGRABBER></font>
+                                                    </td>
+                                                    </tr>
+                                                    <tr id="rowpollensettings">
+                                                        <td colspan=3 width="75%">
+                                                            <h3><TMPL_VAR SETTINGS.LABEL_POLLEN_SETTINGS></h3>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_POLLEN_SETTINGS></i></font>
+                                                        </td>
+                                                        <td align="right">&nbsp;</td>
+                                                    </tr>
+                                                    <tr class="pollen-row">
+                                                        <td width="25%">
+                                                            <label id="labelpollengrasses"><TMPL_VAR SETTINGS.LABEL_POLLEN_GRASSES></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR POLLEN_GRASSES>
+                                                        </td>
+                                                        <td width="5%">&nbsp;</td>
+                                                        <td width="20%">&nbsp;</td>
+                                                    </tr>
+                                                    <tr class="pollen-row">
+                                                        <td width="25%">
+                                                            <label id="labelpollenbirch"><TMPL_VAR SETTINGS.LABEL_POLLEN_BIRCH></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR POLLEN_BIRCH>
+                                                        </td>
+                                                        <td width="5%">&nbsp;</td>
+                                                        <td width="20%">&nbsp;</td>
+                                                    </tr>
+                                                    <tr class="pollen-row">
+                                                        <td width="25%">
+                                                            <label id="labelpollenalder"><TMPL_VAR SETTINGS.LABEL_POLLEN_ALDER></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR POLLEN_ALDER>
+                                                        </td>
+                                                        <td width="5%">&nbsp;</td>
+                                                        <td width="20%">&nbsp;</td>
+                                                    </tr>
+                                                    <tr class="pollen-row">
+                                                        <td width="25%">
+                                                            <label id="labelpollenmugwort"><TMPL_VAR SETTINGS.LABEL_POLLEN_MUGWORT></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR POLLEN_MUGWORT>
+                                                        </td>
+                                                        <td width="5%">&nbsp;</td>
+                                                        <td width="20%">&nbsp;</td>
+                                                    </tr>
+                                                    <tr class="pollen-row">
+                                                        <td width="25%">
+                                                            <label id="labelpollenolive"><TMPL_VAR SETTINGS.LABEL_POLLEN_OLIVE></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR POLLEN_OLIVE>
+                                                        </td>
+                                                        <td width="5%">&nbsp;</td>
+                                                        <td width="20%">&nbsp;</td>
+                                                    </tr>
+                                                    <tr class="pollen-row">
+                                                        <td width="25%">
+                                                            <label id="labelpollenragweed"><TMPL_VAR SETTINGS.LABEL_POLLEN_RAGWEED></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR POLLEN_RAGWEED>
+                                                        </td>
+                                                        <td width="5%">&nbsp;</td>
+                                                        <td width="20%">&nbsp;</td>
+                                                    </tr>
+                                                </table>
+                                            </div>
 
-											<div data-role="collapsible" data-collapsed="true" class="service-collapsible" id="section-visualcrossing">
-												<h3><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/visualcrossing.svg" style="height:1.2em;vertical-align:middle;margin-right:8px"><TMPL_VAR SETTINGS.LABEL_VISUALCROSSING_SETTINGS></h3>
-												<table class="formtable" border="0" width="100%" cellpadding="10">
-													<tr>
-														<td colspan=4>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_VISUALCROSSING_DESC></i></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelvisualcrossingapikey"><TMPL_VAR SETTINGS.LABEL_APIKEY></label>
-														</td>
-														<td width="50%">
-															<input id="visualcrossingapikey" name="visualcrossingapikey" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR VISUALCROSSING.APIKEY>" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_APIKEY>" data-validation-optional="true">
-														</td>
-														<td width="5%">&nbsp;</td>
-														<td width="20%">&nbsp;</td>
-													</tr>
-													
-												</table>
-											</div>
+                                            <div data-role="collapsible" data-collapsed="true" class="service-collapsible" id="section-visualcrossing" data-content-theme="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" class="ui-collapsible ui-collapsible-inset ui-corner-all ui-collapsible-themed-content ui-collapsible-collapsed">
+                                                <h2><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/visualcrossing.svg" style="height:1.2em;vertical-align:middle;margin-right:8px"><TMPL_VAR SETTINGS.LABEL_VISUALCROSSING_SETTINGS></h2>
+                                                <table class="formtable" border="0" width="100%" cellpadding="10">
+                                                    <tr>
+                                                        <td colspan=4>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_VISUALCROSSING_DESC></i></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelvisualcrossingapikey"><TMPL_VAR SETTINGS.LABEL_APIKEY></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <input id="visualcrossingapikey" name="visualcrossingapikey" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR VISUALCROSSING.APIKEY>" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_APIKEY>" data-validation-optional="true">
+                                                        </td>
+                                                        <td width="5%">&nbsp;</td>
+                                                        <td width="20%">&nbsp;</td>
+                                                    </tr>
+                                                    
+                                                </table>
+                                            </div>
 
-											<div data-role="collapsible" data-collapsed="true" class="service-collapsible" id="section-openweather">
-												<h3><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/openweather_200.png" style="height:1.2em;vertical-align:middle;margin-right:8px"><TMPL_VAR SETTINGS.LABEL_OPENWEATHER_SETTINGS></h3>
-												<table class="formtable" border="0" width="100%" cellpadding="10">
-													<tr>
-														<td colspan=4>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_OPENWEATHER_DESC></i></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelopenweatherapikey"><TMPL_VAR SETTINGS.LABEL_APIKEY></label>
-														</td>
-														<td width="50%">
-															<input id="openweatherapikey" name="openweatherapikey" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR OPENWEATHER.APIKEY>" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_APIKEY>" data-validation-optional="true">
-														</td>
-														<td width="5%">&nbsp;</td>
-														<td width="20%">&nbsp;</td>
-													</tr>
-												</table>
-											</div>
+                                            <div data-role="collapsible" data-collapsed="true" class="service-collapsible" id="section-openweather" data-content-theme="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" class="ui-collapsible ui-collapsible-inset ui-corner-all ui-collapsible-themed-content ui-collapsible-collapsed">
+                                                <h2><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/openweather_200.png" style="height:1.2em;vertical-align:middle;margin-right:8px"><TMPL_VAR SETTINGS.LABEL_OPENWEATHER_SETTINGS></h2>
+                                                <table class="formtable" border="0" width="100%" cellpadding="10">
+                                                    <tr>
+                                                        <td colspan=4>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_OPENWEATHER_DESC></i></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelopenweatherapikey"><TMPL_VAR SETTINGS.LABEL_APIKEY></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <input id="openweatherapikey" name="openweatherapikey" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR OPENWEATHER.APIKEY>" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_APIKEY>" data-validation-optional="true">
+                                                        </td>
+                                                        <td width="5%">&nbsp;</td>
+                                                        <td width="20%">&nbsp;</td>
+                                                    </tr>
+                                                </table>
+                                            </div>
 
-											<div data-role="collapsible" data-collapsed="true" class="service-collapsible" id="section-wttrin">
-												<h3><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/wttrin.png" style="height:1.2em;vertical-align:middle;margin-right:8px"><TMPL_VAR SETTINGS.LABEL_WTTRIN_SETTINGS></h3>
-												<table class="formtable" border="0" width="100%" cellpadding="10">
-													<tr>
-														<td colspan=4>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_WTTRIN_DESC></i></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelwttrinstationid"><TMPL_VAR SETTINGS.LABEL_STATIONID></label>
-														</td>
-														<td width="50%">
-															<table border=0 width="100%">
-															<tr>
-															<td width="70%"><input id="wttrinstationid" name="wttrinstationid" type="text" class="textfield" value="<TMPL_VAR WTTRIN.STATIONID>"></td>
-															<td width="15%"><a id="testwttrin" data-role="button" data-mini="true" href="javascript:testwttrin()"><TMPL_VAR SETTINGS.BUTTON_TESTWTTRIN></a></td>
-															<td width="15%"><a id="helpwttrin" data-role="button" data-mini="true" href="https://wttr.in/:help" target="_blank"><TMPL_VAR SETTINGS.BUTTON_HELPWTTRIN></a></td>
-															</tr>
-															</table>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_WTTRINSTATIONID></font>
-														</td>
-													</tr>
-												</table>
-											</div>
+                                            <div data-role="collapsible" data-collapsed="true" class="service-collapsible" id="section-wttrin" data-content-theme="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" class="ui-collapsible ui-collapsible-inset ui-corner-all ui-collapsible-themed-content ui-collapsible-collapsed">
+                                                <h2><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/wttrin.png" style="height:1.2em;vertical-align:middle;margin-right:8px"><TMPL_VAR SETTINGS.LABEL_WTTRIN_SETTINGS></h2>
+                                                <table class="formtable" border="0" width="100%" cellpadding="10">
+                                                    <tr>
+                                                        <td colspan=4>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_WTTRIN_DESC></i></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelwttrinstationid"><TMPL_VAR SETTINGS.LABEL_STATIONID></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <table border=0 width="100%">
+                                                            <tr>
+                                                            <td width="70%"><input id="wttrinstationid" name="wttrinstationid" type="text" class="textfield" value="<TMPL_VAR WTTRIN.STATIONID>"></td>
+                                                            <td width="15%"><a id="testwttrin" data-role="button" data-mini="true" href="javascript:testwttrin()"><TMPL_VAR SETTINGS.BUTTON_TESTWTTRIN></a></td>
+                                                            <td width="15%"><a id="helpwttrin" data-role="button" data-mini="true" href="https://wttr.in/:help" target="_blank"><TMPL_VAR SETTINGS.BUTTON_HELPWTTRIN></a></td>
+                                                            </tr>
+                                                            </table>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_WTTRINSTATIONID></font>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
 
-											<div data-role="collapsible" data-collapsed="true" class="service-collapsible" id="section-wetteronline">
-												<h3><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/wetteronline_logo.png" style="height:1.2em;vertical-align:middle;margin-right:8px"><TMPL_VAR SETTINGS.LABEL_WETTERONLINE_SETTINGS></h3>
-												<table class="formtable" border="0" width="100%" cellpadding="10">
-													<tr>
-														<td colspan=4>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_WETTERONLINE_DESC></i></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelwetteronlinestationid"><TMPL_VAR SETTINGS.LABEL_WETTERONLINE_STATIONID></label>
-														</td>
-														<td width="50%">
-															<table border=0 width="100%">
-															<tr>
-															<td width="70%"><input id="wetteronlinestationid" name="wetteronlinestationid" type="text" class="textfield" placeholder="z.B. dresden, frankfurt-am-main" value="<TMPL_VAR WETTERONLINE.STATIONID>"></td>
-															<td width="15%"><a id="testwetteronline" data-role="button" data-mini="true" href="javascript:testwetteronline()"><TMPL_VAR SETTINGS.BUTTON_TESTWETTERONLINE></a></td>
-															</tr>
-															</table>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_WETTERONLINESTATIONID></font>
-														</td>
-													</tr>
-												</table>
-											</div>
+                                            <div data-role="collapsible" data-collapsed="true" class="service-collapsible" id="section-wetteronline" data-content-theme="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" class="ui-collapsible ui-collapsible-inset ui-corner-all ui-collapsible-themed-content ui-collapsible-collapsed">
+                                                <h2><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/wetteronline_logo.png" style="height:1.2em;vertical-align:middle;margin-right:8px"><TMPL_VAR SETTINGS.LABEL_WETTERONLINE_SETTINGS></h2>
+                                                <table class="formtable" border="0" width="100%" cellpadding="10">
+                                                    <tr>
+                                                        <td colspan=4>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_WETTERONLINE_DESC></i></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelwetteronlinestationid"><TMPL_VAR SETTINGS.LABEL_WETTERONLINE_STATIONID></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <table border=0 width="100%">
+                                                            <tr>
+                                                            <td width="70%"><input id="wetteronlinestationid" name="wetteronlinestationid" type="text" class="textfield" placeholder="z.B. dresden, frankfurt-am-main" value="<TMPL_VAR WETTERONLINE.STATIONID>"></td>
+                                                            <td width="15%"><a id="testwetteronline" data-role="button" data-mini="true" href="javascript:testwetteronline()"><TMPL_VAR SETTINGS.BUTTON_TESTWETTERONLINE></a></td>
+                                                            </tr>
+                                                            </table>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_WETTERONLINESTATIONID></font>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
 
-											<div data-role="collapsible" data-collapsed="true" class="service-collapsible" id="section-weatherflow">
-												<h3><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/weatherflow.svg" style="height:1.2em;vertical-align:middle;margin-right:8px"><TMPL_VAR SETTINGS.LABEL_WEATHERFLOW_SETTINGS></h3>
-												<table class="formtable" border="0" width="100%" cellpadding="10">
-													<tr>
-														<td colspan=4>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_WEATHERFLOW_DESC></i></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelweatherflowapikey"><TMPL_VAR SETTINGS.LABEL_APIKEY></label>
-														</td>
-														<td width="50%">
-															<input id="weatherflowapikey" name="weatherflowapikey" type="text" data-validation-rule="^([A-Za-z0-9\-]){36}$" class="textfield" value="<TMPL_VAR WEATHERFLOW.APIKEY>" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_APIKEY>" data-validation-optional="true">
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															&nbsp;
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelweatherflowstationid"><TMPL_VAR SETTINGS.LABEL_STATIONID></label>
-														</td>
-														<td width="50%">
-															<input id="weatherflowstationid" name="weatherflowstationid" type="text" data-validation-rule="special:number" class="textfield" value="<TMPL_VAR WEATHERFLOW.STATIONID>"  data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_STATIONID>" data-validation-optional="true" >
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_WEATHERFLOWSTATIONID></font>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=4>
-														&nbsp;
-														</td>
-													</tr>
-												</table>
-											</div>
+                                            <div data-role="collapsible" data-collapsed="true" class="service-collapsible" id="section-weatherflow" data-content-theme="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" class="ui-collapsible ui-collapsible-inset ui-corner-all ui-collapsible-themed-content ui-collapsible-collapsed">
+                                                <h2><img src="/plugins/<TMPL_VAR LBPPLUGINDIR>/images/weatherflow.svg" style="height:1.2em;vertical-align:middle;margin-right:8px"><TMPL_VAR SETTINGS.LABEL_WEATHERFLOW_SETTINGS></h2>
+                                                <table class="formtable" border="0" width="100%" cellpadding="10">
+                                                    <tr>
+                                                        <td colspan=4>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_WEATHERFLOW_DESC></i></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelweatherflowapikey"><TMPL_VAR SETTINGS.LABEL_APIKEY></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <input id="weatherflowapikey" name="weatherflowapikey" type="text" data-validation-rule="^([A-Za-z0-9\-]){36}$" class="textfield" value="<TMPL_VAR WEATHERFLOW.APIKEY>" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_APIKEY>" data-validation-optional="true">
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            &nbsp;
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelweatherflowstationid"><TMPL_VAR SETTINGS.LABEL_STATIONID></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <input id="weatherflowstationid" name="weatherflowstationid" type="text" data-validation-rule="special:number" class="textfield" value="<TMPL_VAR WEATHERFLOW.STATIONID>"  data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_STATIONID>" data-validation-optional="true" >
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_WEATHERFLOWSTATIONID></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan=4>
+                                                        &nbsp;
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
 
-									<p>
-										&nbsp;
-									</p>
-									<p>
-										<center>
-											<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="./index.cgi?form=1"><TMPL_VAR SETTINGS.BUTTON_CANCEL></a>
-												<button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SETTINGS.BUTTON_SAVE></button>
-										</center>
-									</form>
-									</p>
+                                    <p>
+                                        &nbsp;
+                                    </p>
+                                    <p>
+                                        <center>
+                                            <a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="./index.cgi?form=1"><TMPL_VAR SETTINGS.BUTTON_CANCEL></a>
+                                                <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SETTINGS.BUTTON_SAVE></button>
+                                        </center>
+                                    </form>
+                                    </p>
 
-									<script>
+                                    <script>
 
-									$( document ).ready(function() {
-										// Activate on Load
-										disable();
+                                    $( document ).ready(function() {
+                                        // Activate on Load
+                                        disable();
 
-										// Expand collapsible for currently selected weather service
-										var currentService = '<TMPL_VAR CURRENT_WEATHERSERVICE>';
-										if (currentService) {
-											$('#section-' + currentService).collapsible('expand');
-										}
+                                        // Expand collapsible for currently selected weather service
+                                        var currentService = '<TMPL_VAR CURRENT_WEATHERSERVICE>';
+                                        if ( (currentService) && $( "select[name=getdata]" ).val()  === "1" ) {
+                                            $('#section-' + currentService).collapsible('expand');
+                                        }
+                                        // Also expand alternate services if enabled
+                                        var currentService = '<TMPL_VAR CURRENT_WEATHERSERVICEDFC>';
+                                        if ( (currentService) && $( "select[name=usealternatedfc]" ).val()  === "1" ) {
+                                            $('#section-' + currentService).collapsible('expand');
+                                        }
+                                        var currentService = '<TMPL_VAR CURRENT_WEATHERSERVICEHFC>';
+                                        if ( (currentService) && $( "select[name=usealternatehfc]" ).val()  === "1" ) {
+                                            $('#section-' + currentService).collapsible('expand');
+                                        }
+                                        // Expand alternate weather service section if either alternate DFC or HFC is enabled
+                                        if ( ( $( "select[name=usealternatedfc]" ).val()  === "1" ) || ( $( "select[name=usealternatehfc]" ).val()  === "1" ) ) {
+                                            $('#section-alternate-weatherservice').collapsible('expand');
+                                        }
+                                        // Expand local/own weather service section if one of the grabbers is enabled
+                                        if ( ( $( "select[name=wugrabber]" ).val()  === "1" ) || 
+                                             ( $( "select[name=foshkgrabber]" ).val()  === "1" ) || 
+                                             ( $( "select[name=pwscatchuploadgrabber]" ).val()  === "1" ) || 
+                                             ( $( "select[name=loxgrabber]" ).val()  === "1" ) ) {
+                                            $('#section-local-weatherservice').collapsible('expand');
+                                        }
+                                        // Expand pollen / air quality weather service section if either alternate DFC or HFC is enabled
+                                        if ( $( "select[name=openmeteoairqualitygrabber]" ).val()  === "1" ) {
+                                            $('#section-pollen').collapsible('expand');
+                                        }
 
-										// Validates
-										validate_enable('#wustationid');
-										validate_enable('#foshkserver');
-										validate_enable('#foshkport');
-																				validate_enable('#visualcrossingapikey');
-										validate_enable('#openweatherapikey');
-										validate_enable('#coordlat');
-										validate_enable('#coordlong');
-										validate_enable('#weatherflowapikey');
-										validate_enable('#weatherflowstationid');
-										validate_enable('#udpport');
-									});
+                                        // Validates
+                                        validate_enable('#wustationid');
+                                        validate_enable('#foshkserver');
+                                        validate_enable('#foshkport');
+                                        validate_enable('#visualcrossingapikey');
+                                        validate_enable('#openweatherapikey');
+                                        validate_enable('#coordlat');
+                                        validate_enable('#coordlong');
+                                        validate_enable('#weatherflowapikey');
+                                        validate_enable('#weatherflowstationid');
+                                        validate_enable('#udpport');
+                                    });
 
-									// Auto-expand collapsible on weather service change
-									$(document).on('change', '#weatherservice', function() {
-										$('.service-collapsible').collapsible('collapse');
-										var selected = $(this).val();
-										if (selected) {
-											$('#section-' + selected).collapsible('expand');
-										}
-									});
+                                    // Auto-expand collapsible on weather service change
+                                    $(document).on('change', '#weatherservice', function() {
+                                        $('.service-collapsible').collapsible('collapse');
+                                        var selected = $(this).val();
+                                        if (selected && $("select[name=getdata]").val() === "1") {
+                                            $('#section-' + selected).collapsible('expand');
+                                        }
+                                    });
 
-									// Expand collapsible when alternate DFC service changes
-									$(document).on('change', '#weatherservicedfc', function() {
-										var selected = $(this).val();
-										if (selected && $("select[name=usealternatedfc]").val() === "1") {
-											$('#section-' + selected).collapsible('expand');
-										}
-									});
+                                    // Expand collapsible when alternate DFC service changes
+                                    $(document).on('change', '#weatherservicedfc', function() {
+                                        var selected = $(this).val();
+                                        if (selected && $("select[name=usealternatedfc]").val() === "1") {
+                                            $('#section-' + selected).collapsible('expand');
+                                        }
+                                    });
 
-									// Expand collapsible when alternate HFC service changes
-									$(document).on('change', '#weatherservicehfc', function() {
-										var selected = $(this).val();
-										if (selected && $("select[name=usealternatehfc]").val() === "1") {
-											$('#section-' + selected).collapsible('expand');
-										}
-									});
+                                    // Expand collapsible when alternate HFC service changes
+                                    $(document).on('change', '#weatherservicehfc', function() {
+                                        var selected = $(this).val();
+                                        if (selected && $("select[name=usealternatehfc]").val() === "1") {
+                                            $('#section-' + selected).collapsible('expand');
+                                        }
+                                    });
 
-									// Add some attributes PERL::CGI doesn't provide
-									$('select[name=getdata]').attr('data-role','flipswitch');
-									$('select[name=getdata_forecast]').attr('data-role','flipswitch');
-									$('select[name=loxgrabber]').attr('data-role','flipswitch');
-									$('select[name=maskkeys]').attr('data-role','flipswitch');
-									$('select[name=wugrabber]').attr('data-role','flipswitch');
-									$('select[name=foshkgrabber]').attr('data-role','flipswitch');
-									$('select[name=pwscatchuploadgrabber]').attr('data-role','flipswitch');
-									$('select[name=openmeteoairqualitygrabber]').attr('data-role','flipswitch');
-									$('select[name=usealternatedfc]').attr('data-role','flipswitch');
-									$('select[name=usealternatehfc]').attr('data-role','flipswitch');
-									$('select[name=weatherservice]').attr('data-mini','true');
-									$('select[name=weatherservicedfc]').attr('data-mini','true');
-									$('select[name=weatherservicehfc]').attr('data-mini','true');
-									$('select[name=metric]').attr('data-mini','true');
-									$('select[name=serverlang]').attr('data-mini','true');
-									$('select[name=cron]').attr('data-mini','true');
-									$('select[name=cron_alternate]').attr('data-mini','true');
-									$('select[name=pollen_grasses]').attr('data-mini','true');
-									$('select[name=pollen_birch]').attr('data-mini','true');
-									$('select[name=pollen_alder]').attr('data-mini','true');
-									$('select[name=pollen_mugwort]').attr('data-mini','true');
-									$('select[name=pollen_olive]').attr('data-mini','true');
-									$('select[name=pollen_ragweed]').attr('data-mini','true');
+                                    // Add some attributes PERL::CGI doesn't provide
+                                    $('select[name=getdata]').attr('data-role','flipswitch');
+                                    $('select[name=getdata_forecast]').attr('data-role','flipswitch');
+                                    $('select[name=loxgrabber]').attr('data-role','flipswitch');
+                                    $('select[name=maskkeys]').attr('data-role','flipswitch');
+                                    $('select[name=wugrabber]').attr('data-role','flipswitch');
+                                    $('select[name=foshkgrabber]').attr('data-role','flipswitch');
+                                    $('select[name=pwscatchuploadgrabber]').attr('data-role','flipswitch');
+                                    $('select[name=openmeteoairqualitygrabber]').attr('data-role','flipswitch');
+                                    $('select[name=usealternatedfc]').attr('data-role','flipswitch');
+                                    $('select[name=usealternatehfc]').attr('data-role','flipswitch');
+                                    $('select[name=weatherservice]').attr('data-mini','true');
+                                    $('select[name=weatherservicedfc]').attr('data-mini','true');
+                                    $('select[name=weatherservicehfc]').attr('data-mini','true');
+                                    $('select[name=metric]').attr('data-mini','true');
+                                    $('select[name=serverlang]').attr('data-mini','true');
+                                    $('select[name=cron]').attr('data-mini','true');
+                                    $('select[name=cron_alternate]').attr('data-mini','true');
+                                    $('select[name=pollen_grasses]').attr('data-mini','true');
+                                    $('select[name=pollen_birch]').attr('data-mini','true');
+                                    $('select[name=pollen_alder]').attr('data-mini','true');
+                                    $('select[name=pollen_mugwort]').attr('data-mini','true');
+                                    $('select[name=pollen_olive]').attr('data-mini','true');
+                                    $('select[name=pollen_ragweed]').attr('data-mini','true');
 
-									// Get Data
-									$( document ).on( 'change', '#getdata', function ( e ) {
-										if ( $( "select[name=getdata]" ).val()  === "1" ) {
-											//alert("An!");
-											$('#cron').removeClass('ui-disabled');
-											$('#cron').selectmenu('refresh');
-										} else {
-											//alert("Aus!");
-											$('#cron').addClass('ui-disabled');
-											$('#cron').selectmenu('refresh');
-										}
-									});
+                                    // Get Data
+                                    $( document ).on( 'change', '#getdata', function ( e ) {
+                                        if ( $( "select[name=getdata]" ).val()  === "1" ) {
+                                            //alert("An!");
+                                            $('#cron').removeClass('ui-disabled');
+                                            $('#cron').selectmenu('refresh');
+                                            // expand section of selected weather service
+                                            var selected = $('#weatherservice').val();
+                                            if (selected) {
+                                                $('#section-' + selected).collapsible('expand');
+                                            }
+                                        } else {
+                                            //alert("Aus!");
+                                            $('#cron').addClass('ui-disabled');
+                                            $('#cron').selectmenu('refresh');
+                                            // collapse previously selected weather service
+                                            var selected = $('#weatherservice').val();
+                                            if (selected) {
+                                                $('#section-' + selected).collapsible('collapse');
+                                            }
+                                        }
+                                    });
 
-									// Get Data Forecast
-									$( document ).on( 'change', '#getdata_forecast', function ( e ) {
-										if ( $( "select[name=getdata_forecast]" ).val()  === "1" ) {
-											//alert("An!");
-											$('#cron_alternate').removeClass('ui-disabled');
-											$('#cron_alternate').selectmenu('refresh');
-										} else {
-											//alert("Aus!");
-											$('#cron_alternate').addClass('ui-disabled');
-											$('#cron_alternate').selectmenu('refresh');
-										}
-									});
+                                    // Get Data Forecast
+                                    $( document ).on( 'change', '#usealternatedfc', function ( e ) {
+                                        if ( ( $( "select[name=usealternatedfc]" ).val()  === "1" ) || ( $( "select[name=usealternatehfc]" ).val()  === "1" ) ) {
+                                            //alert("An!");
+                                            $('#cron_alternate').removeClass('ui-disabled');
+                                            $('#cron_alternate').selectmenu('refresh');
+                                        } else {
+                                            //alert("Aus!");
+                                            $('#cron_alternate').addClass('ui-disabled');
+                                            $('#cron_alternate').selectmenu('refresh');
+                                        }
+                                        // expand or collapse selected alternate weather service
+                                        if ( $( "select[name=usealternatedfc]" ).val()  === "1" ) {
+                                            // expand section of selected weather service
+                                            var selected = $('#weatherservicedfc').val();
+                                            if (selected) {
+                                                $('#section-' + selected).collapsible('expand');
+                                            }
+                                        } else {
+                                            // collapse section of selected weather service
+                                            var selected = $('#weatherservicedfc').val();
+                                            if (selected) {
+                                                $('#section-' + selected).collapsible('collapse');
+                                            }
+                                        }
+                                    });
+                                    $( document ).on( 'change', '#usealternatehfc', function ( e ) {
+                                        if ( ( $( "select[name=usealternatehfc]" ).val()  === "1" ) || ( $( "select[name=usealternatedfc]" ).val()  === "1" ) ) {
+                                            //alert("An!");
+                                            $('#cron_alternate').removeClass('ui-disabled');
+                                            $('#cron_alternate').selectmenu('refresh');
+                                        } else {
+                                            //alert("Aus!");
+                                            $('#cron_alternate').addClass('ui-disabled');
+                                            $('#cron_alternate').selectmenu('refresh');
+                                        }
+                                        // expand or collapse selected alternate weather service
+                                        if ( $( "select[name=usealternatehfc]" ).val()  === "1" ) {
+                                            // expand section of selected weather service
+                                            var selected = $('#weatherservicehfc').val();
+                                            if (selected) {
+                                                $('#section-' + selected).collapsible('expand');
+                                            }
+                                        } else {
+                                            // collapse section of selected weather service
+                                            var selected = $('#weatherservicehfc').val();
+                                            if (selected) {
+                                                $('#section-' + selected).collapsible('collapse');
+                                            }
+                                        }
+                                    });
+                                    // TODO: verify if this can be removed after above two handlers are working correctly
+                                    $( document ).on( 'change', '#getdata_forecast', function ( e ) {
+                                        if ( $( "select[name=getdata_forecast]" ).val()  === "1" ) {
+                                            //alert("An!");
+                                            $('#cron_alternate').removeClass('ui-disabled');
+                                            $('#cron_alternate').selectmenu('refresh');
+                                        } else {
+                                            //alert("Aus!");
+                                            $('#cron_alternate').addClass('ui-disabled');
+                                            $('#cron_alternate').selectmenu('refresh');
+                                        }
+                                    });
 
-									// WUGrabber
-									$( document ).on( 'change', '#wugrabber', function ( e ) {
-										if ( $( "select[name=wugrabber]" ).val()  === "1" ) {
-											//alert("An!");
-											$('#labelwustationid').removeClass('ui-disabled');
-											$('#wustationid').removeClass('ui-disabled');
-										} else {
-											//alert("Aus!");
-											$('#labelwustationid').addClass('ui-disabled');
-											$('#wustationid').addClass('ui-disabled');
-										}
-									});
+                                    // WUGrabber
+                                    $( document ).on( 'change', '#wugrabber', function ( e ) {
+                                        if ( $( "select[name=wugrabber]" ).val()  === "1" ) {
+                                            //alert("An!");
+                                            $('#labelwustationid').removeClass('ui-disabled');
+                                            $('#wustationid').removeClass('ui-disabled');
+                                        } else {
+                                            //alert("Aus!");
+                                            $('#labelwustationid').addClass('ui-disabled');
+                                            $('#wustationid').addClass('ui-disabled');
+                                        }
+                                    });
 
-									// FOSHKGrabber
-									$( document ).on( 'change', '#foshkgrabber', function ( e ) {
-										if ( $( "select[name=foshkgrabber]" ).val()  === "1" ) {
-											//alert("An!");
-											$('#labelfoshkserver').removeClass('ui-disabled');
-											$('#foshkserver').removeClass('ui-disabled');
-											$('#labelfoshkport').removeClass('ui-disabled');
-											$('#foshkport').removeClass('ui-disabled');
-										} else {
-											//alert("Aus!");
-											$('#labelfoshkserver').addClass('ui-disabled');
-											$('#foshkserver').addClass('ui-disabled');
-											$('#labelfoshkport').addClass('ui-disabled');
-											$('#foshkport').addClass('ui-disabled');
-										}
-									});
+                                    // FOSHKGrabber
+                                    $( document ).on( 'change', '#foshkgrabber', function ( e ) {
+                                        if ( $( "select[name=foshkgrabber]" ).val()  === "1" ) {
+                                            //alert("An!");
+                                            $('#labelfoshkserver').removeClass('ui-disabled');
+                                            $('#foshkserver').removeClass('ui-disabled');
+                                            $('#labelfoshkport').removeClass('ui-disabled');
+                                            $('#foshkport').removeClass('ui-disabled');
+                                        } else {
+                                            //alert("Aus!");
+                                            $('#labelfoshkserver').addClass('ui-disabled');
+                                            $('#foshkserver').addClass('ui-disabled');
+                                            $('#labelfoshkport').addClass('ui-disabled');
+                                            $('#foshkport').addClass('ui-disabled');
+                                        }
+                                    });
 
-									// OpenMeteoAirQualityGrabber
-									$( document ).on( 'change', '#openmeteoairqualitygrabber', function ( e ) {
-										if ( $( "select[name=openmeteoairqualitygrabber]" ).val()  === "1" ) {
-											$('.pollen-row').show();
-											$('#rowpollensettings').show();
-										} else {
-											$('.pollen-row').hide();
-											$('#rowpollensettings').hide();
-										}
-									});
+                                    // OpenMeteoAirQualityGrabber
+                                    $( document ).on( 'change', '#openmeteoairqualitygrabber', function ( e ) {
+                                        if ( $( "select[name=openmeteoairqualitygrabber]" ).val()  === "1" ) {
+                                            $('.pollen-row').show();
+                                            $('#rowpollensettings').show();
+                                        } else {
+                                            $('.pollen-row').hide();
+                                            $('#rowpollensettings').hide();
+                                        }
+                                    });
 
-									// Pollen hint texts by level
-									var pollenHints = {
-										'0': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_0>',
-										'1': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_1>',
-										'2': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_2>',
-										'3': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_3>',
-										'4': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_4>',
-										'5': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_5>',
-										'6': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_6>',
-										'7': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_7>'
-									};
-									function updatePollenHint(name) {
-										var val = $('select[name=' + name + ']').val();
-										$('#hint_pollen_' + name.replace('pollen_','') ).text(pollenHints[val] || '');
-									}
-									var pollenNames = ['pollen_grasses','pollen_birch','pollen_alder','pollen_mugwort','pollen_olive','pollen_ragweed'];
-									$.each(pollenNames, function(i, name) {
-										updatePollenHint(name);
-										$( document ).on( 'change', '#' + name, function() { updatePollenHint(name); });
-									});
+                                    // Pollen hint texts by level
+                                    var pollenHints = {
+                                        '0': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_0>',
+                                        '1': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_1>',
+                                        '2': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_2>',
+                                        '3': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_3>',
+                                        '4': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_4>',
+                                        '5': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_5>',
+                                        '6': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_6>',
+                                        '7': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_7>'
+                                    };
+                                    function updatePollenHint(name) {
+                                        var val = $('select[name=' + name + ']').val();
+                                        $('#hint_pollen_' + name.replace('pollen_','') ).text(pollenHints[val] || '');
+                                    }
+                                    var pollenNames = ['pollen_grasses','pollen_birch','pollen_alder','pollen_mugwort','pollen_olive','pollen_ragweed'];
+                                    $.each(pollenNames, function(i, name) {
+                                        updatePollenHint(name);
+                                        $( document ).on( 'change', '#' + name, function() { updatePollenHint(name); });
+                                    });
 
-									// Alternate DFC
-									$( document ).on( 'change', '#usealternatedfc', function ( e ) {
-										if ( $( "select[name=usealternatedfc]" ).val()  === "1" ) {
-											//alert("An!");
-											$('#weatherservicedfc').removeClass('ui-disabled');
-											$('#weatherservicedfc').selectmenu('refresh');
-										} else {
-											//alert("Aus!");
-											$('#weatherservicedfc').addClass('ui-disabled');
-											$('#weatherservicedfc').selectmenu('refresh');
-										}
-									});
+                                    // Alternate DFC
+                                    $( document ).on( 'change', '#usealternatedfc', function ( e ) {
+                                        if ( $( "select[name=usealternatedfc]" ).val()  === "1" ) {
+                                            //alert("An!");
+                                            $('#weatherservicedfc').removeClass('ui-disabled');
+                                            $('#weatherservicedfc').selectmenu('refresh');
+                                        } else {
+                                            //alert("Aus!");
+                                            $('#weatherservicedfc').addClass('ui-disabled');
+                                            $('#weatherservicedfc').selectmenu('refresh');
+                                        }
+                                    });
 
-									// Alternate HFC
-									$( document ).on( 'change', '#usealternatehfc', function ( e ) {
-										if ( $( "select[name=usealternatehfc]" ).val()  === "1" ) {
-											//alert("An!");
-											$('#weatherservicehfc').removeClass('ui-disabled');
-											$('#weatherservicehfc').selectmenu('refresh');
-										} else {
-											//alert("Aus!");
-											$('#weatherservicehfc').addClass('ui-disabled');
-											$('#weatherservicehfc').selectmenu('refresh');
-										}
-									});
+                                    // Alternate HFC
+                                    $( document ).on( 'change', '#usealternatehfc', function ( e ) {
+                                        if ( $( "select[name=usealternatehfc]" ).val()  === "1" ) {
+                                            //alert("An!");
+                                            $('#weatherservicehfc').removeClass('ui-disabled');
+                                            $('#weatherservicehfc').selectmenu('refresh');
+                                        } else {
+                                            //alert("Aus!");
+                                            $('#weatherservicehfc').addClass('ui-disabled');
+                                            $('#weatherservicehfc').selectmenu('refresh');
+                                        }
+                                    });
 
-									// Disable some form elements depending on selected options
-									function disable() {
-										if ( $( "select[name=usealternatedfc]" ).val()  === "0" ) {
-											$('#weatherservicedfc').addClass('ui-disabled');
-											$('#weatherservicedfc').selectmenu('refresh');
-										}
-										if ( $( "select[name=usealternatehfc]" ).val()  === "0" ) {
-											$('#weatherservicehfc').addClass('ui-disabled');
-											$('#weatherservicehfc').selectmenu('refresh');
-										}
-										if ( $( "select[name=getdata]" ).val()  === "0" ) {
-											$('#cron').addClass('ui-disabled');
-										}
-										if ( $( "select[name=getdata_forecast]" ).val()  === "0" ) {
-											$('#cron').addClass('ui-disabled');
-										}
-										if ( $( "select[name=wugrabber]" ).val()  === "0" ) {
-											$('#labelwustationid').addClass('ui-disabled');
-											$('#wustationid').addClass('ui-disabled');
-										}
-										if ( $( "select[name=foshkgrabber]" ).val()  === "0" ) {
-											$('#labelfoshkserver').addClass('ui-disabled');
-											$('#foshkserver').addClass('ui-disabled');
-											$('#labelfoshkport').addClass('ui-disabled');
-											$('#foshkport').addClass('ui-disabled');
-										}
-										if ( $( "select[name=openmeteoairqualitygrabber]" ).val()  === "0" ) {
-											$('.pollen-row').hide();
-											$('#rowpollensettings').hide();
-										}
-									}
+                                    // Disable some form elements depending on selected options
+                                    function disable() {
+                                        if ( $( "select[name=usealternatedfc]" ).val()  === "0" ) {
+                                            $('#weatherservicedfc').addClass('ui-disabled');
+                                            $('#weatherservicedfc').selectmenu('refresh');
+                                        }
+                                        if ( $( "select[name=usealternatehfc]" ).val()  === "0" ) {
+                                            $('#weatherservicehfc').addClass('ui-disabled');
+                                            $('#weatherservicehfc').selectmenu('refresh');
+                                        }
+                                        if ( ( $( "select[name=usealternatedfc]" ).val()  === "0" ) && ( $( "select[name=usealternatehfc]" ).val()  === "0" ) )
+                                        {
+                                            $('#cron_alternate').addClass('ui-disabled');
+                                            $('#cron_alternate').selectmenu('refresh');
+                                        }
+                                        if ( $( "select[name=getdata]" ).val()  === "0" ) {
+                                            $('#cron').addClass('ui-disabled');
+                                        }
+                                        if ( $( "select[name=getdata_forecast]" ).val()  === "0" ) {
+                                            $('#cron').addClass('ui-disabled');
+                                        }
+                                        if ( $( "select[name=wugrabber]" ).val()  === "0" ) {
+                                            $('#labelwustationid').addClass('ui-disabled');
+                                            $('#wustationid').addClass('ui-disabled');
+                                        }
+                                        if ( $( "select[name=foshkgrabber]" ).val()  === "0" ) {
+                                            $('#labelfoshkserver').addClass('ui-disabled');
+                                            $('#foshkserver').addClass('ui-disabled');
+                                            $('#labelfoshkport').addClass('ui-disabled');
+                                            $('#foshkport').addClass('ui-disabled');
+                                        }
+                                        if ( $( "select[name=openmeteoairqualitygrabber]" ).val()  === "0" ) {
+                                            $('.pollen-row').hide();
+                                            $('#rowpollensettings').hide();
+                                        }
+                                    }
 
-									function fetchweather()
-									{
+                                    function fetchweather()
+                                    {
 
-										$('#fetch').addClass('ui-disabled');
-										$("#fetchstate").attr("style", "color:blue").html("<TMPL_VAR SETTINGS.HINT_FETCHWAIT>");
-										$.ajax( {
-												type: 'POST',
-												url: "./ajax-handler.cgi",
-												data: {
-													ajax: 'fetch',
-												}
-											} )
-										.done(function(resp) {
-											console.log( "fetch", "success", resp );
-											$("#fetchstate").attr("style", "color:green").html("<TMPL_VAR SETTINGS.HINT_FETCHOK>");
-										})
-										.fail(function(resp) {
-											console.log( "fetch", "failed", resp );
-											$("#fetchstate").attr("style", "color:red").html("<TMPL_VAR SETTINGS.HINT_FETCHFAILED>");
-										})
-										.always(function(resp) {
-										$('#fetch').removeClass('ui-disabled');
-											console.log( "fetch", "finished", resp );
-										});
+                                        $('#fetch').addClass('ui-disabled');
+                                        $("#fetchstate").attr("style", "color:blue").html("<TMPL_VAR SETTINGS.HINT_FETCHWAIT>");
+                                        $.ajax( {
+                                                type: 'POST',
+                                                url: "./ajax-handler.cgi",
+                                                data: {
+                                                    ajax: 'fetch',
+                                                }
+                                            } )
+                                        .done(function(resp) {
+                                            console.log( "fetch", "success", resp );
+                                            $("#fetchstate").attr("style", "color:green").html("<TMPL_VAR SETTINGS.HINT_FETCHOK>");
+                                        })
+                                        .fail(function(resp) {
+                                            console.log( "fetch", "failed", resp );
+                                            $("#fetchstate").attr("style", "color:red").html("<TMPL_VAR SETTINGS.HINT_FETCHFAILED>");
+                                        })
+                                        .always(function(resp) {
+                                        $('#fetch').removeClass('ui-disabled');
+                                            console.log( "fetch", "finished", resp );
+                                        });
 
-									}
+                                    }
 
-									// Test Link for wtt.in
-									function testwttrin() {
-										var url = 'https://wttr.in/' + $('#wttrinstationid').val();
-										window.open(url, 'NewWindow');
-									}
+                                    // Test Link for wtt.in
+                                    function testwttrin() {
+                                        var url = 'https://wttr.in/' + $('#wttrinstationid').val();
+                                        window.open(url, 'NewWindow');
+                                    }
 
-									// Test Link for Wetteronline
-									function testwetteronline() {
-										var url = 'https://www.wetteronline.de/wetter/' + $('#wetteronlinestationid').val();
-										window.open(url, 'NewWindow');
-									}
+                                    // Test Link for Wetteronline
+                                    function testwetteronline() {
+                                        var url = 'https://www.wetteronline.de/wetter/' + $('#wetteronlinestationid').val();
+                                        window.open(url, 'NewWindow');
+                                    }
 
-									</script>
+                                    </script>
 </TMPL_IF>
 
 
@@ -853,459 +949,526 @@
 
 
 <TMPL_IF FORM2>
-									<form method="post" data-ajax="false" name="main_form" id="main_form" action="./index.cgi?form=2">
-										<input type="hidden" name="saveformdata2" value="1">
-											<div class="form-group">
-												<table class="formtable" border="0" width="100%" cellpadding="10">
-													<tr>
-														<td colspan=3 width="75%">
-															<h2><TMPL_VAR SETTINGS.LABEL_MINISERVERCONNECTION></h2>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_MINISERVER></i></font>
-														</td>
-														<td align="right">
-															&nbsp;
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<h3><TMPL_VAR SETTINGS.LABEL_SENDWHAT></h3>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_SENDWHAT></i></font>
-														</td>
-														<td align="right">
-															&nbsp;
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<i><TMPL_VAR SETTINGS.HINT_SENDWHAT></i>
-														</td>
-														<td align="right">
-															&nbsp;
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labeldfc"><TMPL_VAR SETTINGS.LABEL_DFC></label>
-														</td>
-														<td width="50%">
-															<div data-role="collapsible">
-																<h4><TMPL_VAR SETTINGS.LABEL_PLEASECHOOSE></h4>
-																<fieldset data-role="controlgroup">
-																	<TMPL_VAR DFC>
-																</fieldset>
-															</div>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-														<font size="-1"><TMPL_VAR SETTINGS.HINT_FORECAST></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelhfc"><TMPL_VAR SETTINGS.LABEL_HFC></label>
-														</td>
-														<td width="50%">
-															<div data-role="collapsible">
-																<h4><TMPL_VAR SETTINGS.LABEL_PLEASECHOOSE></h4>
-																<fieldset data-role="controlgroup">
-																	<TMPL_VAR HFC>
-																</fieldset>
-															</div>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-														<font size="-1"><TMPL_VAR SETTINGS.HINT_FORECAST></font>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<h3><TMPL_VAR SETTINGS.LABEL_MQTTCONNECTION></h3>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_MQTT></i></font>
-														</td>
-														<td align="right">
-															&nbsp;
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelsendudp"><TMPL_VAR SETTINGS.LABEL_SENDBYMQTT></label>
-														</td>
-														<td width="50%">
-															<table border="0" width="100%">
-																<tr>
-																	<td width="20%">
-																		<fieldset>
-																			<select id="sendmqtt" name="sendmqtt" data-role="flipswitch" disabled=disabled>
-																				<option value="0"><TMPL_VAR SETTINGS.LABEL_OFF></option>
-																				<option selected=selected value="1"><TMPL_VAR SETTINGS.LABEL_ON></option>
-																			</select>
-																		</fieldset>
-																	</td>
-																	<td>
-																		<table border="0" width="100%">
-																			<tr>
-																				<td align="right">
-																					<label id="labelmqtttopic"><TMPL_VAR SETTINGS.LABEL_MQTTTOPIC></label>
-																				</td>
-																				<td>
-																					<input id="mqtttopic" name="mqtttopic" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR SERVER.TOPIC>"
-																					data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_MQTTTOPIC>">
-																				</td>
-																			</tr>
-																		</table>
-																	</td>
-																</tr>
-															</table>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_MQTTTOPIC></font>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<h3><TMPL_VAR SETTINGS.LABEL_UDPCONNECTION></h3>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_UDP></i></font>
-														</td>
-														<td align="right">
-															&nbsp;
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelminiserver"><TMPL_VAR SETTINGS.LABEL_MINISERVER></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR MINISERVER>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_MINISERVER></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelsendudp"><TMPL_VAR SETTINGS.LABEL_SENDBYUDP></label>
-														</td>
-														<td width="50%">
-															<table border="0" width="100%">
-																<tr>
-																	<td width="20%">
-																		<fieldset>
-																			<TMPL_VAR SENDUDP>
-																		</fieldset>
-																	</td>
-																	<td>
-																		<table border="0" width="100%">
-																			<tr>
-																				<td align="right">
-																					<label id="labeludpport"><TMPL_VAR SETTINGS.LABEL_UDPPORT></label>
-																				</td>
-																				<td>
-																					<input id="udpport" name="udpport" type="text" data-validation-rule="special:port" class="textfield" value="<TMPL_VAR SERVER.UDPPORT>"
-																					data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_UDPPORT>">
-																				</td>
-																			</tr>
-																		</table>
-																	</td>
-																</tr>
-															</table>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_UDP></font>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<h3><TMPL_VAR SETTINGS.LABEL_HTTPCONNECTION></h3>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_HTTP></i></font>
-														</td>
-														<td align="right">
-															&nbsp;
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelsendhtml"><TMPL_VAR SETTINGS.LABEL_SENDBYHTML></label>
-														</td>
-														<td width="50%">
-														  <table border="0">
-																<tr>
-																	<td>
-																		<fieldset>
-																			<select id="sendhtml" name="sendhtml" data-role="flipswitch" disabled=disabled>
-																				<option value="0"><TMPL_VAR SETTINGS.LABEL_OFF></option>
-																				<option selected=selected value="1"><TMPL_VAR SETTINGS.LABEL_ON></option>
-																			</select>
-																		</fieldset>
-																	</td>
-																	<td>
-																		&nbsp;&nbsp;<font size="-1"><TMPL_VAR SETTINGS.LABEL_LINK>: <a href="<TMPL_VAR WEBSITE>" target=_blank"><TMPL_VAR WEBSITE></a></font>
-																	</td>
-																</tr>
-															</table>
-														</td>
-														<td width="5%">
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_HTML></font>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=4>
-														&nbsp;
-														</td>
-													</tr>
-												</table>
-											</div>
-									<p>
-										&nbsp;
-									</p>
-									<p>
-										<center>
-											<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="./index.cgi?form=2"><TMPL_VAR SETTINGS.BUTTON_CANCEL></a>
-												<button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SETTINGS.BUTTON_SAVE></button>
-										</center>
-									</form>
-									</p>
+                                    <form method="post" data-ajax="false" name="main_form" id="main_form" action="./index.cgi?form=2">
+                                        <input type="hidden" name="saveformdata2" value="1">
+                                            <div class="form-group">
+                                                <table class="formtable" border="0" width="100%" cellpadding="10">
+                                                    <tr>
+                                                        <td colspan=3 width="75%">
+                                                            <h2><TMPL_VAR SETTINGS.LABEL_MINISERVERCONNECTION></h2>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_MINISERVER></i></font>
+                                                        </td>
+                                                        <td align="right">
+                                                            &nbsp;
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan=3 width="75%">
+                                                            <h3><TMPL_VAR SETTINGS.LABEL_SENDWHAT></h3>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_SENDWHAT></i></font>
+                                                        </td>
+                                                        <td align="right">
+                                                            &nbsp;
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan=3 width="75%">
+                                                            <i><TMPL_VAR SETTINGS.HINT_SENDWHAT></i>
+                                                        </td>
+                                                        <td align="right">
+                                                            &nbsp;
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labeldfc"><TMPL_VAR SETTINGS.LABEL_DFC></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <div data-role="collapsible">
+                                                                <h4><TMPL_VAR SETTINGS.LABEL_PLEASECHOOSE></h4>
+                                                                <fieldset data-role="controlgroup">
+                                                                    <TMPL_VAR DFC>
+                                                                </fieldset>
+                                                            </div>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                        <font size="-1"><TMPL_VAR SETTINGS.HINT_FORECAST></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelhfc"><TMPL_VAR SETTINGS.LABEL_HFC></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <div data-role="collapsible">
+                                                                <h4><TMPL_VAR SETTINGS.LABEL_PLEASECHOOSE></h4>
+                                                                <fieldset data-role="controlgroup">
+                                                                    <TMPL_VAR HFC>
+                                                                </fieldset>
+                                                            </div>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                        <font size="-1"><TMPL_VAR SETTINGS.HINT_FORECAST></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan=3 width="75%">
+                                                            <h3><TMPL_VAR SETTINGS.LABEL_MQTTCONNECTION></h3>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_MQTT></i></font>
+                                                        </td>
+                                                        <td align="right">
+                                                            &nbsp;
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelsendudp"><TMPL_VAR SETTINGS.LABEL_SENDBYMQTT></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <table border="0" width="100%">
+                                                                <tr>
+                                                                    <td width="20%">
+                                                                        <fieldset>
+                                                                            <select id="sendmqtt" name="sendmqtt" data-role="flipswitch" disabled=disabled>
+                                                                                <option value="0"><TMPL_VAR SETTINGS.LABEL_OFF></option>
+                                                                                <option selected=selected value="1"><TMPL_VAR SETTINGS.LABEL_ON></option>
+                                                                            </select>
+                                                                        </fieldset>
+                                                                    </td>
+                                                                    <td>
+                                                                        <table border="0" width="100%">
+                                                                            <tr>
+                                                                                <td align="right">
+                                                                                    <label id="labelmqtttopic"><TMPL_VAR SETTINGS.LABEL_MQTTTOPIC></label>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <input id="mqtttopic" name="mqtttopic" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR SERVER.TOPIC>"
+                                                                                    data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_MQTTTOPIC>">
+                                                                                </td>
+                                                                            </tr>
+                                                                        </table>
+                                                                    </td>
+                                                                </tr>
+                                                            </table>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_MQTTTOPIC></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan=3 width="75%">
+                                                            <h3><TMPL_VAR SETTINGS.LABEL_UDPCONNECTION></h3>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_UDP></i></font>
+                                                        </td>
+                                                        <td align="right">
+                                                            &nbsp;
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelminiserver"><TMPL_VAR SETTINGS.LABEL_MINISERVER></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR MINISERVER>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_MINISERVER></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelsendudp"><TMPL_VAR SETTINGS.LABEL_SENDBYUDP></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <table border="0" width="100%">
+                                                                <tr>
+                                                                    <td width="20%">
+                                                                        <fieldset>
+                                                                            <TMPL_VAR SENDUDP>
+                                                                        </fieldset>
+                                                                    </td>
+                                                                    <td>
+                                                                        <table border="0" width="100%">
+                                                                            <tr>
+                                                                                <td align="right">
+                                                                                    <label id="labeludpport"><TMPL_VAR SETTINGS.LABEL_UDPPORT></label>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <input id="udpport" name="udpport" type="text" data-validation-rule="special:port" class="textfield" value="<TMPL_VAR SERVER.UDPPORT>"
+                                                                                    data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_UDPPORT>">
+                                                                                </td>
+                                                                            </tr>
+                                                                        </table>
+                                                                    </td>
+                                                                </tr>
+                                                            </table>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_UDP></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan=3 width="75%">
+                                                            <h3><TMPL_VAR SETTINGS.LABEL_HTTPCONNECTION></h3>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_HTTP></i></font>
+                                                        </td>
+                                                        <td align="right">
+                                                            &nbsp;
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelsendhtml"><TMPL_VAR SETTINGS.LABEL_SENDBYHTML></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                          <table border="0">
+                                                                <tr>
+                                                                    <td>
+                                                                        <fieldset>
+                                                                            <select id="sendhtml" name="sendhtml" data-role="flipswitch" disabled=disabled>
+                                                                                <option value="0"><TMPL_VAR SETTINGS.LABEL_OFF></option>
+                                                                                <option selected=selected value="1"><TMPL_VAR SETTINGS.LABEL_ON></option>
+                                                                            </select>
+                                                                        </fieldset>
+                                                                    </td>
+                                                                    <td>
+                                                                        &nbsp;&nbsp;<font size="-1"><TMPL_VAR SETTINGS.LABEL_LINK>: <a href="<TMPL_VAR WEBSITE>" target=_blank"><TMPL_VAR WEBSITE></a></font>
+                                                                    </td>
+                                                                </tr>
+                                                            </table>
+                                                        </td>
+                                                        <td width="5%">
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_HTML></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan=4>
+                                                        &nbsp;
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                    <p>
+                                        &nbsp;
+                                    </p>
+                                    <p>
+                                        <center>
+                                            <a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="./index.cgi?form=2"><TMPL_VAR SETTINGS.BUTTON_CANCEL></a>
+                                                <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SETTINGS.BUTTON_SAVE></button>
+                                        </center>
+                                    </form>
+                                    </p>
 
-									<script>
+                                    <script>
 
-									$( document ).ready(function() {
-										// Validates
-										validate_enable('#udpport');
-										validate_enable('#mqtttopic');
-									});
-									// Add some attributes PERL::CGI doesn't provide
-									$('#sendudp').attr('data-role','flipswitch');
-									</script>
+                                    $( document ).ready(function() {
+                                        // Validates
+                                        validate_enable('#udpport');
+                                        validate_enable('#mqtttopic');
+                                    });
+                                    // Add some attributes PERL::CGI doesn't provide
+                                    $('#sendudp').attr('data-role','flipswitch');
+                                    </script>
 </TMPL_IF>
 <TMPL_IF FORM3>
-									<form method="post" data-ajax="false" name="main_form" id="main_form" action="./index.cgi?form=3">
-										<input type="hidden" name="saveformdata3" value="1">
-											<div class="form-group">
-												<table class="formtable" border="0" width="100%" cellpadding="10">
-													<tr>
-														<td colspan=3 width="75%">
-															<h2><TMPL_VAR SETTINGS.LABEL_CLOUDEMU></h2>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_CLOUDEMU></i></font>
-														</td>
-														<td align="right">
-															&nbsp;
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelemu"><TMPL_VAR SETTINGS.LABEL_ENABLECLOUDEMU></label>
-														</td>
-														<td width="50%">
-															<table border="0" width="100%">
-																<tr>
-																	<td width="20%">
-																		<fieldset>
-																			<TMPL_VAR EMU>
-																		</fieldset>
-																	</td>
-																	<td>
-																		<a id="btntestcloudemu" href="http://<TMPL_VAR MYIP>:6066/forecast/" target="_blank" class="ui-btn ui-btn-inline ui-mini"><TMPL_VAR SETTINGS.BUTTON_TESTCLOUDEMU></a>
-																	</td>
-																	<td>
-																		<font color="red" size="-1"><b><TMPL_VAR EMUWARNING></b></font>
-																	</td>
-																</tr>
-															</table>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_CLOUDEMU></font>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=4>
-														&nbsp;
-														</td>
-													</tr>
-													<tr>
-														<td colspan=3 width="75%">
-															<h2><TMPL_VAR SETTINGS.LABEL_WEBSITE></h2>
-															<font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_WEBSITE></i></font>
-														</td>
-														<td align="right">
-															&nbsp;
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelURL"><TMPL_VAR SETTINGS.LABEL_LINK></label>
-														</td>
-														<td width="50%">
-															<a href="<TMPL_VAR WEBSITE>" target=_blank"><TMPL_VAR WEBSITE></a>&nbsp;<TMPL_VAR SETTINGS.OPTIONS_LINK>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_LINK></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labeltheme"><TMPL_VAR SETTINGS.LABEL_THEME></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR THEME>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_THEME></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelihconset"><TMPL_VAR SETTINGS.LABEL_ICONSET></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR ICONSET>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_ICONSET></font>
-														</td>
-													</tr>
-													<tr>
-														<td width="25%">
-															<label id="labelthemelang"><TMPL_VAR SETTINGS.LABEL_THEMELANG></label>
-														</td>
-														<td width="50%">
-															<TMPL_VAR THEMELANG>
-														</td>
-														<td width="5%">
-															&nbsp;
-														</td>
-														<td width="20%">
-															<font size="-1"><TMPL_VAR SETTINGS.HINT_THEMELANG></font>
-														</td>
-													</tr>
-													<tr>
-														<td colspan=4>
-														&nbsp;
-														</td>
-													</tr>
-												</table>
-											</div>
-									<p>
-										&nbsp;
-									</p>
-									<p>
-										<center>
-											<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="./index.cgi?form=3"><TMPL_VAR SETTINGS.BUTTON_CANCEL></a>
-												<button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SETTINGS.BUTTON_SAVE></button>
-												<a href="#" data-role="button" id="preview1" data-inline="true" data-mini="true" data-icon="eye" onClick="preview();"><TMPL_VAR SETTINGS.LABEL_PREVIEW></a>
-												<a href="#" data-role="button" id="btnweathercodes" data-inline="true" data-mini="true" data-icon="info" onClick="openWeathercodes();"><TMPL_VAR SETTINGS.BUTTON_WEATHERCODES></a>
-										</center>
-									</form>
-									</p>
-									<script>
-									// Add some attributes PERL::CGI doesn't provide
-									$('select[name=emu]').attr('data-role','flipswitch');
-									$('select[name=theme]').attr('data-mini','true');
-									$('select[name=iconset]').attr('data-mini','true');
-									$('select[name=themelang]').attr('data-mini','true');
+                                    <form method="post" data-ajax="false" name="main_form" id="main_form" action="./index.cgi?form=3">
+                                        <input type="hidden" name="saveformdata3" value="1">
+                                            <div class="form-group">
+                                                <table class="formtable" border="0" width="100%" cellpadding="10">
+                                                    <tr>
+                                                        <td colspan=3 width="75%">
+                                                            <h2><TMPL_VAR SETTINGS.LABEL_CLOUDEMU></h2>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_CLOUDEMU></i></font>
+                                                        </td>
+                                                        <td align="right">
+                                                            &nbsp;
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelemu"><TMPL_VAR SETTINGS.LABEL_ENABLECLOUDEMU></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <table border="0" width="100%">
+                                                                <tr>
+                                                                    <td width="20%">
+                                                                        <fieldset>
+                                                                            <TMPL_VAR EMU>
+                                                                        </fieldset>
+                                                                    </td>
+                                                                    <td>
+                                                                        <a id="btntestcloudemu" href="http://<TMPL_VAR MYIP>:6066/forecast/" target="_blank" class="ui-btn ui-btn-inline ui-mini"><TMPL_VAR SETTINGS.BUTTON_TESTCLOUDEMU></a>
+                                                                    </td>
+                                                                    <td>
+                                                                        <font color="red" size="-1"><b><TMPL_VAR EMUWARNING></b></font>
+                                                                    </td>
+                                                                </tr>
+                                                            </table>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_CLOUDEMU></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan=4>
+                                                        &nbsp;
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan=3 width="75%">
+                                                            <h2><TMPL_VAR SETTINGS.LABEL_WEBSITE></h2>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_WEBSITE></i></font>
+                                                        </td>
+                                                        <td align="right">
+                                                            &nbsp;
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelURL"><TMPL_VAR SETTINGS.LABEL_LINK></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <a href="<TMPL_VAR WEBSITE>" target=_blank"><TMPL_VAR WEBSITE></a>&nbsp;<TMPL_VAR SETTINGS.OPTIONS_LINK>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_LINK></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labeltheme"><TMPL_VAR SETTINGS.LABEL_THEME></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR THEME>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_THEME></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelihconset"><TMPL_VAR SETTINGS.LABEL_ICONSET></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR ICONSET>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_ICONSET></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelthemelang"><TMPL_VAR SETTINGS.LABEL_THEMELANG></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR THEMELANG>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_THEMELANG></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan=4>
+                                                        &nbsp;
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                    <p>
+                                        &nbsp;
+                                    </p>
+                                    <p>
+                                        <center>
+                                            <a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="./index.cgi?form=3"><TMPL_VAR SETTINGS.BUTTON_CANCEL></a>
+                                                <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SETTINGS.BUTTON_SAVE></button>
+                                                <a href="#" data-role="button" id="preview1" data-inline="true" data-mini="true" data-icon="eye" onClick="preview();"><TMPL_VAR SETTINGS.LABEL_PREVIEW></a>
+                                                <a href="#" data-role="button" id="btnweathercodes" data-inline="true" data-mini="true" data-icon="info" onClick="openWeathercodes();"><TMPL_VAR SETTINGS.BUTTON_WEATHERCODES></a>
+                                        </center>
+                                    </form>
+                                    </p>
+                                    <script>
+                                    // Add some attributes PERL::CGI doesn't provide
+                                    $('select[name=emu]').attr('data-role','flipswitch');
+                                    $('select[name=theme]').attr('data-mini','true');
+                                    $('select[name=iconset]').attr('data-mini','true');
+                                    $('select[name=themelang]').attr('data-mini','true');
 
-									// Preview Link for theme and iconset
-									function preview() {
-										var url = './show.cgi?theme=' + $('#theme').val() + '&iconset=' + $('#iconset').val() + '&lang=' + $('#themelang').val();
-										window.open(url, 'NewWindow');
-									}
+                                    // Preview Link for theme and iconset
+                                    function preview() {
+                                        var url = './show.cgi?theme=' + $('#theme').val() + '&iconset=' + $('#iconset').val() + '&lang=' + $('#themelang').val();
+                                        window.open(url, 'NewWindow');
+                                    }
 
-									// Open Weathercodes page
-									function openWeathercodes() {
-										var url = '/plugins/<TMPL_VAR LBPPLUGINDIR>/weathercodes.html?size=128&background=e6f7ff&lang=' + encodeURIComponent($('#themelang').val()) + '&iconset=' + encodeURIComponent($('#iconset').val());
-										window.open(url, '_blank');
-									}
+                                    // Open Weathercodes page
+                                    function openWeathercodes() {
+                                        var url = '/plugins/<TMPL_VAR LBPPLUGINDIR>/weathercodes.html?size=128&background=e6f7ff&lang=' + encodeURIComponent($('#themelang').val()) + '&iconset=' + encodeURIComponent($('#iconset').val());
+                                        window.open(url, '_blank');
+                                    }
 
-									// Cloud Emu Testlink
-									$( document ).on( 'change', '#emu', function ( e ) {
-										if ( $( "select[name=emu]" ).val()  === "1" ) {
-											//alert("An!");
-											$('#btntestcloudemu').removeClass('ui-disabled');
-										} else {
-											//alert("Aus!");
-											$('#btntestcloudemu').addClass('ui-disabled');
-										}
-									});
+                                    // Cloud Emu Testlink
+                                    $( document ).on( 'change', '#emu', function ( e ) {
+                                        if ( $( "select[name=emu]" ).val()  === "1" ) {
+                                            //alert("An!");
+                                            $('#btntestcloudemu').removeClass('ui-disabled');
+                                        } else {
+                                            //alert("Aus!");
+                                            $('#btntestcloudemu').addClass('ui-disabled');
+                                        }
+                                    });
 
-									// Disable some form elements depending on selected options
-									function disable() {
-										if ( $( "select[name=emu]" ).val()  === "0" ) {
-											$('#btntestcloudemu').addClass('ui-disabled');
-										}
-									}
+                                    // Disable some form elements depending on selected options
+                                    function disable() {
+                                        if ( $( "select[name=emu]" ).val()  === "0" ) {
+                                            $('#btntestcloudemu').addClass('ui-disabled');
+                                        }
+                                    }
 
-									// Activate on Load
-									disable();
+                                    // Activate on Load
+                                    disable();
 
-									</script>
+                                    </script>
 </TMPL_IF>
 <TMPL_IF FORM99>
-									<TMPL_VAR LOGLIST_HTML>
+                                    <TMPL_VAR LOGLIST_HTML>
 </TMPL_IF>
 <TMPL_IF ERROR>
-									<center>
-										<table border="0">
-										<tr>
-											<td align="center">
-												<h2><TMPL_VAR HINT_ERROR></h2>
-												<p>
-													<TMPL_VAR ERRORMESSAGE>
-												</p>
-											</td>
-										</tr>
-										<tr>
-											<td align="center">
-												<p>
-													<a id="btnok" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="./index.cgi?form=<TMPL_VAR FORMNO>"><TMPL_VAR SETTINGS.BUTTON_OK></a>
-												</p>
-											</td>
-										</tr>
-										</table>
-									</center>
+                                    <center>
+                                        <table border="0">
+                                        <tr>
+                                            <td align="center">
+                                                <h2><TMPL_VAR HINT_ERROR></h2>
+                                                <p>
+                                                    <TMPL_VAR ERRORMESSAGE>
+                                                </p>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td align="center">
+                                                <p>
+                                                    <a id="btnok" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="./index.cgi?form=<TMPL_VAR FORMNO>"><TMPL_VAR SETTINGS.BUTTON_OK></a>
+                                                </p>
+                                            </td>
+                                        </tr>
+                                        </table>
+                                    </center>
 </TMPL_IF>
 <TMPL_IF SAVE>
-									<center>
-										<table border="0">
-										<tr>
-											<td align="center">
-												<h2><TMPL_VAR SETTINGS.HINT_OK></h2>
-												<p>
-													<TMPL_VAR SETTINGS.OK_SETTINGS_SAVED>
-												</p>
-											</td>
-										</tr>
-										<tr>
-											<td align="center">
-												<p>
-													<a id="btnok" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="./index.cgi?form=<TMPL_VAR FORMNO>"><TMPL_VAR SETTINGS.BUTTON_OK></a>
-												</p>
-											</td>
-										</tr>
-										</table>
-									</center>
+                                    <center>
+                                        <table border="0">
+                                        <tr>
+                                            <td align="center">
+                                                <h2><TMPL_VAR SETTINGS.HINT_OK></h2>
+                                                <p>
+                                                    <TMPL_VAR SETTINGS.OK_SETTINGS_SAVED>
+                                                </p>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td align="center">
+                                                <p>
+                                                    <a id="btnok" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="./index.cgi?form=<TMPL_VAR FORMNO>"><TMPL_VAR SETTINGS.BUTTON_OK></a>
+                                                </p>
+                                            </td>
+                                        </tr>
+                                        </table>
+                                    </center>
+</TMPL_IF>
+<TMPL_IF SAVING>
+  <center>
+    <table border="0" style="max-width: 900px; width: 100%;">
+      <tr>
+        <td align="center">
+          <h2><TMPL_VAR SETTINGS.HINT_SAVING></h2>
+          <p><TMPL_VAR SAVINGMESSAGE></p>
+
+          <pre id="savinglog" style="text-align:left; white-space:pre-wrap; background:#111; color:#0f0; padding:10px; border-radius:6px; min-height:200px;"></pre>
+        </td>
+      </tr>
+    </table>
+  </center>
+
+  <script>
+    // These are set by index.cgi:
+    var saveToken = "<TMPL_VAR SAVETOKEN>";
+    var saveForm  = "<TMPL_VAR FORMNO>";
+
+    function pollStatus() {
+        $.ajax({
+            url: "./ajax-save.cgi",
+            data: { status: saveToken },
+            dataType: "json",
+            cache: false
+        }).done(function(resp){
+            if(resp && resp.log !== undefined) {
+            $("#savinglog").text(resp.log);
+            }
+            if(resp && resp.done) {
+            // redirect back to settings (or show OK page)
+            window.location.href = "./index.cgi?form=" + saveForm;
+            } else {
+            setTimeout(pollStatus, 500);
+            }
+        }).fail(function(){
+            setTimeout(pollStatus, 1000);
+        });
+    }
+
+    function startSave() {
+        // Wichtig: Wir müssen die ursprünglichen Form-Daten mitsenden.
+        // Die sind auf der SAVING-Seite nicht mehr als Formular vorhanden,
+        // daher: am besten beim Klick auf "Speichern" per JS vorher abfangen.
+        //
+        // Minimaler Workaround: wir senden hier nur Token/Form.
+        // => Deshalb muss index.cgi (oben) die SAVING-Seite rendern, während die Form-POST noch "da ist".
+        // Für robust: wir nehmen die POST-Parameter in ajax-save.cgi NICHT aus dem DOM,
+        // sondern aus dem Start-POST selbst (die jetzige Seite wurde ja durch POST erzeugt).
+        $.ajax({
+            url: "./ajax-save.cgi",
+            type: "POST",
+            dataType: "json",
+            data: { start: 1, form: saveForm, token: saveToken },
+            cache: false
+        }).done(function(){
+            pollStatus();
+        }).fail(function(xhr){
+            $("#savinglog").text("Konnte Speichervorgang nicht starten.\n" + (xhr.responseText||""));
+        });
+    }
+
+    $(document).ready(function(){
+      startSave();
+    });
+  </script>
 </TMPL_IF>
