@@ -116,10 +116,10 @@ my %L = LoxBerry::Web::readlanguage($template, "language.ini");
 ##########################################################################
 if ($R::saveformdata1) {
 
-    # Wir rendern NUR sofort die SAVING-Seite und starten den Save im Browser via AJAX.
+    # Render only the SAVING page and start the save process in the browser via AJAX.
     $template->param( FORMNO => '1' );
 
-    # Token: kurz, URL-safe, mit genug Entropie
+    # Token: short, URL-safe, with enough entropy
     my $token = time() . "-" . int(rand(1000000)) . "-" . $$;
     $template->param( SAVETOKEN => $token );
 
@@ -133,7 +133,7 @@ if ($R::saveformdata1) {
     $template->param( "SAVING", 1 );
     $template->param( "SAVE", 0 );
     $template->param( "ERROR", 0 );
-    $template->param( "SAVINGMESSAGE", "Speichervorgang wird gestartet..." );
+    $template->param( "SAVINGMESSAGE", $L{'SETTINGS.SAVING_STARTING'} );
 
     LoxBerry::Web::lbheader($L{'SETTINGS.LABEL_PLUGINTITLE'} . " V$version",
                             "https://wiki.loxberry.de/plugins/Weather4Loxone/start",
@@ -152,14 +152,14 @@ if ($R::saveformdata2) {
 
     my $dfc;
     for (my $i=1;$i<=8;$i++) {
-        if ( ${"R::dfc$i"} ) {
+        if ( $cgi->param("dfc$i") ) {
             $dfc = $dfc ? "$dfc;$i" : $i;
         }
     }
 
     my $hfc;
     for (my $i=1;$i<=48;$i++) {
-        if ( ${"R::hfc$i"} ) {
+        if ( $cgi->param("hfc$i") ) {
             $hfc = $hfc ? "$hfc;$i" : $i;
         }
     }
@@ -1013,7 +1013,7 @@ my $saving_page_started = 0;
 sub error {
     my ($err) = @_;
     if ($saving_page_started) {
-        my $msg = $error // '';
+        my $msg = $err // '';
         $msg =~ s/\\/\\\\/g; $msg =~ s/"/\\"/g; $msg =~ s/\r?\n/\\n/g;
         print qq{
           <script>
