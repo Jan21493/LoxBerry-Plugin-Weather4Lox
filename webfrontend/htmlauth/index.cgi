@@ -128,6 +128,7 @@ if ($R::saveformdata1) {
     my %params = $cgi->Vars();
     my $jsonfile = "/tmp/weather4lox_save_${token}.json";
     LoxBerry::System::write_file($jsonfile, encode_json(\%params));
+    chmod(0600, $jsonfile);
 
     $template->param( "SAVING", 1 );
     $template->param( "SAVE", 0 );
