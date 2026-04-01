@@ -1441,11 +1441,11 @@
                 if(resp.has_error) {
                     // Show error – keep the log visible, add a back-link
                     $("#savinglog").css("color", "#f44");
-                    $("#savingback").show();
                 } else {
-                    // Success – redirect back to settings
-                    window.location.href = "./index.cgi?form=" + saveForm;
+                    // Success – keep the log visible so user can read messages
+                    $("#savinglog").css("color", "#0f0");
                 }
+                $("#savingback").show();
             } else {
                 setTimeout(pollStatus, 500);
             }
