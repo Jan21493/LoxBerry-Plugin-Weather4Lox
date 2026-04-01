@@ -632,20 +632,50 @@
                                                 data: $form.serialize() + "&form=1",
                                                 cache: false
                                             }).done(function(resp) {
-                                                if (resp && resp.checks) {
-                                                    $("#save-log").text(resp.checks.join("\n"));
-                                                }
-                                                if (resp && resp.ok) {
-                                                    $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_OK>");
-                                                    $("#save-log").css("color", "#080");
-                                                } else {
-                                                    $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_ERROR>");
-                                                    $("#save-log").css("color", "#c00");
-                                                    if (resp && resp.error) {
-                                                        $("#save-log").append("\n\n" + resp.error);
+                                                // Show check messages step by step
+                                                if (resp && resp.checks && resp.checks.length) {
+                                                    var $log = $("#save-log");
+                                                    $log.text("");
+                                                    var checks = resp.checks;
+                                                    var i = 0;
+                                                    function showNext() {
+                                                        if (i < checks.length) {
+                                                            if (i > 0) $log.append("\n");
+                                                            $log.append(document.createTextNode(checks[i]));
+                                                            // Auto-scroll the log to the bottom
+                                                            $log.scrollTop($log[0].scrollHeight);
+                                                            i++;
+                                                            setTimeout(showNext, 150);
+                                                        } else {
+                                                            // All messages shown – display final status
+                                                            if (resp.ok) {
+                                                                $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_OK>");
+                                                                $log.css("color", "#080");
+                                                            } else {
+                                                                $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_ERROR>");
+                                                                $log.css("color", "#c00");
+                                                                if (resp.error) {
+                                                                    $log.append("\n\n" + resp.error);
+                                                                }
+                                                            }
+                                                            $("#save-back").show();
+                                                        }
                                                     }
+                                                    showNext();
+                                                } else {
+                                                    // No check messages – show final status immediately
+                                                    if (resp && resp.ok) {
+                                                        $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_OK>");
+                                                        $("#save-log").css("color", "#080");
+                                                    } else {
+                                                        $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_ERROR>");
+                                                        $("#save-log").css("color", "#c00");
+                                                        if (resp && resp.error) {
+                                                            $("#save-log").text(resp.error);
+                                                        }
+                                                    }
+                                                    $("#save-back").show();
                                                 }
-                                                $("#save-back").show();
                                             }).fail(function(xhr) {
                                                 $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_ERROR>");
                                                 $("#save-log").text("<TMPL_VAR SETTINGS.SAVING_ERR_START>" + "\n" + (xhr.responseText || ""));
