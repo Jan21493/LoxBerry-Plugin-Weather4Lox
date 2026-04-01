@@ -19,6 +19,7 @@ use warnings;
 
 use CGI;
 use JSON qw(encode_json decode_json);
+use Encode qw(decode_utf8);
 use IO::Handle ();
 use Scalar::Util qw(looks_like_number);
 use LWP::UserAgent;
@@ -73,7 +74,7 @@ if (defined $cgi->param('status')) {
     my ($logfile, $donefile, $errfile, $jsonfile) = log_paths($token);
 
     my $log = "";
-    $log = LoxBerry::System::read_file($logfile) if -e $logfile;
+    $log = decode_utf8(LoxBerry::System::read_file($logfile)) if -e $logfile;
 
     # Limit output size (last 10k chars)
     if (length($log) > 10000) {
@@ -84,7 +85,7 @@ if (defined $cgi->param('status')) {
     my $has_error = 0;
 
     if (-e $errfile) {
-        my $err = LoxBerry::System::read_file($errfile);
+        my $err = decode_utf8(LoxBerry::System::read_file($errfile));
         $err = substr($err, -5000) if length($err) > 5000;
         $log .= "\nERROR:\n$err\n";
         $done = 1;
