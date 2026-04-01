@@ -315,10 +315,7 @@ sub verifyApiCall {
     }
     my $decodedJson;
     my $match;
-    my $json = JSON::PP->new->relaxed;
-    $json = $json->utf8(1);
-    $json = $json->relaxed(1);
-    $json = $json->allow_barekey(1);
+    my $json = JSON::PP->new->utf8(1)->relaxed(1)->allow_barekey(1);
 
     # do regular expression match (if match is defined)
     if (defined $matchPattern && length $matchPattern) {
