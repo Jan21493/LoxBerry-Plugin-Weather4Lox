@@ -1410,8 +1410,8 @@
     <table border="0" style="max-width: 900px; width: 100%;">
       <tr>
         <td align="center">
-          <h2><TMPL_VAR SETTINGS.HINT_SAVING></h2>
-          <p><TMPL_VAR SAVINGMESSAGE></p>
+          <h2 id="savinghint"><TMPL_VAR SETTINGS.HINT_SAVING></h2>
+          <p id="savingmsg"><TMPL_VAR SAVINGMESSAGE></p>
 
           <pre id="savinglog" style="text-align:left; white-space:pre-wrap; background:#fff; color:#333; padding:10px; border-radius:6px; border:1px solid #ccc; min-height:200px;"></pre>
           <p id="savingback" style="display:none; margin-top:15px;">
@@ -1438,6 +1438,8 @@
                 $("#savinglog").text(resp.log);
             }
             if(resp && resp.done) {
+                $("#savinghint").hide();
+                $("#savingmsg").hide();
                 if(resp.has_error) {
                     // Show error – keep the log visible, add a back-link
                     $("#savinglog").css("color", "#c00");
