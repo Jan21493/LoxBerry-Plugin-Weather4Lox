@@ -152,14 +152,14 @@ if ($R::saveformdata2) {
 
     my $dfc;
     for (my $i=1;$i<=8;$i++) {
-        if ( ${"R::dfc$i"} ) {
+        if ( $cgi->param("dfc$i") ) {
             $dfc = $dfc ? "$dfc;$i" : $i;
         }
     }
 
     my $hfc;
     for (my $i=1;$i<=48;$i++) {
-        if ( ${"R::hfc$i"} ) {
+        if ( $cgi->param("hfc$i") ) {
             $hfc = $hfc ? "$hfc;$i" : $i;
         }
     }
@@ -1013,7 +1013,7 @@ my $saving_page_started = 0;
 sub error {
     my ($err) = @_;
     if ($saving_page_started) {
-        my $msg = $error // '';
+        my $msg = $err // '';
         $msg =~ s/\\/\\\\/g; $msg =~ s/"/\\"/g; $msg =~ s/\r?\n/\\n/g;
         print qq{
           <script>
