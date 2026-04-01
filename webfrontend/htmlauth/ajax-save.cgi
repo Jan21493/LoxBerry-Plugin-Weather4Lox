@@ -19,7 +19,7 @@ use warnings;
 
 use CGI;
 use JSON::PP;
-use Encode qw(decode_utf8);
+use Encode;
 use HTML::Entities qw(decode_entities);
 use Scalar::Util qw(looks_like_number);
 use LWP::UserAgent;
@@ -102,7 +102,7 @@ eval {
         my $apikey     = $R->{openweatherapikey} // '';
         my $stationid  = "lat=" . ($central_lat // '') . "&lon=" . ($central_long // '');
         my $oneCallURL = "$url/3.0/onecall?appid=$apikey&$stationid";
-        push @checks, " - Checking API call to OpenWeather One Call API with URL: $oneCallURL";
+        push @checks, " - Checking One Call API: $oneCallURL";
 
         ($response, $apicheck_error) = verifyApiCall(url => $oneCallURL, path => ['lat']);
     }
@@ -115,6 +115,9 @@ eval {
         my $apikey    = $R->{weatherflowapikey} // '';
         my $stationid = $R->{weatherflowstationid} // '';
         my $queryURL  = "$url/observations/station/$stationid?token=$apikey";
+        logline(" - Checking WeatherFlow API: $queryURL");
+
+        # Verify API call and check if response contains expected 'station_id' element
         ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['station_id']);
     }
 
@@ -126,6 +129,9 @@ eval {
         my $apikey    = $R->{visualcrossingapikey} // '';
         my $stationid = ($central_lat // '') . "," . ($central_long // '');
         my $queryURL  = "$url/$stationid?unitGroup=metric&include=current&key=$apikey&contentType=json";
+        logline(" - Checking Visual Crossing API: $queryURL");
+
+        # Verify API call and check if response contains expected 'latitude' element
         ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['latitude']);
     }
 
@@ -136,6 +142,9 @@ eval {
         my $url       = $cfg->param("WTTRIN.URL");
         my $stationid = $R->{wttrinstationid} // '';
         my $queryURL  = "$url/$stationid?format=j1";
+        logline(" - Checking WTTR.in API: $queryURL");
+
+        # Verify API call and check if response contains expected 'weatherCode' element
         ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['current_condition', 0, 'weatherCode']);
     }
 
@@ -146,6 +155,9 @@ eval {
         my $url       = $cfg->param("WETTERONLINE.URL-CURRENT");
         my $stationid = $R->{wetteronlinestationid} // '';
         my $queryURL  = "$url$stationid";
+        logline(" - Checking WetterOnline API: $queryURL");
+
+        # Verify API call and check if response contains expected 'gid' element
         ($response, $apicheck_error) = verifyApiCall(
             url   => $queryURL,
             match => qr/WO\.geo = (\{(?:[^{}"]|"(?:[^"\\]|\\.)*"|(?1))*\});/s,
@@ -158,6 +170,7 @@ eval {
         my $url       = $cfg->param("WUNDERGROUND.URL");
         my $stationid = $R->{wustationid} // '';
         my $dashURL   = "https://www.wunderground.com/dashboard/pws/$stationid";
+        logline(" - 1. Checking Wunderground Dashboard: $dashURL");
 
         my ($apikey, $wu_err) = verifyApiCall(
             url   => $dashURL,
@@ -167,8 +180,11 @@ eval {
         if ($wu_err) {
             $apicheck_error = $wu_err;
         } elsif ($apikey) {
-            push @checks, " - Found API key for Wunderground: $apikey, checking if it works with API URL...";
+            push @checks, " - Found API key for Wunderground: $apikey.";
             my $queryURL = "$url?apiKey=$apikey&stationId=$stationid&format=json&units=m";
+            logline(" - 2. Checking if it works with API URL: $queryURL");
+
+            # Verify API call and check if response contains expected 'obsTime' element
             ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['observations', 0, 'stationID']);
         } else {
             $apicheck_error = $L{'SETTINGS.SAVING_NO_DATA'};
@@ -321,8 +337,12 @@ sub verifyApiCall {
     if (defined $matchPattern && length $matchPattern) {
         push @checks, " - Searching for pattern match in response: $matchPattern";
         if ($content =~ $matchPattern) {
-            $match = decode_entities($1);
-            $match = decode_utf8($match);
+            # Fix: Quotes um Keys
+            $match = $1;
+            # fix unquoted keys in JSON-like string (used by WetterOnline)
+            $match =~ s/([{,]\s*)"?(\w+)"?\s*:/$1"$2":/g;
+            $match = decode_entities($match);
+            $match = decode('ISO-8859-1', $match) unless Encode::is_utf8($match);
             my $is_json = 0;
             eval {
                 $decodedJson = $json->decode($match);
@@ -331,6 +351,8 @@ sub verifyApiCall {
             if ($is_json) {
                 push @checks, " - Found match in response (JSON), continuing...";
             } else {
+                push @checks, " - Found match in response (no JSON), returning matched part directly.";
+                # if match is found but not JSON, return matched part directly without trying to decode JSON, used e.g. by Wunderground to retrieve API key from public dashboard page
                 return ($match, undef);
             }
         } else {
