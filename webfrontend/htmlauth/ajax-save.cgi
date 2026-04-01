@@ -18,11 +18,9 @@ use strict;
 use warnings;
 
 use CGI;
-#use JSON qw(encode_json decode_json);
 use JSON::PP;
 use Encode qw(decode_utf8);
 use HTML::Entities qw(decode_entities);
-use IO::Handle ();
 use Scalar::Util qw(looks_like_number);
 use LWP::UserAgent;
 use Config::Simple '-strict';
@@ -31,7 +29,7 @@ use LoxBerry::Web;
 
 my $cgi = CGI->new;
 
-# Load language strings (no template required for JSON API)
+# Load language strings
 my %L = LoxBerry::System::readlanguage("language.ini");
 
 sub no_cache_json_header {
@@ -50,139 +48,17 @@ sub json_out {
     exit;
 }
 
-sub valid_token {
-    my ($t) = @_;
-    return defined $t && $t =~ /^[0-9A-Za-z._-]{8,64}$/;
+# ---------- Only accept POST with form=1 ----------
+my $form = $cgi->param('form') // '';
+if ($form ne '1') {
+    json_out({ ok => 0, error => "Only form=1 supported" });
 }
 
-sub log_paths {
-    my ($token) = @_;
-    return (
-        "/tmp/weather4lox_save_${token}.log",
-        "/tmp/weather4lox_save_${token}.done",
-        "/tmp/weather4lox_save_${token}.err",
-        "/tmp/weather4lox_save_${token}.json",
-    );
-}
+# ---------- Run save synchronously ----------
+my @checks;
+my $has_error = 0;
 
-# Remove stale temp files from previous save sessions
-sub cleanup_stale_files {
-    my ($exclude_token) = @_;
-    my @stale = grep { /^\/tmp\/weather4lox_save_.*\.(log|done|err|json)$/ }
-                glob("/tmp/weather4lox_save_*");
-    for my $f (@stale) {
-        # Skip files belonging to the current save session
-        next if defined $exclude_token && $f =~ /\Q$exclude_token\E/;
-        unlink $f;
-    }
-}
-
-# ---------- STATUS ----------
-if (defined $cgi->param('status')) {
-    my $token = $cgi->param('status');
-
-    if (!valid_token($token)) {
-        json_out({ done => 1, log => "Invalid token\n" });
-    }
-
-    my ($logfile, $donefile, $errfile, $jsonfile) = log_paths($token);
-
-    my $log = "";
-    $log = decode_utf8(LoxBerry::System::read_file($logfile)) if -e $logfile;
-
-    # Limit output size (last 10k chars)
-    if (length($log) > 10000) {
-        $log = substr($log, -10000);
-    }
-
-    my $done = (-e $donefile) ? 1 : 0;
-    my $has_error = 0;
-
-    if (-e $errfile) {
-        my $err = decode_utf8(LoxBerry::System::read_file($errfile));
-        $err = substr($err, -5000) if length($err) > 5000;
-        $log .= "\nERROR:\n$err\n";
-        $done = 1;
-        $has_error = 1;
-    }
-
-    json_out({ done => $done, log => $log, has_error => $has_error });
-}
-
-# ---------- CLEANUP ----------
-if (defined $cgi->param('cleanup')) {
-    my $token = $cgi->param('cleanup');
-
-    if (!valid_token($token)) {
-        json_out({ ok => 0, error => "Invalid token" });
-    }
-
-    my ($logfile, $donefile, $errfile, $jsonfile) = log_paths($token);
-    unlink $logfile, $donefile, $errfile, $jsonfile;
-    json_out({ ok => 1 });
-}
-
-# ---------- START ----------
-if (defined $cgi->param('start')) {
-    my $token = $cgi->param('token') // '';
-    my $form  = $cgi->param('form')  // '';
-
-    if (!valid_token($token)) {
-        json_out({ ok => 0, error => "Invalid token" });
-    }
-    if ($form ne '1') {
-        json_out({ ok => 0, error => "Only form=1 supported" });
-    }
-
-    # Remove any leftover temp files from previous save sessions
-    cleanup_stale_files($token);
-
-    my ($logfile, $donefile, $errfile, $jsonfile) = log_paths($token);
-    unlink $logfile; unlink $donefile; unlink $errfile;
-
-    # Params must have been saved as JSON by index.cgi
-    if (!-e $jsonfile) {
-        json_out({ ok => 0, error => "Missing params file $jsonfile (index.cgi must create it)" });
-    }
-
-    my $pid = fork();
-    if (!defined $pid) {
-        json_out({ ok => 0, error => "fork failed" });
-    }
-
-    if ($pid == 0) {
-        # child / worker
-        eval {
-        run_worker($token);
-        1;
-        } or do {
-        my $e = $@ || "unknown error";
-        LoxBerry::System::write_file($errfile, $e);
-        LoxBerry::System::write_file($donefile, "1\n");
-        };
-        exit 0;
-    }
-
-    # parent returns immediately
-    json_out({ ok => 1 });
-}
-
-json_out({ ok => 0, error => "Invalid request" });
-
-# ---------------- WORKER ----------------
-sub run_worker {
-    my ($token) = @_;
-
-    my ($logfile, $donefile, $errfile, $jsonfile) = log_paths($token);
-
-    # load original POST params saved by index.cgi
-    my $raw = LoxBerry::System::read_file($jsonfile);
-    my $R = decode_json($raw);
-
-    # Remove the JSON params file now that it has been read
-    unlink $jsonfile;
-
-    # Load language strings (available via LoxBerry::System in the forked worker)
+eval {
     my $cfg = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 
     # Ensure URLs exist
@@ -198,18 +74,13 @@ sub run_worker {
     $cfg->param("OPENMETEOAIRQUALITY.URL", "https://air-quality-api.open-meteo.com/v1/air-quality");
     $cfg->save();
 
-    my $error;
+    push @checks, $L{'SETTINGS.SAVING_SETTINGS'};
 
-    sub logline {
-        my ($m) = @_;
-        my $old = (-e $logfile) ? LoxBerry::System::read_file($logfile) : "";
-        $old .= $m . "\n";
-        # prevent runaway growth
-        $old = substr($old, -200000) if length($old) > 200000;
-        LoxBerry::System::write_file($logfile, $old);
+    # Read form parameters directly from POST
+    my $R = {};
+    for my $name ($cgi->param()) {
+        $R->{$name} = $cgi->param($name);
     }
-
-    logline($L{'SETTINGS.SAVING_SETTINGS'});
 
     # normalize coordinates
     for my $k (qw(wucoordlat wucoordlong coordlat coordlong)) {
@@ -223,24 +94,23 @@ sub run_worker {
     my $response;
     my $apicheck_error;
 
-    if ( ( ($R->{weatherservice}    // '') eq "openweather") || 
-         ( ($R->{weatherservicedfc} // '') eq "openweather") || 
+    if ( ( ($R->{weatherservice}    // '') eq "openweather") ||
+         ( ($R->{weatherservicedfc} // '') eq "openweather") ||
          ( ($R->{weatherservicehfc} // '') eq "openweather") ) {
-        logline("\n" . $L{'SETTINGS.SAVING_CHECK_OPENWEATHER'});
+        push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_OPENWEATHER'};
         my $url        = $cfg->param("OPENWEATHER.URL");
         my $apikey     = $R->{openweatherapikey} // '';
         my $stationid  = "lat=" . ($central_lat // '') . "&lon=" . ($central_long // '');
         my $oneCallURL = "$url/3.0/onecall?appid=$apikey&$stationid";
-        logline(" - Checking API call to OpenWeather One Call API with URL: $oneCallURL");
+        push @checks, " - Checking API call to OpenWeather One Call API with URL: $oneCallURL";
 
-        # Verify API call and check if response contains expected 'lat' element
         ($response, $apicheck_error) = verifyApiCall(url => $oneCallURL, path => ['lat']);
     }
 
-    if (!$apicheck_error && ( ( ($R->{weatherservice}    // '') eq "weatherflow") || 
-                              ( ($R->{weatherservicedfc} // '') eq "weatherflow") || 
+    if (!$apicheck_error && ( ( ($R->{weatherservice}    // '') eq "weatherflow") ||
+                              ( ($R->{weatherservicedfc} // '') eq "weatherflow") ||
                               ( ($R->{weatherservicehfc} // '') eq "weatherflow") ) ) {
-        logline("\n" . $L{'SETTINGS.SAVING_CHECK_WEATHERFLOW'});
+        push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_WEATHERFLOW'};
         my $url       = $cfg->param("WEATHERFLOW.URL");
         my $apikey    = $R->{weatherflowapikey} // '';
         my $stationid = $R->{weatherflowstationid} // '';
@@ -248,10 +118,10 @@ sub run_worker {
         ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['station_id']);
     }
 
-    if (!$apicheck_error && ( ( ($R->{weatherservice}    // '') eq "visualcrossing") || 
-                              ( ($R->{weatherservicedfc} // '') eq "visualcrossing") || 
+    if (!$apicheck_error && ( ( ($R->{weatherservice}    // '') eq "visualcrossing") ||
+                              ( ($R->{weatherservicedfc} // '') eq "visualcrossing") ||
                               ( ($R->{weatherservicehfc} // '') eq "visualcrossing") ) ) {
-        logline("\n" . $L{'SETTINGS.SAVING_CHECK_VISUALCROSSING'});
+        push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_VISUALCROSSING'};
         my $url       = $cfg->param("VISUALCROSSING.URL");
         my $apikey    = $R->{visualcrossingapikey} // '';
         my $stationid = ($central_lat // '') . "," . ($central_long // '');
@@ -259,45 +129,45 @@ sub run_worker {
         ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['latitude']);
     }
 
-    if (!$apicheck_error && ( ( ($R->{weatherservice}    // '') eq "wttrin") || 
-                              ( ($R->{weatherservicedfc} // '') eq "wttrin") || 
+    if (!$apicheck_error && ( ( ($R->{weatherservice}    // '') eq "wttrin") ||
+                              ( ($R->{weatherservicedfc} // '') eq "wttrin") ||
                               ( ($R->{weatherservicehfc} // '') eq "wttrin") ) ) {
-        logline("\n" . $L{'SETTINGS.SAVING_CHECK_WTTRIN'});
+        push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_WTTRIN'};
         my $url       = $cfg->param("WTTRIN.URL");
         my $stationid = $R->{wttrinstationid} // '';
         my $queryURL  = "$url/$stationid?format=j1";
         ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['current_condition', 0, 'weatherCode']);
     }
 
-    if (!$apicheck_error && ( ( ($R->{weatherservice}    // '') eq "wetteronline") || 
-                              ( ($R->{weatherservicedfc} // '') eq "wetteronline") || 
+    if (!$apicheck_error && ( ( ($R->{weatherservice}    // '') eq "wetteronline") ||
+                              ( ($R->{weatherservicedfc} // '') eq "wetteronline") ||
                               ( ($R->{weatherservicehfc} // '') eq "wetteronline") ) ) {
-        logline("\n" . $L{'SETTINGS.SAVING_CHECK_WETTERONLINE'});
+        push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_WETTERONLINE'};
         my $url       = $cfg->param("WETTERONLINE.URL-CURRENT");
         my $stationid = $R->{wetteronlinestationid} // '';
         my $queryURL  = "$url$stationid";
         ($response, $apicheck_error) = verifyApiCall(
-        url   => $queryURL,
-        match => qr/WO\.geo = (\{(?:[^{}"]|"(?:[^"\\]|\\.)*"|(?1))*\});/s,
-        path => ['gid']
+            url   => $queryURL,
+            match => qr/WO\.geo = (\{(?:[^{}"]|"(?:[^"\\]|\\.)*"|(?1))*\});/s,
+            path => ['gid']
         );
     }
 
     if (!$apicheck_error && ($R->{wugrabber} // '') ne '' && ($R->{wugrabber} // '') ne '0') {
-        logline("\n" . $L{'SETTINGS.SAVING_CHECK_WUNDERGROUND'});
+        push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_WUNDERGROUND'};
         my $url       = $cfg->param("WUNDERGROUND.URL");
         my $stationid = $R->{wustationid} // '';
         my $dashURL   = "https://www.wunderground.com/dashboard/pws/$stationid";
 
         my ($apikey, $wu_err) = verifyApiCall(
-        url   => $dashURL,
-        match => qr/.*apiKey=([0-9a-z]*)\&.*/s
+            url   => $dashURL,
+            match => qr/.*apiKey=([0-9a-z]*)\&.*/s
         );
 
         if ($wu_err) {
             $apicheck_error = $wu_err;
         } elsif ($apikey) {
-            logline(" - Found API key for Wunderground: $apikey, checking if it works with API URL...");
+            push @checks, " - Found API key for Wunderground: $apikey, checking if it works with API URL...";
             my $queryURL = "$url?apiKey=$apikey&stationId=$stationid&format=json&units=m";
             ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['observations', 0, 'stationID']);
         } else {
@@ -306,10 +176,12 @@ sub run_worker {
     }
 
     if ($apicheck_error) {
-        die $apicheck_error;
+        $has_error = 1;
+        push @checks, "\nERROR: $apicheck_error";
+        json_out({ ok => 0, checks => \@checks, error => $apicheck_error });
     }
 
-    logline("\n" . $L{'SETTINGS.SAVING_WRITE_CONFIG'});
+    push @checks, "\n" . $L{'SETTINGS.SAVING_WRITE_CONFIG'};
 
     # Write configuration file(s)
     $cfg->param("WUNDERGROUND.APIKEY", $R->{wuapikey} // "");
@@ -376,7 +248,7 @@ sub run_worker {
 
     $cfg->save();
 
-    logline($L{'SETTINGS.SAVING_POLLEN'});
+    push @checks, $L{'SETTINGS.SAVING_POLLEN'};
 
     $cfg->param("POLLEN.ALDER",   ( $R->{pollen_alder}   // 0 ) + 0);
     $cfg->param("POLLEN.BIRCH",   ( $R->{pollen_birch}   // 0 ) + 0);
@@ -386,7 +258,7 @@ sub run_worker {
     $cfg->param("POLLEN.RAGWEED", ( $R->{pollen_ragweed} // 0 ) + 0);
     $cfg->save();
 
-    logline($L{'SETTINGS.SAVING_CRONJOB'});
+    push @checks, $L{'SETTINGS.SAVING_CRONJOB'};
 
     if (($R->{getdata} // "") eq "1") {
         system("ln -sf $lbpbindir/cronjob.pl $lbhomedir/system/cron/cron.01min/$lbpplugindir");
@@ -394,19 +266,26 @@ sub run_worker {
         unlink("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
     }
 
-    logline($L{'SETTINGS.SAVING_DONE'});
-    LoxBerry::System::write_file($donefile, "1\n");
-}
+    push @checks, $L{'SETTINGS.SAVING_DONE'};
+    1;
+} or do {
+    my $e = $@ || "unknown error";
+    $has_error = 1;
+    push @checks, "\nERROR: $e";
+    json_out({ ok => 0, checks => \@checks, error => "$e" });
+};
+
+json_out({ ok => 1, checks => \@checks });
 
 ##########################################################################
 # Verify API call for different weather services
 # Parameters:
 # - url: API URL to call
-# - match: regular expression to extract specific part of response (e.g. API key, station ID, geo coordinates, etc.) or '' to skip match
-# - path: path elements (tree and param to retrieve) from API response, used to check if response contains this element
+# - match: regular expression to extract specific part of response
+# - path: path elements from API response, used to check if response contains this element
 # Returns:
-# - decoded JSON response from API call, matched part of response (if match is defined), or value of path element (if path is defined and match is not defined)
-# - error message: if API call fails, match is defined but not found in response, or if decoded JSON does not contain expected path element
+# - decoded JSON response, matched part, or value of path element
+# - error message if API call fails
 
 sub verifyApiCall {
     my (%p)          = @_;
@@ -424,7 +303,7 @@ sub verifyApiCall {
     # Check status of request
     my $urlstatus = $res->status_line;
     my $urlstatuscode = substr($urlstatus, 0, 3);
-    logline(" - HTTP status: $urlstatus");
+    push @checks, " - HTTP status: $urlstatus";
 
     # return error if API call fails
     if ($urlstatuscode eq "401") {
@@ -441,9 +320,9 @@ sub verifyApiCall {
     $json = $json->relaxed(1);
     $json = $json->allow_barekey(1);
 
-    # do regular expression match (if match is defined) and return matched part only, used e.g. by WetterOnline to retrieve API keys, station ID and geo coordinates
+    # do regular expression match (if match is defined)
     if (defined $matchPattern && length $matchPattern) {
-        logline(" - Searching for pattern match in response: $matchPattern");
+        push @checks, " - Searching for pattern match in response: $matchPattern";
         if ($content =~ $matchPattern) {
             $match = decode_entities($1);
             $match = decode_utf8($match);
@@ -453,9 +332,8 @@ sub verifyApiCall {
                 $is_json = 1;
             };
             if ($is_json) {
-                logline(" - Found match in response (JSON), continuing...");
+                push @checks, " - Found match in response (JSON), continuing...";
             } else {
-                # if match is found but not JSON, return matched part directly without trying to decode JSON, used e.g. by Wunderground to retrieve API key from public dashboard page
                 return ($match, undef);
             }
         } else {
@@ -467,28 +345,28 @@ sub verifyApiCall {
 
     # if path is not defined, return whole decoded JSON response
     if (@path == 0) {
-        logline(" - Returning JSON response, done!");
+        push @checks, " - Returning JSON response, done!";
         return ($decodedJson, undef);
     }
 
-    # check if decoded JSON contains expected path element and return its value
+    # check if decoded JSON contains expected path element
     my $cur = $decodedJson;
-    logline(" - Looking for path element(s) in JSON response: " . join(" -> ", @path));
+    push @checks, " - Looking for path element(s) in JSON response: " . join(" -> ", @path);
     for my $p (@path) {
         return (undef, "Path element(s) NOT found: Missing expected path element") unless defined $cur;
 
         if (ref $cur eq 'ARRAY') {
-        return (undef, "Path element(s) NOT found: Invalid array index") unless defined $p && looks_like_number($p);
-        my $idx = int($p);
-        return (undef, "Path element(s) NOT found: Array index out of bounds") if $idx < 0 || $idx > $#$cur;
-        $cur = $cur->[$idx];
+            return (undef, "Path element(s) NOT found: Invalid array index") unless defined $p && looks_like_number($p);
+            my $idx = int($p);
+            return (undef, "Path element(s) NOT found: Array index out of bounds") if $idx < 0 || $idx > $#$cur;
+            $cur = $cur->[$idx];
         } elsif (ref $cur eq 'HASH') {
-        return (undef, "Path element(s) NOT found: Missing key $p") unless exists $cur->{$p};
-        $cur = $cur->{$p};
+            return (undef, "Path element(s) NOT found: Missing key $p") unless exists $cur->{$p};
+            $cur = $cur->{$p};
         } else {
-        return (undef, "Path element(s) NOT found: Unexpected JSON structure");
+            return (undef, "Path element(s) NOT found: Unexpected JSON structure");
         }
     }
-    logline(" - Found value for path element(s): $cur, done with this check!");
+    push @checks, " - Found value for path element(s): $cur, done with this check!";
     return ($cur, undef);
 }

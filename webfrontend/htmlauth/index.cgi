@@ -22,7 +22,7 @@ use Config::Simple '-strict';
 use CGI::Carp qw(fatalsToBrowser);
 use CGI;
 use LWP::UserAgent;
-use JSON qw( decode_json encode_json );
+use JSON qw( decode_json );
 use LoxBerry::System;
 use LoxBerry::Web;
 
@@ -113,34 +113,8 @@ my %L = LoxBerry::Web::readlanguage($template, "language.ini");
 ##########################################################################
 # Save Form 1 (Server Settings)
 ##########################################################################
-if ($R::saveformdata1) {
-
-    # Render only the SAVING page and start the save process in the browser via AJAX.
-    $template->param( FORMNO => '1' );
-
-    # Token: short, URL-safe, with enough entropy
-    my $token = time() . "-" . int(rand(1000000)) . "-" . $$;
-    $template->param( SAVETOKEN => $token );
-
-    # Serialize all POST parameters to a JSON file so that ajax-save.cgi
-    # can pick them up later (the SAVING page no longer has the form data).
-    my %params = $cgi->Vars();
-    my $jsonfile = "/tmp/weather4lox_save_${token}.json";
-    LoxBerry::System::write_file($jsonfile, encode_json(\%params));
-    chmod(0600, $jsonfile);
-
-    $template->param( "SAVING", 1 );
-    $template->param( "SAVE", 0 );
-    $template->param( "ERROR", 0 );
-    $template->param( "SAVINGMESSAGE", $L{'SETTINGS.SAVING_STARTING'} );
-
-    LoxBerry::Web::lbheader($L{'SETTINGS.LABEL_PLUGINTITLE'} . " V$version",
-                            "https://wiki.loxberry.de/plugins/Weather4Loxone/start",
-                            "help.html");
-    print $template->output();
-    LoxBerry::Web::lbfooter();
-    exit;
-}
+# Form 1 save is handled entirely client-side via AJAX POST to ajax-save.cgi.
+# No server-side rendering needed for Form 1 save.
 
 ##########################################################################
 # Save Form 2 (Miniserver)
