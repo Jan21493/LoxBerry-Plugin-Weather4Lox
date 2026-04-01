@@ -78,15 +78,17 @@ if (defined $cgi->param('status')) {
     }
 
     my $done = (-e $donefile) ? 1 : 0;
+    my $has_error = 0;
 
     if (-e $errfile) {
         my $err = LoxBerry::System::read_file($errfile);
         $err = substr($err, -5000) if length($err) > 5000;
         $log .= "\nERROR:\n$err\n";
         $done = 1;
+        $has_error = 1;
     }
 
-    json_out({ done => $done, log => $log });
+    json_out({ done => $done, log => $log, has_error => $has_error });
 }
 
 # ---------- START ----------

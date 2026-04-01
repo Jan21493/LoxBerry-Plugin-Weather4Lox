@@ -22,7 +22,7 @@ use Config::Simple '-strict';
 use CGI::Carp qw(fatalsToBrowser);
 use CGI;
 use LWP::UserAgent;
-use JSON qw( decode_json );
+use JSON qw( decode_json encode_json );
 use LoxBerry::System;
 use LoxBerry::Web;
 
@@ -122,6 +122,12 @@ if ($R::saveformdata1) {
     # Token: kurz, URL-safe, mit genug Entropie
     my $token = time() . "-" . int(rand(1000000)) . "-" . $$;
     $template->param( SAVETOKEN => $token );
+
+    # Serialize all POST parameters to a JSON file so that ajax-save.cgi
+    # can pick them up later (the SAVING page no longer has the form data).
+    my %params = $cgi->Vars();
+    my $jsonfile = "/tmp/weather4lox_save_${token}.json";
+    LoxBerry::System::write_file($jsonfile, encode_json(\%params));
 
     $template->param( "SAVING", 1 );
     $template->param( "SAVE", 0 );
