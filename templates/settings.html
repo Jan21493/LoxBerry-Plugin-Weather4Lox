@@ -1414,6 +1414,9 @@
           <p><TMPL_VAR SAVINGMESSAGE></p>
 
           <pre id="savinglog" style="text-align:left; white-space:pre-wrap; background:#111; color:#0f0; padding:10px; border-radius:6px; min-height:200px;"></pre>
+          <p id="savingback" style="display:none; margin-top:15px;">
+            <a data-role="button" data-inline="true" data-mini="true" data-icon="back" href="./index.cgi?form=<TMPL_VAR FORMNO>"><TMPL_VAR SETTINGS.BUTTON_OK></a>
+          </p>
         </td>
       </tr>
     </table>
@@ -1432,13 +1435,19 @@
             cache: false
         }).done(function(resp){
             if(resp && resp.log !== undefined) {
-            $("#savinglog").text(resp.log);
+                $("#savinglog").text(resp.log);
             }
             if(resp && resp.done) {
-            // redirect back to settings (or show OK page)
-            window.location.href = "./index.cgi?form=" + saveForm;
+                if(resp.has_error) {
+                    // Show error – keep the log visible, add a back-link
+                    $("#savinglog").css("color", "#f44");
+                    $("#savingback").show();
+                } else {
+                    // Success – redirect back to settings
+                    window.location.href = "./index.cgi?form=" + saveForm;
+                }
             } else {
-            setTimeout(pollStatus, 500);
+                setTimeout(pollStatus, 500);
             }
         }).fail(function(){
             setTimeout(pollStatus, 1000);
@@ -1446,24 +1455,24 @@
     }
 
     function startSave() {
-        // Wichtig: Wir müssen die ursprünglichen Form-Daten mitsenden.
-        // Die sind auf der SAVING-Seite nicht mehr als Formular vorhanden,
-        // daher: am besten beim Klick auf "Speichern" per JS vorher abfangen.
-        //
-        // Minimaler Workaround: wir senden hier nur Token/Form.
-        // => Deshalb muss index.cgi (oben) die SAVING-Seite rendern, während die Form-POST noch "da ist".
-        // Für robust: wir nehmen die POST-Parameter in ajax-save.cgi NICHT aus dem DOM,
-        // sondern aus dem Start-POST selbst (die jetzige Seite wurde ja durch POST erzeugt).
         $.ajax({
             url: "./ajax-save.cgi",
             type: "POST",
             dataType: "json",
             data: { start: 1, form: saveForm, token: saveToken },
             cache: false
-        }).done(function(){
-            pollStatus();
+        }).done(function(resp){
+            if(resp && resp.ok) {
+                pollStatus();
+            } else {
+                $("#savinglog").text("Konnte Speichervorgang nicht starten.\n" + (resp && resp.error ? resp.error : ""));
+                $("#savinglog").css("color", "#f44");
+                $("#savingback").show();
+            }
         }).fail(function(xhr){
             $("#savinglog").text("Konnte Speichervorgang nicht starten.\n" + (xhr.responseText||""));
+            $("#savinglog").css("color", "#f44");
+            $("#savingback").show();
         });
     }
 
