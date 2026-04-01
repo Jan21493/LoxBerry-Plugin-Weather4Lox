@@ -1464,7 +1464,9 @@
             data: { start: 1, form: saveForm, token: saveToken },
             cache: false
         }).done(function(resp){
-            if(!resp || !resp.ok) {
+            if(resp && resp.ok) {
+                // polling is already running via pollStatus()
+            } else {
                 $("#savinglog").text("<TMPL_VAR SETTINGS.SAVING_ERR_START>" + "\n" + (resp && resp.error ? resp.error : ""));
                 $("#savinglog").css("color", "#c00");
                 $("#savingback").show();
