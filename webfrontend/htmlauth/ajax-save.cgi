@@ -98,9 +98,9 @@ eval {
     my $response;
     my $apicheck_error;
 
-    if ( ( ($R->{weatherservice}    // '') eq "openweather") ||
-         ( ($R->{weatherservicedfc} // '') eq "openweather") ||
-         ( ($R->{weatherservicehfc} // '') eq "openweather") ) {
+    if ( ( ($R->{getdata})         && ($R->{weatherservice}    // '') eq "openweather") ||
+         ( ($R->{usealternatedfc}) && ($R->{weatherservicedfc} // '') eq "openweather") ||
+         ( ($R->{usealternatehfc}) && ($R->{weatherservicehfc} // '') eq "openweather") ) {
         push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_OPENWEATHER'};
         my $url        = $cfg->param("OPENWEATHER.URL");
         my $apikey     = $R->{openweatherapikey} // '';
@@ -108,12 +108,13 @@ eval {
         my $oneCallURL = "$url/3.0/onecall?appid=$apikey&$stationid";
         push @checks, " - Checking One Call API: $oneCallURL";
 
+        # Verify API call and check if response contains expected 'lat' element
         ($response, $apicheck_error) = verifyApiCall(url => $oneCallURL, path => ['lat']);
     }
 
-    if (!$apicheck_error && ( ( ($R->{weatherservice}    // '') eq "weatherflow") ||
-                              ( ($R->{weatherservicedfc} // '') eq "weatherflow") ||
-                              ( ($R->{weatherservicehfc} // '') eq "weatherflow") ) ) {
+    if (!$apicheck_error && ( ( ($R->{getdata})         && ($R->{weatherservice}    // '') eq "weatherflow") ||
+                              ( ($R->{usealternatedfc}) && ($R->{weatherservicedfc} // '') eq "weatherflow") ||
+                              ( ($R->{usealternatehfc}) && ($R->{weatherservicehfc} // '') eq "weatherflow") ) ) {
         push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_WEATHERFLOW'};
         my $url       = $cfg->param("WEATHERFLOW.URL");
         my $apikey    = $R->{weatherflowapikey} // '';
@@ -125,9 +126,9 @@ eval {
         ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['station_id']);
     }
 
-    if (!$apicheck_error && ( ( ($R->{weatherservice}    // '') eq "visualcrossing") ||
-                              ( ($R->{weatherservicedfc} // '') eq "visualcrossing") ||
-                              ( ($R->{weatherservicehfc} // '') eq "visualcrossing") ) ) {
+    if (!$apicheck_error && ( ( ($R->{getdata})         && ($R->{weatherservice}    // '') eq "visualcrossing") ||
+                              ( ($R->{usealternatedfc}) && ($R->{weatherservicedfc} // '') eq "visualcrossing") ||
+                              ( ($R->{usealternatehfc}) && ($R->{weatherservicehfc} // '') eq "visualcrossing") ) ) {
         push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_VISUALCROSSING'};
         my $url       = $cfg->param("VISUALCROSSING.URL");
         my $apikey    = $R->{visualcrossingapikey} // '';
@@ -139,9 +140,9 @@ eval {
         ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['latitude']);
     }
 
-    if (!$apicheck_error && ( ( ($R->{weatherservice}    // '') eq "wttrin") ||
-                              ( ($R->{weatherservicedfc} // '') eq "wttrin") ||
-                              ( ($R->{weatherservicehfc} // '') eq "wttrin") ) ) {
+    if (!$apicheck_error && ( ( ($R->{getdata})         && ($R->{weatherservice}    // '') eq "wttrin") ||
+                              ( ($R->{usealternatedfc}) && ($R->{weatherservicedfc} // '') eq "wttrin") ||
+                              ( ($R->{usealternatehfc}) && ($R->{weatherservicehfc} // '') eq "wttrin") ) ) {
         push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_WTTRIN'};
         my $url       = $cfg->param("WTTRIN.URL");
         my $stationid = $R->{wttrinstationid} // '';
@@ -152,9 +153,9 @@ eval {
         ($response, $apicheck_error) = verifyApiCall(url => $queryURL, path => ['current_condition', 0, 'weatherCode']);
     }
 
-    if (!$apicheck_error && ( ( ($R->{weatherservice}    // '') eq "wetteronline") ||
-                              ( ($R->{weatherservicedfc} // '') eq "wetteronline") ||
-                              ( ($R->{weatherservicehfc} // '') eq "wetteronline") ) ) {
+    if (!$apicheck_error && ( ( ($R->{getdata})         && ($R->{weatherservice}    // '') eq "wetteronline") ||
+                              ( ($R->{usealternatedfc}) && ($R->{weatherservicedfc} // '') eq "wetteronline") ||
+                              ( ($R->{usealternatehfc}) && ($R->{weatherservicehfc} // '') eq "wetteronline") ) ) {
         push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_WETTERONLINE'};
         my $url       = $cfg->param("WETTERONLINE.URL-CURRENT");
         my $stationid = $R->{wetteronlinestationid} // '';
@@ -318,7 +319,7 @@ sub verifyApiCall {
     # Perform the API call
     my $ua  = LWP::UserAgent->new( agent => $userAgent );
     my $res = $ua->get($url);
-    my $content = $res->decoded_content();
+    my $content = $res->decoded_content(charset => 'utf-8');
 
     # Check status of request
     my $urlstatus = $res->status_line;
@@ -335,18 +336,16 @@ sub verifyApiCall {
     }
     my $decodedJson;
     my $match;
-    my $json = JSON::PP->new->utf8(1)->relaxed(1)->allow_barekey(1);
+    my $json = JSON::PP->new->relaxed->allow_barekey(1);
 
     # do regular expression match (if match is defined)
     if (defined $matchPattern && length $matchPattern) {
         push @checks, " - Searching for pattern match in response: $matchPattern";
         if ($content =~ $matchPattern) {
-            # Fix: Quotes um Keys
             $match = $1;
             # fix unquoted keys in JSON-like string (used by WetterOnline)
             $match =~ s/([{,]\s*)"?(\w+)"?\s*:/$1"$2":/g;
-            $match = decode_entities($match);
-            $match = decode('ISO-8859-1', $match) unless Encode::is_utf8($match);
+
             my $is_json = 0;
             eval {
                 $decodedJson = $json->decode($match);

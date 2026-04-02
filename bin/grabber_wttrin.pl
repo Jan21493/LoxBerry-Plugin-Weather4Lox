@@ -87,54 +87,54 @@ LOGDEB "This is $0 Version $version";
 # Mapping table for conversion of WTTR.in weather codes to Loxone weather Picto-Codes and short names for weather symbols
 # Weather codes are based on https://www.worldweatheronline.com/weather-api/api/docs/weather-icons.aspx
 my %wttr_to_lox = (
-    113 => [ 1,  'sunny' ],         # description: Clear/Sunny
-    116 => [ 2,  'partlycloudy' ],  # description: Partly Cloudy
-    119 => [ 3,  'cloudy' ],        # description: Cloudy
-    122 => [ 5,  'overcast' ],      # description: Overcast
-    143 => [ 6,  'fog' ],           # description: Mist
-    176 => [ 11, 'rain' ],          # description: Patchy rain nearby
-    179 => [ 23, 'snow' ],          # description: Patchy snow nearby
-    182 => [ 26, 'sleet' ],         # description: Patchy sleet nearby
-    185 => [ 14, 'sleet' ],         # description: Patchy freezing drizzle nearby
-    200 => [ 18, 'tstorms' ],       # description: Thundery outbreaks in nearby
-    227 => [ 21, 'snow' ],          # description: Blowing snow
-    230 => [ 22, 'snow' ],          # description: Blizzard
-    248 => [ 6,  'fog' ],           # description: Fog
-    260 => [ 6,  'fog' ],           # description: Freezing fog
-    263 => [ 13, 'chancerain' ],    # description: Patchy light drizzle
-    266 => [ 13, 'chancerain' ],    # description: Light drizzle
-    281 => [ 14, 'sleet' ],         # description: Freezing drizzle
-    284 => [ 15, 'sleet' ],         # description: Heavy freezing drizzle
-    293 => [ 16, 'chancerain' ],    # description: Patchy light rain
-    296 => [ 10, 'rain' ],          # description: Light rain
-    299 => [ 11, 'rain' ],          # description: Moderate rain at times
-    302 => [ 11, 'rain' ],          # description: Moderate rain
-    305 => [ 12, 'rain' ],          # description: Heavy rain at times
-    308 => [ 12, 'rain' ],          # description: Heavy rain
-    311 => [ 14, 'sleet' ],         # description: Light freezing rain
-    314 => [ 15, 'sleet' ],         # description: Moderate or Heavy freezing rain
-    317 => [ 25, 'sleet' ],         # description: Light sleet
-    320 => [ 26, 'sleet' ],         # description: Moderate or heavy sleet
-    323 => [ 23, 'snow' ],          # description: Patchy light snow
-    326 => [ 20, 'snow' ],          # description: Light snow
-    329 => [ 21, 'snow' ],          # description: Patchy moderate snow
-    332 => [ 21, 'snow' ],          # description: Moderate snow
-    335 => [ 24, 'snow' ],          # description: Patchy heavy snow
-    338 => [ 22, 'snow' ],          # description: Heavy snow
-    350 => [ 26, 'sleet' ],         # description: Ice pellets
-    353 => [ 16, 'rain' ],          # description: Light rain shower
-    356 => [ 17, 'rain' ],          # description: Moderate or heavy rain shower
-    359 => [ 17, 'rain' ],          # description: Torrential rain shower
-    362 => [ 26, 'sleet' ],         # description: Light sleet showers
-    365 => [ 26, 'sleet' ],         # description: Moderate or heavy sleet showers
-    368 => [ 23, 'snow' ],          # description: Light snow showers
-    371 => [ 24, 'snow' ],          # description: Moderate or heavy snow showers
-    374 => [ 28, 'sleet' ],         # description: Light showers of ice pellets
-    377 => [ 29, 'sleet' ],         # description: Moderate or heavy showers of ice pellets
-    386 => [ 18, 'tstorms' ],       # description: Patchy light rain in area with thunder
-    389 => [ 19, 'tstorms' ],       # description: Moderate or heavy rain in area with thunder
-    392 => [ 18, 'snow' ],          # description: Patchy light snow in area with thunder
-    395 => [ 19, 'snow' ],          # description: Moderate or heavy snow in area with thunder
+    113 => [ 1,  'clear' ],                       # description: Clear/Sunny
+    116 => [ 2,  'partly_cloudy' ],               # description: Partly Cloudy
+    119 => [ 3,  'cloudy' ],                      # description: Cloudy
+    122 => [ 5,  'overcast' ],                    # description: Overcast
+    143 => [ 6,  'mist' ],                        # description: Mist
+    176 => [ 11, 'cloudy_shower_1' ],             # description: Patchy rain nearby
+    179 => [ 23, 'cloudy_snow_1' ],               # description: Patchy snow nearby
+    182 => [ 26, 'cloudy_sleet_1' ],              # description: Patchy sleet nearby
+    185 => [ 14, 'cloudy_freezingrain_1' ],       # description: Patchy freezing drizzle nearby
+    200 => [ 18, 'cloudy_thunderstorm_1' ],       # description: Thundery outbreaks in nearby
+    227 => [ 21, 'cloudy_snow_2' ],               # description: Blowing snow
+    230 => [ 22, 'overcast_snowthunderstorm_3' ], # description: Blizzard
+    248 => [ 6,  'fog' ],                         # description: Fog
+    260 => [ 6,  'cloudy_freezingrain_1' ],       # description: Freezing fog
+    263 => [ 13, 'cloudy_showers_1' ],            # description: Patchy light drizzle
+    266 => [ 13, 'cloudy_rain_1' ],               # description: Light drizzle
+    281 => [ 14, 'overcast_freezingrain_2' ],     # description: Freezing drizzle
+    284 => [ 15, 'overcast_freezingrain_3' ],     # description: Heavy freezing drizzle
+    293 => [ 16, 'cloudy_showers_1' ],            # description: Patchy light rain
+    296 => [ 10, 'overcast_rain_1' ],             # description: Light rain
+    299 => [ 11, 'overcast_showers_2' ],          # description: Moderate rain at times
+    302 => [ 11, 'overcast_rain_2' ],             # description: Moderate rain
+    305 => [ 12, 'overcast_showers_3' ],          # description: Heavy rain at times
+    308 => [ 12, 'overcast_rain_3' ],             # description: Heavy rain
+    311 => [ 14, 'overcast_freezingrain_1' ],     # description: Light freezing rain
+    314 => [ 15, 'overcast_freezingrain_2' ],     # description: Moderate or Heavy freezing rain
+    317 => [ 25, 'overcast_sleet_1' ],            # description: Light sleet
+    320 => [ 26, 'overcast_sleet_2' ],            # description: Moderate or heavy sleet
+    323 => [ 23, 'cloudy_snow_1' ],               # description: Patchy light snow
+    326 => [ 20, 'overcast_snow_1' ],             # description: Light snow
+    329 => [ 21, 'cloudy_snow_2' ],               # description: Patchy moderate snow
+    332 => [ 21, 'overcast_snow_2' ],             # description: Moderate snow
+    335 => [ 24, 'overcast_snow_3' ],             # description: Patchy heavy snow
+    338 => [ 22, 'overcast_snow_3' ],             # description: Heavy snow
+    350 => [ 26, 'overcast_icepellets' ],         # description: Ice pellets
+    353 => [ 16, 'cloudy_shower_1' ],             # description: Light rain shower
+    356 => [ 17, 'cloudy_shower_2' ],             # description: Moderate or heavy rain shower
+    359 => [ 17, 'overcast_shower_3' ],           # description: Torrential rain shower
+    362 => [ 26, 'cloudy_sleet_1' ],              # description: Light sleet showers
+    365 => [ 26, 'cloudy_sleet_2' ],              # description: Moderate or heavy sleet showers
+    368 => [ 23, 'cloudy_snow_1' ],               # description: Light snow showers
+    371 => [ 24, 'cloudy_snow_2' ],               # description: Moderate or heavy snow showers
+    374 => [ 28, 'cloudy_icepellets_1' ],         # description: Light showers of ice pellets
+    377 => [ 29, 'cloudy_hail_1' ],               # description: Moderate or heavy showers of ice pellets
+    386 => [ 18, 'cloudy_thunderstorms_1' ],      # description: Patchy light rain in area with thunder
+    389 => [ 19, 'overcast_thunderstorms_2' ],    # description: Moderate or heavy rain in area with thunder
+    392 => [ 18, 'cloudy_snowthunderstorm_1' ],   # description: Patchy light snow in area with thunder
+    395 => [ 19, 'overcast_snowthunderstorm_2' ], # description: Moderate or heavy snow in area with thunder
 );
 
 sub wttr_to_lox {
@@ -436,8 +436,19 @@ if ( $daily ) {
         $moon{percent}   = sprintf("%.2f", $moonillum * 100) + 0;
         $moon{phase}     = sprintf("%.2f", $moonphase * 100) + 0;
         $moon{direction} = getMoonDirection($moonage);
-        $moon{rise}      = undef;  # not available from wttr.in
-        $moon{set}       = undef;
+
+        # moonrise / moonset
+        my ($moonrise, $moonset);
+        eval {
+            my $mr_t = Time::Piece->strptime($results->{astronomy}[0]{moonrise}, "%R %p");
+            $moonrise = sprintf("%02d:%02d", $mr_t->hour, $mr_t->min);
+        };
+        eval {
+            my $ms_t = Time::Piece->strptime($results->{astronomy}[0]{moonset}, "%R %p");
+            $moonset = sprintf("%02d:%02d", $ms_t->hour, $ms_t->min);
+        };
+        $moon{rise}      = $moonrise // undef;
+        $moon{set}       = $moonset // undef;
 
         push @dailyData, {
             day            => $i,

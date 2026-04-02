@@ -138,12 +138,12 @@ my $envelope = readJsonFile($lbplogdir, $weatherKey);
 my $cur = $envelope->{$weatherKey} // {};
 my $location = $envelope->{location} // {};
 
-my $weatherKey = "dailyforecast";
-my $envelope = readJsonFile($lbplogdir, $weatherKey);
+$weatherKey = "dailyforecast";
+$envelope = readJsonFile($lbplogdir, $weatherKey);
 my $dfc = $envelope->{$weatherKey} // [];
 
-my $weatherKey = "hourlyforecast";
-my $envelope = readJsonFile($lbplogdir, $weatherKey);
+$weatherKey = "hourlyforecast";
+$envelope = readJsonFile($lbplogdir, $weatherKey);
 my $hfc = $envelope->{$weatherKey} // [];
 
 my $iconMapping = readJsonFile("$lbphtmldir/icons/$stdiconset", "icon_mapping") // {};
@@ -220,31 +220,34 @@ sendToLox($toMS, $doLog, "cur_sun_s", $curDateLoxEpoch + timeToSec($cur->{sunset
 sendToLox($toMS, $doLog, "cur_ozone", $cur->{ozone});
 sendToLox($toMS, $doLog, "cur_sky", $cur->{cloudCover});
 
-# special handling for sunrise and sunset: send as loxone epoch time to Loxone for easier processing,
-# but need to be in hh:mm format on theme web page
-${"cur_sun_r"} = $cur->{sunrise};
-${"cur_sun_s"} = $cur->{sunset};
-
 # Use night icons between sunset and sunrise
 my $curSec = timeToSec($curDate->hour . ":" . $curDate->minute);
 my $sunriseSec = timeToSec($cur->{sunrise}) // 6;
 my $sunsetSec = timeToSec($cur->{sunset}) // 18;
-my $iconName;
+my $iconName = '';
+my $moonPhases;
 
 if ($curSec < $sunriseSec || $curSec > $sunsetSec) {
-    $iconName = $iconMapping->{icons}{$cur->{weatherCode}{weather4lox}}{"iconNight"};
+    $iconName = $iconMapping->{icons}{$cur->{weatherCode}{weather4lox}}{"iconNight"} // 'no_mapping';
 
     # add moon quarter / half to night icon name, if icon sets demands this
-    my $moonPhases = $iconMapping->{icons}{$cur->{weatherCode}{weather4lox}}{moonPhases} // 0;
+    $moonPhases = $iconMapping->{icons}{$cur->{weatherCode}{weather4lox}}{moonPhases} // 0;
     if ($moonPhases == 5) {
         $iconName .= "_" . getMoonPhasePart($cur->{moon}{age}, 5) . "q";
     } elsif ($moonPhases == 3) {
         $iconName .= "_" . getMoonPhasePart($cur->{moon}{age}, 3) . "h";
     }
 } else {
-    $iconName = $iconMapping->{icons}{$cur->{weatherCode}{weather4lox}}{"iconDay"};
+    $iconName = $iconMapping->{icons}{$cur->{weatherCode}{weather4lox}}{"iconDay"} // 'no_mapping' ;
 }
-${"cur_we_icon"} = $iconName . "." . $iconMapping->{format};
+# special handling for sunrise and sunset: send as loxone epoch time to Loxone for easier processing,
+# but need to be in hh:mm format on theme web page
+{ 
+    no strict 'refs';
+    ${"cur_sun_r"} = $cur->{sunrise};
+    ${"cur_sun_s"} = $cur->{sunset};
+    ${"cur_we_icon"} = $iconName . "." . ($iconMapping->{format} // 'no_format');
+}
 
 #
 # Send daily forecast to Loxone via HTML webpage, MQTT and UDP
@@ -286,11 +289,11 @@ foreach my $dfcEntry (@$dfc) {
     sendToLox($toMS, $doLog, "dfc${per}_snow", !$metric ? $dfcEntry->{precipitation}{snowHigh}*0.393700787 : $dfcEntry->{precipitation}{snowHigh});
     sendToLox($toMS, $doLog, "dfc${per}_w_sp_h", !$metric ? $dfcEntry->{wind}{max}{speed}*0.621371192 : $dfcEntry->{wind}{max}{speed});
     sendToLox($toMS, $doLog, "dfc${per}_w_gu_h", !$metric ? $dfcEntry->{wind}{max}{gust}*0.621371192 : $dfcEntry->{wind}{max}{gust});
-    sendToLox($toMS, $doLog, "dfc${per}_w_dirdes_h", encode_utf8($langData->{wind_directions}{getWindDirCardinal($dfcEntry->{wind}{max}{direction})} // '-')); 
+    sendToLox($toMS, $doLog, "dfc${per}_w_dirdes_h", encode_utf8($langData->{wind_directions}{getWindDirCardinal($dfcEntry->{wind}{max}{direction}) // ''} // '-')); 
     sendToLox($toMS, $doLog, "dfc${per}_w_dir_h", $dfcEntry->{wind}{max}{direction});
     sendToLox($toMS, $doLog, "dfc${per}_w_sp_a", !$metric ? $dfcEntry->{wind}{avg}{speed}*0.621371192 : $dfcEntry->{wind}{avg}{speed});
     sendToLox($toMS, $doLog, "dfc${per}_w_gu_a", !$metric ? $dfcEntry->{wind}{avg}{gust}*0.621371192 : $dfcEntry->{wind}{avg}{gust});
-    sendToLox($toMS, $doLog, "dfc${per}_w_dirdes_a", encode_utf8($langData->{wind_directions}{getWindDirCardinal($dfcEntry->{wind}{avg}{direction})} // '-')); 
+    sendToLox($toMS, $doLog, "dfc${per}_w_dirdes_a", encode_utf8($langData->{wind_directions}{getWindDirCardinal($dfcEntry->{wind}{avg}{direction}) // ''} // '-')); 
     sendToLox($toMS, $doLog, "dfc${per}_w_dir_a", $dfcEntry->{wind}{avg}{direction});
     sendToLox($toMS, $doLog, "dfc${per}_hu_a", $dfcEntry->{humidity}{avg});
     sendToLox($toMS, $doLog, "dfc${per}_hu_h", $dfcEntry->{humidity}{max});
@@ -308,14 +311,17 @@ foreach my $dfcEntry (@$dfc) {
     sendToLox($toMS, $doLog, "dfc${per}_sun_r", $dfcDate_LoxoneEpoch + timeToSec($dfcEntry->{sunrise}));
     sendToLox($toMS, $doLog, "dfc${per}_sun_s", $dfcDate_LoxoneEpoch + timeToSec($dfcEntry->{sunset}));
 
-    # special handling for sunrise and sunset: send as loxone epoch time for easier processing in Loxone,
-    # but need to be in hh:mm format on web page
-    ${"dfc${per}_sun_r"} = $dfcEntry->{sunrise};
-    ${"dfc${per}_sun_s"} = $dfcEntry->{sunset};
-
     my $iconName = $iconMapping->{icons}{$dfcEntry->{weatherCode}{weather4lox}}{"iconDay"};
-    ${"dfc${per}_we_icon"} = $iconName . "." . $iconMapping->{format};
-    
+
+    # special handling for sunrise and sunset: send as loxone epoch time to Loxone for easier processing,
+    # but need to be in hh:mm format on theme web page
+    { 
+        no strict 'refs';
+        ${"dfc${per}_sun_r"} = $dfcEntry->{sunrise};
+        ${"dfc${per}_sun_s"} = $dfcEntry->{sunset};
+        ${"dfc${per}_we_icon"} = $iconName . "." . ($iconMapping->{format} // 'no-format');
+    }
+        
     $doLog = 0;
 }
 
@@ -394,7 +400,11 @@ foreach my $hfcEntry (@$hfc) {
     } else {
         $iconName = $iconMapping->{icons}{$hfcEntry->{weatherCode}{weather4lox}}{"iconDay"};
     }
-    ${"hfc${per}_we_icon"} = $iconName . "." . $iconMapping->{format};
+
+    { 
+        no strict 'refs';
+        ${"hfc${per}_we_icon"} = $iconName . "." . ($iconMapping->{format} // 'no_format');
+    }
     
     $doLog = 0;
 }
@@ -522,9 +532,20 @@ if (!$newstyle) {
     open(F1,">$lbplogdir/webpage.map.html");
     flock(F1,2);
     open(F,"<$lbptemplatedir/themes/$lang/$theme.map.html");
-    while (<F>) {
-        $_ =~ s/<!--\$(.*?)-->/${$1}/g;
-        print F1 $_;
+    {
+        no strict 'refs';
+        while (<F>) {
+            # $_ =~ s/<!--\$(.*?)-->/${$1}/g;
+            $_ =~ s/<!--\$(.*?)-->/
+                if (!defined ${$1}) {
+                    LOGWARN "Template variable '\$$1' is undefined (line $. in $lbptemplatedir\/themes\/$lang\/$theme.map.html)";
+                    '';
+                } else {
+                    ${$1};
+                }
+            /ge;
+            print F1 $_;
+        }
     }
     close(F);
     #flock(F1,8);
@@ -544,9 +565,20 @@ if (!$newstyle) {
     open(F1,">$lbplogdir/webpage.dfc.html");
     flock(F1,2);
     open(F,"<$lbptemplatedir/themes/$lang/$theme.dfc.html");
-    while (<F>) {
-        $_ =~ s/<!--\$(.*?)-->/${$1}/g;
-        print F1 $_;
+    {
+        no strict 'refs';
+        while (<F>) {
+            # $_ =~ s/<!--\$(.*?)-->/${$1}/g;
+            $_ =~ s/<!--\$(.*?)-->/
+                if (!defined ${$1}) {
+                    LOGWARN "Template variable '\$$1' is undefined (line $. in $lbptemplatedir\/themes\/$lang\/$theme.dfc.html)";
+                    '';
+                } else {
+                    ${$1};
+                }
+            /ge;
+            print F1 $_;
+        }
     }
     close(F);
     #flock(F1,8);
@@ -567,9 +599,20 @@ if (!$newstyle) {
     open(F1,">$lbplogdir/webpage.hfc.html");
     flock(F1,2);
     open(F,"<$lbptemplatedir/themes/$lang/$theme.hfc.html");
-    while (<F>) {
-        $_ =~ s/<!--\$(.*?)-->/${$1}/g;
-        print F1 $_;
+    {
+        no strict 'refs';
+        while (<F>) {
+            # $_ =~ s/<!--\$(.*?)-->/${$1}/g;
+            $_ =~ s/<!--\$(.*?)-->/
+                if (!defined ${$1}) {
+                    LOGWARN "Template variable '\$$1' is undefined (line $. in $lbptemplatedir\/themes\/$lang\/$theme.hfc.html)";
+                    '';
+                } else {
+                    ${$1};
+                }
+            /ge;
+            print F1 $_;
+        }
     }
     close(F);
     #flock(F1,8);
@@ -588,9 +631,20 @@ if (!$newstyle) {
 open(F1,">$lbplogdir/webpage.html");
 flock(F1,2);
 open(F,"<$lbptemplatedir/themes/$lang/$theme.main.html");
-while (<F>) {
-    $_ =~ s/<!--\$(.*?)-->/${$1}/g;
-    print F1 $_;
+{
+    no strict 'refs';
+    while (<F>) {
+        # $_ =~ s/<!--\$(.*?)-->/${$1}/g;
+        $_ =~ s/<!--\$(.*?)-->/
+            if (!defined ${$1}) {
+                LOGWARN "Template variable '\$$1' is undefined (line $. in $lbptemplatedir\/themes\/$lang\/$theme.main.html)";
+                '';
+            } else {
+                ${$1};
+            }
+        /ge;
+        print F1 $_;
+    }
 }
 close(F);
 #flock(F1,8);
