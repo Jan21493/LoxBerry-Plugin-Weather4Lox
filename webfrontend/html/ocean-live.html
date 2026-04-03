@@ -347,12 +347,16 @@ var liveData = {
   daily: [],
   dailyCount: 0,
   lang: null,
-  iconMapping: null
+  icons: null
 };
 
 // Rendered hourly arrays for preselectHour
 var hourlyTodayRendered = [];
 var hourlyTomorrowRendered = [];
+
+// Selection state (persisted across refreshes)
+var selectedTab = 'heute';
+var selectedHourIdx = 0;
 
 // ===== FETCH HELPERS =====
 function checkOk(response) {
@@ -431,7 +435,7 @@ function loadAllData() {
     liveData.refreshInterval = (currentEnvelope.refresh || 300) * 1000;
 
     liveData.lang = results[3];
-    liveData.iconMapping = (results[4] && results[4].icons) || {};
+    liveData.icons = (results[4] && results[4].icons) || {};
     liveData.iconFormat = (results[4] && results[4].format) || 'png';
 
     // Derive datetime from time object if missing
@@ -531,7 +535,7 @@ function phaseFilename(baseFilename, phaseIdx, pchar, ext) {
 function resolveIcon(weatherCode, isNight, moonAge) {
 
   const ext = '.' + (liveData.iconFormat || 'png');
-  const iconEntry = liveData.iconMapping && liveData.iconMapping[weatherCode];
+  const iconEntry = liveData.icons && liveData.icons[weatherCode];
   var iconName = null;
 
   if (iconEntry) {
@@ -572,10 +576,13 @@ function transformHourly(hourlyArray, sunriseStr, sunsetStr) {
       uvi: h.uvIndex,
       clouds: h.cloudCover,
       weatherCode: h.weatherCode ? h.weatherCode.weather4lox : undefined,
-      moonAge: h.moon.age,
-      moonDirection: h.moon.direction,
+      moonAge: h.moon ? h.moon.age : 0,
+      moonDirection: h.moon ? h.moon.direction : null,
       isNight: h.isNight,
-      desc: h.weatherCode ? h.weatherCode.description : undefined
+      desc: h.weatherCode ? h.weatherCode.description : undefined,
+      dewpoint: h.dewpoint,
+      gust: h.wind ? h.wind.gust : undefined,
+      visibility: h.visibility
     };
   });
 }
@@ -640,8 +647,40 @@ function renderAll() {
   var sunset = c.sunset || '--:--';
   var pad2 = function(n) { return n < 10 ? '0' + n : '' + n; };
 
-  // Transform hourly arrays
-  hourlyTodayRendered = transformHourly(liveData.hourlyToday, sunrise, sunset);
+  // Get localized "now" label from language file
+  var nowLabel = (liveData.lang && liveData.lang.theme && liveData.lang.theme.now) || 'Now';
+
+  // Build synthetic nowEntry from current.json data
+  var cTemp = c.temperature || {};
+  var cWind = c.wind || {};
+  var cWx = c.weatherCode || {};
+  var cPrecip = c.precipitation || {};
+  var cTime = c.time || {};
+  var nowEntry = {
+    hour: nowLabel,
+    isNow: true,
+    temp: cTemp.air,
+    feelsLike: cTemp.feelsLike,
+    rainProb: cPrecip.probability,
+    rainAmount: cPrecip.rainToday,
+    wind: cWind.speed,
+    windDir: cWind.direction,
+    humidity: c.humidity,
+    pressure: c.pressure,
+    uvi: c.uvIndex,
+    clouds: c.cloudCover,
+    weatherCode: cWx.weather4lox,
+    moonAge: c.moon ? c.moon.age : 0,
+    moonDirection: c.moon ? c.moon.direction : null,
+    isNight: c.isNight,
+    desc: cWx.description,
+    dewpoint: c.dewpoint,
+    gust: cWind.gust,
+    visibility: c.visibility
+  };
+
+  // Transform hourly arrays; prepend nowEntry to heute
+  hourlyTodayRendered = [nowEntry].concat(transformHourly(liveData.hourlyToday, sunrise, sunset));
   hourlyTomorrowRendered = transformHourly(liveData.hourlyTomorrow, sunrise, sunset);
 
   // Render hour strips (handle empty tomorrow gracefully)
@@ -656,13 +695,6 @@ function renderAll() {
 
   // Update header city
   document.getElementById('hdrCity').textContent = (liveData.location && liveData.location.city) || '--';
-
-  // Nested field helpers
-  var cTemp = c.temperature || {};
-  var cWind = c.wind || {};
-  var cWx = c.weatherCode || {};
-  var cPrecip = c.precipitation || {};
-  var cTime = c.time || {};
 
   // Reset hero context
   var ctx = document.getElementById('heroContext');
@@ -706,8 +738,22 @@ function renderAll() {
   // Hide stats with no data
   hideEmptyStats();
 
-  // Preselect current hour in heute strip
-  preselectHour('heute');
+  // Restore previously selected hour/tab, or preselect default
+  var activeTabEl = document.querySelector('.tab.active');
+  var currentActiveTab = activeTabEl ? activeTabEl.getAttribute('data-tab') : 'heute';
+  if (currentActiveTab === selectedTab && selectedTab !== 'tage') {
+    // Restore the previously selected hour
+    var stripId = (selectedTab === 'heute') ? 'hourStripHeute' : 'hourStripMorgen';
+    var dataArray = (selectedTab === 'heute') ? hourlyTodayRendered : hourlyTomorrowRendered;
+    var cards = document.getElementById(stripId).querySelectorAll('.hcard');
+    var idx = Math.min(selectedHourIdx, Math.max(0, cards.length - 1));
+    if (cards[idx]) {
+      selectHour(cards[idx], dataArray);
+      cards[idx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  } else {
+    preselectHour(currentActiveTab);
+  }
 
   // Drag scroll
   makeDragScroll(document.getElementById('hourStripHeute'));
@@ -966,8 +1012,10 @@ function renderHourStrip(containerId, dataArray) {
     (function(el, arr) {
       el.onclick = function() { selectHour(el, arr); };
     })(card, dataArray);
+    // Show "Now" label directly; for regular hours append ':00'
+    var timeLabel = d.isNow ? d.hour : d.hour + ':00';
     card.innerHTML =
-      '<div class="hcard-time mono">' + d.hour + ':00</div>' +
+      '<div class="hcard-time mono">' + timeLabel + '</div>' +
       '<img class="hcard-icon" src="' + resolveIcon(d.weatherCode, d.isNight, d.moonAge) + '" alt="">' +
       '<div class="hcard-temp">' + Math.round(d.temp) + '&deg;</div>' +
       (d.rainProb != null ? '<div class="hcard-rainProb">' + d.rainProb + '%</div>' : '');
@@ -1041,12 +1089,16 @@ function selectHour(el, dataArray) {
   var idx = parseInt(el.getAttribute('data-idx'));
   var d = dataArray[idx];
 
+  // Update selection state
+  selectedHourIdx = idx;
+
   // Determine active tab for context label
   var activeTab = document.querySelector('.tab.active');
   var tabName = activeTab ? activeTab.getAttribute('data-tab') : 'heute';
-  var tabLabel = tabName === 'morgen' ? (activeTab ? activeTab.textContent : 'Morgen') : (activeTab ? activeTab.textContent : 'Heute');
+  var tabLabel = activeTab ? activeTab.textContent : 'Heute';
   var ctx = document.getElementById('heroContext');
-  ctx.textContent = tabLabel + ' ' + d.hour + ':00';
+  // For the now entry show label directly; for regular hours append ':00'
+  ctx.textContent = tabLabel + ' ' + (d.isNow ? d.hour : d.hour + ':00');
   ctx.style.opacity = '1';
 
   var heroTemp = document.getElementById('heroTemp');
@@ -1055,13 +1107,30 @@ function selectHour(el, dataArray) {
     heroTemp.innerHTML = Math.round(d.temp) + '<sup>\u00b0C</sup>';
     heroTemp.style.opacity = '1';
   }, 150);
-  document.getElementById('heroDesc').textContent = d.desc;
+  document.getElementById('heroDesc').textContent = d.desc || '--';
   document.getElementById('heroWind').textContent = textContent =
     (d.wind != null ? d.wind : '--') + ' km/h' +
-    (liveData.lang.wind_from ? ', ' + liveData.lang.wind_from + ' ' : ' ') +
+    (liveData.lang && liveData.lang.wind_from ? ', ' + liveData.lang.wind_from + ' ' : ' ') +
     getWindDirLabel(d.windDir);
-  document.getElementById('heroHumidity').textContent = d.humidity + '%';
+  document.getElementById('heroHumidity').textContent = (d.humidity != null ? d.humidity : '--') + '%';
+  document.getElementById('heroFeelslike').textContent = (d.feelsLike != null ? d.feelsLike : '--') + '\u00b0';
   document.getElementById('heroIcon').src = resolveIcon(d.weatherCode, d.isNight, d.moonAge);
+
+  // Update stat boxes with hourly data
+  document.getElementById('statHumidity').textContent = (d.humidity != null ? d.humidity : '--') + '%';
+  document.getElementById('statWind').textContent = (d.wind != null ? d.wind : '--') + ' km/h';
+  document.getElementById('statWindDir').textContent = getWindDirShort(d.windDir);
+  document.getElementById('statPressure').innerHTML = (d.pressure != null ? d.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
+  document.getElementById('statVisibility').innerHTML = (d.visibility != null ? d.visibility : '--') + ' <small style="color:var(--text-muted)">km</small>';
+  document.getElementById('statDewpoint').textContent = (d.dewpoint != null ? d.dewpoint : '--') + '\u00b0';
+  document.getElementById('statPrecip').textContent = (d.rainAmount != null ? d.rainAmount : 0) + ' mm';
+  document.getElementById('statUVI').textContent = d.uvi != null ? d.uvi : '--';
+  document.getElementById('statClouds').textContent = (d.clouds != null ? d.clouds : '--') + '%';
+  document.getElementById('statGusts').textContent = (d.gust != null ? d.gust : '--') + ' km/h';
+  document.getElementById('statFeelslike').textContent = (d.feelsLike != null ? d.feelsLike : '--') + '\u00b0';
+
+  // Hide empty stats after update
+  hideEmptyStats();
 
   // Sync chart highlight
   var chartId = (tabName === 'morgen') ? 'tempChartMorgen' : 'tempChartHeute';
@@ -1076,10 +1145,18 @@ function preselectHour(tabName) {
   if (!dataArray || dataArray.length === 0) return;
   var cards = document.getElementById(stripId).querySelectorAll('.hcard');
   var targetIdx = 0;
-  if (tabName === 'heute') {
-    var currentHour = new Date().getHours();
-    targetIdx = Math.min(currentHour, cards.length - 1);
+  if (tabName === 'morgen') {
+    // For morgen: select hour 12:00 by default
+    for (var i = 0; i < dataArray.length; i++) {
+      if (dataArray[i].hour === '12') { targetIdx = i; break; }
+    }
   }
+  // For heute: select index 0 (nowEntry) by default
+
+  // Update selection state
+  selectedTab = tabName;
+  selectedHourIdx = targetIdx;
+
   if (cards[targetIdx]) {
     selectHour(cards[targetIdx], dataArray);
     cards[targetIdx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
@@ -1170,30 +1247,61 @@ function renderTempChart(svgId, dataArray) {
   var stripId = isHeute ? 'hourStripHeute' : 'hourStripMorgen';
   var stripDataArray = isHeute ? hourlyTodayRendered : hourlyTomorrowRendered;
 
-  var temps = dataArray.map(function(d) { return d.temp; });
-  var n = temps.length;
-  var minT = Math.min.apply(null, temps);
-  var maxT = Math.max.apply(null, temps);
+  // For heute: separate nowEntry from hourly data for the line chart
+  var nowEntry = null;
+  var hourlyData = dataArray;
+  if (isHeute && dataArray.length > 0 && dataArray[0].isNow) {
+    nowEntry = dataArray[0];
+    hourlyData = dataArray.slice(1);
+  }
+
+  // Collect all temperatures for Y-axis range (including nowEntry)
+  var allTemps = hourlyData.map(function(d) { return d.temp; });
+  if (nowEntry && nowEntry.temp != null) allTemps.push(nowEntry.temp);
+  allTemps = allTemps.filter(function(t) { return t != null; });
+  if (allTemps.length === 0) return;
+
+  var minT = Math.min.apply(null, allTemps);
+  var maxT = Math.max.apply(null, allTemps);
   var range = Math.max(1, maxT - minT);
 
+  // Fixed 24h axis (hours 0..23)
+  var HOURS = 24;
   var H = 140, step = 32, padL = 40, padR = 16;
   var yTop = 32, yBot = H - 28;
   var chartH = yBot - yTop;
-  var W = padL + padR + (n - 1) * step;
+  var W = padL + padR + (HOURS - 1) * step;
+  var pad2 = function(n) { return n < 10 ? '0' + n : '' + n; };
 
   svg.setAttribute('width', W);
   svg.setAttribute('height', H);
   svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
 
-  function xPos(i) { return padL + i * step; }
+  // X position based on actual hour (0..23)
+  function xPos(h) { return padL + h * step; }
   function yPos(t) { return yBot - ((t - minT) / range) * chartH; }
 
+  // Current hour for nowEntry position on chart
+  var currentHour = new Date().getHours();
+
+  // Build polyline points for hourly data (each at its actual hour position)
   var pts = [];
-  for (var i = 0; i < n; i++) pts.push(xPos(i) + ',' + yPos(temps[i]));
+  for (var i = 0; i < hourlyData.length; i++) {
+    var hh = parseInt(hourlyData[i].hour, 10);
+    if (!isNaN(hh) && hourlyData[i].temp != null) {
+      pts.push(xPos(hh) + ',' + yPos(hourlyData[i].temp));
+    }
+  }
 
-  var area = padL + ',' + yBot + ' ' + pts.join(' ') + ' ' + xPos(n-1) + ',' + yBot;
+  // Area polygon (under the line)
+  var area = '';
+  if (pts.length > 0) {
+    var firstH = parseInt(hourlyData[0].hour, 10);
+    var lastH = parseInt(hourlyData[hourlyData.length - 1].hour, 10);
+    area = xPos(firstH) + ',' + yBot + ' ' + pts.join(' ') + ' ' + xPos(lastH) + ',' + yBot;
+  }
 
-  var labels = '', dots = '', gridLines = '', yAxis = '';
+  var labels = '', dots = '', gridLines = '', yAxis = '', nowDot = '';
   var cs = getComputedStyle(document.documentElement);
   var gridC = cs.getPropertyValue('--border').trim();
   var labelC = cs.getPropertyValue('--text-muted').trim();
@@ -1208,36 +1316,62 @@ function renderTempChart(svgId, dataArray) {
     yAxis += '<line x1="' + padL + '" y1="' + yp + '" x2="' + (W - padR) + '" y2="' + yp + '" stroke="' + gridC + '" stroke-dasharray="3,3" />';
   }
 
-  for (var i = 0; i < n; i++) {
-    var tPct = (temps[i] - minT) / range;
-    if (i % 3 === 0) {
-      gridLines += '<line x1="'+xPos(i)+'" y1="'+yTop+'" x2="'+xPos(i)+'" y2="'+yBot+'" stroke="'+gridC+'" />';
-      labels += '<text x="'+xPos(i)+'" y="14" text-anchor="middle" font-size="9" fill="'+labelC+'" font-family="Outfit,sans-serif">'+dataArray[i].hour+':00</text>';
-      labels += '<text x="'+xPos(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9" fill="'+labelC+'" font-family="Outfit,sans-serif">'+Math.round(temps[i])+'\u00b0</text>';
-    }
-    dots += '<circle cx="'+xPos(i)+'" cy="'+yPos(temps[i])+'" r="3" fill="url(#dotG-'+svgId+')" stroke="rgba(255,255,255,0.2)" stroke-width="1" class="chart-dot" data-idx="'+i+'" data-strip="'+stripId+'" style="cursor:pointer"><set attributeName="fill" to="hsl('+Math.round(200 - tPct * 160)+',80%,55%)"/></circle>';
+  // Fixed X-axis grid lines and labels (every 3 hours)
+  for (var h = 0; h < HOURS; h += 3) {
+    gridLines += '<line x1="' + xPos(h) + '" y1="' + yTop + '" x2="' + xPos(h) + '" y2="' + yBot + '" stroke="' + gridC + '" />';
+    labels += '<text x="' + xPos(h) + '" y="14" text-anchor="middle" font-size="9" fill="' + labelC + '" font-family="Outfit,sans-serif">' + pad2(h) + ':00</text>';
   }
 
-  // Build gradient stops based on actual temperature at each point
-  var lineStops = '';
-  for (var i = 0; i < n; i++) {
-    var pct = (i / Math.max(1, n - 1) * 100).toFixed(1);
-    var tPct = (temps[i] - minT) / range;
+  // Dots for hourly data (data-idx offset by 1 because nowEntry is at strip index 0)
+  for (var i = 0; i < hourlyData.length; i++) {
+    var hh = parseInt(hourlyData[i].hour, 10);
+    var temp = hourlyData[i].temp;
+    if (isNaN(hh) || temp == null) continue;
+    var tPct = (temp - minT) / range;
     var hue = Math.round(200 - tPct * 160);
-    lineStops += '<stop offset="'+pct+'%" stop-color="hsl('+hue+',80%,55%)"/>';
+    var stripIdx = nowEntry ? (i + 1) : i; // offset: nowEntry is strip card[0]
+    dots += '<circle cx="' + xPos(hh) + '" cy="' + yPos(temp) + '" r="3" fill="url(#dotG-' + svgId + ')" stroke="rgba(255,255,255,0.2)" stroke-width="1" class="chart-dot" data-idx="' + stripIdx + '" data-strip="' + stripId + '" style="cursor:pointer"><set attributeName="fill" to="hsl(' + Math.round(200 - tPct * 160) + ',80%,55%)"/></circle>';
+    // Temperature label at every dot (for alignment with fixed axis)
+    if (hh % 3 === 0) {
+      labels += '<text x="' + xPos(hh) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="9" fill="' + labelC + '" font-family="Outfit,sans-serif">' + Math.round(temp) + '\u00b0</text>';
+    }
+  }
+
+  // Special now dot (strip card index 0, at current hour position)
+  var initHighlightX = xPos(0), initHighlightY = yBot;
+  if (nowEntry && nowEntry.temp != null) {
+    var tPctNow = (nowEntry.temp - minT) / range;
+    initHighlightX = xPos(currentHour);
+    initHighlightY = yPos(nowEntry.temp);
+    nowDot = '<circle cx="' + xPos(currentHour) + '" cy="' + yPos(nowEntry.temp) + '" r="4" fill="var(--amber)" stroke="rgba(255,255,255,0.3)" stroke-width="1" class="chart-dot" data-idx="0" data-strip="' + stripId + '" style="cursor:pointer" />';
+  } else if (hourlyData.length > 0 && hourlyData[0].temp != null) {
+    var hh0 = parseInt(hourlyData[0].hour, 10);
+    initHighlightX = isNaN(hh0) ? xPos(0) : xPos(hh0);
+    initHighlightY = yPos(hourlyData[0].temp);
+  }
+
+  // Build gradient stops for the line (based on actual hour positions)
+  var lineStops = '';
+  for (var i = 0; i < hourlyData.length; i++) {
+    var hh = parseInt(hourlyData[i].hour, 10);
+    if (isNaN(hh) || hourlyData[i].temp == null) continue;
+    var pct = (hh / (HOURS - 1) * 100).toFixed(1);
+    var tPct = (hourlyData[i].temp - minT) / range;
+    var hue = Math.round(200 - tPct * 160);
+    lineStops += '<stop offset="' + pct + '%" stop-color="hsl(' + hue + ',80%,55%)"/>';
   }
 
   svg.innerHTML =
     '<defs>' +
-    '<linearGradient id="lineG-'+svgId+'" x1="0" y1="0" x2="1" y2="0">' + lineStops + '</linearGradient>' +
-    '<linearGradient id="areaG-'+svgId+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--sky)" stop-opacity="0.15"/><stop offset="100%" stop-color="var(--amber)" stop-opacity="0"/></linearGradient>' +
+    '<linearGradient id="lineG-' + svgId + '" x1="0" y1="0" x2="1" y2="0">' + lineStops + '</linearGradient>' +
+    '<linearGradient id="areaG-' + svgId + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--sky)" stop-opacity="0.15"/><stop offset="100%" stop-color="var(--amber)" stop-opacity="0"/></linearGradient>' +
     '</defs>' +
     yAxis + gridLines +
-    '<line x1="'+padL+'" y1="'+yBot+'" x2="'+(W-padR)+'" y2="'+yBot+'" stroke="'+gridC+'" />' +
-    '<path d="M '+area+'" fill="url(#areaG-'+svgId+')" />' +
-    '<polyline points="'+pts.join(' ')+'" fill="none" stroke="url(#lineG-'+svgId+')" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' +
-    dots + labels +
-    '<circle class="chart-highlight" cx="'+xPos(0)+'" cy="'+yPos(temps[0])+'" r="6" fill="var(--amber)" stroke="var(--text-primary)" stroke-width="2" opacity="0.9" />';
+    '<line x1="' + padL + '" y1="' + yBot + '" x2="' + (W - padR) + '" y2="' + yBot + '" stroke="' + gridC + '" />' +
+    (area ? '<path d="M ' + area + '" fill="url(#areaG-' + svgId + ')" />' : '') +
+    (pts.length > 0 ? '<polyline points="' + pts.join(' ') + '" fill="none" stroke="url(#lineG-' + svgId + ')" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' : '') +
+    dots + nowDot + labels +
+    '<circle class="chart-highlight" cx="' + initHighlightX + '" cy="' + initHighlightY + '" r="6" fill="var(--amber)" stroke="var(--text-primary)" stroke-width="2" opacity="0.9" />';
 
   // Click on chart dots → select corresponding hour card
   svg.querySelectorAll('.chart-dot').forEach(function(dot) {
@@ -1254,17 +1388,27 @@ function highlightChartPoint(svgId, idx, dataArray) {
   if (!svg || !dataArray || !dataArray.length) return;
   var hl = svg.querySelector('.chart-highlight');
   if (!hl) return;
-  var temps = dataArray.map(function(d) { return d.temp; });
-  var minT = Math.min.apply(null, temps), maxT = Math.max.apply(null, temps), range = Math.max(1, maxT - minT);
+  var d = dataArray[idx];
+  if (!d) return;
+
+  // Compute temperature range using all data (including nowEntry)
+  var allTemps = dataArray.map(function(d) { return d.temp; }).filter(function(t) { return t != null; });
+  var minT = Math.min.apply(null, allTemps), maxT = Math.max.apply(null, allTemps), range = Math.max(1, maxT - minT);
   var H = 140, step = 32, padL = 40, yTop = 32, yBot = H - 28, chartH = yBot - yTop;
-  hl.setAttribute('cx', padL + idx * step);
-  hl.setAttribute('cy', yBot - ((temps[idx] - minT) / range) * chartH);
-  var tPct = (temps[idx] - minT) / range;
+
+  // Determine x position by actual hour (nowEntry → current hour)
+  var currentHour = new Date().getHours();
+  var hourVal = d.isNow ? currentHour : parseInt(d.hour, 10);
+  if (isNaN(hourVal)) hourVal = 0;
+
+  hl.setAttribute('cx', padL + hourVal * step);
+  hl.setAttribute('cy', yBot - ((d.temp - minT) / range) * chartH);
+  var tPct = (d.temp - minT) / range;
   var hue = Math.round(200 - tPct * 160);
   hl.setAttribute('fill', 'hsl('+hue+',80%,55%)');
 
   var wrap = svg.parentElement;
-  if (wrap) wrap.scrollLeft = Math.max(0, (padL + idx * step) - wrap.clientWidth / 2);
+  if (wrap) wrap.scrollLeft = Math.max(0, (padL + hourVal * step) - wrap.clientWidth / 2);
 }
 
 // ===== HIDE EMPTY DATA =====
