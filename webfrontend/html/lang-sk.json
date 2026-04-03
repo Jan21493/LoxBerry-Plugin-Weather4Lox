@@ -240,6 +240,7 @@
     "tab_today": "Dnes",
     "tab_tomorrow": "Zajtra",
     "tab_days": "Dni",
+    "now": "Teraz",
     "hours_today": "Hodinova predpoved dnes",
     "hours_tomorrow": "Hodinova predpoved zajtra",
     "forecast_X_days": "{fcastDays}-dnova predpoved",
