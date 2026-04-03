@@ -242,7 +242,7 @@
     "tab_days": "Dagen",
     "hours_today": "Uren vandaag",
     "hours_tomorrow": "Uren morgen",
-    "forecast_7day": "7-daagse voorspelling",
+    "forecast_X_days": "{fcastDays}-daagse voorspelling",
     "click_hour_detail": "Klik op uur voor details",
     "loading": "Weergegevens worden geladen...",
     "error_loading": "Gegevens konden niet worden geladen.",

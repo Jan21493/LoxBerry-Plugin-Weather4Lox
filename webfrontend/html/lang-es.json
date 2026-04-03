@@ -242,7 +242,7 @@
     "tab_days": "Días",
     "hours_today": "Horas de hoy",
     "hours_tomorrow": "Horas de mañana",
-    "forecast_7day": "Pronóstico de 7 días",
+    "forecast_X_days": "Pronóstico de {fcastDays} días",
     "click_hour_detail": "Clic en hora para detalles",
     "loading": "Cargando datos meteorológicos...",
     "error_loading": "No se pudieron cargar los datos.",

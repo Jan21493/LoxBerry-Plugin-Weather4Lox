@@ -242,7 +242,7 @@
     "tab_days": "Dni",
     "hours_today": "Hodinova predpoved dnes",
     "hours_tomorrow": "Hodinova predpoved zajtra",
-    "forecast_7day": "7-dnova predpoved",
+    "forecast_X_days": "{fcastDays}-dnova predpoved",
     "click_hour_detail": "Kliknite na hodinu pre detaily",
     "loading": "Nacitavam udaje o pocasi...",
     "error_loading": "Udaje sa nepodarilo nacitat.",

@@ -15,9 +15,9 @@
     :root {
       /* tweak these values to change base column sizing */
       --num-col-width: 50px;         /* width for Weather4Lox number column */
-      --code-col-width: 120px;         /* width for Weather4Lox Code column */
-      --desc-col-width: 200px; 
-      --icon-col-width: calc(var(--icon-size) * 3); 
+      --code-col-width: 100px;         /* width for Weather4Lox Code column */
+      --desc-col-width: 150px; 
+      --icon-col-width: calc(var(--icon-size) *4); 
       --remarks-col-width: calc(var(--desc-col-width) * 2); 
     }
 
@@ -528,24 +528,83 @@ function sanitizeParam(val, fallback) {
   return /^[a-zA-Z0-9_-]+$/.test(val) ? val : fallback;
 }
 
-// Validate hex color (with or without leading '#', and allowing 3,4,6,8 digit formats)
+const bgColorDefault = '#e6f7ff';
+const bgSelect = document.getElementById('bg-select');
+
 function isValidHexColor(val) {
   if (!val || typeof val !== 'string') return false;
-  const s = val.trim().toLowerCase();
-  // erlaubt: #RGB, #RRGGBB, #RGBA, #RRGGBBAA oder ohne führendes '#'
-  return /^#?([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/.test(s);
+  return /^#?([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(val.trim());
 }
-function normalizeHex(val, fallback = '#e6f7ff') {
+
+function normalizeHex(val, fallback = bgColorDefault) {
   if (!isValidHexColor(val)) return fallback;
   let s = val.trim().toLowerCase();
-  if (s[0] !== '#') s = '#' + s;
-  return s;
+  return s[0] === '#' ? s : ('#' + s);
 }
 
+function clearSelection(selectEl) {
+  if (!selectEl) return;
+  selectEl.selectedIndex = -1;
+}
+
+function selectOptionByValue(selectEl, value) {
+  if (!selectEl) return null;
+  const option = Array.from(selectEl.options).find(function(opt) {
+    return opt.value.toLowerCase() === String(value).toLowerCase();
+  });
+  if (option) option.selected = true;
+  return option || null;
+}
+
+function selectOptionByKey(selectEl, key) {
+  if (!selectEl) return null;
+  const option = Array.from(selectEl.options).find(function(opt) {
+    return opt.getAttribute('data-key') === key;
+  });
+  if (option) option.selected = true;
+  return option || null;
+}
+
+function syncBackground(rawValue) {
+  const bgSelect = document.getElementById('bg-select');
+  const value = (rawValue || '').trim();
+
+  if (!value) {
+    bgColor = bgColorDefault;
+    selectOptionByValue(bgSelect, bgColorDefault);
+    updateBgColors();
+    return;
+  }
+
+  // Hex color
+  if (isValidHexColor(value)) {
+    bgColor = normalizeHex(value, bgColorDefault);
+
+    // If the hex exists in the list, select it; otherwise keep custom color and clear selection
+    const matched = selectOptionByValue(bgSelect, bgColor);
+    if (!matched) {
+      clearSelection(bgSelect);
+    }
+
+    updateBgColors();
+    return;
+  }
+
+  // Named background key
+  const matched = selectOptionByKey(bgSelect, value);
+  if (matched) {
+    bgColor = matched.value;
+  } else {
+    bgColor = bgColorDefault;
+    selectOptionByValue(bgSelect, bgColorDefault);
+  }
+
+  updateBgColors();
+}
+
+// Extract and sanitize URL parameters
 const urlLang = sanitizeParam((urlParams.get('lang') || 'en').toLowerCase(), 'en');
 const urlIconset = sanitizeParam(urlParams.get('iconset'), 'naturalistic');
-let bgColor = normalizeHex('#' +urlParams.get('background'), '#e6f7ff');
-
 
 // Parse numeric "size" parameter (optional) and clamp/align to step
 let urlSize = null;
@@ -1143,6 +1202,9 @@ async function init() {
   langSel.value = urlLang;
   if (!langSel.value) langSel.value = 'en';
 
+  // Set background from URL param: either hex color (without leading #)or named option; if invalid/missing → default + select default in dropdown
+  syncBackground(urlParams.get('background'));
+
   // If a "size" parameter was present in the URL, use it as initial icon size
   if (urlSize !== null) {
     iconSize = urlSize;
@@ -1172,8 +1234,7 @@ async function init() {
   });
 
   document.getElementById('bg-select').addEventListener('change', function() {
-    bgColor = this.value;
-    updateBgColors();
+    syncBackground(this.value);
   });
 
   document.getElementById('size-slider').addEventListener('input', function() {
@@ -1184,6 +1245,7 @@ async function init() {
   langSel.addEventListener('change', async function() {
     await loadLang(this.value);
     applyTranslations();
+    syncBackground(document.getElementById('bg-select').value);
     render();
   });
 

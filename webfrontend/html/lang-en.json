@@ -242,7 +242,7 @@
     "tab_days": "Days",
     "hours_today": "Today's hours",
     "hours_tomorrow": "Tomorrow's hours",
-    "forecast_7day": "7-day forecast",
+    "forecast_X_days": "{fcastDays}-day forecast",
     "click_hour_detail": "Click hour for details",
     "loading": "Loading weather data...",
     "error_loading": "Could not load data.",

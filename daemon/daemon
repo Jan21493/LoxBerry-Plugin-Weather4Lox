@@ -16,17 +16,14 @@ if [ -x /usr/bin/logger ]; then
 fi
 
 echo "DAEMON: Restore databases" >> $LBPLOG/$pluginname/weather4lox.log
-if [ ! -e $LBPLOG/$pluginname/current.dat ]; then
-	cp $LBPDATA/$pluginname/current.dat $LBPLOG/$pluginname/
+if [ ! -e $LBPLOG/$pluginname/current.json ]; then
+	cp $LBPDATA/$pluginname/current.json $LBPLOG/$pluginname/
 fi
-if [ ! -e $LBPLOG/$pluginname/dailyforecast.dat ]; then
-	cp $LBPDATA/$pluginname/dailyforecast.dat $LBPLOG/$pluginname/
+if [ ! -e $LBPLOG/$pluginname/dailyforecast.json ]; then
+	cp $LBPDATA/$pluginname/dailyforecast.json $LBPLOG/$pluginname/
 fi
-if [ ! -e $LBPLOG/$pluginname/hourlyforecast.dat ]; then
-	cp $LBPDATA/$pluginname/hourlyforecast.dat $LBPLOG/$pluginname/
-fi
-if [ ! -e $LBPLOG/$pluginname/hourlyhistory.dat ]; then
-	cp $LBPDATA/$pluginname/hourlyhistory.dat $LBPLOG/$pluginname/
+if [ ! -e $LBPLOG/$pluginname/hourlyforecast.json ]; then
+	cp $LBPDATA/$pluginname/hourlyforecast.json $LBPLOG/$pluginname/
 fi
 if [ ! -e $LBPLOG/$pluginname/webpage.html ]; then
 	cp $LBPDATA/$pluginname/webpage.html $LBPLOG/$pluginname/

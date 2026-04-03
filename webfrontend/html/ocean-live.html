@@ -201,6 +201,7 @@
     .drow-icon { width: 40px; height: 40px; }
     .drow-desc { font-size: 0.8rem; color: var(--text-secondary); }
     .drow-rainProb { font-size: 0.75rem; color: var(--sky); text-align: center; }
+    .drow-rainProb i { width: 14px; height: 14px; flex-shrink: 0; }
     .drow-temps { display: flex; align-items: center; gap: 6px; }
     .drow-lo { color: var(--sky); font-weight: 500; min-width: 30px; text-align: right; font-size: 0.85rem; }
     .drow-hi { color: var(--amber); font-weight: 500; min-width: 30px; font-size: 0.85rem; }
@@ -336,22 +337,18 @@ var currentLang = (function() {
   return (p && SUPPORTED_LANGS.indexOf(p) !== -1) ? p : 'de';
 })();
 
-// Weather code to icon key mapping (from weathercodes.html)
-var WEATHER_CODE_MAP = {
-  1:'clear', 2:'fair', 3:'partly_cloudy', 4:'cloudy', 5:'overcast',
-  10:'cloudy_shower_1', 11:'cloudy_shower_2', 12:'overcast_shower_1', 13:'overcast_shower_2', 14:'overcast_shower_3',
-  20:'cloudy_rain_1', 21:'cloudy_rain_2', 22:'overcast_rain_1', 23:'overcast_rain_2', 24:'overcast_rain_3',
-  30:'cloudy_sleet_1', 31:'cloudy_sleet_2', 32:'overcast_sleet_1', 33:'overcast_sleet_2', 34:'overcast_sleet_3',
-  40:'cloudy_snow_1', 41:'cloudy_snow_2', 42:'overcast_snow_1', 43:'overcast_snow_2', 44:'overcast_snow_3',
-  50:'cloudy_freezingrain_1', 51:'cloudy_freezingrain_2', 52:'overcast_freezingrain_1', 53:'overcast_freezingrain_2', 54:'overcast_freezingrain_3',
-  60:'cloudy_thunderstorm_1', 61:'cloudy_thunderstorm_2', 62:'overcast_thunderstorm_1', 63:'overcast_thunderstorm_2', 64:'overcast_thunderstorm_3',
-  70:'cloudy_snowthunderstorm_1', 71:'cloudy_snowthunderstorm_2', 72:'overcast_snowthunderstorm_1', 73:'overcast_snowthunderstorm_2', 74:'overcast_snowthunderstorm_3',
-  80:'cloudy_fog', 81:'overcast_fog', 82:'overcast_hail_1', 83:'overcast_hail_2', 84:'overcast_hail_3',
-  99:'no_data'
-};
-
 // Global state
-var liveData = { current: null, location: null, refreshInterval: null, hourlyToday: [], hourlyTomorrow: [], daily: [], lang: null, iconMapping: null };
+var liveData = {
+  current: null,
+  location: null,
+  refreshInterval: null,
+  hourlyToday: [],
+  hourlyTomorrow: [],
+  daily: [],
+  dailyCount: 0,
+  lang: null,
+  iconMapping: null
+};
 
 // Rendered hourly arrays for preselectHour
 var hourlyTodayRendered = [];
@@ -503,6 +500,7 @@ function loadAllData() {
         uvi: d.uvIndex
       };
     });
+    liveData.dailyCount = liveData.daily.length;
 
     renderAll();
     return liveData;
@@ -612,15 +610,26 @@ function getWindDirShort(deg) {
 
 
 // ===== i18n =====
-function applyLang(strings) {
+function formatI18nString(str, vars) {
+  if (!str || typeof str !== 'string') return str;
+  return str.replace(/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g, function(_, key) {
+    return vars && vars[key] !== undefined ? String(vars[key]) : '{' + key + '}';
+  });
+}
+
+function applyLang(strings, vars) {
   document.querySelectorAll('[data-i18n]').forEach(function(el) {
     var key = el.getAttribute('data-i18n');
     var parts = key.split('.');
     var val = strings;
+
     for (var i = 0; i < parts.length; i++) {
       val = val && val[parts[i]];
     }
-    if (val && typeof val === 'string') el.textContent = val;
+
+    if (val && typeof val === 'string') {
+      el.textContent = formatI18nString(val, vars);
+    }
   });
 }
 
@@ -692,7 +701,7 @@ function renderAll() {
   renderTempChart('tempChartMorgen', hourlyTomorrowRendered);
 
   // Apply i18n
-  if (liveData.lang) applyLang(liveData.lang);
+  if (liveData.lang) applyLang(liveData.lang, { fcastDays: liveData.dailyCount });
 
   // Hide stats with no data
   hideEmptyStats();
@@ -799,7 +808,7 @@ function scheduleRefresh() {
             <div><div class="astro-label" data-i18n="theme.sunset">Sonnenuntergang</div><div class="astro-val mono" id="heroSunset">18:05</div></div>
           </div>
           <div class="astro-item">
-            <div class="astro-emoji" style="background:rgba(139,92,246,0.1)">&nbsp;&#x1F319;</div>
+            <div class="astro-emoji" style="background:rgba(139,92,246,0.1)">&nbsp;&#x1F4A7;</div>
             <div>
               <div class="astro-label" data-i18n="theme.humidity">Luftfeuchte</div>
               <div class="astro-val mono" id="heroHumidity">--%</div>
@@ -870,7 +879,7 @@ function scheduleRefresh() {
   <!-- ===== TAB PANEL: TAGE ===== -->
   <div id="panel-tage" class="tab-panel">
     <div class="glass daily-wrap">
-      <h2 data-i18n="theme.forecast_7day">7-Tage Vorhersage</h2>
+      <h2 data-i18n="theme.forecast_X_days" data-i18n-args='{"fcastDays":7}'>7-Tage Vorhersage</h2>
       <div id="dailyWrap"></div>
     </div>
   </div>
@@ -991,8 +1000,11 @@ function renderDaily(containerId, dataArray) {
       '<div><div class="drow-day">' + d.day + '</div><div class="drow-date mono">' + d.date + '</div></div>' +
       '<img class="drow-icon" src="' + resolveIcon(d.weatherCode, isDay, 0) + '" alt="">' +
       (d.desc ? '<div class="drow-desc">' + d.desc + '</div>' : '<div class="drow-desc"></div>') +
-      (d.rainProb != null ? '<div class="drow-rainProb">' + d.rainProb + '%</div>' : '<div class="drow-rainProb"></div>') +
-      '<div class="drow-temps"><span class="drow-lo mono">' + Math.round(d.low) + '&deg;</span><div class="drow-bar"><div class="drow-fill" id="bar' + i + '"></div></div><span class="drow-hi mono">' + Math.round(d.high) + '&deg;</span></div>' +
+      (d.rainProb != null ? '<div class="drow-rainProb" style="display:flex;align-items:center;justify-content:center;gap:4px;">' +
+                              '<i data-lucide="umbrella" style="width:14px;height:14px;"></i>' +
+                              '<span>' + d.rainProb + '%</span>' +
+                            '</div>' : '<div class="drow-rainProb"></div>') +
+      '<div class="drow-temps"><span class="drow-lo mono">' + Math.round(d.low) + '&deg;C</span><div class="drow-bar"><div class="drow-fill" id="bar' + i + '"></div></div><span class="drow-hi mono">' + Math.round(d.high) + '&deg;C</span></div>' +
       detailHtml;
     (function(r) {
       r.onclick = function() {
@@ -1004,6 +1016,7 @@ function renderDaily(containerId, dataArray) {
     })(row);
     container.appendChild(row);
   }
+  lucide.createIcons();
   // Calculate temp bar positions
   var allTemps = [];
   for (var i = 0; i < dataArray.length; i++) {

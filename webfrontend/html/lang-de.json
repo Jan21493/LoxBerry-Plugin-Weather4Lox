@@ -236,7 +236,7 @@
     "tab_days": "Tage",
     "hours_today": "Heutige Stunden",
     "hours_tomorrow": "Morgige Stunden",
-    "forecast_7day": "7-Tage Vorhersage",
+    "forecast_X_days": "{fcastDays}-Tage Vorhersage",
     "click_hour_detail": "Stunde anklicken fuer Details",
     "loading": "Wetterdaten werden geladen...",
     "error_loading": "Daten konnten nicht geladen werden.",
