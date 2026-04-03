@@ -1329,7 +1329,7 @@ function renderTempChart(svgId, dataArray) {
     if (isNaN(hh) || temp == null) continue;
     var tPct = (temp - minT) / range;
     var hue = Math.round(200 - tPct * 160);
-    var stripIdx = nowEntry ? (i + 1) : i; // offset: nowEntry is strip card[0]
+    var stripIdx = (isHeute && nowEntry) ? (i + 1) : i; // offset: nowEntry is strip card[0] for heute
     dots += '<circle cx="' + xPos(hh) + '" cy="' + yPos(temp) + '" r="3" fill="url(#dotG-' + svgId + ')" stroke="rgba(255,255,255,0.2)" stroke-width="1" class="chart-dot" data-idx="' + stripIdx + '" data-strip="' + stripId + '" style="cursor:pointer"><set attributeName="fill" to="hsl(' + Math.round(200 - tPct * 160) + ',80%,55%)"/></circle>';
     // Temperature label at every dot (for alignment with fixed axis)
     if (hh % 3 === 0) {
@@ -1340,7 +1340,6 @@ function renderTempChart(svgId, dataArray) {
   // Special now dot (strip card index 0, at current hour position)
   var initHighlightX = xPos(0), initHighlightY = yBot;
   if (nowEntry && nowEntry.temp != null) {
-    var tPctNow = (nowEntry.temp - minT) / range;
     initHighlightX = xPos(currentHour);
     initHighlightY = yPos(nowEntry.temp);
     nowDot = '<circle cx="' + xPos(currentHour) + '" cy="' + yPos(nowEntry.temp) + '" r="4" fill="var(--amber)" stroke="rgba(255,255,255,0.3)" stroke-width="1" class="chart-dot" data-idx="0" data-strip="' + stripId + '" style="cursor:pointer" />';
