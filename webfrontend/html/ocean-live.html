@@ -357,6 +357,7 @@ var hourlyTomorrowRendered = [];
 // Selection state (persisted across refreshes)
 var selectedTab = 'heute';
 var selectedHourIdx = 0;
+var selectedHourValue = 'now';
 
 // ===== FETCH HELPERS =====
 function checkOk(response) {
@@ -561,10 +562,11 @@ function resolveIcon(weatherCode, isNight, moonAge) {
 function transformHourly(hourlyArray, sunriseStr, sunsetStr) {
   return hourlyArray.map(function(h) {
     var hTime = (h.time && h.time.datetime) || '';
-    var hourStr = hTime.slice(11, 13);
-    var dn = isDaytime(hTime, sunriseStr, sunsetStr) ? 'day' : 'night';
+    var hourValue = hTime ? parseInt(hTime.slice(11, 13), 10) : null;
+
     return {
-      hour: hourStr,
+      hour: hTime ? hTime.slice(11, 13) : '--',
+      hourValue: hourValue,
       temp: h.temperature ? h.temperature.air : undefined,
       feelsLike: h.temperature ? h.temperature.feelsLike : undefined,
       rainProb: h.precipitation ? h.precipitation.probability : undefined,
@@ -582,7 +584,9 @@ function transformHourly(hourlyArray, sunriseStr, sunsetStr) {
       desc: h.weatherCode ? h.weatherCode.description : undefined,
       dewpoint: h.dewpoint,
       gust: h.wind ? h.wind.gust : undefined,
-      visibility: h.visibility
+      visibility: h.visibility,
+      time: h.time,
+      isCurrent: false
     };
   });
 }
@@ -640,44 +644,102 @@ function applyLang(strings, vars) {
   });
 }
 
-// ===== RENDER ALL =====
-function renderAll() {
-  var c = liveData.current;
-  var sunrise = c.sunrise || '--:--';
-  var sunset = c.sunset || '--:--';
-  var pad2 = function(n) { return n < 10 ? '0' + n : '' + n; };
+function getRoundedCurrentHour(date) {
+  var rounded = new Date(date);
+  rounded.setMinutes(0, 0, 0);
+  return rounded;
+}
 
-  // Get localized "now" label from language file
-  var nowLabel = (liveData.lang && liveData.lang.theme && liveData.lang.theme.now) || 'Now';
+function buildNowEntry(currentData, nowLabel) {
+  var currentTime = currentData.time && currentData.time.datetime
+    ? new Date(currentData.time.datetime)
+    : new Date();
 
-  // Build synthetic nowEntry from current.json data
-  var cTemp = c.temperature || {};
-  var cWind = c.wind || {};
-  var cWx = c.weatherCode || {};
-  var cPrecip = c.precipitation || {};
-  var cTime = c.time || {};
-  var nowEntry = {
+  var roundedTime = getRoundedCurrentHour(currentTime);
+  var hourValue = roundedTime.getHours();
+
+  var cTemp = currentData.temperature || {};
+  var cWind = currentData.wind || {};
+  var cWx = currentData.weatherCode || {};
+  var cPrecip = currentData.precipitation || {};
+
+  return {
     hour: nowLabel,
-    isNow: true,
+    hourValue: hourValue,
+    time: {
+      datetime: roundedTime.toISOString()
+    },
     temp: cTemp.air,
     feelsLike: cTemp.feelsLike,
     rainProb: cPrecip.probability,
     rainAmount: cPrecip.rainToday,
     wind: cWind.speed,
     windDir: cWind.direction,
-    humidity: c.humidity,
-    pressure: c.pressure,
-    uvi: c.uvIndex,
-    clouds: c.cloudCover,
+    humidity: currentData.humidity,
+    pressure: currentData.pressure,
+    uvi: currentData.uvIndex,
+    clouds: currentData.cloudCover,
     weatherCode: cWx.weather4lox,
-    moonAge: c.moon ? c.moon.age : 0,
-    moonDirection: c.moon ? c.moon.direction : null,
-    isNight: c.isNight,
+    moonAge: currentData.moon ? currentData.moon.age : 0,
+    moonDirection: currentData.moon ? currentData.moon.direction : null,
+    isNight: currentData.isNight,
     desc: cWx.description,
-    dewpoint: c.dewpoint,
+    dewpoint: currentData.dewpoint,
     gust: cWind.gust,
-    visibility: c.visibility
+    visibility: currentData.visibility,
+    isCurrent: true
   };
+}
+
+function findHourIndex(dataArray, hourValue) {
+  for (var i = 0; i < dataArray.length; i++) {
+    if (dataArray[i].hourValue === hourValue) return i;
+  }
+  return 0;
+}
+
+function restoreSelectionAfterRender() {
+  var activeTabEl = document.querySelector('.tab.active');
+  var currentActiveTab = activeTabEl ? activeTabEl.getAttribute('data-tab') : 'heute';
+
+  if (currentActiveTab !== selectedTab) {
+    selectedTab = currentActiveTab;
+  }
+
+  var stripId = (selectedTab === 'heute') ? 'hourStripHeute' : 'hourStripMorgen';
+  var dataArray = (selectedTab === 'heute') ? hourlyTodayRendered : hourlyTomorrowRendered;
+  var cards = document.getElementById(stripId).querySelectorAll('.hcard');
+
+  var idx = selectedHourIdx;
+  if (selectedTab === 'heute' && selectedHourValue === 'now') {
+    idx = 0;
+  } else if (selectedTab === 'morgen' && selectedHourValue === '12') {
+    idx = findHourIndex(dataArray, '12');
+  }
+
+  if (!cards.length) return;
+  idx = Math.min(Math.max(idx, 0), cards.length - 1);
+  if (cards[idx]) {
+    selectHour(cards[idx], dataArray);
+    cards[idx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+}
+
+// ===== RENDER ALL =====
+function renderAll() {
+  var c = liveData.current;
+  var sunrise = c.sunrise || '--:--';
+  var sunset = c.sunset || '--:--';
+  var cTemp = c.temperature || {};
+  var cWind = c.wind || {};
+  var cWx = c.weatherCode || {};
+  var cPrecip = c.precipitation || {};
+  var cTime = c.time || {};
+  var pad2 = function(n) { return n < 10 ? '0' + n : '' + n; };
+
+  // Get localized "now" label from language file
+  var nowLabel = (liveData.lang && liveData.lang.theme && liveData.lang.theme.now) || 'Now';
+  var nowEntry = buildNowEntry(c, nowLabel);
 
   // Transform hourly arrays; prepend nowEntry to heute
   hourlyTodayRendered = [nowEntry].concat(transformHourly(liveData.hourlyToday, sunrise, sunset));
@@ -739,21 +801,7 @@ function renderAll() {
   hideEmptyStats();
 
   // Restore previously selected hour/tab, or preselect default
-  var activeTabEl = document.querySelector('.tab.active');
-  var currentActiveTab = activeTabEl ? activeTabEl.getAttribute('data-tab') : 'heute';
-  if (currentActiveTab === selectedTab && selectedTab !== 'tage') {
-    // Restore the previously selected hour
-    var stripId = (selectedTab === 'heute') ? 'hourStripHeute' : 'hourStripMorgen';
-    var dataArray = (selectedTab === 'heute') ? hourlyTodayRendered : hourlyTomorrowRendered;
-    var cards = document.getElementById(stripId).querySelectorAll('.hcard');
-    var idx = Math.min(selectedHourIdx, Math.max(0, cards.length - 1));
-    if (cards[idx]) {
-      selectHour(cards[idx], dataArray);
-      cards[idx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
-  } else {
-    preselectHour(currentActiveTab);
-  }
+  restoreSelectionAfterRender();
 
   // Drag scroll
   makeDragScroll(document.getElementById('hourStripHeute'));
@@ -1015,10 +1063,11 @@ function renderHourStrip(containerId, dataArray) {
     // Show "Now" label directly; for regular hours append ':00'
     var timeLabel = d.isNow ? d.hour : d.hour + ':00';
     card.innerHTML =
-      '<div class="hcard-time mono">' + timeLabel + '</div>' +
+      '<div class="hcard-time mono">' + (d.isNow ? nowLabel : d.hour + ':00') + '</div>' +
       '<img class="hcard-icon" src="' + resolveIcon(d.weatherCode, d.isNight, d.moonAge) + '" alt="">' +
       '<div class="hcard-temp">' + Math.round(d.temp) + '&deg;</div>' +
       (d.rainProb != null ? '<div class="hcard-rainProb">' + d.rainProb + '%</div>' : '');
+
     container.appendChild(card);
   }
 }
@@ -1086,11 +1135,13 @@ function renderDaily(containerId, dataArray) {
 function selectHour(el, dataArray) {
   document.querySelectorAll('.hcard').forEach(function(c) { c.classList.remove('selected'); });
   el.classList.add('selected');
-  var idx = parseInt(el.getAttribute('data-idx'));
+
+  var idx = parseInt(el.getAttribute('data-idx'), 10);
   var d = dataArray[idx];
 
   // Update selection state
   selectedHourIdx = idx;
+  selectedHourValue = (d && typeof d.hourValue === 'number') ? String(d.hourValue) : 'now';
 
   // Determine active tab for context label
   var activeTab = document.querySelector('.tab.active');
@@ -1132,10 +1183,12 @@ function selectHour(el, dataArray) {
   // Hide empty stats after update
   hideEmptyStats();
 
-  // Sync chart highlight
-  var chartId = (tabName === 'morgen') ? 'tempChartMorgen' : 'tempChartHeute';
-  highlightChartPoint(chartId, idx, dataArray);
-}
+  // Highlight correct hour slot on the active chart (use hourValue, not array index)
+  var chartId = (selectedTab === 'heute') ? 'tempChartHeute' : 'tempChartMorgen';
+  if (d && typeof d.hourValue === 'number') {
+    highlightChartPoint(chartId, d.hourValue);
+  }
+} 
 
 // ===== PRESELECT HOUR =====
 function preselectHour(tabName) {
@@ -1155,11 +1208,28 @@ function preselectHour(tabName) {
 
   // Update selection state
   selectedTab = tabName;
+  if (tabName === 'heute' || tabName === 'morgen') {
+    renderAll();
+  }
   selectedHourIdx = targetIdx;
 
   if (cards[targetIdx]) {
     selectHour(cards[targetIdx], dataArray);
     cards[targetIdx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+}
+
+function refreshActiveTabView(tabName) {
+  selectedTab = tabName;
+
+  if (tabName === 'heute') {
+    renderHourStrip('hourStripHeute', hourlyTodayRendered);
+    renderTempChart('tempChartHeute', hourlyTodayRendered);
+    restoreSelectionAfterRender();
+  } else if (tabName === 'morgen') {
+    renderHourStrip('hourStripMorgen', hourlyTomorrowRendered);
+    renderTempChart('tempChartMorgen', hourlyTomorrowRendered);
+    restoreSelectionAfterRender();
   }
 }
 
@@ -1181,7 +1251,7 @@ document.querySelectorAll('.tab').forEach(function(btn) {
         requestAnimationFrame(function() { newPanel.classList.add('fade-in'); });
         var hero = document.getElementById('heroSection');
         if (hero) hero.style.display = (tabName === 'tage') ? 'none' : '';
-        preselectHour(tabName);
+        refreshActiveTabView(tabName);
       }, 300);
     } else {
       document.querySelectorAll('.tab').forEach(function(b) { b.classList.remove('active'); });
@@ -1193,7 +1263,7 @@ document.querySelectorAll('.tab').forEach(function(btn) {
       requestAnimationFrame(function() { newPanel.classList.add('fade-in'); });
       var hero = document.getElementById('heroSection');
       if (hero) hero.style.display = (tabName === 'tage') ? 'none' : '';
-      preselectHour(tabName);
+      refreshActiveTabView(tabName);
     }
   });
 });
@@ -1241,173 +1311,248 @@ function makeDragScroll(el) {
 // ===== TEMPERATURE CHART (SVG, responsive) =====
 function renderTempChart(svgId, dataArray) {
   var svg = document.getElementById(svgId);
-  if (!svg || !dataArray || !dataArray.length) return;
+  if (!svg) return;
 
-  var isHeute = (svgId === 'tempChartHeute');
-  var stripId = isHeute ? 'hourStripHeute' : 'hourStripMorgen';
-  var stripDataArray = isHeute ? hourlyTodayRendered : hourlyTomorrowRendered;
-
-  // For heute: separate nowEntry from hourly data for the line chart
-  var nowEntry = null;
-  var hourlyData = dataArray;
-  if (isHeute && dataArray.length > 0 && dataArray[0].isNow) {
-    nowEntry = dataArray[0];
-    hourlyData = dataArray.slice(1);
-  }
-
-  // Collect all temperatures for Y-axis range (including nowEntry)
-  var allTemps = hourlyData.map(function(d) { return d.temp; });
-  if (nowEntry && nowEntry.temp != null) allTemps.push(nowEntry.temp);
-  allTemps = allTemps.filter(function(t) { return t != null; });
-  if (allTemps.length === 0) return;
-
-  var minT = Math.min.apply(null, allTemps);
-  var maxT = Math.max.apply(null, allTemps);
-  var range = Math.max(1, maxT - minT);
-
-  // Fixed 24h axis (hours 0..23)
-  var HOURS = 24;
-  var H = 140, step = 32, padL = 40, padR = 16;
-  var yTop = 32, yBot = H - 28;
+  // --- Chart constants (must match highlightChartPoint) ---
+  var H = 140;
+  var padL = 40;
+  var padR = 16;
+  var yTop = 28;
+  var yBot = H - 28;
   var chartH = yBot - yTop;
-  var W = padL + padR + (HOURS - 1) * step;
-  var pad2 = function(n) { return n < 10 ? '0' + n : '' + n; };
+  var stepX = 28; // pixels per hour slot
+  var W = padL + padR + (24 * stepX);
 
   svg.setAttribute('width', W);
   svg.setAttribute('height', H);
   svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
 
-  // X position based on actual hour (0..23)
-  function xPos(h) { return padL + h * step; }
-  function yPos(t) { return yBot - ((t - minT) / range) * chartH; }
+  // --- Helper: fixed x position for hour slots 0..24 ---
+  function xPos(hour) {
+    return padL + hour * stepX;
+  }
 
-  // Current hour for nowEntry position on chart
-  var currentHour = new Date().getHours();
+  // --- Build fixed slots 0..24 (inclusive) ---
+  var slots = [];
+  for (var h = 0; h <= 24; h++) {
+    slots.push({
+      hour: h,
+      // point is the original data item (now or forecast) if present
+      point: null,
+      // temp is the numeric temperature used for the curve
+      temp: null
+    });
+  }
 
-  // Build polyline points for hourly data (each at its actual hour position)
-  var pts = [];
-  for (var i = 0; i < hourlyData.length; i++) {
-    var hh = parseInt(hourlyData[i].hour, 10);
-    if (!isNaN(hh) && hourlyData[i].temp != null) {
-      pts.push(xPos(hh) + ',' + yPos(hourlyData[i].temp));
+  // --- Map incoming points by hourValue (0..23). hour 24 is kept as duplicate of hour 0/23 line end. ---
+  var pointByHour = new Map();
+  if (Array.isArray(dataArray)) {
+    dataArray.forEach(function(entry) {
+      if (!entry) return;
+      var hv = entry.hourValue;
+      if (typeof hv === 'string' && /^\d+$/.test(hv)) hv = parseInt(hv, 10);
+      if (typeof hv !== 'number' || isNaN(hv)) return;
+      if (hv < 0 || hv > 23) return; // hourValue must be 0..23
+      pointByHour.set(hv, entry);
+    });
+  }
+
+  // Apply mapped points into slots[0..23]
+  for (var hh = 0; hh <= 23; hh++) {
+    var p = pointByHour.get(hh) || null;
+    if (p && p.temp != null && !isNaN(p.temp)) {
+      slots[hh].point = p;
+      slots[hh].temp = Number(p.temp);
     }
   }
 
-  // Area polygon (under the line)
-  var area = '';
-  if (pts.length > 0) {
-    var firstH = parseInt(hourlyData[0].hour, 10);
-    var lastH = parseInt(hourlyData[hourlyData.length - 1].hour, 10);
-    area = xPos(firstH) + ',' + yBot + ' ' + pts.join(' ') + ' ' + xPos(lastH) + ',' + yBot;
+  // Slot 24: close the curve at hour 24 using hour 23 value (or fallback later)
+  // This keeps the axis 0..24 consistent visually.
+  if (slots[23].temp != null) {
+    slots[24].temp = slots[23].temp;
   }
 
-  var labels = '', dots = '', gridLines = '', yAxis = '', nowDot = '';
+  // --- Fill missing temps so the polyline ALWAYS exists from 0..24 ---
+  // Strategy:
+  // 1) Find first known temperature
+  // 2) Forward fill until next known
+  // 3) Backward fill before first known with the first known temp
+  var firstKnownIdx = -1;
+  for (var i = 0; i < slots.length; i++) {
+    if (slots[i].temp != null && !isNaN(slots[i].temp)) {
+      firstKnownIdx = i;
+      break;
+    }
+  }
+
+  // No data at all -> clear SVG and stop
+  if (firstKnownIdx === -1) {
+    svg.innerHTML = '';
+    return;
+  }
+
+  // Backfill before first known
+  for (var b = 0; b < firstKnownIdx; b++) {
+    slots[b].temp = slots[firstKnownIdx].temp;
+  }
+
+  // Forward fill gaps
+  var lastTemp = slots[firstKnownIdx].temp;
+  for (var f = firstKnownIdx + 1; f < slots.length; f++) {
+    if (slots[f].temp == null || isNaN(slots[f].temp)) {
+      slots[f].temp = lastTemp;
+    } else {
+      lastTemp = slots[f].temp;
+    }
+  }
+
+  // Ensure slot 24 exists (again) after filling
+  if (slots[24].temp == null || isNaN(slots[24].temp)) {
+    slots[24].temp = slots[23].temp;
+  }
+
+  // --- Determine min/max for y scale ---
+  var temps = slots.map(function(s) { return s.temp; }).filter(function(t) { return t != null && !isNaN(t); });
+  var minT = Math.min.apply(null, temps);
+  var maxT = Math.max.apply(null, temps);
+  var range = Math.max(1, maxT - minT);
+
+  function yPos(temp) {
+    return yBot - ((temp - minT) / range) * chartH;
+  }
+
+  // --- Styles from CSS variables ---
   var cs = getComputedStyle(document.documentElement);
   var gridC = cs.getPropertyValue('--border').trim();
   var labelC = cs.getPropertyValue('--text-muted').trim();
 
-  // Y-axis labels
+  // --- Y grid + labels ---
+  var yAxis = '';
   var ySteps = Math.max(2, Math.min(5, Math.ceil(range)));
   var yStep = range / ySteps;
-  for (var s = 0; s <= ySteps; s++) {
-    var tv = minT + s * yStep;
+
+  for (var y = 0; y <= ySteps; y++) {
+    var tv = minT + y * yStep;
     var yp = yPos(tv);
     yAxis += '<text x="' + (padL - 6) + '" y="' + (yp + 3) + '" text-anchor="end" font-size="9" fill="' + labelC + '" font-family="Outfit,sans-serif">' + Math.round(tv) + '\u00b0</text>';
     yAxis += '<line x1="' + padL + '" y1="' + yp + '" x2="' + (W - padR) + '" y2="' + yp + '" stroke="' + gridC + '" stroke-dasharray="3,3" />';
   }
 
-  // Fixed X-axis grid lines and labels (every 3 hours)
-  for (var h = 0; h < HOURS; h += 3) {
-    gridLines += '<line x1="' + xPos(h) + '" y1="' + yTop + '" x2="' + xPos(h) + '" y2="' + yBot + '" stroke="' + gridC + '" />';
-    labels += '<text x="' + xPos(h) + '" y="14" text-anchor="middle" font-size="9" fill="' + labelC + '" font-family="Outfit,sans-serif">' + pad2(h) + ':00</text>';
-  }
-
-  // Dots for hourly data (data-idx offset by 1 because nowEntry is at strip index 0)
-  for (var i = 0; i < hourlyData.length; i++) {
-    var hh = parseInt(hourlyData[i].hour, 10);
-    var temp = hourlyData[i].temp;
-    if (isNaN(hh) || temp == null) continue;
-    var tPct = (temp - minT) / range;
-    var hue = Math.round(200 - tPct * 160);
-    var stripIdx = (isHeute && nowEntry) ? (i + 1) : i; // offset: nowEntry is strip card[0] for heute
-    dots += '<circle cx="' + xPos(hh) + '" cy="' + yPos(temp) + '" r="3" fill="url(#dotG-' + svgId + ')" stroke="rgba(255,255,255,0.2)" stroke-width="1" class="chart-dot" data-idx="' + stripIdx + '" data-strip="' + stripId + '" style="cursor:pointer"><set attributeName="fill" to="hsl(' + Math.round(200 - tPct * 160) + ',80%,55%)"/></circle>';
-    // Temperature label at every dot (for alignment with fixed axis)
-    if (hh % 3 === 0) {
-      labels += '<text x="' + xPos(hh) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="9" fill="' + labelC + '" font-family="Outfit,sans-serif">' + Math.round(temp) + '\u00b0</text>';
+  // --- X grid + labels 0..24 ---
+  var xLabels = '';
+  for (var h2 = 0; h2 <= 24; h2++) {
+    if (h2 % 3 === 0) {
+      xLabels += '<text x="' + xPos(h2) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="9" fill="' + labelC + '" font-family="Outfit,sans-serif">' + String(h2).padStart(2, '0') + '</text>';
+    }
+    if (h2 < 24) {
+      xLabels += '<line x1="' + xPos(h2) + '" y1="' + yTop + '" x2="' + xPos(h2) + '" y2="' + yBot + '" stroke="' + gridC + '" opacity="0.12" />';
     }
   }
 
-  // Special now dot (strip card index 0, at current hour position)
-  var initHighlightX = xPos(0), initHighlightY = yBot;
-  if (nowEntry && nowEntry.temp != null) {
-    initHighlightX = xPos(currentHour);
-    initHighlightY = yPos(nowEntry.temp);
-    nowDot = '<circle cx="' + xPos(currentHour) + '" cy="' + yPos(nowEntry.temp) + '" r="4" fill="var(--amber)" stroke="rgba(255,255,255,0.3)" stroke-width="1" class="chart-dot" data-idx="0" data-strip="' + stripId + '" style="cursor:pointer" />';
-  } else if (hourlyData.length > 0 && hourlyData[0].temp != null) {
-    var hh0 = parseInt(hourlyData[0].hour, 10);
-    initHighlightX = isNaN(hh0) ? xPos(0) : xPos(hh0);
-    initHighlightY = yPos(hourlyData[0].temp);
+  // --- Build polyline points from ALL slots 0..24 (this guarantees a curve starting at 0) ---
+  var polyPoints = [];
+  for (var p = 0; p < slots.length; p++) {
+    polyPoints.push(xPos(slots[p].hour) + ',' + yPos(slots[p].temp));
   }
 
-  // Build gradient stops for the line (based on actual hour positions)
-  var lineStops = '';
-  for (var i = 0; i < hourlyData.length; i++) {
-    var hh = parseInt(hourlyData[i].hour, 10);
-    if (isNaN(hh) || hourlyData[i].temp == null) continue;
-    var pct = (hh / (HOURS - 1) * 100).toFixed(1);
-    var tPct = (hourlyData[i].temp - minT) / range;
-    var hue = Math.round(200 - tPct * 160);
-    lineStops += '<stop offset="' + pct + '%" stop-color="hsl(' + hue + ',80%,55%)"/>';
+  // --- Build area under curve ---
+  var areaPoints = xPos(0) + ',' + yBot + ' ' + polyPoints.join(' ') + ' ' + xPos(24) + ',' + yBot;
+
+  // --- Dots only for real measured/forecast points (not for filled ones) ---
+  // We add data-hour to support highlight + click mapping.
+  var dots = '';
+  for (var d = 0; d <= 23; d++) {
+    var slot = slots[d];
+    if (!slot.point) continue;
+
+    var dotY = yPos(slot.temp) - 1.5; // small upward shift for better visual centering
+    dots += '<circle class="chart-dot" cx="' + xPos(d) + '" cy="' + dotY + '" r="3" ' +
+            'fill="var(--sky)" stroke="rgba(255,255,255,0.2)" stroke-width="1" ' +
+            'data-hour="' + d + '" style="cursor:pointer"></circle>';
   }
+
+  // --- Gradients ---
+  var defs =
+    '<defs>' +
+      '<linearGradient id="areaG-' + svgId + '" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="var(--sky)" stop-opacity="0.15"/>' +
+        '<stop offset="100%" stop-color="var(--amber)" stop-opacity="0"/>' +
+      '</linearGradient>' +
+    '</defs>';
+
+  // --- Baseline ---
+  var baseLine = '<line x1="' + padL + '" y1="' + yBot + '" x2="' + (W - padR) + '" y2="' + yBot + '" stroke="' + gridC + '" />';
+
+  // --- Highlight circle (will be moved by highlightChartPoint) ---
+  // Default highlight = hour 0
+  var highlight = '<circle class="chart-highlight" cx="' + xPos(0) + '" cy="' + (yPos(slots[0].temp) - 1.5) + '" r="6" fill="var(--amber)" stroke="var(--text-primary)" stroke-width="2" opacity="0.9" />';
 
   svg.innerHTML =
-    '<defs>' +
-    '<linearGradient id="lineG-' + svgId + '" x1="0" y1="0" x2="1" y2="0">' + lineStops + '</linearGradient>' +
-    '<linearGradient id="areaG-' + svgId + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--sky)" stop-opacity="0.15"/><stop offset="100%" stop-color="var(--amber)" stop-opacity="0"/></linearGradient>' +
-    '</defs>' +
-    yAxis + gridLines +
-    '<line x1="' + padL + '" y1="' + yBot + '" x2="' + (W - padR) + '" y2="' + yBot + '" stroke="' + gridC + '" />' +
-    (area ? '<path d="M ' + area + '" fill="url(#areaG-' + svgId + ')" />' : '') +
-    (pts.length > 0 ? '<polyline points="' + pts.join(' ') + '" fill="none" stroke="url(#lineG-' + svgId + ')" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' : '') +
-    dots + nowDot + labels +
-    '<circle class="chart-highlight" cx="' + initHighlightX + '" cy="' + initHighlightY + '" r="6" fill="var(--amber)" stroke="var(--text-primary)" stroke-width="2" opacity="0.9" />';
+    defs +
+    yAxis +
+    xLabels +
+    baseLine +
+    '<path d="M ' + areaPoints + '" fill="url(#areaG-' + svgId + ')" />' +
+    '<polyline points="' + polyPoints.join(' ') + '" fill="none" stroke="var(--sky)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' +
+    dots +
+    highlight;
 
-  // Click on chart dots → select corresponding hour card
+  // --- Click dots -> select matching hour in hour-strip ---
+  var isToday = (svgId === 'tempChartHeute');
+  var stripId = isToday ? 'hourStripHeute' : 'hourStripMorgen';
+  var stripData = isToday ? hourlyTodayRendered : hourlyTomorrowRendered;
+
   svg.querySelectorAll('.chart-dot').forEach(function(dot) {
     dot.addEventListener('click', function() {
-      var idx = parseInt(dot.getAttribute('data-idx'));
+      var hourValue = parseInt(dot.getAttribute('data-hour'), 10);
+
+      var targetIdx = 0;
+      for (var i2 = 0; i2 < stripData.length; i2++) {
+        if (stripData[i2] && stripData[i2].hourValue === hourValue) {
+          targetIdx = i2;
+          break;
+        }
+      }
+
       var cards = document.getElementById(stripId).querySelectorAll('.hcard');
-      if (cards[idx]) selectHour(cards[idx], stripDataArray);
+      if (cards[targetIdx]) selectHour(cards[targetIdx], stripData);
     });
   });
+
+  // --- Apply current highlight after render ---
+  // If selectedHourValue is "now", highlight the rounded hourValue (stored in selectedHourIdx's data entry)
+  var hvToHighlight = 0;
+  if (selectedTab === (isToday ? 'heute' : 'morgen')) {
+    var selArray = stripData;
+    if (selArray && selArray[selectedHourIdx] && typeof selArray[selectedHourIdx].hourValue === 'number') {
+      hvToHighlight = selArray[selectedHourIdx].hourValue;
+    }
+  }
+  highlightChartPoint(svgId, hvToHighlight);
 }
 
-function highlightChartPoint(svgId, idx, dataArray) {
+function highlightChartPoint(svgId, hourValue) {
   var svg = document.getElementById(svgId);
-  if (!svg || !dataArray || !dataArray.length) return;
-  var hl = svg.querySelector('.chart-highlight');
-  if (!hl) return;
-  var d = dataArray[idx];
-  if (!d) return;
+  if (!svg) return;
 
-  // Compute temperature range using all data (including nowEntry)
-  var allTemps = dataArray.map(function(d) { return d.temp; }).filter(function(t) { return t != null; });
-  var minT = Math.min.apply(null, allTemps), maxT = Math.max.apply(null, allTemps), range = Math.max(1, maxT - minT);
-  var H = 140, step = 32, padL = 40, yTop = 32, yBot = H - 28, chartH = yBot - yTop;
+  var highlight = svg.querySelector('.chart-highlight');
+  if (!highlight) return;
 
-  // Determine x position by actual hour (nowEntry → current hour)
-  var currentHour = new Date().getHours();
-  var hourVal = d.isNow ? currentHour : parseInt(d.hour, 10);
-  if (isNaN(hourVal)) hourVal = 0;
+  if (hourValue == null || isNaN(hourValue)) hourValue = 0;
+  hourValue = Math.max(0, Math.min(24, hourValue));
 
-  hl.setAttribute('cx', padL + hourVal * step);
-  hl.setAttribute('cy', yBot - ((d.temp - minT) / range) * chartH);
-  var tPct = (d.temp - minT) / range;
-  var hue = Math.round(200 - tPct * 160);
-  hl.setAttribute('fill', 'hsl('+hue+',80%,55%)');
+  // Must match renderTempChart constants
+  var padL = 40;
+  var stepX = 28;
 
-  var wrap = svg.parentElement;
-  if (wrap) wrap.scrollLeft = Math.max(0, (padL + hourVal * step) - wrap.clientWidth / 2);
+  var dot = svg.querySelector('.chart-dot[data-hour="' + hourValue + '"]');
+  if (dot) {
+    highlight.setAttribute('cx', dot.getAttribute('cx'));
+    highlight.setAttribute('cy', dot.getAttribute('cy'));
+  } else {
+    // If there is no real dot for this hour, move highlight horizontally only
+    highlight.setAttribute('cx', padL + hourValue * stepX);
+  }
 }
 
 // ===== HIDE EMPTY DATA =====
