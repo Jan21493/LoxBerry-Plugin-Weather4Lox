@@ -1,43 +1,61 @@
-<!-- Changes made to ocean-live.html -->
+<html>
+<head>
+    <title>Ocean Live</title>
+</head>
+<body>
+    <h1>Ocean Live Data</h1>
+    <script>
+        // Fetch current and future data
+        const fetchData = async () => {
+            let currentData = await fetch('current.json');
+            let forecastData = await fetch('hourlyforecast.json');
+            const currentJson = await currentData.json();
+            const futureJson = await forecastData.json();
+            return { currentJson, futureJson };
+        };
 
-<script>
-// Ensure the temperature chart x-axis always renders from 0:00 to 24:00 but do not draw any line/points before the last full hour.
-// The first chart point must be at the last full hour, using the data from current.json for that hour,
-// and all future points must come from hourlyforecast.json.
+        // Render the temporary chart
+        const renderTempChart = async () => {
+            const { currentJson, futureJson } = await fetchData();
+            // Fixed x-axis from 0 to 24
+            const xAxisData = Array.from(Array(25).keys());  // 0 to 24
+            const chartData = [];
 
-// Function to render temperature chart
-function renderTempChart(data) {
-    const nowHour = new Date().getUTCHours();
-    let tempData = new Array(24).fill(null); // 24-slot array
+            // Draw points only at last full hour
+            const lastFullHour = new Date();
+            lastFullHour.setMinutes(0);
+            lastFullHour.setSeconds(0);
+            lastFullHour.setHours(lastFullHour.getHours() - (lastFullHour.getHours() % 1));
 
-    // Populate the array with temperatures
-    data.forEach(entry => {
-        const hour = entry.hour;
-        if (hour >= nowHour && entry.temperature !== undefined) {
-            tempData[hour] = entry.temperature;
-        }
-    });
+            // Adding data for the chart
+            const nowEntry = currentJson.hourValue;
+            xAxisData.forEach((hour, index) => {
+                if (hour === nowEntry.hourValue) {
+                    chartData.push(currentJson.data);
+                } else if (hour > nowEntry.hourValue && hour <= (nowEntry.hourValue + futureJson.length)) {
+                    chartData.push(futureJson[hour - nowEntry.hourValue - 1].data);
+                }
+            });
+            // Update chart with chartData
+            updateChart(xAxisData, chartData);
+        };
 
-    // Rendering logic for the chart...
-    // Ensure the svg x scale is fixed to [0,24] even if data starts later.
-}
+        // Render hour stripe logic
+        const renderHourStrip = () => {
+            const nowLabel = new Date();
+            // Computed nowLabel inside the function
+            const hourNow = nowLabel.getUTCHours();
+            // Existing logic here
+        };
 
-// In buildNowEntry mark the entry as isNow:true and set hourValue to numeric hour; set hour label to nowLabel.
-function buildNowEntry(data) {
-    return {
-        isNow: true,
-        hourValue: new Date().getUTCHours(),
-        hourLabel: nowLabel 
-    };
-}
+        // Ensure hourly rendered data logic
+        const hourlyTodayRendered = (nowEntry) => {
+            // Use nowEntry with strictly greater logic
+            const uniqueHours = [...new Set(futureJson.filter(point => point.hourValue > nowEntry.hourValue))];
+            // Render unique hours
+        };
 
-// Fix renderHourStrip to not reference an out-of-scope nowLabel; 
-// instead accept a third parameter nowLabel or read it from liveData.lang.theme.now.
-function renderHourStrip(d, nowLabel) {
-    const label = d.isNow ? nowLabel : (d.hour + ':00');
-    // Rendering logic for the hour strip...
-}
-
-</script>
-
-<!-- Existing comments remain unchanged. Any new comments are written in English. -->
+        fetchData();
+    </script>
+</body>
+</html>
