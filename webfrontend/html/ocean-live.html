@@ -1267,7 +1267,7 @@ function preselectHour(tabName) {
   if (tabName === 'morgen') {
     // For morgen: select hour 12:00 by default
     for (var i = 0; i < dataArray.length; i++) {
-      if (dataArray[i].hourValue === 12) { targetIdx = i; break; }
+      if (dataArray[i] && typeof dataArray[i].hourValue === 'number' && dataArray[i].hourValue === 12) { targetIdx = i; break; }
     }
   }
   // For heute: select index 0 (nowEntry) by default
@@ -1469,10 +1469,10 @@ function renderTempChart(svgId, selectableData, pastData, nowHour) {
     return;
   }
 
-  // Backfill before first known (filled past slots are considered past)
+  // Backfill before first known; mark as past only when a split is intended (nowHour is valid)
   for (var b = 0; b < firstKnownIdx; b++) {
     slots[b].temp = slots[firstKnownIdx].temp;
-    slots[b].isPast = true;
+    slots[b].isPast = (typeof nowHour === 'number');
   }
 
   // Forward fill gaps
