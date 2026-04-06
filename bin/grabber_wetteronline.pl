@@ -593,9 +593,8 @@ if ( $current ) {
     # $time{date}      = getValue($resCurrent, 'current', 'date');
     $time{datetime}  = _epochToIso($dtCurrent->epoch, $timezone);                                                            # cur_date_des
     $time{epoch}     = $dtCurrent->epoch;                                                                                      # cur_date
-    $time{timezone}  = $timezone;                                                                                              # cur_date_tz_des
-    $time{tzShort}  = $dtCurrent->strftime('%Z');                                                                              # cur_date_tz_des_sh, e.g. "CET"
-    $time{tzOffset} = $dtCurrent->strftime('%z');                                                                              # cur_date_tz, e.g. "+0100"
+
+    # cur_date_tz_des (e.g. Europe/Berlin), cur_date_tz_des_sh (e.g. "CET"), cur_date_tz (e.g. "+0100") are send in location section 
 
     $currentData{time} = \%time;
 
@@ -735,7 +734,7 @@ if ( $daily ) {
     my @dailyData;
     my $dtResult;
     my $results;
-    $i = 0;               # used for days, starts with 0 for current day, 1 for next day, etc.
+    my $day = 0;               # used for days, starts with 0 for current day, 1 for next day, etc.
 
     LOGINF "Reading daily weather data from API response into W4L structure at $dtCurrent.";
 
@@ -828,7 +827,7 @@ if ( $daily ) {
 
         push @dailyData, {
 
-            day            => $i,                                                # dfc<X>_per, counter of day
+            day            => $day,                                              # dfc<X>_per, counter of day
             time => {
                 # date       => getValue($results, 'date'),                      # original timestamp from API
                 datetime     => _epochToIso($dtResult->epoch, $timezone),        # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
@@ -904,7 +903,7 @@ if ( $daily ) {
             ozone            => undef,                                                          # dfc<X>_ozone     - ozone (not present)
             cloudCover       => skyConditionFromWoCode($symbol),                                # dfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
         };
-        $i++;
+        $day++;
     }
  
     # Build envelope and write JSON to file
@@ -934,7 +933,7 @@ if ( $hourly ) {
     my @hourlyData;
     my $dtResult;
     my $results;
-    $i = 0;               # used for hours, starts with 0 for current hour, 1 for next hour, etc.
+    my $hour = 1;                # used for hours, starts with 1 for first forecasted hour, 2 for next hour, etc.
 
     LOGINF "Reading hourly weather data from API response into W4L structure at $dtCurrent.";
 
@@ -979,7 +978,7 @@ if ( $hourly ) {
         }
 
         push @hourlyData, {
-            hour           => $i,                                                # hfc<X>_per, counter of day
+            hour           => $hour,                                             # hfc<X>_per, counter of day
             time => {
                 # date       => getValue($results, 'date'),                      # original timestamp from API
                 datetime     => _epochToIso($dtResult->epoch, $timezone),        # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
@@ -1029,7 +1028,7 @@ if ( $hourly ) {
             cloudCover       => skyConditionFromWoCode($symbol),                          # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
             isNight          => $isNighttime,                                             # get nighttime information from sunrise / sunset, alternate solution woudl be from symbol code
         };
-        $i++;
+        $hour++;
     }
 
 	# WetterOnline only offers 32h hourly forecast, the rest is retriveved by interpolating the daily forecast data.
@@ -1160,7 +1159,7 @@ if ( $hourly ) {
 	my $pop_i      = Math::Function::Interpolator::Linear->new(points => \%pop_pct);
 
 	# 4. Step: Create hourly data for all hours starting from '$dtResult' (time stamp from the last hourly entry) + 1h
-    #          up to last available entry in dpEpochs, '$i' still counts the entry
+    #          up to last available entry in dpEpochs, '$hour' still counts the entry
 
 	# Get latest time stamp 
 	my $end_epoch_time = $dpEpochs[-1];
@@ -1170,7 +1169,7 @@ if ( $hourly ) {
 	my $epochTime = $dtResult->epoch;
 
     # only save 5 days of hourly data to reduce loading times
-	while ($epochTime <= $end_epoch_time && !$skipInterpolation && $i < 121) {
+	while ($epochTime <= $end_epoch_time && !$skipInterpolation && $hour < 121) {
 
         # values with additional calculations needs to be done before hash is assigned
 
@@ -1217,7 +1216,7 @@ if ( $hourly ) {
 
         push @hourlyData, {
 
-            hour              => $i,                                                # hfc<X>_per, counter of day
+            hour              => $hour,                                             # hfc<X>_per, counter of day
             time => {
                 datetime      => _epochToIso($epochTime, $timezone),                # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
                 epoch         => $epochTime,                                        # hfc<X>_date       - UNIX timestamp
@@ -1267,7 +1266,7 @@ if ( $hourly ) {
             isNight          => $isNighttime,                                       # get nighttime information from sunrise / sunset
         };
         $dtResult->add(hours => 1);
-        $i++;
+        $hour++;
     }
 
     # Build envelope and write JSON to file

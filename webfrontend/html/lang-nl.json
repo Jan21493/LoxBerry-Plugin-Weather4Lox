@@ -209,7 +209,6 @@
     "tornado": "Hevige, roterende wervelwinden die van de grond tot een wolk reiken. Nachtpictogrammen tonen geen maanfasen.",
     "no_data": "Wordt gebruikt wanneer geen weergegevens aanwezig zijn. Het pictogram kan dag/nacht aangeven afhankelijk van de set."
   },
-  "wind_from": "Wind uit",
   "wind_directions": {
     "N": "Noord",
     "NE": "Noordoost",
@@ -231,7 +230,7 @@
     "pressure": "Luchtdruk",
     "sunrise": "Zonsopgang",
     "sunset": "Zonsondergang",
-    "feels_like": "Gevoelstemperatuur",
+    "feelsLike": "Gevoelstemperatuur",
     "precipitation": "Neerslag",
     "cloud_cover": "Wolkenbedekking",
     "uv_index": "UV-index",
@@ -247,7 +246,10 @@
     "click_hour_detail": "Klik op uur voor details",
     "loading": "Weergegevens worden geladen...",
     "error_loading": "Gegevens konden niet worden geladen.",
+    "wind_from": "Wind uit",
+    "with": "met",
     "gusts": "Windstoten",
+    "up_to": "tot",
     "live_dashboard": "Live Dashboard",
     "weekdays": [
       "zondag",

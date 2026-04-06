@@ -225,9 +225,8 @@ if ( $current ) {
     my %time;
     $time{datetime} = _epochToIso($cc->{time}, $timezone);
     $time{epoch}    = $cc->{time};
-    $time{timezone} = $timezone;
-    $time{tzShort}  = $tzShort;
-    $time{tzOffset} = $tzOffset;
+
+    # cur_date_tz_des (e.g. Europe/Berlin), cur_date_tz_des_sh (e.g. "CET"), cur_date_tz (e.g. "+0100") are send in location section 
 
     # sunrise / sunset
     my ($sunrise, $sunset);
@@ -327,7 +326,7 @@ if ( $current ) {
 if ( $daily ) {
 
     my @dailyData;
-    $i = 0;
+    my $day = 0;               # used for days, starts with 0 for current day, 1 for next day, etc.
 
     LOGINF "Reading daily weather data from API response into W4L structure.";
 
@@ -405,7 +404,7 @@ if ( $daily ) {
         $moon{set}       = undef;  # not available from WeatherFlow API
 
         push @dailyData, {
-            day            => $i,
+            day            => $day,
             time           => \%time,
             sunrise        => $sunrise,
             sunset         => $sunset,
@@ -424,7 +423,7 @@ if ( $daily ) {
             ozone          => undef,  # not available from WeatherFlow daily
             cloudCover     => undef,  # not available from WeatherFlow daily
         };
-        $i++;
+        $day++;
     }
 
     # Build envelope and write JSON to file
@@ -452,7 +451,7 @@ if ( $daily ) {
 if ( $hourly ) {
 
     my @hourlyData;
-    $i = 0;
+    my $hour = 1;               # used for hours, starts with 1 for first forecasted hour, 2 for next hour, etc.
 
     LOGINF "Reading hourly weather data from API response into W4L structure.";
 
@@ -505,7 +504,7 @@ if ( $hourly ) {
         $moon{direction} = getMoonDirection($moonage);
 
         push @hourlyData, {
-            hour           => $i,
+            hour           => $hour,
             time           => \%time,
             temperature    => \%temperature,
             humidity       => defined $h->{relative_humidity} ? $h->{relative_humidity} + 0 : undef,
@@ -522,7 +521,7 @@ if ( $hourly ) {
             moon           => \%moon,
             isNight        => wfIsNight($h->{icon}),
         };
-        $i++;
+        $hour++;
     }
 
     # Build envelope and write JSON to file

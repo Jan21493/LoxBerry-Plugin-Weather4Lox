@@ -203,7 +203,6 @@
     "tornado": "Heftige, rotierende Wirbel, die vom Boden bis zu einer Wolke reichen. Symbole für Nacht zeigen keine Mondphasen an.",
     "no_data": "Wird verwendet, wenn keine Wetterdaten vorliegen. Das Symbol kann je nach Set Tag/Nacht anzeigen."
   },
-  "wind_from": "Wind aus",
   "wind_directions": {
     "N": "Nord",
     "NE": "Nord-Ost",
@@ -225,7 +224,7 @@
     "pressure": "Luftdruck",
     "sunrise": "Sonnenaufgang",
     "sunset": "Sonnenuntergang",
-    "feels_like": "Gefühlt",
+    "feelsLike": "Gefühlt",
     "precipitation": "Niederschlag",
     "cloud_cover": "Bewölkung",
     "uv_index": "UV-Index",
@@ -241,7 +240,10 @@
     "click_hour_detail": "Stunde anklicken fuer Details",
     "loading": "Wetterdaten werden geladen...",
     "error_loading": "Daten konnten nicht geladen werden.",
-    "gusts": "Boen",
+    "wind_from": "Wind aus",
+    "with": "mit",
+    "gusts": "Böen",
+    "up_to": "bis zu",
     "live_dashboard": "Live Dashboard",
     "weekdays": [
       "Sonntag",

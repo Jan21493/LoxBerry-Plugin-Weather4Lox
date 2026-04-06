@@ -70,8 +70,8 @@ my $grabberKey      = "openweather";          # name in JSONs
 my $weatherKey;
 
 # params for API calls
-my $oneCallURI       = "$url/3.0/onecall?appid=$apikey&$stationid&lang=$lang&units=metric";
-my $fc3hrURI.        = "$url/2.5/forecast?appid=$apikey&$stationid&lang=$lang&units=metric&cnt=40";
+my $oneCallURL       = "$url/3.0/onecall?appid=$apikey&$stationid&lang=$lang&units=metric";
+my $fc3hrURL         = "$url/2.5/forecast?appid=$apikey&$stationid&lang=$lang&units=metric&cnt=40";
 my $userAgentLocal   = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
@@ -142,9 +142,9 @@ if ($hourly) {
     requireOrLogdie('Math::Function::Interpolator::Linear');
 }
 
-# Get weather data from wetteronline.de (API request) for current conditions
+# Get weather data from openweathermap.org (API request) for current conditions
 my $results = apiCall(
-    url => $oneCallURI,
+    url => $oneCallURL,
     maskkeys => $maskKeys,
     keyparam => 'appid',
     # apikey => $apiKey,      # Key is not included in output JSON, so no masking needed here
@@ -161,7 +161,7 @@ my $wdirdes;
 my @filecontent;
 my $i;
 
-# Mapping: OpenWeatherMap weather codes => [Loxone Code, Weather4Lox code] # Description
+# Mapping: OpenWeatherMap weather codes => [Loxone Code, Weather4Lox code] 
 # Weather codes with meaning: https://openweathermap.org/weather-conditions
 # --> Using https://wiki.loxberry.de/plugins/weather4loxone/start#wetter-codes
 
@@ -347,78 +347,77 @@ my %skyConditionByW4lCode = (
 
 # Mapping of OpenWeatherMap weather codes to sky coverage (in percentages)
 
-my %skyCoverageByOwmCode = (
-    # Thunderstorm codes
-    200 => 90,   # thunderstorm with light rain
-    201 => 95,   # thunderstorm with rain
-    202 => 100,  # thunderstorm with heavy rain
-    210 => 80,   # light thunderstorm
-    211 => 90,   # thunderstorm
-    212 => 100,  # heavy thunderstorm
-    221 => 100,  # ragged thunderstorm
-    230 => 90,   # thunderstorm with light drizzle
-    231 => 90,   # thunderstorm with drizzle
-    232 => 100,  # thunderstorm with heavy drizzle
-
-    # Drizzle codes
-    300 => 75,   # light intensity drizzle
-    301 => 80,   # drizzle
-    302 => 85,   # heavy intensity drizzle
-    310 => 80,   # light intensity drizzle rain
-    311 => 85,   # drizzle rain
-    312 => 90,   # heavy intensity drizzle rain
-    313 => 85,   # shower rain and drizzle
-    314 => 90,   # heavy shower rain and drizzle
-    321 => 80,   # shower drizzle
-
-    # Rain codes
-    500 => 80,   # light rain
-    501 => 85,   # moderate rain
-    502 => 90,   # heavy intensity rain
-    503 => 95,   # very heavy rain
-    504 => 100,  # extreme rain
-    511 => 90,   # freezing rain
-    520 => 85,   # light intensity shower rain
-    521 => 90,   # shower rain
-    522 => 95,   # heavy intensity shower rain
-    531 => 100,  # ragged shower rain
-
-    # Snow codes
-    600 => 70,   # light snow
-    601 => 80,   # snow
-    602 => 90,   # heavy snow
-    611 => 85,   # sleet
-    612 => 80,   # light shower sleet
-    613 => 85,   # shower sleet
-    615 => 75,   # light rain and snow
-    616 => 85,   # rain and snow
-    620 => 80,   # light shower snow
-    621 => 85,   # shower snow
-    622 => 95,   # heavy shower snow
-
-    # Atmosphere codes
-    701 => 60,   # mist
-    711 => 60,   # smoke
-    721 => 40,   # haze
-    731 => 65,   # sand/dust whirls
-    741 => 90,   # fog
-    751 => 80,   # sand
-    761 => 80,   # dust
-    762 => 100,  # volcanic ash
-    771 => 95,   # squalls
-    781 => 100,  # tornado
-
-    # Clear, clouds
-    800 => 0,    # clear sky
-    801 => 20,   # few clouds: 11-25%
-    802 => 40,   # scattered clouds: 25-50%
-    803 => 65,   # broken clouds: 51-84%
-    804 => 100,  # overcast clouds: 85-100%
-);
-
-
 sub skyConditionFromOwmCode {
     my ($owmCode) = @_;
+
+    my %skyCoverageByOwmCode = (
+        # Thunderstorm codes
+        200 => 90,   # thunderstorm with light rain
+        201 => 95,   # thunderstorm with rain
+        202 => 100,  # thunderstorm with heavy rain
+        210 => 80,   # light thunderstorm
+        211 => 90,   # thunderstorm
+        212 => 100,  # heavy thunderstorm
+        221 => 100,  # ragged thunderstorm
+        230 => 90,   # thunderstorm with light drizzle
+        231 => 90,   # thunderstorm with drizzle
+        232 => 100,  # thunderstorm with heavy drizzle
+
+        # Drizzle codes
+        300 => 75,   # light intensity drizzle
+        301 => 80,   # drizzle
+        302 => 85,   # heavy intensity drizzle
+        310 => 80,   # light intensity drizzle rain
+        311 => 85,   # drizzle rain
+        312 => 90,   # heavy intensity drizzle rain
+        313 => 85,   # shower rain and drizzle
+        314 => 90,   # heavy shower rain and drizzle
+        321 => 80,   # shower drizzle
+
+        # Rain codes
+        500 => 80,   # light rain
+        501 => 85,   # moderate rain
+        502 => 90,   # heavy intensity rain
+        503 => 95,   # very heavy rain
+        504 => 100,  # extreme rain
+        511 => 90,   # freezing rain
+        520 => 85,   # light intensity shower rain
+        521 => 90,   # shower rain
+        522 => 95,   # heavy intensity shower rain
+        531 => 100,  # ragged shower rain
+
+        # Snow codes
+        600 => 70,   # light snow
+        601 => 80,   # snow
+        602 => 90,   # heavy snow
+        611 => 85,   # sleet
+        612 => 80,   # light shower sleet
+        613 => 85,   # shower sleet
+        615 => 75,   # light rain and snow
+        616 => 85,   # rain and snow
+        620 => 80,   # light shower snow
+        621 => 85,   # shower snow
+        622 => 95,   # heavy shower snow
+
+        # Atmosphere codes
+        701 => 60,   # mist
+        711 => 60,   # smoke
+        721 => 40,   # haze
+        731 => 65,   # sand/dust whirls
+        741 => 90,   # fog
+        751 => 80,   # sand
+        761 => 80,   # dust
+        762 => 100,  # volcanic ash
+        771 => 95,   # squalls
+        781 => 100,  # tornado
+
+        # Clear, clouds
+        800 => 0,    # clear sky
+        801 => 20,   # few clouds: 11-25%
+        802 => 40,   # scattered clouds: 25-50%
+        803 => 65,   # broken clouds: 51-84%
+        804 => 100,  # overcast clouds: 85-100%
+);
 
     # Check for empty/undefined values
     if (defined $owmCode) {
@@ -426,6 +425,7 @@ sub skyConditionFromOwmCode {
 
         if ($entry) {
             return ($entry);
+        }
     }
 
     LOGWARN "Unknown OpenWeatherMap code '$owmCode' for sky condition.";
@@ -433,62 +433,80 @@ sub skyConditionFromOwmCode {
 }
 
 
-# Determine if it's currently nighttime based on current time and sunrise/sunset times, all in HH:MM format
+# Determine if it's currently nighttime based on current time, sunrise/sunset times (all epoch times on the same day) and $timezone
 sub isNighttime {
     my ($time, $timezone, $sunrise, $sunset) = @_;
-    my $isNighttime = 0;
+    my $isNighttime = undef; # default to day (undef)
 
     if ($time lt $sunrise || $time gt $sunset) {
         $isNighttime = 1;
     }
     return ($isNighttime);
-
 }
 
+# Determine if it's currently nighttime for a given hour from houry data, based on sunrise/sunset times from daily data
+sub isNighttimeForCurrentHour {
+    my ($dtEpoch, $timezone, $results) = @_;
+
+    my $isNighttime = undef; # default to day (undef)
+
+    # Get sunrise and sunset time from daily data, needed for isNighttime calculation (used for selecting day or night symbol)
+    for my $dailyresults (@{$results->{daily} // []}) {
+        if (_epochToIsoDate(getValue($dailyresults, 'dt'), $timezone) eq _epochToIsoDate($dtEpoch, $timezone)) {
+            # we found the matching day in daily data for the current hour
+
+            if (isNighttime($dtEpoch, $timezone, getValue($dailyresults, 'sunrise'), getValue($dailyresults, 'sunset'))) {
+                $isNighttime = 1;
+                last; # break loop if we found the matching day and determined it is nighttime
+            }
+        }
+    }
+    return ($isNighttime);
+}
+
+sub getCountryCode {
+    my $name = shift;
+
+    # location information
+    my %countryNameToCode = (
+        # Germany
+        "Germany"      => "DE",
+        "Deutschland"  => "DE",
+
+        # Spain
+        "Spain"        => "ES",
+        "Spanien"      => "ES",
+        "España"       => "ES",
+
+        # Slovakia
+        "Slovakia"     => "SK",
+        "Slovensko"    => "SK",
+
+        # Netherlands
+        "Netherlands"  => "NL",
+        "Nederland"    => "NL",
+
+        # Austria
+        "Austria"      => "AT",
+        "Österreich"   => "AT",
+    );
+
+    return $countryNameToCode{$name} // undef;
+}
 
 ##########################################################################
 # Fetch common data
 ##########################################################################
 
+######### To be verified: Timezone from API response ?
 my $timezoneFromApi = getValue($results, 'timezone');
 if ($timezone ne $timezoneFromApi) {
     LOGWARN "Timezone for location '$city' ($timezoneFromApi) does not match the system timezone of your LoxBerry ($timezone). Time differences may occur!";
 }
 
 # date/time from API response
-my $dtCurrent = DateTime->from_epoch( epoch => $results->{current}{dt}, time_zone => $timezoneFromApi );
-
-
-
-# location information
-my %countryNameToCode = (
-    # Germany
-    "Germany"      => "DE",
-    "Deutschland"  => "DE",
-
-    # Spain
-    "Spain"        => "ES",
-    "Spanien"      => "ES",
-    "España"       => "ES",
-
-    # Slovakia
-    "Slovakia"     => "SK",
-    "Slovensko"    => "SK",
-
-    # Netherlands
-    "Netherlands"  => "NL",
-    "Nederland"    => "NL",
-
-    # Austria
-    "Austria"      => "AT",
-    "Österreich"   => "AT",
-);
-
-sub getCountryCode {
-    my $name = shift;
-    return $countryNameToCode{$name} // undef;
-}
-
+my $currentEpoch = getValue($results, 'current', 'dt');
+my $dtCurrent = DateTime->from_epoch( epoch => $currentEpoch, time_zone => $timezoneFromApi );
 
 # add location information once
 my $location = {
@@ -516,22 +534,23 @@ if ( $current ) {
     LOGINF "Reading current weather data from API response into W4L structure at $dtCurrent.";
 
     my %time;
-    $time{datetime}  = _epochToIso($dtCurrent->epoch, $timezoneFromApi);;                                                      # cur_date_des
-    $time{epoch}     = $dtCurrent->epoch;                                                                                      # cur_date
-    $time{timezone}  = $timezoneFromApi;                                                                                       # cur_date_tz_des
-    $time{tzShort}  = $dtCurrent->strftime('%Z');                                                                              # cur_date_tz_des_sh, e.g. "CET"
-    $time{tzOffset} = $dtCurrent->strftime('%z');                                                                              # cur_date_tz, e.g. "+0100"
+    $time{datetime}  = _epochToIso($currentEpoch, $timezoneFromApi);;                                                         # cur_date_des
+    $time{epoch}     = $currentEpoch;                                                                                         # cur_date
+
+    # cur_date_tz_des (e.g. Europe/Berlin), cur_date_tz_des_sh (e.g. "CET"), cur_date_tz (e.g. "+0100") are send in location section 
 
     $currentData{time} = \%time;
 
-    # sunrise and set in local time, e.g. 05:47 and 17:39
-    $currentData{sunrise} = getTimeFromEpochFormatted('%H:%M', $timezone, $results, 'current', 'sunrise');                     # cur_sun_r 
-    $currentData{sunset}  = getTimeFromEpochFormatted('%H:%M', $timezone, $results, 'current', 'sunset');                      # cur_sun_s
+    # sunrise and sunset are in local time, e.g. 05:47 and 17:39, they are provided as epoch times in the API response
+    my $sunriseEpoch = getValue($results, 'current', 'sunrise');
+    my $sunsetEpoch  = getValue($results, 'current', 'sunset');
+    $currentData{sunrise} = getTimeFromEpochFormatted('%H:%M', $timezone, $sunriseEpoch);                                     # cur_sun_r 
+    $currentData{sunset}  = getTimeFromEpochFormatted('%H:%M', $timezone, $sunsetEpoch);                                      # cur_sun_s
 
     # temperatures
     my %temperature;
 
-    $temperature{air}        = getFormatted('%.1f', $results, 'current', 'temp');                                              # cur_tt.    - air temperature in °C
+    $temperature{air}        = getFormatted('%.1f', $results, 'current', 'temp');                                              # cur_tt     - air temperature in °C
     $temperature{feelsLike}  = getFormatted('%.1f', $results, 'current', 'feels_like');                                        # cur_tt_fl  - feels like temperature in °C
     $temperature{windChill}  = undef;                                                                                          # cur_w_ch   - wind chill (not present), feel-like temperature considering wind, only relevant for low temperatures
     $temperature{heatIndex}  = undef;                                                                                          # cur_hi.    - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
@@ -539,7 +558,7 @@ if ( $current ) {
     $currentData{temperature} = \%temperature;
 
     # humidity
-    $currentData{humidity} = getPercentage('%.2f', $results, 'current', 'humidity');                                           # cur_hu, in percentage
+    $currentData{humidity} = getFormatted('%.1f', $results, 'current', 'humidity');                                            # cur_hu, in percentage
     
     # wind
     my %wind;
@@ -548,58 +567,62 @@ if ( $current ) {
 
     $wind{direction}      = $windDirection;                                                                                    # cur_w_dir, wind direction in degrees
     $wind{cardinal}       = getWindDirCardinal($windDirection);                                                                # to calculate cur_w_dirdes, wind direction description, e.g. "Süden",
-    $wind{speed}          = getFormatted('%.1f', $results, 'current', 'wind_speed');                                           # cur_w_sp, wind speed in km/h
-    $wind{gust}           = getFormatted('%.1f', $results, 'current', 'wind_gust');                                            # cur_w_gu, gust speed in km/h
+    $wind{speed}          = getFormattedMultiplied('%.1f', 3.6, $results, 'current', 'wind_speed');                            # cur_w_sp, wind speed converted from m/s to km/h
+    $wind{gust}           = getFormattedMultiplied('%.1f', 3.6, $results, 'current', 'wind_gust');                             # cur_w_gu, gust speed converted from m/s to km/h
 
     $currentData{wind} = \%wind;
 
     # air pressure
-    $currentData{pressure} = getFormatted('%.0f', $results, 'current', '_pressure');                                           # cur_pr, air pressure in hPa
+    $currentData{pressure} = getFormatted('%.0f', $results, 'current', 'pressure');                                           # cur_pr, air pressure in hPa
 
     # dew point
     $currentData{dewpoint} = getFormatted('%.1f', $results, 'current', 'dew_point');                                           # cur_dp, dew point in °C
 
     # visibility - not provided by API
-    $currentData{visibility} = getFormatted('%.0f', $results, 'current', 'visibility');                                        # cur_vis, visibility in meters
+    $currentData{visibility} = getFormattedMultiplied('%.0f', 0.001, $results, 'current', 'visibility');                       # cur_vis, visibility in km (API provides in meters)
 
     # solar radiation
-    $currentData{solarRadiation} = undef;                                                                                      # cur_sr 
+    $currentData{solarRadiation} = undef;                                                                                      # cur_sr, solar radiation in W/m² (not provided by API)
 
     $currentData{uvIndex} = getFormatted('%.0f', $results, 'current', 'uvi');                                                  # cur_uvi
 
     # precipitation
     my %precipitation;
 
-    $precipitation{rainToday} = getFormatted('%.2f', $results, 
-        'daily', 0, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_end');                     # cur_prec_today, today precipitation in mm
+    ##### TO be verified: all rain parameters ?
+    $precipitation{rain1hr} = getFormatted('%.1f', $results, 'rain', '1h');                                                    # cur_prec_1h, 1-hour precipitation in mm
+    $precipitation{snow1h} = getFormatted('%.1f', $results, 'snow', '1h');                                                     # cur_snow_1h, 1-hour snow in cm (conversion from mm, API provides mm)
+    $precipitation{type} = getValue($results, 'current', 'weather', 0, 'main');                                                # type of precipitation (rain, snow), undef, if it is currently not raining/snowing
 
-    $precipitation{rain1hr} = getFormatted('%.2f', $results, 'rain', '1h');                                                    # cur_prec_1h, 1-hour precipitation in mm
-    $precipitation{probability} = getPercentage('%.2f', $results, 'current', 'precipitation', 'probability');               # cur_pop, probability in percent
-    $precipitation{type} = getValue($results, 'current', 'precipitation', 'type');                                          # type of precipitation (rain, snow), undef, if it is currently not raining/snowing
-    $precipitation{snowToday} = getFormatted('%.2f', $results, 
-        'trend', 'items', 0, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end');                         # cur_snow_today, today snow in cm
-    $precipitation{snow1h} = getFormatted('%.2f', $results, 
-        'hours', 'items', 0, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end');                         # cur_snow_1h, 1-hour snow in cm
+    $precipitation{probability} = getPercentage('%.1f', $results, 'hourly', 0, 'pop');                                         # cur_pop, probability in percent
+
+    # $precipitation{rainToday} = getFormatted('%.1f', $results, 
+    #    'daily', 0, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_end');                              # cur_prec_today, today precipitation in mm
+
+     # $precipitation{snowToday} = getFormatted('%.1f', $results, 
+    #     'trend', 'items', 0, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end');                         # cur_snow_today, today snow in cm
 
     $currentData{precipitation} = \%precipitation;
 
     # weather codes
     my %weatherCode;
 
-    # Mapping: Wetteronline Symbol => [Loxone code, Weather4Lox code, description]
-    my ($loxoneCode, $w4lCode, $desc);
-    my $symbol = getValue($results, 'current', 'symbol');
+    # Mapping: OWM Symbol => [Loxone code, Weather4Lox code]
+    my ($loxoneCode, $w4lCode, $description);
+    my $symbol = getValue($results, 'current', 'weather', 0, 'id');
     if (!defined $symbol) {
-        LOGWARN "Wetteronline symbol for current weather is undefined!";
-        ($loxoneCode, $w4lCode, $desc) = (5, 'no_data', 'No description for weather symbol');  # Default fallback
+        LOGWARN "OpenWeatherMap symbol for current weather is undefined!";
+        ($loxoneCode, $w4lCode) = (5, 'no_data');  # Default fallback
+        $description = 'No description for weather symbol';
     } else {
-        ($loxoneCode, $w4lCode, $desc) = wetteronlineToLox($symbol);
+        ($loxoneCode, $w4lCode) = owmToLox($symbol);
+        $description = getValue($results, 'current', 'weather', 0, 'description') // 'No description for weather symbol';
     }
 
     $weatherCode{loxone}      = $loxoneCode;                                                                                  # cur_code
     $weatherCode{weather4lox} = $w4lCode;                                                                                     # cur_icon
-    $weatherCode{description} = $desc;                                                                                        # cur_des
-    $weatherCode{image}       = getValue($results, 'current', 'weather_condition_image');                                  # future use, e.g. as background image
+    $weatherCode{description} = $description;                                                                                 # cur_des
+    $weatherCode{image}       = undef;                                                                                        # future use, e.g. as background image
     $weatherCode{metar}       = getMetarCode($w4lCode);                                                                       # future use, e.g. scientific theme
 
     $currentData{weatherCode} = \%weatherCode;
@@ -607,24 +630,23 @@ if ( $current ) {
     # ozone
     $currentData{ozone} = undef;                                                                                               # cur_ozone
     
-    # sky condition - calculate from symbol code
-    $currentData{cloudCover} = skyConditionFromWoCode($symbol);                                                                # cur_sky
+    # sky condition / cloud cover
+    $currentData{cloudCover} = getValue($results, 'current', 'clouds');                                                         # cur_sky, cloud cover in percentage from API response
 
     # astro data
     my %moon;
 
     my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = phase();
     # age is delivered by API, , but makes no sense as phase() delivers all values
-    # $moon{age} = getFormatted('%.2f', $results, 'moon', 0, 'age');
-    $moon{age} = sprintf("%.2f",$moonage) + 0;                                                                                 # cur_moon_a, moon age in days
-    $moon{percent} = sprintf("%.2f",$moonillum * 100) + 0;                                                                     # cur_moon_p, moon illumination in percent
-    $moon{phase} = sprintf("%.2f",$moonphase * 100) + 0;                                                                       # cur_moon_ph, moon phase in percent (0% = new moon, 50% = half moon, 100% = full moon)
+    $moon{age} = sprintf("%.1f",$moonage) + 0;                                                                                 # cur_moon_a, moon age in days
+    $moon{percent} = sprintf("%.1f",$moonillum * 100) + 0;                                                                     # cur_moon_p, moon illumination in percent
+    $moon{phase} = sprintf("%.1f",$moonphase * 100) + 0;                                                                       # cur_moon_ph, moon phase in percent (0% = new moon, 50% = half moon, 100% = full moon)
     $moon{direction} = getMoonDirection($moonphase);                                                                           #                - moon direction (waxing, waning)
 
     $currentData{moon} = \%moon;
     
     # night time - used for selecting day or night symbol (eighter night time or undef)
-    $currentData{isNight} = isNighttime($symbol);
+    $currentData{isNight} = isNighttime($currentEpoch, $timezone, $sunriseEpoch, $sunsetEpoch);
 
     # Build envelope and write JSON to file
     $weatherKey = "current";
@@ -651,188 +673,107 @@ if ( $current ) {
 if ( $daily ) {
   
     my @dailyData;
-    my $dtResult;
-    my $results;
-    $i = 0;               # used for days, starts with 0 for current day, 1 for next day, etc.
+    my $day = 0;               # used for days, starts with 0 for current day, 1 for next day, etc.
 
     LOGINF "Reading daily weather data from API response into W4L structure at $dtCurrent.";
 
     # it is assumed, that the elements are ordered by time (ascending)
-    for my $results (@{$resDaily}) {
+    for my $resDay (@{$results->{daily} // []}) {
 
         # values with additional calculations needs to be done before hash is assigned
 
-        # time
-        $dtResult = DateTime::Format::ISO8601->parse_datetime(getValue($results, 'date'));   # ISO date from API in UTC, e.g. 2026-03-13T23:00:00+00:00
-        $dtResult->set_time_zone($timezone);
-        
-        # no longer needed, TODO: verify and clean up
-        # my @label_month = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_MONTH'}) );
-        # my $monthname  = $label_month[$dtResult->month - 1];
-        # my @label_month_sh = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_MONTH_SH'}) );
-        # my $monthshort = $label_month_sh[$dtResult->month - 1];
-        # my @label_days = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_DAYS'}) );
-        # my $wdayname   = $label_days[$dtResult->day_of_week % 7];
-        # my @label_days_sh = split(' ', Encode::decode("UTF-8", $L{'GRABBER.LABEL_DAYS_SH'}) );
-        # my $wdayshort  = $label_days_sh[$dtResult->day_of_week % 7];
+        my $dtEpoch = getValue($resDay, 'dt');
 
         # wind
-        my $windDirAvg = getFormatted('%.0f', $results, 'wind', 'direction'); 
+        my $windDirAvg = getFormatted('%.0f', $resDay, 'wind_deg');                                                   # dfc<X>_w_dir_a, average wind direction in degrees
 
-        # Mapping: Wetteronline Symbol => [Loxone code, Weather4Lox code, description]
+        # Mapping: OWM Symbol => [Loxone code, Weather4Lox code, description]
         my ($loxoneCode, $w4lCode, $description);
-        my $symbol = getValue($results, 'symbol');
+        my $symbol = getValue($resDay, 'weather', 0, 'id');
         if (!defined $symbol) {
-            LOGWARN "Wetteronline symbol for daily weather is undefined!";
-            ($loxoneCode, $w4lCode, $description) = (5, 'no_data', 'No description for weather symbol'); # Default fallback
+            LOGWARN "OpenWeatherMap symbol for daily weather is undefined!";
+            ($loxoneCode, $w4lCode) = (5, 'no_data'); # Default fallback
+            $description = 'No description for weather symbol';
         } else {
-            ($loxoneCode, $w4lCode, $description) = wetteronlineToLox($symbol);
+            ($loxoneCode, $w4lCode) = owmToLox($symbol);
+            $description = getValue($resDay, 'weather', 0, 'description') // 'No description for weather symbol';
         }
 
         # astro data - get moon infos for specific time of data set (translated to epoch time)
-        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = phase($dtResult->epoch);
-
-        # Calculating min, max values from dayparts
-        # humidity (min, max)
-        # wind (max) for speed, gust, and direction
-
-        my $humidityMin  = 100; # 100%
-        my $humidityMax  = 0;   # 0%
-
-        my $windSpeedMax = -1;
-        my $windGustMax  = -1;
-        my $windDirMax   = 0;
-
-        # get values for all four dayparts and calculate min and max for the day
-        my @dayParts = @{ getValue($results, 'dayparts') // undef };
-        if (!@dayParts) {
-            LOGWARN "No dayparts found for daily data on date " . getValue($results, 'date') . ", min/max values will be set to null.";
-            $humidityMin = undef;
-            $humidityMax = undef;
-
-            $windSpeedMax = undef;
-            $windGustMax = undef;
-            $windDirMax = undef;
-        } else {
-            foreach my $dayPart (@dayParts) {
-                my $humidity = getPercentage('%.2f', $dayPart, 'humidity');
-
-                if (defined $humidity){
-                    if ($humidity < $humidityMin) {
-                        $humidityMin = $humidity;
-                    }
-                    if ($humidity > $humidityMax) {
-                        $humidityMax = $humidity;
-                    }
-                }
-
-                my $windSpeed = getFormatted('%.0f', $dayPart, 'wind', 'speed', 'kilometer_per_hour', 'value') // 0;
-                my $windGust = getFormatted('%.0f', $dayPart, 'wind', 'speed', 'kilometer_per_hour', 'max_gust') // 0;
-                my $windDir = getFormatted('%.0f', $dayPart, 'wind', 'direction') // 0;
-
-                if ($windSpeed > $windSpeedMax) {
-                    $windSpeedMax = $windSpeed;
-                    $windDirMax = $windDir;
-                }
-                # if gust is present, it has preference for direction
-                if ($windGust > $windGustMax) {
-                    $windGustMax = $windGust;
-                    $windDirMax = $windDir;
-                }
-            }
-        }
-
-        # dewpoint calculation
-        my $dewpointAvg;
-        @dayParts = @{ getValue($results, 'dayparts') // undef };
-        my $sum = 0; 
-        my $cnt = 0;
-        for my $dayPart (@dayParts) {
-            my $dewpoint = getFormatted('%.1f', $dayPart, 'dew_point', 'celsius');
-            $sum += $dewpoint if defined $dewpoint;
-            $cnt++ if defined $dewpoint;
-        }
-        $dewpointAvg = $cnt ? sprintf("%.1f", $sum / $cnt) + 0 : undef;
+        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = phase($dtEpoch);
 
         push @dailyData, {
 
-            day            => $i,                                                # dfc<X>_per, counter of day
+            day            => $day,                                                                                            # dfc<X>_per, counter of day
             time => {
-                # date       => getValue($results, 'date'),                      # original timestamp from API
-                datetime     => _epochToIso($dtResult->epoch, $timezone),        # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
-                epoch        => $dtResult->epoch,                                # dfc<X>_date       - UNIX timestamp
-                # wdayName   => $wdayname,                                       # name of day of week, e.g. Saturday  - TODO: verify if useful, client may calculate name as well
-                # wdayShort  => $wdayshort,                                      # short name of day of week, e.g. Sa (two chars)
-                # monthName  => $monthname,                                      # name of month, e.g. March
-                # monthShort => $monthshort,                                     # name of month, e.g. Mar (three chars
+                datetime     => _epochToIso($dtEpoch, $timezone),                                                              # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
+                epoch        => $dtEpoch,                                                                                      # dfc<X>_date       - UNIX timestamp
             },
             temperature => {
                 min => {
-                    air         => getFormatted('%.1f', $results, 'temperature', 'min', 'air'),         # dfc<X>_tt_l      - daily min temperature (°C)
-                    feelsLike   => getFormatted('%.1f', $results, 'temperature', 'min', 'apparent'),    # dfc<X>_tt_fl_l   - min feels-like temperature
-                    windChill   => undef,                                                               # hfc<X>_w_ch      - wind chill (not present), feel-like temperature considering wind, only relevant for low temperatures
+                    air         => getFormatted('%.1f', $resDay, 'temp', 'min'),                                               # dfc<X>_tt_l      - daily min temperature (°C)
+                    feelsLike   => getFormatted('%.1f', $resDay, 'feels_like', 'min'),                                         # dfc<X>_tt_fl_l   - min feels-like temperature
+                    windChill   => undef,                                                                                      # hfc<X>_w_ch      - wind chill (not present), feel-like temperature considering wind, only relevant for low temperatures
                 },
                 max => {
-                    air         => getFormatted('%.1f', $results, 'temperature', 'max', 'air'),         # dfc<X>_tt_h      - daily max temperature (°C)
-                    feelsLike   => getFormatted('%.1f', $results, 'temperature', 'max', 'apparent'),    # dfc<X>_tt_fl_h   - max feels-like temperature
-                    heatIndex   => undef,                                                               # hfc<X>_hi        - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
+                    air         => getFormatted('%.1f', $resDay, 'temp', 'max'),                                               # dfc<X>_tt_h      - daily max temperature (°C)
+                    feelsLike   => getFormatted('%.1f', $resDay, 'feels_like', 'max'),                                         # dfc<X>_tt_fl_h   - max feels-like temperature
+                    heatIndex   => undef,                                                                                      # hfc<X>_hi        - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
                 },
             },
             wind => {
                 avg => {
                     direction       => $windDirAvg,                                                                            # dfc<X>_w_dir_a     - wind direction (degree, average)
                     cardinal        => getWindDirCardinal($windDirAvg),                                                        # to calculate dfc<X>_w_dirdes_a  - wind direction description (average)
-                    speed           => getFormatted('%.2f', $results, 'wind', 'speed', 'kilometer_per_hour', 'value'),         # dfc<X>_w_sp_a      - wind speed average (km/h)
-                    gust            => getFormatted('%.2f', $results, 'wind', 'speed', 'kilometer_per_hour', 'max_gust'),      # dfc<X>_w_gu_a      - wind gust average (km/h)
+                    speed           => getFormattedMultiplied('%.1f', 3.6, $resDay, 'wind_speed'),                             # dfc<X>_w_sp_a      - wind speed average (km/h)
+                    gust            => getFormattedMultiplied('%.1f', 3.6, $resDay, 'wind_gust'),                              # dfc<X>_w_gu_a      - wind gust average (km/h)
                 },
                 max => {
-                    direction       => $windDirMax,                                                                            # dfc<X>_w_dir_h     - wind direction (degree, max)
-                    cardinal        => getWindDirCardinal($windDirMax),                                                        # to calculate dfc<X>_w_dirdes_h  - wind direction description (max)
-                    speed           => $windSpeedMax,                                                                          # dfc<X>_w_sp_h      - wind speed max (km/h)
-                    gust            => $windGustMax,                                                                           # dfc<X>_w_gu_h      - wind gust max (km/h)
+                    direction       => undef,                                                                                  # dfc<X>_w_dir_h     - wind direction (degree, max)
+                    cardinal        => undef,                                                                                  # to calculate dfc<X>_w_dirdes_h  - wind direction description (max)
+                    speed           => undef,                                                                                  # dfc<X>_w_sp_h      - wind speed max (km/h)
+                    gust            => undef,                                                                                  # dfc<X>_w_gu_h      - wind gust max (km/h)
                 }
             },
             precipitation => {
-                probability   => getPercentage('%.2f', $results, 'precipitation', 'probability'),                                                # dfc<X>_pop        - probability of precipitation (%)
-                duration      => getFormatted('%.2f', $results, 'precipitation', 'duration', 'hours'),                                           #                   - duration of precipitation
-                rainLow       => getFormatted('%.2f', $results, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_begin'),  #                   - precipitation (mm) from
-                rainHigh      => getFormatted('%.2f', $results, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_end'),    # dfc<X>_prec       - precipitation (mm) up to
-                type          => getValue($results, 'precipitation', 'type'),                                                                    #                   - precipitation type
-                snowLow       => getFormatted('%.2f', $results, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_begin'),      #                   - snow height (cm) from
-                snowHigh      => getFormatted('%.2f', $results, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end'),        # dfc<X>_snow       - snow height (cm) up to
+                probability   => getPercentage('%.1f', $resDay, 'pop'),                                                        # dfc<X>_pop        - probability of precipitation (%)
+                duration      => undef,                                                                                        #                   - duration of precipitation
+                rainHigh      => getFormatted('%.1f', $resDay, 'rain'),                                                        # dfc<X>_prec       - precipitation (mm)
+                type          => getValue($resDay, 'weather', 0, 'main'),                                                      #                   - precipitation type
+                snowHigh      => getFormattedMultiplied('%.1f', 0.1, $resDay, 'snow'),                                         # dfc<X>_snow       - snow height (cm)
             },
             weatherCode => {
-                loxone        => $loxoneCode,                                                   # dfc<X>_we_code   - Loxone code
-                weather4lox   => $w4lCode,                                                      # dfc<X>_we_icon   - Weather4Lox icon code
-                description   => $description,                                                  # dfc<X>_we_des    - description
-                image         => getValue($results, 'weather_condition_image'),                 #                  - future use., e.g. as background image
-                metar         => getMetarCode($w4lCode),                                        #                  - METAR cod
+                loxone        => $loxoneCode,                                                                                  # dfc<X>_we_code   - Loxone code
+                weather4lox   => $w4lCode,                                                                                     # dfc<X>_we_icon   - Weather4Lox icon code
+                description   => $description,                                                                                 # dfc<X>_we_des    - description
+                image         => undef,                                                                                        #                  - future use., e.g. as background image
+                metar         => getMetarCode($w4lCode),                                                                       #                  - METAR code
             },
             moon => {
-                age        => getFormatted('%.2f', $results, 'moon', 'age'),                    # dfc<X>_moon_a    - moon age in days
-                rise       => getTimeFormatted('%H:%M', $timezone, $results, 'moon', 'rise'),   #                  - moon rise in ISO time
-                set        => getTimeFormatted('%H:%M', $timezone, $results, 'moon', 'set'),    #                  - moon set in ISO time
-                percent    => sprintf("%.2f", $moonillum * 100) + 0,                              # dfc<X>_moon_p.   - moon percent
-                phase      => sprintf("%.2f", $moonphase * 100) + 0,                              # dfc<X>_moon_ph.  - moon phase
-                direction  => getMoonDirection($moonphase),                                     #                  - moon direction (waxing, waning)
+                age        => sprintf("%.1f", $moonage) + 0,                                                                   # dfc<X>_moon_a    - moon age in days
+                rise       => getTimeFormatted('%H:%M', $timezone, $resDay, 'moonrise'),                                       #                  - moon rise in HH:MM in local time (API provides in Unix epoch time)
+                set        => getTimeFormatted('%H:%M', $timezone, $resDay, 'moonset'),                                        #                  - moon set in HH:MM in local time (API provides in Unix epoch time)
+                percent    => sprintf("%.1f", $moonillum * 100) + 0,                                                           # dfc<X>_moon_p    - moon percent
+                phase      => sprintf("%.1f", $moonphase * 100) + 0,                                                           # dfc<X>_moon_ph   - moon phase
+                direction  => getMoonDirection($moonphase),                                                                    #                  - moon direction (waxing, waning)
             },
             humidity       => {
-                avg        =>  getPercentage('%.2f', $results, 'humidity'),                     # dfc<X>_hu_a      - average humidity
-                min        =>  $humidityMin,	                                                # dfc0_hu_l        - minimum humidity
-                max        =>  $humidityMax,                                                    # dfc<X>_hu_h.     - maximum humidity
+                avg        =>  getFormatted('%.1f', $resDay, 'humidity'),                                                      # dfc<X>_hu_a      - average humidity
+                min        =>  undef,	                                                                                       # dfc<X>_hu_l      - minimum humidity
+                max        =>  undef,                                                                                          # dfc<X>_hu_h      - maximum humidity
             },
-            pressure         => getFormatted('%.0f', $results, 'air_pressure', 'hpa'),          # dfc<X>_pr        - air pressure (hPa)
-            dewpoint         => $dewpointAvg,                                                   # dfc<X>_dp        - average dew point (°C)
-            uvIndex          => getFormatted('%.1f', $results, 'uv_index', 'value'),            # dfc<X>_uvi       - UV index
-            sunrise          => getTimeFormatted('%H:%M', $timezone, $results, 'sun', 'rise'),  # dfc<X>_sun_r     - sunrise time (HH:MM)
-            sunset           => getTimeFormatted('%H:%M', $timezone, $results, 'sun', 'set'),   # dfc<X>_sun_s     - sunset time (HH:MM)
-            visibility       => undef,                                                          # dfc<X>_vis       - visibility (m/km as needed)
-            solarRadiation   => undef,                                                          # dfc<X>_sr        - solar radiation (not present)
-            heatIndex        => undef,                                                          # dfc<X>_hi        - heat index (not present)
-            ozone            => undef,                                                          # dfc<X>_ozone     - ozone (not present)
-            cloudCover       => skyConditionFromWoCode($symbol),                                # dfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
+            pressure         => getFormatted('%.0f', $resDay, 'pressure'),                                                     # dfc<X>_pr        - air pressure (hPa)
+            dewpoint         => getFormatted('%.0f', $resDay, 'dew_point'),                                                    # dfc<X>_dp        - average dew point (°C)
+            uvIndex          => getFormatted('%.1f', $resDay, 'uvi'),                                                          # dfc<X>_uvi       - UV index, maximum value for the day
+            sunrise          => getTimeFormatted('%H:%M', $timezone, $resDay, 'sunrise'),                                      # dfc<X>_sun_r     - sunrise time (HH:MM) from Unix epoch time
+            sunset           => getTimeFormatted('%H:%M', $timezone, $resDay, 'sunset'),                                       # dfc<X>_sun_s     - sunset time (HH:MM) from Unix epoch time
+            visibility       => undef,                                                                                         # dfc<X>_vis       - visibility (m/km as needed)
+            solarRadiation   => undef,                                                                                         # dfc<X>_sr        - solar radiation (not present)
+            heatIndex        => undef,                                                                                         # dfc<X>_hi        - heat index (not present)
+            ozone            => undef,                                                                                         # dfc<X>_ozone     - ozone (not present)
+            cloudCover       => getFormatted('%.0f', $resDay, 'clouds'),                                                       # dfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
         };
-        $i++;
+        $day++;
     }
  
     # Build envelope and write JSON to file
@@ -859,343 +800,243 @@ if ( $daily ) {
 
 if ( $hourly ) {
 
-    my @hourlyData;
-    my $dtResult;
-    my $results;
-    $i = 0;               # used for hours, starts with 0 for current hour, 1 for next hour, etc.
+    my @hourlyArray;
+    my $hourlyData;
+    my $hour = 1;                # used for hours, starts with 1 for first forecasted hour, 2 for next hour, etc.
 
     LOGINF "Reading hourly weather data from API response into W4L structure at $dtCurrent.";
 
     # it is assumed, that the elements are ordered by time (ascending)
-    for my $results (@{$resHourly->{hours}}) {
+    for my $resHour (@{$results->{hourly} // []}) {
 
         # values with additional calculations needs to be done before hash is assigned
 
         # time
-        $dtResult = DateTime::Format::ISO8601->parse_datetime(getValue($results, 'date'));   # ISO date from API in UTC, e.g. 2026-03-13T23:00:00+00:00
-        $dtResult->set_time_zone($timezone);
+        my $dtEpoch = getValue($resHour, 'dt');
 
         # wind
-        my $windDir     = getFormatted('%.0f', $results, 'wind', 'direction'); 
+        my $windDir     = getFormatted('%.0f', $resHour, 'wind_deg');
 
-        # Mapping: Wetteronline Symbol => [Loxone code, Weather4Lox code, description]
+        # Mapping: OWM Symbol => [Loxone code, Weather4Lox code, description]
         my ($loxoneCode, $w4lCode, $description);
-        my $symbol = getValue($results, 'symbol');
+        my $symbol = getValue($resHour, 'weather', 0, 'id');
         if (!defined $symbol) {
-            LOGWARN "Wetteronline symbol for hourly weather is undefined!";
-            ($loxoneCode, $w4lCode, $description) = (5, 'no_data', 'No description for weather symbol');
+            LOGWARN "OpenWeatherMap symbol for hourly weather is undefined!";
+            ($loxoneCode, $w4lCode) = (5, 'no_data');
+            $description = 'No description for weather symbol';
         } else {
-            ($loxoneCode, $w4lCode, $description) = wetteronlineToLox($symbol);
+            ($loxoneCode, $w4lCode) = owmToLox($symbol);
+            $description = getValue($resHour, 'weather', 0, 'description') // 'No description for weather symbol';
         }
 
         # astro data - get moon infos for specific time of data set (translated to epoch time)
-        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = phase($dtResult->epoch);
+        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = phase($dtEpoch);
 
-        # Get sunrise and sunset time from daily data, needed for isNighttime calculation
-        my $isNighttime = undef; # default to day (undef)
-
-        for my $dailyresults (@{$resDaily}) {
-            if (substr(getValue($dailyresults, 'date'), 0, 10) eq substr(getValue($results, 'date'), 0, 10)) {
-                # we found the matching daily data for the current hourly data, now we can check the dayparts for precipitation type
-
-                if ($dtResult->strftime('%H:%M') lt getTimeFormatted('%H:%M', $timezone, $dailyresults, 'sun', 'rise') || 
-                    $dtResult->strftime('%H:%M') gt getTimeFormatted('%H:%M', $timezone, $dailyresults, 'sun', 'set')) {
-                    $isNighttime = 1;
-                    last; # break loop if we found the matching day and determined it is nighttime
-                }
-            }
-        }
-
-        push @hourlyData, {
-            hour           => $i,                                                # hfc<X>_per, counter of day
+        $hourlyData = {
+            hour           => $hour,                                                               # hfc<X>_per, counter of day
             time => {
-                # date       => getValue($results, 'date'),                      # original timestamp from API
-                datetime     => _epochToIso($dtResult->epoch, $timezone),        # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
-                epoch        => $dtResult->epoch,                                # hfc<X>_date       - UNIX timestamp
+                datetime     => _epochToIso($dtEpoch, $timezone),                                  # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
+                epoch        => $dtEpoch,                                                          # hfc<X>_date       - UNIX timestamp
             },
             temperature => {
-                air            => getFormatted('%.1f', $results, 'temperature', 'air'),         # hfc<X>_tt        - hourly max temperature (°C)
-                feelsLike      => getFormatted('%.1f', $results, 'temperature', 'apparent'),    # hfc<X>_tt_fl     - min feels-like temperature
-                heatIndex      => undef,                                                        # hfc<X>_hi        - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
-                windChill      => undef,                                                        # hfc<X>_w_ch      - wind chill (not present), feel-like temperature considering wind, only relevant for low temperatures
+                air            => getFormatted('%.1f', $resHour, 'temp'),                          # hfc<X>_tt        - hourly max temperature (°C)
+                feelsLike      => getFormatted('%.1f', $resHour, 'feels_like'),                    # hfc<X>_tt_fl     - min feels-like temperature
+                heatIndex      => undef,                                                           # hfc<X>_hi        - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
+                windChill      => undef,                                                           # hfc<X>_w_ch      - wind chill (not present), feel-like temperature considering wind, only relevant for low temperatures
             },
             wind => {
-                direction     => $windDir,                                                                                   # hfc<X>_w_dir     - wind direction (degree)
-                cardinal      => getWindDirCardinal($windDir),                                                               # to calculate hfc<X>_w_dirdes  - wind direction description
-                speed         => getFormatted('%.2f', $results, 'wind', 'speed', 'kilometer_per_hour', 'value'),             # hfc<X>_w_sp      - wind speed (km/h)
-                gust          => getFormatted('%.2f', $results, 'wind', 'speed', 'kilometer_per_hour', 'max_gust'),          # hfc<X>_w_gu      - wind gust (km/h)
+                direction     => $windDir,                                                          # hfc<X>_w_dir     - wind direction (degree)
+                cardinal      => getWindDirCardinal($windDir),                                      # to calculate hfc<X>_w_dirdes  - wind direction description
+                speed         => getFormattedMultiplied('%.1f', 3.6, $resHour, 'wind_speed'),       # hfc<X>_w_sp      - wind speed (km/h)
+                gust          => getFormattedMultiplied('%.1f', 3.6, $resHour, 'wind_gust'),        # hfc<X>_w_gu      - wind gust (km/h)
             },
             precipitation => {
-                probability   => getPercentage('%.2f', $results, 'precipitation', 'probability'),                                                # hfc<X>_pop         - probability of precipitation (%)
-                duration      => getValue($results, 'precipitation', 'duration', 'hours'),                                                       #                    - duration of precipitation
-                rainLow       => getFormatted('%.2f', $results, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_begin'),  #                    - precipitation (mm) from
-                rainHigh      => getFormatted('%.2f', $results, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_end'),    # hfc<X>_prec        - precipitation (mm) up to
-                type          => getValue($results, 'precipitation', 'type'),                                                                    #                    - precipitation type
-                snowLow       => getFormatted('%.2f', $results, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_begin'),      #                    - snow height (cm) from
-                snowHigh      => getFormatted('%.2f', $results, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end'),        # hfc<X>_snow        - snow height (cm) up to
+                probability   => getPercentage('%.1f', $resHour, 'pop'),                            # hfc<X>_pop         - probability of precipitation (%)
+                rainHigh      => getFormatted('%.1f', $resHour, 'rain', '1h'),                      # hfc<X>_prec        - precipitation (mm) up to
+                type          => getValue($resHour, 'weather', 0, 'main'),                          #                    - precipitation type
+                snowHigh      => getFormattedMultiplied('%.1f', 0.1, $resHour, 'snow'),             # hfc<X>_snow        - snow height (cm) up to
             },
             weatherCode => {
-                loxone       => $loxoneCode,                                              # hfc<X>_we_code   - Loxone code
-                weather4lox  => $w4lCode,                                                 # hfc<X>_we_icon   - Weather4Lox icon code
-                description  => $description,                                             # hfc<X>_we_des    - description
-                metar        => getMetarCode($w4lCode),                                   #                  - METAR code
+                loxone       => $loxoneCode,                                                        # hfc<X>_we_code   - Loxone code
+                weather4lox  => $w4lCode,                                                           # hfc<X>_we_icon   - Weather4Lox icon code
+                description  => $description,                                                       # hfc<X>_we_des    - description
+                metar        => getMetarCode($w4lCode),                                             #                  - METAR code
             },
             moon => {
-                age          => sprintf("%.2f", $moonage) + 0,                            # hfc<X>_moon_a    - moon age in days
-                percent      => sprintf("%.2f", $moonillum * 100) + 0,                    # hfc<X>_moon_p    - moon percentage
-                phase        => sprintf("%.2f", $moonphase * 100) + 0,                    # hfc<X>_moon_ph   - moon phase
-                direction    => getMoonDirection($moonphase),                             #                  - moon direction (waxing, waning)
-
+                age          => sprintf("%.1f", $moonage) + 0,                                      # hfc<X>_moon_a    - moon age in days
+                percent      => sprintf("%.1f", $moonillum * 100) + 0,                              # hfc<X>_moon_p    - moon percentage
+                phase        => sprintf("%.1f", $moonphase * 100) + 0,                              # hfc<X>_moon_ph   - moon phase
+                direction    => getMoonDirection($moonphase),                                       #                  - moon direction (waxing, waning)
             },
-            humidity         => getPercentage('%.2f', $results, 'humidity'),              # hfc<X>_hu        - humidity
-            pressure         => getFormatted('%.0f', $results, 'air_pressure', 'hpa'),    # hfc<X>_pr        - air pressure (hPa)
-            dewpoint         => getFormatted('%.1f', $results, 'dew_point', 'celsius'),   # hfc<X>_dp        - dew point (°C)
-            uvIndex          => getFormatted('%.1f', $results, 'uv_index', 'value'),      # hfc<X>_uvi       - UV index
-            visibility       => getFormatted('%.0f', $results, 'visibility'),             # hfc<X>_vis       - visibility (m/km as needed)
-            solarRadiation   => undef,                                                    # hfc<X>_sr        - solar radiation (not present)
-            ozone            => undef,                                                    # hfc<X>_ozone     - ozone (not present)
-            cloudCover       => skyConditionFromWoCode($symbol),                          # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
-            isNight          => $isNighttime,                                             # get nighttime information from sunrise / sunset, alternate solution woudl be from symbol code
+            humidity         => getFormatted('%.1f', $resHour, 'humidity'),                         # hfc<X>_hu        - humidity
+            pressure         => getFormatted('%.0f', $resHour, 'pressure'),                         # hfc<X>_pr        - air pressure (hPa)
+            dewpoint         => getFormatted('%.1f', $resHour, 'dew_point'),                        # hfc<X>_dp        - dew point (°C)
+            uvIndex          => getFormatted('%.1f', $resHour, 'uvi'),                              # hfc<X>_uvi       - UV index
+            visibility       => getFormattedMultiplied('%.0f', 0.001, $resHour, 'visibility'),      # hfc<X>_vis       - visibility (m/km as needed)
+            solarRadiation   => undef,                                                              # hfc<X>_sr        - solar radiation (not present)
+            ozone            => undef,                                                              # hfc<X>_ozone     - ozone (not present)
+            cloudCover       => getFormatted('%.0f', $resHour, 'clouds'),                           # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
+            isNight          => isNighttimeForCurrentHour($dtEpoch, $timezone, $results),           # get nighttime information from sunrise / sunset
         };
-        $i++;
+        push @hourlyArray, $hourlyData;
+        $hour++;
     }
 
-	# WetterOnline only offers 32h hourly forecast, the rest is retriveved by interpolating the daily forecast data.
+    # OpenWeatherMap only offers 48h of hourly forecasts in the free account. Interpolate with 3-hours data to have more entries for the weather emulator
+    if ($hour < 168) {
 
-	# 1. Step: Collect all support points from $resDaily by crawling through all available 'dayparts'. Each day has an
-    #          array with 4 "dayparts" (at 05:00, 11:00, 17:00, 23:00) containing weather data for the corresponding time interval
+        LOGINF "Fetching additional 3-Hourly Forecat Data to interpolite hourly data (only 48h of hourly data available via OneCall API).";
 
-    # create hashes for different parameters
-	my (%t_air,             # temperatur air 
-       %t_app,              # temperatur feels like
-       %hum,                # humidity
-       %w_dir,              # wind direction
-       %w_sp_kmh,           # wind speed
-       %w_gu_kmh,           # wind gust
-       %pr_hpa,             # pressure
-       %dp_c,               # dew point
-       %uvidx,              # uv index
-       %prec_dur,           # precipitation duration
-       %prec_mm,            # precipitation (rain in mm)
-       %snow_cm,            # precipitation (snow in cm)
-       %pop_pct,            # precipitation (propability, percentage)
-    );
-    my (%symbol,            # symbol - do not interpolate
-        %c_img,             # weather image - do not interpolate
-        %prec_type,         # precipitation type
-    );
-    my @dpEpochs;
-	
-    # Collect support points for all days, each with 4 dayparts
-	for my $dailyResults (@{$resDaily}) {
-		my @dayParts = @{$dailyResults->{dayparts}};
+        # Get data from openweathermap.org (API request) for 3-hourly forecasts via free 5 day / 3 hour forecast data
+        my $res3Hourly = apiCall(
+            url => $fc3hrURL,
+            maskkeys => $maskKeys,
+            keyparam => 'appid',
+            # apikey => $apikey,	# not needed here as the URL is already masked and the key won't appear elsewhere in the response
+            info => "for Location $stationid (3-Hourly Weather Forecast Data)",
+        );
+        my $lastHourlyData = $hourlyData; # to keep track of the last hourly data for interpolation
 
-		for my $dayPart (@dayParts) {
-			# Convert daypart timestamp to epoch seconds
-			my $ep = DateTime::Format::ISO8601->parse_datetime(getValue($dayPart, 'date'))->epoch;   # ISO date from API is in UTC, e.g. 2026-03-13T23:00:00+00:00
+        # it is assumed, that the elements are ordered by time (ascending)
+        for my $res3Hour (@{$res3Hourly->{list} // []}) {
 
-			push @dpEpochs, $ep;
+            # skip already existing hourly data, only interpolate for missing hours (normally every 3 hours)
+			if ($lastHourlyData->{time}{epoch} >= getValue($res3Hour, 'dt')) {
+				next;
+			}
 
-			# Temperatures
-			$t_air{$ep} = getFormatted('%.1f', $dayPart, 'temperature', 'air') + 0;
-			$t_app{$ep} = getFormatted('%.1f', $dayPart, 'temperature', 'apparent') + 0;
+            # wind
+            my $windDir3h     = getFormatted('%.0f', $res3Hour, 'wind', 'deg') // 0; # default to 0 if wind direction is missing, to avoid issues with interpolation
 
-			# Humidity (0..1) -> store as percent (0..100) and interpolate in that domain
-			$hum{$ep} = getPercentage('%.2f', $dayPart, 'humidity');
-
-			# Wind direction (deg) and speed (km/h)
-			$w_dir{$ep}    = getFormatted('%.0f', $dayPart, 'wind', 'direction');
-			$w_sp_kmh{$ep} = getFormatted('%.2f', $dayPart, 'wind', 'speed', 'kilometer_per_hour', 'value') + 0;
-			$w_gu_kmh{$ep} = getFormatted('%.2f', $dayPart, 'wind', 'speed', 'kilometer_per_hour', 'max_gust') + 0;
-
-			# Pressure / dew point
-			$pr_hpa{$ep} = getFormatted('%.0f', $dayPart, 'air_pressure', 'hpa') + 0;
-			$dp_c{$ep}   = getFormatted('%.1f', $dayPart, 'dew_point', 'celsius') + 0;
-
-			# Rain amount: mean of interval begin/end (if present)
-			if ($dayPart->{precipitation}{details}{rainfall_amount}{millimeter}) {
-				my $rf = (getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_begin') +
-						  getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_end')) / 2;
-				$prec_mm{$ep} = $rf;
-			} else {
-				$prec_mm{$ep} = 0;                
+            # Mapping: OWM Symbol => [Loxone code, Weather4Lox code, description]
+            my ($loxoneCode, $w4lCode, $description);
+            my $symbol = getValue($res3Hour, 'weather', 0, 'id');
+            if (!defined $symbol) {
+                LOGWARN "OpenWeatherMap symbol for hourly weather is undefined!";
+                ($loxoneCode, $w4lCode) = (5, 'no_data');
+                $description = 'No description for weather symbol';
+            } else {
+                ($loxoneCode, $w4lCode) = owmToLox($symbol);
+                $description = getValue($res3Hour, 'weather', 0, 'description') // 'No description for weather symbol';
             }
 
-			# Snow height (cm)
-			if ($dayPart->{precipitation}{details}{snow_height}{centimeter}) {
-				$snow_cm{$ep} = (getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_begin') +
-						         getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end')) / 2;
-			}  else {
-                $snow_cm{$ep} = 0;
-            }
+			# Step to last entry (normally 3 hours)
+			my $delta = (getValue($res3Hour, 'dt') - $lastHourlyData->{time}{epoch}) / 3600;
 
-			# precipitation duration in minutes.  TODO: verify if daypart include duration and units
-			$prec_dur{$ep} = getFormatted('%.2f', $dayPart, 'precipitation', 'duration', 'minutes')  + 0 // 0;
+			# Create new interpolated entries
+			for (my $step=1; $step <= $delta; $step++) {
 
-			# precipitation probability (0..1) -> percent (0..100)
-			$pop_pct{$ep} = getPercentage('%.2f', $dayPart, 'precipitation', 'probability') + 0 // 0;
+                # values with additional calculations needs to be done before hash is assigned
 
-            # uv index
-            $uvidx{$ep} = getFormatted('%.1f', $dayPart, 'uv_index', 'value') // 0;
+                # time
+                my $dtEpoch = $lastHourlyData->{time}{epoch} + ($step * 3600); # add hours in seconds to last known hourly data timestamp
 
-			# Symbol is categorical data -> keep as step/hold value
-			$symbol{$ep} = getValue($dayPart, 'symbol');
-			$c_img{$ep} = getValue($dayPart, 'weather_condition_image');
-		}
-	}
+                # astro data - get moon infos for specific time of data set (translated to epoch time)
+                my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = phase($dtEpoch);
 
-	# 2. Step: Sort and de-duplicate epochs
-    my $skipInterpolation = 0;
-
-	@dpEpochs = sort { $a <=> $b } @dpEpochs;
-	{
-		my %seen;
-		@dpEpochs = grep { !$seen{$_}++ } @dpEpochs;
-	}
-    if (!@dpEpochs) {
-        LOGWARN "No dayparts to interpolate. Errors are likely, e.g. the Loxone weather emulator may show a black screen";
-        $skipInterpolation = 1;
-    }
-
-    if (scalar(@dpEpochs) < 2) {
-        LOGWARN("Not enough time points for interpolation: " . scalar(@dpEpochs));
-        $skipInterpolation = 1;
-    }
-
-    for my $hashref (\%t_air, \%t_app, \%hum, \%w_dir, \%w_sp_kmh, \%pr_hpa, \%dp_c, \%prec_mm, \%snow_cm, \%pop_pct, \%uvidx, \%prec_dur) {
-        my @defined_vals = grep { defined $_ } values %$hashref;
-        if (scalar(@defined_vals) < 2) {
-            LOGWARN("Not enough defined values for interpolator (" . $hashref . ")");
-             $skipInterpolation = 1;
-        }
-    }
-
-	# 3. Step: Create interpolators for all parameters
-
-	# Create interpolators (once)
-	my $t_air_i    = Math::Function::Interpolator::Linear->new(points => \%t_air);
-	my $t_app_i    = Math::Function::Interpolator::Linear->new(points => \%t_app);
-	my $hum_i      = Math::Function::Interpolator::Linear->new(points => \%hum);
-	my $w_dir_i    = Math::Function::Interpolator::Linear->new(points => \%w_dir);
-	my $w_sp_i     = Math::Function::Interpolator::Linear->new(points => \%w_sp_kmh);
-	my $w_gu_i     = Math::Function::Interpolator::Linear->new(points => \%w_gu_kmh);
-	my $pr_i       = Math::Function::Interpolator::Linear->new(points => \%pr_hpa);
-	my $dp_i       = Math::Function::Interpolator::Linear->new(points => \%dp_c);
-	my $uvidx_i    = Math::Function::Interpolator::Linear->new(points => \%uvidx);
-	my $prec_i     = Math::Function::Interpolator::Linear->new(points => \%prec_mm);
-	my $prec_dur_i = Math::Function::Interpolator::Linear->new(points => \%prec_dur);
-	my $snow_i     = Math::Function::Interpolator::Linear->new(points => \%snow_cm);
-	my $pop_i      = Math::Function::Interpolator::Linear->new(points => \%pop_pct);
-
-	# 4. Step: Create hourly data for all hours starting from '$dtResult' (time stamp from the last hourly entry) + 1h
-    #          up to last available entry in dpEpochs, '$i' still counts the entry
-
-	# Get latest time stamp 
-	my $end_epoch_time = $dpEpochs[-1];
-
-	# increase time '$dtResult' by 1 hour for next entry
-	$dtResult->add(hours => 1);
-	my $epochTime = $dtResult->epoch;
-
-    # only save 5 days of hourly data to reduce loading times
-	while ($epochTime <= $end_epoch_time && !$skipInterpolation && $i < 121) {
-
-        # values with additional calculations needs to be done before hash is assigned
-
-		# For step/hold fields (symbol -> icon/code/description and wind direction text),
-		# select the field from last daypart epoch <= current hourly epoch
-		my $stepEp = $dpEpochs[0];
-		for my $e (@dpEpochs) {
-			last if $e > $epochTime;
-			$stepEp = $e;
-		}
-
-        # calculate epoch time from last entry + 1h
-		$epochTime = $dtResult->epoch;
-
-        # Mapping: Wetteronline Symbol => [Loxone code, Weather4Lox code, description]
-        my ($loxoneCode, $w4lCode, $description);
-        my $sym = $symbol{$stepEp};
-        if (!defined $sym) {
-            LOGWARN "Wetteronline symbol for hourly weather is undefined!";
-            ($loxoneCode, $w4lCode, $description) = (5, 'no_data', 'Keine Beschreibung zu Wettersymbol');
-        } else {
-            ($loxoneCode, $w4lCode, $description) = wetteronlineToLox($sym);
-        }
-
-        # astro data
-
-        # get moon infos for specific time of data set (translated to epoch time)
-        my ($moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang) = phase($epochTime);
-
-        # Get sunrise and sunset time from daily data, needed for isNighttime calculation
-        my $isNighttime = undef; # default to day (undef)
-
-        for my $dailyResults (@{$resDaily}) {
-            if (substr(getValue($dailyResults, 'date'), 0, 10) eq $dtResult->strftime('%Y-%m-%d')) {
-                # we found the matching daily data for the current hourly data, now we can check the dayparts for precipitation type
-
-                if ($dtResult->strftime('%H:%M') lt getTimeFormatted('%H:%M', $timezone, $dailyResults, 'sun', 'rise') || 
-                    $dtResult->strftime('%H:%M') gt getTimeFormatted('%H:%M', $timezone, $dailyResults, 'sun', 'set')) {
-                    $isNighttime = 1;
-                    last; # break loop if we found the matching day and determined it is nighttime
+                sub interpolate {
+                    my ($lastValue, $nextValue, $step, $delta) = @_;
+                    if (defined $lastValue && defined $nextValue) {
+                        return $lastValue + (($nextValue - $lastValue) / $delta * $step);
+                    } elsif (defined $lastValue) {
+                        return $lastValue;
+                    } elsif (defined $nextValue) {
+                        return $nextValue;
+                    } else {
+                        return undef;
+                    }
                 }
+
+                # Interpolate wind direction with special handling for circular nature of wind direction (0° and 360° are the same) 
+                my $lastWindDir = $lastHourlyData->{wind}{direction};
+                my $windDirDiff = $windDir3h - $lastWindDir;
+
+                # Get shortest path over the 360° jump
+                if ($windDirDiff > 180) {
+                    $windDirDiff -= 360;
+                } elsif ($windDirDiff < -180) {
+                    $windDirDiff += 360;
+                }
+                # Interpolate wind direction
+                my $interpolatedWindDir = ($lastWindDir + ($windDirDiff / $delta * $step) + 360) % 360; # add 360 before modulo to avoid negative values
+
+                $hourlyData = {
+                    hour           => $hour,                                                               # hfc<X>_per, counter of day
+                    time => {
+                        datetime     => _epochToIso($dtEpoch, $timezone),                                  # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
+                        epoch        => $dtEpoch,                                                          # hfc<X>_date       - UNIX timestamp
+                    },
+                    temperature => {
+                        air            => interpolate($lastHourlyData->{temperature}{air},
+                                            getFormatted('%.1f', $res3Hour, 'temp'),
+                                            $step, $delta),                                                # hfc<X>_tt        - hourly max temperature (°C)
+                        feelsLike      => interpolate($lastHourlyData->{temperature}{feelsLike},
+                                            getFormatted('%.1f', $res3Hour, 'feels_like'),
+                                            $step, $delta),                                                # hfc<X>_tt_fl     - min feels-like temperature
+                        heatIndex      => undef,                                                           # hfc<X>_hi        - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
+                        windChill      => undef,                                                           # hfc<X>_w_ch      - wind chill (not present), feel-like temperature considering wind, only relevant for low temperatures
+                    },
+                    wind => {
+                        direction     => $interpolatedWindDir,                                             # hfc<X>_w_dir     - wind direction (degree)
+                        cardinal      => getWindDirCardinal($interpolatedWindDir),                         # to calculate hfc<X>_w_dirdes  - wind direction description
+                        speed         => interpolate($lastHourlyData->{wind}{speed},
+                                            getFormattedMultiplied('%.1f', 3.6, $res3Hour, 'wind_speed'),
+                                            $step, $delta),                                                # hfc<X>_w_sp      - wind speed (km/h)
+                        gust          => interpolate($lastHourlyData->{wind}{gust},
+                                            getFormattedMultiplied('%.1f', 3.6, $res3Hour, 'wind_gust'),
+                                            $step, $delta),                                                # hfc<X>_w_gu      - wind gust (km/h)
+                    },
+                    precipitation => {
+                        probability   => interpolate($lastHourlyData->{precipitation}{probability},
+                                            getPercentage('%.1f', $res3Hour, 'pop'),
+                                            $step, $delta),                                                # hfc<X>_pop         - probability of precipitation (%)
+                        rainHigh      => interpolate($lastHourlyData->{precipitation}{rainHigh},
+                                            getFormatted('%.1f', $res3Hour, 'rain', '1h'),
+                                            $step, $delta),                                                # hfc<X>_prec        - precipitation (mm) up to
+                        type          => getValue($res3Hour, 'weather', 0, 'main'),                          #                    - precipitation type
+                        snowHigh      => interpolate($lastHourlyData->{precipitation}{snowHigh},
+                                            getFormattedMultiplied('%.1f', 0.1, $res3Hour, 'snow'),
+                                            $step, $delta),                                                # hfc<X>_snow        - snow height (cm) up to
+                    },
+                    weatherCode => {
+                        loxone       => $loxoneCode,                                                        # hfc<X>_we_code   - Loxone code
+                        weather4lox  => $w4lCode,                                                           # hfc<X>_we_icon   - Weather4Lox icon code
+                        description  => $description,                                                       # hfc<X>_we_des    - description
+                        metar        => getMetarCode($w4lCode),                                             #                  - METAR code
+                    },
+                    moon => {
+                        age          => sprintf("%.1f", $moonage) + 0,                                      # hfc<X>_moon_a    - moon age in days
+                        percent      => sprintf("%.1f", $moonillum * 100) + 0,                              # hfc<X>_moon_p    - moon percentage
+                        phase        => sprintf("%.1f", $moonphase * 100) + 0,                              # hfc<X>_moon_ph   - moon phase
+                        direction    => getMoonDirection($moonphase),                                       #                  - moon direction (waxing, waning)
+                    },
+                    humidity         => interpolate($lastHourlyData->{humidity},
+                                            getFormatted('%.1f', $res3Hour, 'humidity'),
+                                            $step, $delta),                                                 # hfc<X>_hu        - humidity
+                    pressure         => interpolate($lastHourlyData->{pressure},
+                                            getFormatted('%.0f', $res3Hour, 'pressure'),
+                                            $step, $delta),                                                 # hfc<X>_pr        - air pressure (hPa)
+                    dewpoint         => interpolate($lastHourlyData->{dewpoint},
+                                            getFormatted('%.1f', $res3Hour, 'dew_point'),
+                                            $step, $delta),                                                 # hfc<X>_dp        - dew point (°C)
+                    uvIndex          => interpolate($lastHourlyData->{uvIndex},
+                                            getFormatted('%.1f', $res3Hour, 'uvi'),
+                                            $step, $delta),                                                 # hfc<X>_uvi       - UV index
+                    visibility       => interpolate($lastHourlyData->{visibility},
+                                            getFormattedMultiplied('%.0f', 0.001, $res3Hour, 'visibility'),
+                                            $step, $delta),                                                 # hfc<X>_vis       - visibility (m/km as needed)
+                    solarRadiation   => undef,                                                              # hfc<X>_sr        - solar radiation (not present)
+                    ozone            => undef,                                                              # hfc<X>_ozone     - ozone (not present)
+                    cloudCover       => interpolate($lastHourlyData->{cloudCover},
+                                            getFormatted('%.0f', $res3Hour, 'clouds'),
+                                            $step, $delta),                                                 # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
+                    isNight          => isNighttimeForCurrentHour($dtEpoch, $timezone, $results),           # get nighttime information from sunrise / sunset, alternate solution woudl be from symbol code
+                };
+                push @hourlyArray, $hourlyData;
+                $lastHourlyData = $hourlyData; # update last known hourly data with the current one for next interpolation step
+                $hour++;
             }
         }
-
-        push @hourlyData, {
-
-            hour              => $i,                                                # hfc<X>_per, counter of day
-            time => {
-                datetime      => _epochToIso($epochTime, $timezone),                # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
-                epoch         => $epochTime,                                        # hfc<X>_date       - UNIX timestamp
-            },
-            temperature => {
-                air           => sprintf("%.1f", $t_air_i->linear($epochTime)),     # hfc<X>_tt        - hourly temperature (°C)
-                feelsLike     => sprintf("%.1f", $t_app_i->linear($epochTime)),     # hfc<X>_tt_fl     - min feels-like temperature
-                heatIndex     => undef,                                             # hfc<X>_hi        - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
-                windChill     => undef,                                             # hfc<X>_w_ch      - wind chill (not present), feel-like temperature considering wind, only relevant for low temperatures
-            },
-            wind => {
-                direction     => $w_dir{$stepEp},                                   # hfc<X>_w_dir     - wind direction (degree)
-                cardinal      => getWindDirCardinal($w_dir{$stepEp}),               # to calculate hfc<X>_w_dirdes  - wind direction description
-                speed         => sprintf("%.2f", $w_sp_i->linear($epochTime)) + 0,  # hfc<X>_w_sp      - wind speed (km/h)
-                gust          => sprintf("%.2f", $w_gu_i->linear($epochTime)) + 0,  # hfc<X>_w_gu      - wind gust (km/h)
-            },
-            precipitation => {
-                probability   => sprintf("%.0f", $pop_i->linear($epochTime)) + 0,   # hfc<X>_pop         - probability of precipitation (%)
-                duration      => sprintf("%.0f", $prec_dur_i->linear($epochTime)) + 0,  #                    - duration of precipitation
-                rainLow       => sprintf("%.0f", $prec_i->linear($epochTime)) + 0,  #                    - precipitation (mm) from
-                rainHigh      => sprintf("%.0f", $prec_i->linear($epochTime)) + 0,  # hfc<X>_prec        - precipitation (mm) up to
-                type          => $prec_type{$stepEp},                               #                    - precipitation type
-                snowLow       => sprintf("%.0f", $snow_i->linear($epochTime)) + 0,  #                    - snow height (cm) from
-                snowHigh      => sprintf("%.0f", $snow_i->linear($epochTime)) + 0,  # hfc<X>_snow        - snow height (cm) up to
-            },
-            weatherCode => {
-                loxone        => $loxoneCode,                                       # hfc<X>_we_code   - Loxone code
-                weather4lox   => $w4lCode,                                          # hfc<X>_we_icon   - Weather4Lox icon code
-                description   => $description,                                      # hfc<X>_we_des    - description
-                image         => $c_img{$stepEp},                                   #                  - future use, e.g. as background image
-                metar         => getMetarCode($w4lCode),                            #                  - METAR code
-            },
-            moon => {
-                age        => sprintf("%.2f", $moonage) + 0,                        # hfc<X>_moon_a    - moon age in days
-                percent    => sprintf("%.2f", $moonillum * 100) + 0,                # hfc<X>_moon_p    - moon percentage
-                phase      => sprintf("%.2f", $moonphase * 100) + 0,                # hfc<X>_moon_ph   - moon phase
-                direction  => getMoonDirection($moonphase),                         #                  - moon direction (waxing, waning)
-            },
-            humidity         => sprintf("%.0f", $hum_i->linear($epochTime)) + 0,    # hfc<X>_hu        - humidity
-            pressure         => sprintf("%.0f", $pr_i->linear($epochTime)) + 0,     # hfc<X>_pr        - air pressure (hPa)
-            dewpoint         => sprintf("%.1f", $dp_i->linear($epochTime)) + 0,     # hfc<X>_dp        - dew point (°C)
-            uvIndex          => sprintf("%.1f", $uvidx_i->linear($epochTime)) + 0,  # hfc<X>_uvi       - UV index
-            visibility       => undef,                                              # hfc<X>_vis       - visibility (m/km), not available in dayparts!
-            solarRadiation   => undef,                                              # hfc<X>_sr        - solar radiation (not present)
-            ozone            => undef,                                              # hfc<X>_ozone     - ozone (not present)
-            cloudCover       => skyConditionFromWoCode($sym),                       # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
-            isNight          => $isNighttime,                                       # get nighttime information from sunrise / sunset
-        };
-        $dtResult->add(hours => 1);
-        $i++;
     }
 
     # Build envelope and write JSON to file
@@ -1210,7 +1051,7 @@ if ( $hourly ) {
             grabberScript   => $grabberFile,
             schemaVersion   => "v1.0",
         },
-        $weatherKey => \@hourlyData,
+        $weatherKey => \@hourlyArray,
     };
     writeJsonFile($lbplogdir, $weatherKey, $envelope);
 

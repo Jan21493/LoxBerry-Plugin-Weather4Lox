@@ -209,7 +209,6 @@
     "tornado": "Vórtices giratorios violentos que se extienden desde el suelo hasta una nube. Los iconos nocturnos no muestran fases lunares.",
     "no_data": "Se usa cuando no hay datos meteorológicos. El icono puede indicar día/noche según el conjunto."
   },
-  "wind_from": "Viento de",
   "wind_directions": {
     "N": "Norte",
     "NE": "Noreste",
@@ -231,7 +230,7 @@
     "pressure": "Presión",
     "sunrise": "Salida del sol",
     "sunset": "Puesta del sol",
-    "feels_like": "Sensación",
+    "feelsLike": "Sensación",
     "precipitation": "Precipitación",
     "cloud_cover": "Nubosidad",
     "uv_index": "Índice UV",
@@ -247,7 +246,10 @@
     "click_hour_detail": "Clic en hora para detalles",
     "loading": "Cargando datos meteorológicos...",
     "error_loading": "No se pudieron cargar los datos.",
+    "wind_from": "Viento de",
+    "with": "con",
     "gusts": "Ráfagas",
+    "up_to": "hasta",
     "live_dashboard": "Panel en vivo",
     "weekdays": [
       "Domingo",

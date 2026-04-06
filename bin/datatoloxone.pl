@@ -164,7 +164,7 @@ LOGINF "---------------------------------------------- Sending current weather d
 our $sendUDPqueue;
 
 # Get timezone offset in seconds from tz_offset, e.g. "+0100" => 3600, "-0230" => -9000
-my $tzseconds = tzOffsetSeconds($cur->{time}{tzOffset} // "");
+my $tzseconds = tzOffsetSeconds($location->{tzOffset} // "");
 
 # Times are send in local time 
 my $curDate = DateTime->from_epoch(epoch => $cur->{time}{epoch}, time_zone => $location->{timezone});
@@ -176,9 +176,9 @@ my $doLog = 1; # log the first data set in detail, but not all subsequent ones t
 # TODO: To be verified if + $tzseconds is correct 
 sendToLox($toMS, $doLog, "cur_date", toLoxEpoch($cur->{time}{epoch}));                             # Loxone epoch (1.1.2009, MEZ), e.g. 542934004
 sendToLox($toMS, $doLog, "cur_date_des", $cur->{time}{datetime});                                  # was RFC822, now ISO 8601, e.g. Mon, 16 Mar 2026 23:00:04 +0100
-sendToLox($toMS, $doLog, "cur_date_tz_des_sh", $cur->{time}{timezone});                            # IANA timezone name, e.g. Europe/Berlin
-sendToLox($toMS, $doLog, "cur_date_tz_des", $cur->{time}{tzShort});                                # Time Zone Abbreviation, e.g. CET
-sendToLox($toMS, $doLog, "cur_date_tz", $cur->{time}{tzOffset});                                   # Numeric timezone offset, e.g. +0100
+sendToLox($toMS, $doLog, "cur_date_tz_des_sh", $location->{timezone});                             # IANA timezone name, e.g. Europe/Berlin
+sendToLox($toMS, $doLog, "cur_date_tz_des", $location->{tzShort});                                 # Time Zone Abbreviation, e.g. CET
+sendToLox($toMS, $doLog, "cur_date_tz", $location->{tzOffset});                                    # Numeric timezone offset, e.g. +0100
 sendToLox($toMS, $doLog, "cur_day", encode_utf8(sprintf("%02d", $curDate->day)));
 sendToLox($toMS, $doLog, "cur_month", encode_utf8(sprintf("%02d", $curDate->month)));
 sendToLox($toMS, $doLog, "cur_year", encode_utf8($curDate->year));
@@ -257,10 +257,10 @@ LOGINF "-------------------------------------- Sending daily weather forecast to
 
 foreach my $dfcEntry (@$dfc) {
 
-    # Today is dfc0, tomorrow is dfc1, ...
+    # Today is day 0 (dfc0), tomorrow is dfc1, ...
     my $per = $dfcEntry->{day};
 
-    # Check if we should send this period to MS via MQTT and UDP
+    # Check if we should send this period to MS via MQTT and UDP - first period is 1 for current day (dfc0)
     $toMS = $dfcAllowed->{$per + 1};
 
     LOGINF "Processing daily forecast entry for day $per (dfc${per}) with date " . $dfcEntry->{time}{datetime} . ($toMS ? " and sending data to MS (as configured)." : ", but not sending data to MS (as configured).");
@@ -334,11 +334,11 @@ LOGINF "-------------------------------------- Sending hourly weather forecast t
 $doLog = 1; # log the first data set in detail, but not all subsequent ones to avoid log flooding
 foreach my $hfcEntry (@$hfc) {
 
-    # Today is hfc0, tomorrow is hfc1, ...
+    # Hours starting with 1, (hfc1) ...
     my $per = $hfcEntry->{hour};
 
     # Check if we should send this period to MS via MQTT and UDP
-    $toMS = $hfcAllowed->{$per + 1};
+    $toMS = $hfcAllowed->{$per};
 
     LOGINF "Processing hourly forecast entry for hour $per (hfc${per}) with date " . $hfcEntry->{time}{datetime} . ($toMS ? " and sending data to MS (as configured)." : ", but not sending data to MS (as configured).");
 
@@ -786,7 +786,7 @@ if ($emu) {
     print F "<valid_until>" . (($curDate->year)+5) . "-12-31</valid_until>\n";
     print F "<station>\n";
     print F ";" . ($location->{city} // "-") . ";" . ($location->{longitude} // "0") . ";" . ($location->{latitude} // "0");
-    print F ";" . ($location->{elevation} // "0") . ";" . ($location->{country} // "-") . ";" . ($cur->{time}{tzShort} // "UTC") . ";" . ($emuTzOffset // "+0.00");
+    print F ";" . ($location->{elevation} // "0") . ";" . ($location->{country} // "-") . ";" . ($location->{tzShort} // "UTC") . ";" . ($emuTzOffset // "+0.00");
     print F ";" . ($cur->{sunrise} // "-") . ";" . ($cur->{sunset} // "-") . ";\n";
     # Data line for current conditions (semicolon separated, in the order expected by Loxone)
     print F $curDate->strftime('%d.%m.%Y') . ";\t";                     # Local date in format "dd.mm.yyyy"

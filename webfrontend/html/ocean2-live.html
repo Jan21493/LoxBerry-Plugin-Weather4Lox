@@ -132,36 +132,17 @@
 
     /* Hero card */
     .hero { padding: 28px; }
-    .hero-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: nowrap; }
-    .hero-row > div:first-child { flex: 1 1 auto; min-width: 0; }
+    .hero-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
     .hero-temp { font-size: 4.5rem; font-weight: 300; line-height: 1; letter-spacing: -0.04em; text-shadow: var(--glow); transition: opacity 0.15s; }
-    .hero-feels { color: var(--text-muted); font-size: 0.85rem; }
     .hero-temp sup { font-size: 1.8rem; font-weight: 400; opacity: 0.5; vertical-align: super; }
     .hero-desc { font-size: 1.1rem; color: var(--text-secondary); margin-top: 6px; }
-    .hero-wind { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
-    .hero-wind-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0 6px;
-      align-items: baseline;
-      min-width: 0;
-    }
-    .hero-wind,
-    .hero-gust {
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      margin-top: 4px;
-      white-space: nowrap;
-    }
+    .hero-feels { color: var(--text-muted); font-size: 0.85rem; }
     .hero-icon-box {
-      flex: 0 0 150px;
-      width: 150px; height: 150px; 
-      min-width: 100px; min-height: 100px; 
-      border-radius: 50%;
+      width: 130px; height: 130px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       animation: bobble 6s ease-in-out infinite;
     }
-    .hero-icon { width: 120px; height: 120px; flex: 0 0 auto; filter: drop-shadow(0 6px 24px rgba(56,189,248,0.2)); }
+    .hero-icon { width: 100px; height: 100px; filter: drop-shadow(0 6px 24px rgba(56,189,248,0.2)); }
     @keyframes bobble { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
 
     /* Astro row */
@@ -339,7 +320,7 @@
 
 <script>
 // ===== CONFIGURATION =====
-var JSON_BASE = './';
+var LOG_BASE = '/plugins/weather4lox';
 var SUPPORTED_LANGS = ['de', 'en', 'es', 'nl', 'sk'];
 var REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -366,17 +347,12 @@ var liveData = {
   daily: [],
   dailyCount: 0,
   lang: null,
-  icons: null
+  iconMapping: null
 };
 
 // Rendered hourly arrays for preselectHour
 var hourlyTodayRendered = [];
 var hourlyTomorrowRendered = [];
-
-// Selection state (persisted across refreshes)
-var selectedTab = 'heute';
-var selectedHourIdx = 0;
-var selectedHourValue = 'now';
 
 // ===== FETCH HELPERS =====
 function checkOk(response) {
@@ -440,11 +416,11 @@ function showError(msg) {
 function loadAllData() {
   showLoading();
   return Promise.all([
-    fetch(JSON_BASE + 'current.json').then(checkOk).then(function(r) { return r.json(); }),
-    fetch(JSON_BASE + 'hourlyforecast.json').then(checkOk).then(function(r) { return r.json(); }),
-    fetch(JSON_BASE + 'dailyforecast.json').then(checkOk).then(function(r) { return r.json(); }),
-    fetch(JSON_BASE + 'lang-' + currentLang + '.json').then(checkOk).then(function(r) { return r.json(); }),
-    fetch(JSON_BASE + 'icons/' + ICONSET + '/icon_mapping.json').then(checkOk).then(function(r) { return r.json(); })
+    fetch(LOG_BASE + '/current.json').then(checkOk).then(function(r) { return r.json(); }),
+    fetch(LOG_BASE + '/hourlyforecast.json').then(checkOk).then(function(r) { return r.json(); }),
+    fetch(LOG_BASE + '/dailyforecast.json').then(checkOk).then(function(r) { return r.json(); }),
+    fetch('lang-' + currentLang + '.json').then(checkOk).then(function(r) { return r.json(); }),
+    fetch('icons/' + ICONSET + '/icon_mapping.json').then(checkOk).then(function(r) { return r.json(); })
   ]).then(function(results) {
     hideLoading();
 
@@ -455,7 +431,7 @@ function loadAllData() {
     liveData.refreshInterval = (currentEnvelope.refresh || 300) * 1000;
 
     liveData.lang = results[3];
-    liveData.icons = (results[4] && results[4].icons) || {};
+    liveData.iconMapping = (results[4] && results[4].icons) || {};
     liveData.iconFormat = (results[4] && results[4].format) || 'png';
 
     // Derive datetime from time object if missing
@@ -487,12 +463,7 @@ function loadAllData() {
       if (!ht.datetime && ht.epoch) ht.datetime = new Date(ht.epoch * 1000).toISOString();
       if (!h.time) h.time = ht;
     });
-    liveData.hourlyToday = hourlyRaw.filter(function (h) {
-      return h.time &&
-        h.time.datetime &&
-        h.time.datetime.slice(0, 10) === todayStr &&
-        parseInt(h.time.datetime.slice(11, 13), 10) > parseInt(curTime.datetime.slice(11, 13), 10);
-    });
+    liveData.hourlyToday = hourlyRaw.filter(function(h) { return h.time && h.time.datetime && h.time.datetime.slice(0, 10) === todayStr; });
     liveData.hourlyTomorrow = hourlyRaw.filter(function(h) { return h.time && h.time.datetime && h.time.datetime.slice(0, 10) === tomorrowStr; });
 
     // Transform daily data
@@ -560,7 +531,7 @@ function phaseFilename(baseFilename, phaseIdx, pchar, ext) {
 function resolveIcon(weatherCode, isNight, moonAge) {
 
   const ext = '.' + (liveData.iconFormat || 'png');
-  const iconEntry = liveData.icons && liveData.icons[weatherCode];
+  const iconEntry = liveData.iconMapping && liveData.iconMapping[weatherCode];
   var iconName = null;
 
   if (iconEntry) {
@@ -586,11 +557,10 @@ function resolveIcon(weatherCode, isNight, moonAge) {
 function transformHourly(hourlyArray, sunriseStr, sunsetStr) {
   return hourlyArray.map(function(h) {
     var hTime = (h.time && h.time.datetime) || '';
-    var hourValue = hTime ? parseInt(hTime.slice(11, 13), 10) : null;
-
+    var hourStr = hTime.slice(11, 13);
+    var dn = isDaytime(hTime, sunriseStr, sunsetStr) ? 'day' : 'night';
     return {
-      hour: hTime ? hTime.slice(11, 13) : '--',
-      hourValue: hourValue,
+      hour: hourStr,
       temp: h.temperature ? h.temperature.air : undefined,
       feelsLike: h.temperature ? h.temperature.feelsLike : undefined,
       rainProb: h.precipitation ? h.precipitation.probability : undefined,
@@ -602,15 +572,10 @@ function transformHourly(hourlyArray, sunriseStr, sunsetStr) {
       uvi: h.uvIndex,
       clouds: h.cloudCover,
       weatherCode: h.weatherCode ? h.weatherCode.weather4lox : undefined,
-      moonAge: h.moon ? h.moon.age : 0,
-      moonDirection: h.moon ? h.moon.direction : null,
+      moonAge: h.moon.age,
+      moonDirection: h.moon.direction,
       isNight: h.isNight,
-      desc: h.weatherCode ? h.weatherCode.description : undefined,
-      dewpoint: h.dewpoint,
-      gust: h.wind ? h.wind.gust : undefined,
-      visibility: h.visibility,
-      time: h.time,
-      isNow: false
+      desc: h.weatherCode ? h.weatherCode.description : undefined
     };
   });
 }
@@ -668,105 +633,15 @@ function applyLang(strings, vars) {
   });
 }
 
-function getRoundedCurrentHour(date) {
-  var rounded = new Date(date);
-  rounded.setMinutes(0, 0, 0);
-  return rounded;
-}
-
-function buildNowEntry(currentData, nowLabel) {
-  var currentTime = currentData.time && currentData.time.datetime
-    ? new Date(currentData.time.datetime)
-    : new Date();
-
-  var roundedTime = getRoundedCurrentHour(currentTime);
-  var hourValue = roundedTime.getHours();
-
-  var cTemp = currentData.temperature || {};
-  var cWind = currentData.wind || {};
-  var cWx = currentData.weatherCode || {};
-  var cPrecip = currentData.precipitation || {};
-
-  return {
-    hour: nowLabel,
-    hourValue: hourValue,
-    time: {
-      datetime: roundedTime.toISOString()
-    },
-    temp: cTemp.air,
-    feelsLike: cTemp.feelsLike,
-    rainProb: cPrecip.probability,
-    rainAmount: cPrecip.rainToday,
-    wind: cWind.speed,
-    windDir: cWind.direction,
-    humidity: currentData.humidity,
-    pressure: currentData.pressure,
-    uvi: currentData.uvIndex,
-    clouds: currentData.cloudCover,
-    weatherCode: cWx.weather4lox,
-    moonAge: currentData.moon ? currentData.moon.age : 0,
-    moonDirection: currentData.moon ? currentData.moon.direction : null,
-    isNight: currentData.isNight,
-    desc: cWx.description,
-    dewpoint: currentData.dewpoint,
-    gust: cWind.gust,
-    visibility: currentData.visibility,
-    isNow: true
-  };
-}
-
-function findHourIndex(dataArray, hourValue) {
-  for (var i = 0; i < dataArray.length; i++) {
-    if (dataArray[i].hourValue === hourValue) return i;
-  }
-  return 0;
-}
-
-function restoreSelectionAfterRender() {
-  var activeTabEl = document.querySelector('.tab.active');
-  var currentActiveTab = activeTabEl ? activeTabEl.getAttribute('data-tab') : 'heute';
-
-  if (currentActiveTab !== selectedTab) {
-    selectedTab = currentActiveTab;
-  }
-
-  var stripId = (selectedTab === 'heute') ? 'hourStripHeute' : 'hourStripMorgen';
-  var dataArray = (selectedTab === 'heute') ? hourlyTodayRendered : hourlyTomorrowRendered;
-  var cards = document.getElementById(stripId).querySelectorAll('.hcard');
-
-  var idx = selectedHourIdx;
-  if (selectedTab === 'heute' && selectedHourValue === 'now') {
-    idx = 0;
-  } else if (selectedTab === 'morgen' && selectedHourValue === '12') {
-    idx = findHourIndex(dataArray, '12');
-  }
-
-  if (!cards.length) return;
-  idx = Math.min(Math.max(idx, 0), cards.length - 1);
-  if (cards[idx]) {
-    selectHour(cards[idx], dataArray);
-    cards[idx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }
-}
-
 // ===== RENDER ALL =====
 function renderAll() {
   var c = liveData.current;
   var sunrise = c.sunrise || '--:--';
   var sunset = c.sunset || '--:--';
-  var cTemp = c.temperature || {};
-  var cWind = c.wind || {};
-  var cWx = c.weatherCode || {};
-  var cPrecip = c.precipitation || {};
-  var cTime = c.time || {};
   var pad2 = function(n) { return n < 10 ? '0' + n : '' + n; };
 
-  // Get localized "now" label from language file
-  var nowLabel = (liveData.lang && liveData.lang.theme && liveData.lang.theme.now) || 'Now';
-  var nowEntry = buildNowEntry(c, nowLabel);
-
-  // Transform hourly arrays; prepend nowEntry to heute
-  hourlyTodayRendered = [nowEntry].concat(transformHourly(liveData.hourlyToday, sunrise, sunset));
+  // Transform hourly arrays
+  hourlyTodayRendered = transformHourly(liveData.hourlyToday, sunrise, sunset);
   hourlyTomorrowRendered = transformHourly(liveData.hourlyTomorrow, sunrise, sunset);
 
   // Render hour strips (handle empty tomorrow gracefully)
@@ -782,19 +657,25 @@ function renderAll() {
   // Update header city
   document.getElementById('hdrCity').textContent = (liveData.location && liveData.location.city) || '--';
 
+  // Nested field helpers
+  var cTemp = c.temperature || {};
+  var cWind = c.wind || {};
+  var cWx = c.weatherCode || {};
+  var cPrecip = c.precipitation || {};
+  var cTime = c.time || {};
+
   // Reset hero context
   var ctx = document.getElementById('heroContext');
   ctx.textContent = (liveData.lang && liveData.lang.theme && liveData.lang.theme.current) || 'Aktuell';
   ctx.style.opacity = '0.6';
 
   // Update hero with current data
-  document.getElementById('heroTemp').innerHTML = Math.round(cTemp.air * 10) / 10 + '<sup>\u00b0C</sup>';
-  document.getElementById('heroFeelsLike').textContent = (cTemp.feelsLike != null ? Math.round(cTemp.feelsLike * 10) / 10 : '--') + '\u00b0C';
+  document.getElementById('heroTemp').innerHTML = Math.round(cTemp.air) + '<sup>\u00b0C</sup>';
   document.getElementById('heroDesc').textContent = cWx.description || '--';
-  document.getElementById('heroWind').textContent = (cWind.speed != null ? cWind.speed : '--') + ' km/h ' + getWindDirLabel(cWind.direction) + ', ';
-  document.getElementById('heroGust').textContent = (cWind.gust != null ? cWind.gust : '--') + ' km/h';
+  document.getElementById('heroWind').textContent = (cWind.speed != null ? cWind.speed : '--') + ' km/h ' + getWindDirLabel(cWind.direction);
   document.getElementById('heroHumidity').textContent = (c.humidity != null ? c.humidity : '--') + '%';
   document.getElementById('heroIcon').src = resolveIcon(cWx.weather4lox, c.isNight, c.moon ? c.moon.age : 0);
+  document.getElementById('heroFeelslike').textContent = (cTemp.feelsLike != null ? cTemp.feelsLike : '--') + '\u00b0';
 
   // Sunrise/Sunset
   document.getElementById('heroSunrise').textContent = sunrise;
@@ -808,10 +689,12 @@ function renderAll() {
   document.getElementById('statVisibility').innerHTML = (c.visibility != null ? c.visibility : '--') + ' <small style="color:var(--text-muted)">km</small>';
 
   // Extra stats
-  document.getElementById('statDewpoint').textContent = (c.dewpoint != null ? Math.round(c.dewpoint * 10) / 10 : '--') + '\u00b0C';
+  document.getElementById('statDewpoint').textContent = (c.dewpoint != null ? c.dewpoint : '--') + '\u00b0';
   document.getElementById('statPrecip').textContent = (cPrecip.rainToday != null ? cPrecip.rainToday : 0) + ' mm';
   document.getElementById('statUVI').textContent = c.uvIndex != null ? c.uvIndex : '--';
   document.getElementById('statClouds').textContent = (c.cloudCover != null ? c.cloudCover : '--') + '%';
+  document.getElementById('statGusts').textContent = (cWind.gust != null ? cWind.gust : '--') + ' km/h';
+  document.getElementById('statFeelslike').textContent = (cTemp.feelsLike != null ? cTemp.feelsLike : '--') + '\u00b0';
 
   // Render temperature charts
   renderTempChart('tempChartHeute', hourlyTodayRendered);
@@ -823,8 +706,8 @@ function renderAll() {
   // Hide stats with no data
   hideEmptyStats();
 
-  // Restore previously selected hour/tab, or preselect default
-  restoreSelectionAfterRender();
+  // Preselect current hour in heute strip
+  preselectHour('heute');
 
   // Drag scroll
   makeDragScroll(document.getElementById('hourStripHeute'));
@@ -884,12 +767,8 @@ function scheduleRefresh() {
           <div>
             <div id="heroContext" style="font-size:0.75rem;font-weight:600;color:var(--sky);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;opacity:0;transition:opacity 0.3s"></div>
             <div class="hero-temp" id="heroTemp">--<sup>&deg;C</sup></div>
-            <div class="hero-feels" id="heroFeelsLike" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">--<sup>&deg;C</sup></div>
             <div class="hero-desc" id="heroDesc">--</div>
-            <div class="hero-wind-group" style="display:flex;gap:8px;align-items:center;margin-top:4px">
-              <span class="hero-wind" id="heroWind" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">-- km/h,</span>
-              <span class="hero-gust" id="heroGust" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">-- km/h</span>
-            </div>
+            <div class="hero-feels" id="heroWind" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">-- km/h</div>
           </div>
           <div class="hero-icon-box accent-bg">
             <img class="hero-icon" id="heroIcon" src="icons/color/cloudy_day.png" alt="">
@@ -935,6 +814,10 @@ function scheduleRefresh() {
               <div class="astro-val mono" id="heroHumidity">--%</div>
             </div>
           </div>
+          <div class="astro-item">
+            <div class="astro-emoji" style="background:rgba(99,102,241,0.1)">&nbsp;&#x1F321;</div>
+            <div><div class="astro-label" data-i18n="theme.feels_like">Gefuehlt</div><div class="astro-val mono" id="heroFeelslike">9.1&deg;</div></div>
+          </div>
         </div>
       </div>
 
@@ -966,6 +849,8 @@ function scheduleRefresh() {
       <div class="glass extra"><div class="stat-label" data-i18n="theme.precipitation">Niederschlag</div><div class="stat-val mono" id="statPrecip">0.2 mm</div></div>
       <div class="glass extra"><div class="stat-label" data-i18n="theme.uv_index">UV-Index</div><div class="stat-val mono" id="statUVI">3</div></div>
       <div class="glass extra"><div class="stat-label" data-i18n="theme.cloud_cover">Bewoelkung</div><div class="stat-val mono" id="statClouds">45%</div></div>
+      <div class="glass extra"><div class="stat-label" data-i18n="theme.gusts">Boen</div><div class="stat-val mono" id="statGusts">28 km/h</div></div>
+      <div class="glass extra"><div class="stat-label" data-i18n="theme.feels_like">Gefuehlt</div><div class="stat-val mono" id="statFeelslike">9.1&deg;</div></div>
     </div>
   </div>
 
@@ -1081,14 +966,11 @@ function renderHourStrip(containerId, dataArray) {
     (function(el, arr) {
       el.onclick = function() { selectHour(el, arr); };
     })(card, dataArray);
-    // Show "Now" label directly; for regular hours append ':00'
-    var timeLabel = d.isNow ? d.hour : d.hour + ':00';
     card.innerHTML =
-      '<div class="hcard-time mono">' + (d.isNow ? d.hour : d.hour + ':00') + '</div>' +
+      '<div class="hcard-time mono">' + d.hour + ':00</div>' +
       '<img class="hcard-icon" src="' + resolveIcon(d.weatherCode, d.isNight, d.moonAge) + '" alt="">' +
       '<div class="hcard-temp">' + Math.round(d.temp) + '&deg;</div>' +
       (d.rainProb != null ? '<div class="hcard-rainProb">' + d.rainProb + '%</div>' : '');
-
     container.appendChild(card);
   }
 }
@@ -1156,59 +1038,35 @@ function renderDaily(containerId, dataArray) {
 function selectHour(el, dataArray) {
   document.querySelectorAll('.hcard').forEach(function(c) { c.classList.remove('selected'); });
   el.classList.add('selected');
-
-  var idx = parseInt(el.getAttribute('data-idx'), 10);
+  var idx = parseInt(el.getAttribute('data-idx'));
   var d = dataArray[idx];
-
-  // Update selection state
-  selectedHourIdx = idx;
-  selectedHourValue = (d && typeof d.hourValue === 'number') ? String(d.hourValue) : 'now';
 
   // Determine active tab for context label
   var activeTab = document.querySelector('.tab.active');
   var tabName = activeTab ? activeTab.getAttribute('data-tab') : 'heute';
-  var tabLabel = activeTab ? activeTab.textContent : 'Heute';
+  var tabLabel = tabName === 'morgen' ? (activeTab ? activeTab.textContent : 'Morgen') : (activeTab ? activeTab.textContent : 'Heute');
   var ctx = document.getElementById('heroContext');
-  // For the now entry show label directly; for regular hours append ':00'
-  ctx.textContent = tabLabel + '∙' + (d.isNow ? d.hour : d.hour + ':00');
+  ctx.textContent = tabLabel + ' ' + d.hour + ':00';
   ctx.style.opacity = '1';
 
   var heroTemp = document.getElementById('heroTemp');
   heroTemp.style.opacity = '0';
   setTimeout(function() {
-    heroTemp.innerHTML = Math.round(d.temp * 10) / 10 + '<sup>\u00b0C</sup>';
+    heroTemp.innerHTML = Math.round(d.temp) + '<sup>\u00b0C</sup>';
     heroTemp.style.opacity = '1';
   }, 150);
-  document.getElementById('heroDesc').textContent = d.desc || '--';
+  document.getElementById('heroDesc').textContent = d.desc;
   document.getElementById('heroWind').textContent = textContent =
-    (liveData.lang && liveData.lang.theme.wind_from ? liveData.lang.theme.wind_from + ' ' : ' ') +
-    getWindDirLabel(d.windDir) + ' ' + (liveData.lang && liveData.lang.theme.with ? ' ' + liveData.lang.theme.with + ' ' : ' ') + ' ' + (d.wind != null ? d.wind : '--') + ' km/h' + ', ';
-  document.getElementById('heroGust').textContent = textContent =
-    (liveData.lang && liveData.lang.theme.gusts ? liveData.lang.theme.gusts + ' ' + liveData.lang.theme.up_to + ' ' : '') + (d.gust != null ? d.gust : '--') + ' km/h';
-  document.getElementById('heroHumidity').textContent = (d.humidity != null ? d.humidity : '--') + '%';
-  document.getElementById('heroFeelsLike').textContent = (liveData.lang && liveData.lang.theme.feelsLike ? liveData.lang.theme.feelsLike + ' ' : ' ') + (d.feelsLike != null ? d.feelsLike : '--') + '\u00b0C';
+    (d.wind != null ? d.wind : '--') + ' km/h' +
+    (liveData.lang.wind_from ? ', ' + liveData.lang.wind_from + ' ' : ' ') +
+    getWindDirLabel(d.windDir);
+  document.getElementById('heroHumidity').textContent = d.humidity + '%';
   document.getElementById('heroIcon').src = resolveIcon(d.weatherCode, d.isNight, d.moonAge);
 
-  // Update stat boxes with hourly data
-  document.getElementById('statHumidity').textContent = (d.humidity != null ? d.humidity : '--') + '%';
-  document.getElementById('statWind').textContent = (d.wind != null ? d.wind : '--') + ' km/h';
-  document.getElementById('statWindDir').textContent = getWindDirShort(d.windDir);
-  document.getElementById('statPressure').innerHTML = (d.pressure != null ? d.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
-  document.getElementById('statVisibility').innerHTML = (d.visibility != null ? d.visibility : '--') + ' <small style="color:var(--text-muted)">km</small>';
-  document.getElementById('statDewpoint').textContent = (d.dewpoint != null ? d.dewpoint : '--') + '\u00b0';
-  document.getElementById('statPrecip').textContent = (d.rainAmount != null ? d.rainAmount : 0) + ' mm';
-  document.getElementById('statUVI').textContent = d.uvi != null ? d.uvi : '--';
-  document.getElementById('statClouds').textContent = (d.clouds != null ? d.clouds : '--') + '%';
-
-  // Hide empty stats after update
-  hideEmptyStats();
-
-  // Highlight correct hour slot on the active chart (use hourValue, not array index)
-  var chartId = (selectedTab === 'heute') ? 'tempChartHeute' : 'tempChartMorgen';
-  if (d && typeof d.hourValue === 'number') {
-    highlightChartPoint(chartId, d.hourValue);
-  }
-} 
+  // Sync chart highlight
+  var chartId = (tabName === 'morgen') ? 'tempChartMorgen' : 'tempChartHeute';
+  highlightChartPoint(chartId, idx, dataArray);
+}
 
 // ===== PRESELECT HOUR =====
 function preselectHour(tabName) {
@@ -1218,38 +1076,13 @@ function preselectHour(tabName) {
   if (!dataArray || dataArray.length === 0) return;
   var cards = document.getElementById(stripId).querySelectorAll('.hcard');
   var targetIdx = 0;
-  if (tabName === 'morgen') {
-    // For morgen: select hour 12:00 by default
-    for (var i = 0; i < dataArray.length; i++) {
-      if (dataArray[i].hour === '12') { targetIdx = i; break; }
-    }
+  if (tabName === 'heute') {
+    var currentHour = new Date().getHours();
+    targetIdx = Math.min(currentHour, cards.length - 1);
   }
-  // For heute: select index 0 (nowEntry) by default
-
-  // Update selection state
-  selectedTab = tabName;
-  if (tabName === 'heute' || tabName === 'morgen') {
-    renderAll();
-  }
-  selectedHourIdx = targetIdx;
-
   if (cards[targetIdx]) {
     selectHour(cards[targetIdx], dataArray);
     cards[targetIdx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }
-}
-
-function refreshActiveTabView(tabName) {
-  selectedTab = tabName;
-
-  if (tabName === 'heute') {
-    renderHourStrip('hourStripHeute', hourlyTodayRendered);
-    renderTempChart('tempChartHeute', hourlyTodayRendered);
-    restoreSelectionAfterRender();
-  } else if (tabName === 'morgen') {
-    renderHourStrip('hourStripMorgen', hourlyTomorrowRendered);
-    renderTempChart('tempChartMorgen', hourlyTomorrowRendered);
-    restoreSelectionAfterRender();
   }
 }
 
@@ -1271,7 +1104,7 @@ document.querySelectorAll('.tab').forEach(function(btn) {
         requestAnimationFrame(function() { newPanel.classList.add('fade-in'); });
         var hero = document.getElementById('heroSection');
         if (hero) hero.style.display = (tabName === 'tage') ? 'none' : '';
-        refreshActiveTabView(tabName);
+        preselectHour(tabName);
       }, 300);
     } else {
       document.querySelectorAll('.tab').forEach(function(b) { b.classList.remove('active'); });
@@ -1283,7 +1116,7 @@ document.querySelectorAll('.tab').forEach(function(btn) {
       requestAnimationFrame(function() { newPanel.classList.add('fade-in'); });
       var hero = document.getElementById('heroSection');
       if (hero) hero.style.display = (tabName === 'tage') ? 'none' : '';
-      refreshActiveTabView(tabName);
+      preselectHour(tabName);
     }
   });
 });
@@ -1331,261 +1164,109 @@ function makeDragScroll(el) {
 // ===== TEMPERATURE CHART (SVG, responsive) =====
 function renderTempChart(svgId, dataArray) {
   var svg = document.getElementById(svgId);
-  if (!svg) return;
+  if (!svg || !dataArray || !dataArray.length) return;
 
-  // --- Chart constants (must match highlightChartPoint) ---
-  var H = 140;
-  var padL = 40;
-  var padR = 16;
-  var yTop = 28;
-  var yBot = H - 28;
+  var isHeute = (svgId === 'tempChartHeute');
+  var stripId = isHeute ? 'hourStripHeute' : 'hourStripMorgen';
+  var stripDataArray = isHeute ? hourlyTodayRendered : hourlyTomorrowRendered;
+
+  var temps = dataArray.map(function(d) { return d.temp; });
+  var n = temps.length;
+  var minT = Math.min.apply(null, temps);
+  var maxT = Math.max.apply(null, temps);
+  var range = Math.max(1, maxT - minT);
+
+  var H = 140, step = 32, padL = 40, padR = 16;
+  var yTop = 32, yBot = H - 28;
   var chartH = yBot - yTop;
-  var stepX = 28; // pixels per hour slot
-  var W = padL + padR + (24 * stepX);
+  var W = padL + padR + (n - 1) * step;
 
   svg.setAttribute('width', W);
   svg.setAttribute('height', H);
   svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
 
-  // --- Helper: fixed x position for hour slots 0..24 ---
-  function xPos(hour) {
-    return padL + hour * stepX;
-  }
+  function xPos(i) { return padL + i * step; }
+  function yPos(t) { return yBot - ((t - minT) / range) * chartH; }
 
-  // --- Build fixed slots 0..24 (inclusive) ---
-  var slots = [];
-  for (var h = 0; h <= 24; h++) {
-    slots.push({
-      hour: h,
-      // point is the original data item (now or forecast) if present
-      point: null,
-      // temp is the numeric temperature used for the curve
-      temp: null
-    });
-  }
+  var pts = [];
+  for (var i = 0; i < n; i++) pts.push(xPos(i) + ',' + yPos(temps[i]));
 
-  // --- Map incoming points by hourValue (0..23). hour 24 is kept as duplicate of hour 0/23 line end. ---
-  var pointByHour = new Map();
-  if (Array.isArray(dataArray)) {
-    dataArray.forEach(function(entry) {
-      if (!entry) return;
-      var hv = entry.hourValue;
-      if (typeof hv === 'string' && /^\d+$/.test(hv)) hv = parseInt(hv, 10);
-      if (typeof hv !== 'number' || isNaN(hv)) return;
-      if (hv < 0 || hv > 23) return; // hourValue must be 0..23
-      pointByHour.set(hv, entry);
-    });
-  }
+  var area = padL + ',' + yBot + ' ' + pts.join(' ') + ' ' + xPos(n-1) + ',' + yBot;
 
-  // Apply mapped points into slots[0..23]
-  for (var hh = 0; hh <= 23; hh++) {
-    var p = pointByHour.get(hh) || null;
-    if (p && p.temp != null && !isNaN(p.temp)) {
-      slots[hh].point = p;
-      slots[hh].temp = Number(p.temp);
-    }
-  }
-
-  // Slot 24: close the curve at hour 24 using hour 23 value (or fallback later)
-  // This keeps the axis 0..24 consistent visually.
-  if (slots[23].temp != null) {
-    slots[24].temp = slots[23].temp;
-  }
-
-  // --- Fill missing temps so the polyline ALWAYS exists from 0..24 ---
-  // Strategy:
-  // 1) Find first known temperature
-  // 2) Forward fill until next known
-  // 3) Backward fill before first known with the first known temp
-  var firstKnownIdx = -1;
-  for (var i = 0; i < slots.length; i++) {
-    if (slots[i].temp != null && !isNaN(slots[i].temp)) {
-      firstKnownIdx = i;
-      break;
-    }
-  }
-
-  // No data at all -> clear SVG and stop
-  if (firstKnownIdx === -1) {
-    svg.innerHTML = '';
-    return;
-  }
-
-  // Backfill before first known
-//  for (var b = 0; b < firstKnownIdx; b++) {
-//    slots[b].temp = slots[firstKnownIdx].temp;
-//  }
-
-  // Forward fill gaps
-  var lastTemp = slots[firstKnownIdx].temp;
-  for (var f = firstKnownIdx + 1; f < slots.length; f++) {
-    if (slots[f].temp == null || isNaN(slots[f].temp)) {
-      slots[f].temp = lastTemp;
-    } else {
-      lastTemp = slots[f].temp;
-    }
-  }
-
-  // Ensure slot 24 exists (again) after filling
-  if (slots[24].temp == null || isNaN(slots[24].temp)) {
-    slots[24].temp = slots[23].temp;
-  }
-
-  // --- Determine min/max for y scale ---
-  var temps = slots.map(function(s) { return s.temp; }).filter(function(t) { return t != null && !isNaN(t); });
-  var minT = Math.min.apply(null, temps);
-  var maxT = Math.max.apply(null, temps);
-  var range = Math.max(1, maxT - minT);
-
-  function yPos(temp) {
-    return yBot - ((temp - minT) / range) * chartH;
-  }
-
-  // --- Styles from CSS variables ---
+  var labels = '', dots = '', gridLines = '', yAxis = '';
   var cs = getComputedStyle(document.documentElement);
   var gridC = cs.getPropertyValue('--border').trim();
   var labelC = cs.getPropertyValue('--text-muted').trim();
 
-  // --- Y grid + labels ---
-  var yAxis = '';
+  // Y-axis labels
   var ySteps = Math.max(2, Math.min(5, Math.ceil(range)));
   var yStep = range / ySteps;
-
-  for (var y = 0; y <= ySteps; y++) {
-    var tv = minT + y * yStep;
+  for (var s = 0; s <= ySteps; s++) {
+    var tv = minT + s * yStep;
     var yp = yPos(tv);
     yAxis += '<text x="' + (padL - 6) + '" y="' + (yp + 3) + '" text-anchor="end" font-size="9" fill="' + labelC + '" font-family="Outfit,sans-serif">' + Math.round(tv) + '\u00b0</text>';
     yAxis += '<line x1="' + padL + '" y1="' + yp + '" x2="' + (W - padR) + '" y2="' + yp + '" stroke="' + gridC + '" stroke-dasharray="3,3" />';
   }
 
-  // --- X grid + labels 0..24 ---
-  var xLabels = '';
-  var gridLines = '';
-  for (var h2 = 0; h2 <= 24; h2++) {
-    if (h2 % 3 === 0) {
-      gridLines += '<line x1="' + xPos(h2) + '" y1="' + yTop + '" x2="' + xPos(h2) + '" y2="' + (yBot + 5) + '" stroke="' + gridC + '" />';
-      xLabels += '<text x="' + xPos(h2) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="9" fill="' + labelC + '" font-family="Outfit,sans-serif">' + String(h2).padStart(2, '0') + '</text>';
+  for (var i = 0; i < n; i++) {
+    var tPct = (temps[i] - minT) / range;
+    if (i % 3 === 0) {
+      gridLines += '<line x1="'+xPos(i)+'" y1="'+yTop+'" x2="'+xPos(i)+'" y2="'+yBot+'" stroke="'+gridC+'" />';
+      labels += '<text x="'+xPos(i)+'" y="14" text-anchor="middle" font-size="9" fill="'+labelC+'" font-family="Outfit,sans-serif">'+dataArray[i].hour+':00</text>';
+      labels += '<text x="'+xPos(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9" fill="'+labelC+'" font-family="Outfit,sans-serif">'+Math.round(temps[i])+'\u00b0</text>';
     }
-    if ((h2 < 24) && (h2 % 3 !== 0)) {
-      xLabels += '<line x1="' + xPos(h2) + '" y1="' + yTop + '" x2="' + xPos(h2) + '" y2="' + yBot + '" stroke="' + gridC + '" opacity="0.5" />';
-    }
+    dots += '<circle cx="'+xPos(i)+'" cy="'+yPos(temps[i])+'" r="3" ' +
+    'fill="url(#dotG-'+svgId+')" stroke="rgba(255,255,255,0.2)" stroke-width="1" ' +
+    'class="chart-dot" data-idx="'+i+'" data-strip="'+stripId+'" style="cursor:pointer"><set attributeName="fill" to="hsl('+Math.round(200 - tPct * 160)+',80%,55%)"/></circle>';
   }
 
-  // --- Build polyline points ---
-  var polyPoints = [];
-  for (var p = 0; p < slots.length; p++) {
-    if (!slots[p].point) continue;
-    polyPoints.push(xPos(slots[p].hour) + ',' + yPos(slots[p].temp));
-  }
-
-  // --- Build area under curve ---
-  var areaPoints = xPos(0) + ',' + yBot + ' ' + polyPoints.join(' ') + ' ' + xPos(24) + ',' + yBot;
-
-  // --- Dots only for real measured/forecast points (not for filled ones) ---
-  // We add data-hour to support highlight + click mapping.
-  var dots = '';
-  for (var d = 0; d <= 23; d++) {
-    var slot = slots[d];
-    var tPct = (slot.temp - minT) / range;
-    var hue = Math.round(200 - tPct * 160);
-    if (!slot.point) continue;
-
-    var dotY = yPos(slot.temp);
-    dots += '<circle class="chart-dot" cx="' + xPos(d) + '" cy="' + dotY + '" r="4" ' +
-            'fill="url(#dotG-'+svgId+')" stroke="rgba(255,255,255,0.2)" stroke-width="1" ' +
-            'data-hour="' + d + '" style="cursor:pointer"><set attributeName="fill" to="hsl('+hue+',80%,55%)"/></circle>';
-  }
-
- // Build gradient stops based on actual temperature at each point
+  // Build gradient stops based on actual temperature at each point
   var lineStops = '';
-  for (var i = 0; i < slots.length; i++) {
-    var pct = (i / Math.max(1, slots.length - 1) * 100).toFixed(1);
-    var tPct = (slots[i].temp - minT) / range;
+  for (var i = 0; i < n; i++) {
+    var pct = (i / Math.max(1, n - 1) * 100).toFixed(1);
+    var tPct = (temps[i] - minT) / range;
     var hue = Math.round(200 - tPct * 160);
-    if (!slots[i].point) continue;
     lineStops += '<stop offset="'+pct+'%" stop-color="hsl('+hue+',80%,55%)"/>';
   }
 
-  var defs =
+  svg.innerHTML =
     '<defs>' +
     '<linearGradient id="lineG-'+svgId+'" x1="0" y1="0" x2="1" y2="0">' + lineStops + '</linearGradient>' +
     '<linearGradient id="areaG-'+svgId+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--sky)" stop-opacity="0.15"/><stop offset="100%" stop-color="var(--amber)" stop-opacity="0"/></linearGradient>' +
-    '</defs>';
+    '</defs>' +
+    yAxis + gridLines +
+    '<line x1="'+padL+'" y1="'+yBot+'" x2="'+(W-padR)+'" y2="'+yBot+'" stroke="'+gridC+'" />' +
+    '<path d="M '+area+'" fill="url(#areaG-'+svgId+')" />' +
+    '<polyline points="'+pts.join(' ')+'" fill="none" stroke="url(#lineG-'+svgId+')" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' +
+    dots + labels +
+    '<circle class="chart-highlight" cx="'+xPos(0)+'" cy="'+yPos(temps[0])+'" r="6" fill="var(--amber)" stroke="var(--text-primary)" stroke-width="2" opacity="0.9" />';
 
-  // --- Baseline ---
-  var baseLine = '<line x1="' + padL + '" y1="' + yBot + '" x2="' + (W - padR) + '" y2="' + yBot + '" stroke="' + gridC + '" />';
-
-  // --- Highlight circle (will be moved by highlightChartPoint) ---
-  // Default highlight = hour 0
-  var highlight = '<circle class="chart-highlight" cx="' + xPos(0) + '" cy="' + (yPos(slots[0].temp) - 1.5) + '" r="6" fill="var(--amber)" stroke="var(--text-primary)" stroke-width="2" opacity="0.9" />';
-
-  svg.innerHTML =
-    defs +
-    yAxis +
-    xLabels +
-    gridLines +
-    baseLine +
-    '<path d="M ' + areaPoints + '" fill="url(#areaG-' + svgId + ')" />' +
-    '<polyline points="' + polyPoints.join(' ') + '" fill="none" stroke="url(#lineG-'+svgId+')" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' +
-    dots +
-    highlight;
-
-  // --- Click dots -> select matching hour in hour-strip ---
-  var isToday = (svgId === 'tempChartHeute');
-  var stripId = isToday ? 'hourStripHeute' : 'hourStripMorgen';
-  var stripData = isToday ? hourlyTodayRendered : hourlyTomorrowRendered;
-
+  // Click on chart dots → select corresponding hour card
   svg.querySelectorAll('.chart-dot').forEach(function(dot) {
     dot.addEventListener('click', function() {
-      var hourValue = parseInt(dot.getAttribute('data-hour'), 10);
-
-      var targetIdx = 0;
-      for (var i2 = 0; i2 < stripData.length; i2++) {
-        if (stripData[i2] && stripData[i2].hourValue === hourValue) {
-          targetIdx = i2;
-          break;
-        }
-      }
-
+      var idx = parseInt(dot.getAttribute('data-idx'));
       var cards = document.getElementById(stripId).querySelectorAll('.hcard');
-      if (cards[targetIdx]) selectHour(cards[targetIdx], stripData);
+      if (cards[idx]) selectHour(cards[idx], stripDataArray);
     });
   });
-
-  // --- Apply current highlight after render ---
-  // If selectedHourValue is "now", highlight the rounded hourValue (stored in selectedHourIdx's data entry)
-  var hvToHighlight = 0;
-  if (selectedTab === (isToday ? 'heute' : 'morgen')) {
-    var selArray = stripData;
-    if (selArray && selArray[selectedHourIdx] && typeof selArray[selectedHourIdx].hourValue === 'number') {
-      hvToHighlight = selArray[selectedHourIdx].hourValue;
-    }
-  }
-  highlightChartPoint(svgId, hvToHighlight);
 }
 
-function highlightChartPoint(svgId, hourValue) {
+function highlightChartPoint(svgId, idx, dataArray) {
   var svg = document.getElementById(svgId);
-  if (!svg) return;
+  if (!svg || !dataArray || !dataArray.length) return;
+  var hl = svg.querySelector('.chart-highlight');
+  if (!hl) return;
+  var temps = dataArray.map(function(d) { return d.temp; });
+  var minT = Math.min.apply(null, temps), maxT = Math.max.apply(null, temps), range = Math.max(1, maxT - minT);
+  var H = 140, step = 32, padL = 40, yTop = 32, yBot = H - 28, chartH = yBot - yTop;
+  hl.setAttribute('cx', padL + idx * step);
+  hl.setAttribute('cy', yBot - ((temps[idx] - minT) / range) * chartH);
+  var tPct = (temps[idx] - minT) / range;
+  var hue = Math.round(200 - tPct * 160);
+  hl.setAttribute('fill', 'hsl('+hue+',80%,55%)');
 
-  var highlight = svg.querySelector('.chart-highlight');
-  if (!highlight) return;
-
-  if (hourValue == null || isNaN(hourValue)) hourValue = 0;
-  hourValue = Math.max(0, Math.min(24, hourValue));
-
-  // Must match renderTempChart constants
-  var padL = 40;
-  var stepX = 28;
-
-  var dot = svg.querySelector('.chart-dot[data-hour="' + hourValue + '"]');
-  if (dot) {
-    highlight.setAttribute('cx', dot.getAttribute('cx'));
-    highlight.setAttribute('cy', dot.getAttribute('cy'));
-  } else {
-    // If there is no real dot for this hour, move highlight horizontally only
-    highlight.setAttribute('cx', padL + hourValue * stepX);
-  }
+  var wrap = svg.parentElement;
+  if (wrap) wrap.scrollLeft = Math.max(0, (padL + idx * step) - wrap.clientWidth / 2);
 }
 
 // ===== HIDE EMPTY DATA =====

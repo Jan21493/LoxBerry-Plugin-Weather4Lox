@@ -209,7 +209,6 @@
     "tornado": "Violent rotating vortices reaching from the ground to a cloud. Night symbols do not show moon phases.",
     "no_data": "Used when no weather data is available. The icon may indicate day/night depending on the set."
   },
-  "wind_from": "Wind from",
   "wind_directions": {
     "N": "North",
     "NE": "North-East",
@@ -231,7 +230,7 @@
     "pressure": "Pressure",
     "sunrise": "Sunrise",
     "sunset": "Sunset",
-    "feels_like": "Feels like",
+    "feelsLike": "Feels like",
     "precipitation": "Precipitation",
     "cloud_cover": "Cloud cover",
     "uv_index": "UV index",
@@ -247,7 +246,10 @@
     "click_hour_detail": "Click hour for details",
     "loading": "Loading weather data...",
     "error_loading": "Could not load data.",
+    "wind_from": "Wind from",
+    "with": "with",
     "gusts": "Gusts",
+    "up_to": "up to",
     "live_dashboard": "Live Dashboard",
     "weekdays": [
       "Sunday",

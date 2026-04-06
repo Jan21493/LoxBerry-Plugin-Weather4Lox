@@ -209,7 +209,6 @@
     "tornado": "Prudké rotujúce víry siahajúce od zeme po oblak. Nočné ikony nezobrazujú fázy Mesiaca.",
     "no_data": "Používa sa, keď nie sú dostupné žiadne meteorologické údaje. Ikona môže podľa sady indikovať deň/noc."
   },
-  "wind_from": "Vietor od",
   "wind_directions": {
     "N": "Sever",
     "NE": "Severovýchod",
@@ -231,7 +230,7 @@
     "pressure": "Tlak",
     "sunrise": "Východ slnka",
     "sunset": "Západ slnka",
-    "feels_like": "Pocitovo",
+    "feelsLike": "Pocitovo",
     "precipitation": "Zrážky",
     "cloud_cover": "Oblačnosť",
     "uv_index": "UV index",
@@ -247,7 +246,10 @@
     "click_hour_detail": "Kliknite na hodinu pre detaily",
     "loading": "Nacitavam udaje o pocasi...",
     "error_loading": "Udaje sa nepodarilo nacitat.",
+    "wind_from": "Vietor od",
+    "with": "s",
     "gusts": "Narazovy vietor",
+    "up_to": "az do",
     "live_dashboard": "Zive informacie",
     "weekdays": [
       "Nedeľa",

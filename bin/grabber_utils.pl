@@ -290,6 +290,34 @@ sub getFormatted {
 }
 
 ##########################################################################
+# Get a formatted value (numbers only) from decoded JSON, used for rounding
+# Parameters:
+#   $fmt   - sprintf format, e.g. '%.2f', round to two decimal places
+#   $multiplier - multiplier to apply to the value after formatting, e.g. 100 for percentages
+#   $root  - root data structure
+#   @path  - path elements passed to getValue
+# Returns:
+#   rounded numeric value (e.g. 4.1) or undef if value missing/invalid
+
+sub getFormattedMultiplied {
+    my ($fmt, $multiplier, $root, @path) = @_;
+
+    my $v = getValue($root, @path);
+    return undef unless defined $v;
+  
+    # Trim leading/trailing whitespace (only scalar strings)
+    if (!ref $v) {
+        $v =~ s/^\s+|\s+$//g;
+    }
+    # Only accept numerical values
+    return undef unless looks_like_number($v);
+    return undef if $v =~ /^(?:nan|inf|infinity)$/i;  # just in case
+
+    my $s = sprintf($fmt, $v * $multiplier) + 0; # numeric result of sprintf
+    return $s;
+}
+
+##########################################################################
 # Get a formatted time value (numbers only) from decoded JSON, used for rounding
 # Parameters:
 #   $fmt      - sprintf format, e.g. '%H:%M'
@@ -747,6 +775,25 @@ sub _epochToIso {
     }
     # Fallback: UTC
     return strftime("%Y-%m-%dT%H:%M:%SZ", gmtime($epoch));
+}
+
+# epoch -> ISO 8601 with timezone from tz_long (or UTC fallback)
+sub _epochToIsoDate {
+    my ($epoch, $tzLong) = @_;
+    return undef unless defined $epoch && $epoch =~ /^\d+$/;
+
+    # Try POSIX localtime with TZ override
+    if (defined $tzLong && $tzLong ne '') {
+        local $ENV{TZ} = $tzLong;
+        POSIX::tzset();
+        my $iso = strftime("%Y-%m-%d", localtime($epoch));
+        # Insert colon in offset: +0200 -> +02:00
+        $iso =~ s/(\d{2})(\d{2})$/$1:$2/;
+        POSIX::tzset();   # restore
+        return $iso;
+    }
+    # Fallback: UTC
+    return strftime("%Y-%m-%d", gmtime($epoch));
 }
 
 # Read system timezone once
