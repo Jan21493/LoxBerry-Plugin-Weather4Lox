@@ -162,6 +162,7 @@ if ($R::saveformdata3) {
     # Write configuration file(s)
     $cfg->param("SERVER.EMU", "$R::emu");
     $cfg->param("WEB.THEME", "$R::theme");
+    $cfg->param('WEB.MODE', "$R::mode");
     $cfg->param("WEB.ICONSET", "$R::iconset");
     $cfg->param("WEB.LANG", "$R::themelang");
 
@@ -172,7 +173,7 @@ if ($R::saveformdata3) {
     open(F1,">$lbplogdir/webpage.html");
     flock(F1,2);
     open(F,"<$lbptemplatedir/themes/new-style.theme.html");
-    { no strict 'refs'; ${'themeurl'} = "./$R::theme.theme.html?iconset=$R::iconset&lang=$R::themelang" }
+    { no strict 'refs'; ${'themeurl'} = "./$R::theme.theme.html?mode=$R::mode&iconset=$R::iconset&lang=$R::themelang" }
     {
         no strict 'refs';
         while (<F>) {
@@ -926,6 +927,22 @@ if ($R::form eq "1" || !$R::form) {
         -default => $cfg->param('WEB.THEME'),
     );
     $template->param( THEME => $theme );
+
+    # Mode (new-style themes only)
+    my @values = ('dark', 'light', 'system');
+    my %labels = (
+        'dark' => "Dark Mode",
+        'light' => "Light Mode",
+        'system' => "System Mode (automatic)",
+    );
+    my $mode = $cgi->popup_menu(
+        -name    => 'mode',
+        -id      => 'mode',
+        -values  => \@values,
+        -labels  => \%labels,
+        -default => $cfg->param('WEB.MODE'),
+    );
+    $template->param( MODE => $mode );
 
     # Icon Set
     my @values = ('color', 'flat', 'dark', 'light', 'green', 'silver', 'realistic', 'naturalistic', 'custom' );

@@ -1379,7 +1379,21 @@
                                                     </tr>
                                                     <tr>
                                                         <td width="25%">
-                                                            <label id="labelihconset"><TMPL_VAR SETTINGS.LABEL_ICONSET></label>
+                                                            <label id="labelmode"><TMPL_VAR SETTINGS.LABEL_MODE></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR MODE>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_MODE></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labeliconset"><TMPL_VAR SETTINGS.LABEL_ICONSET></label>
                                                         </td>
                                                         <td width="50%">
                                                             <TMPL_VAR ICONSET>
@@ -1428,6 +1442,7 @@
                                     // Add some attributes PERL::CGI doesn't provide
                                     $('select[name=emu]').attr('data-role','flipswitch');
                                     $('select[name=theme]').attr('data-mini','true');
+                                    $('select[name=mode]').attr('data-mini','true');
                                     $('select[name=iconset]').attr('data-mini','true');
                                     $('select[name=themelang]').attr('data-mini','true');
 
@@ -1439,7 +1454,7 @@
                                             var url = './show.cgi?theme=' + themeName + '&iconset=' + $('#iconset').val() + '&lang=' + $('#themelang').val();
                                             window.open(url, 'NewWindow');
                                         } else {
-                                            var url = '/plugins/<TMPL_VAR LBPPLUGINDIR>/' + themeName + '.theme.html?iconset=' + $('#iconset').val() + '&lang=' + $('#themelang').val();
+                                            var url = '/plugins/<TMPL_VAR LBPPLUGINDIR>/' + themeName + '.theme.html?mode=' + $('#mode').val() + '&iconset=' + $('#iconset').val() + '&lang=' + $('#themelang').val();
                                             window.open(url, 'NewWindow');
                                         }
                                     }
