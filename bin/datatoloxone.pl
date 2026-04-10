@@ -562,6 +562,11 @@ if (!$interimStyleTheme && !$newStyleTheme) {
     if (-e "$lbplogdir/webpage.map.html") {
         LOGDEB "$lbplogdir/webpage.map.html created.";
     }
+} else {
+    my $fileToDelete = "$lbplogdir/webpage.map.html";
+    if (-e $fileToDelete) {
+        unlink $fileToDelete or warn "Delete of file $fileToDelete failed: $!";
+    }
 }
 
 #############################################
@@ -593,6 +598,11 @@ if (!$interimStyleTheme && !$newStyleTheme) {
 
     if (-e "$lbplogdir/webpage.dfc.html") {
         LOGDEB "$lbplogdir/webpage.dfc.html created.";
+    }
+} else {
+    my $fileToDelete = "$lbplogdir/webpage.dfc.html";
+    if (-e $fileToDelete) {
+        unlink $fileToDelete or warn "Delete of file $fileToDelete failed: $!";
     }
 }
 
@@ -626,6 +636,11 @@ if (!$interimStyleTheme && !$newStyleTheme) {
 
     if (-e "$lbplogdir/webpage.hfc.html") {
         LOGDEB "$lbplogdir/webpage.hfc.html created.";
+    }
+} else {
+    my $fileToDelete = "$lbplogdir/webpage.hfc.html";
+    if (-e $fileToDelete) {
+        unlink $fileToDelete or warn "Delete of file $fileToDelete failed: $!";
     }
 }
 
