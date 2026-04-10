@@ -51,6 +51,9 @@ my $verbose = '';
 my $cronjob = '';
 my $default = '';
 my $alternate = '';
+my $local = '';
+my $interval = 60; # default interval for refresh in minutes
+
 # optional, default: 1, used to mask keyparam in URLs and literal key value in dumps
 my $maskkeys = $pcfg->param('SERVER.MASKKEYS');
 $maskkeys = 1 if !defined($maskkeys) || $maskkeys eq '';
@@ -60,7 +63,9 @@ GetOptions ('verbose' => \$verbose,
             'cronjob' => \$cronjob,
             'default' => \$default,
             'alternate' => \$alternate,
+            'local' => \$local,
 			'maskkeys' => \$maskkeys,
+			'interval=i' => \$interval,
 			);
 
 # Create a logging object
@@ -92,7 +97,7 @@ LOGINF "Weather4Lox Fetch (masking API keys in dumps is " . ($maskkeys ? "enable
 
 # execute when fetch.pl is called directly or with cronjob and default flag
 if( !$cronjob || ( $cronjob && $default ) ){
-	LOGINF "Fetch default weather data";
+	LOGINF "Fetch default weather data ...";
 	# Which grabber should grab which weather data?
 	my $service_opt = "--current";
 
@@ -102,6 +107,8 @@ if( !$cronjob || ( $cronjob && $default ) ){
 	if ( ($servicehfc && $servicehfc eq $service) || !$servicehfc ) {
 		$service_opt .= " --hourly";
 	}
+	$interval = $pcfg->param("SERVER.CRON") || $interval;
+	$service_opt .= " --interval $interval";
 
 	if (-e "$lbpbindir/grabber_$service.pl") {
 		LOGINF "Starting Grabber grabber_$service.pl $service_opt $verbose_opt $maskkeys_opt";
@@ -116,22 +123,25 @@ if( !$cronjob || ( $cronjob && $default ) ){
 
 # execute when fetch.pl is called directly or with cronjob and alternate flag
 if( !$cronjob || ( $cronjob && $alternate ) ){
-	LOGINF "Fetch alternate weather data";
+	LOGINF "Fetch alternate weather data ...";
+
+	$interval = $pcfg->param("SERVER.CRON_ALTERNATE") || $interval;
+
 	# Grab alternate DFC / HFC
 	if ( $servicedfc && $servicedfc eq $servicehfc ) {
 		if (-e "$lbpbindir/grabber_$servicedfc.pl") {
-			LOGINF "Starting Grabber grabber_$servicedfc.pl --daily --hourly $verbose_opt $maskkeys_opt";
+			LOGINF "Starting Grabber grabber_$servicedfc.pl --daily --hourly $verbose_opt $maskkeys_opt --interval $interval";
 			$log->close;
-			system ("$lbpbindir/grabber_$servicedfc.pl --daily --hourly $verbose_opt $maskkeys_opt");
+			system ("$lbpbindir/grabber_$servicedfc.pl --daily --hourly $verbose_opt $maskkeys_opt --interval $interval");
 		} else {
 			LOGCRIT "Cannot find grabber script for service $servicedfc.";
 			exit (1);
 		}
 	} elsif ( $servicedfc && $servicedfc ne $servicehfc ) {
 		if (-e "$lbpbindir/grabber_$servicedfc.pl") {
-			LOGINF "Starting Grabber grabber_$servicedfc.pl --daily $verbose_opt $maskkeys_opt";
+			LOGINF "Starting Grabber grabber_$servicedfc.pl --daily $verbose_opt $maskkeys_opt --interval $interval";
 			$log->close;
-			system ("$lbpbindir/grabber_$servicedfc.pl --daily $verbose_opt $maskkeys_opt");
+			system ("$lbpbindir/grabber_$servicedfc.pl --daily $verbose_opt $maskkeys_opt --interval $interval");
 		} else {
 			LOGCRIT "Cannot find grabber script for service $servicedfc.";
 			exit (1);
@@ -141,7 +151,7 @@ if( !$cronjob || ( $cronjob && $alternate ) ){
 
 	if ( $servicehfc && $servicehfc ne $servicedfc ) {
 		if (-e "$lbpbindir/grabber_$servicehfc.pl") {
-			LOGINF "Starting Grabber grabber_$servicehfc.pl --hourly $verbose_opt $maskkeys_opt";
+			LOGINF "Starting Grabber grabber_$servicehfc.pl --hourly $verbose_opt $maskkeys_opt --interval $interval";
 			$log->close;
 			system ("$lbpbindir/grabber_$servicehfc.pl --hourly $verbose_opt $maskkeys_opt");
 		} else {
@@ -152,48 +162,60 @@ if( !$cronjob || ( $cronjob && $alternate ) ){
 	$log->open;
 }
 
-# Grab some data from Wunderground
-if ( $pcfg->param("SERVER.WUGRABBER") ) {
-	LOGINF "Starting Grabber grabber_wu.pl $verbose_opt";
-	$log->close;
-	system ("$lbpbindir/grabber_wu.pl $verbose_opt");
-	$log->open;
+# execute when fetch.pl is called directly or with cronjob and local flag
+if( !$cronjob || ( $cronjob && $local ) ) {
+	LOGINF "Fetch current weather data from local or own weather station ...";
+
+	$interval = $pcfg->param("SERVER.CRON_LOCAL") || $interval;
+
+	# Grab some data from Wunderground
+	if ( $pcfg->param("SERVER.WUGRABBER") ) {
+		LOGINF "Starting Grabber grabber_wu.pl $verbose_opt --interval $interval";
+		$log->close;
+		system ("$lbpbindir/grabber_wu.pl $verbose_opt --interval $interval");
+		$log->open;
+	}
+
+	# Grab some data from FOSHKplugin
+	if ( $pcfg->param("SERVER.FOSHKGRABBER") ) {
+		LOGINF "Starting Grabber grabber_foshk.pl $verbose_opt --interval $interval";
+		$log->close;
+		system ("$lbpbindir/grabber_foshk.pl $verbose_opt --interval $interval");
+		$log->open;
+	}
+
+	# Grab some data from PWSCatchUpload
+	if ( $pcfg->param("SERVER.PWSCATCHUPLOADGRABBER") ) {
+		LOGINF "Starting Grabber grabber_pwscatchupload.pl $verbose_opt --interval $interval";
+		$log->close;
+		system ("$lbpbindir/grabber_pwscatchupload.pl $verbose_opt --interval $interval");
+		$log->open;
+	}
+
+	# Grab some data from Loxone Miniserver
+	if ( $pcfg->param("SERVER.LOXGRABBER") ) {
+		LOGINF "Starting Grabber grabber_loxone.pl $verbose_opt --interval $interval";
+		$log->close;
+		system ("$lbpbindir/grabber_loxone.pl $verbose_opt --interval $interval");
+		$log->open;
+	}
 }
 
-# Grab some data from FOSHKplugin
-if ( $pcfg->param("SERVER.FOSHKGRABBER") ) {
-	LOGINF "Starting Grabber grabber_foshk.pl";
-	$log->close;
-	system ("$lbpbindir/grabber_foshk.pl $verbose_opt");
-	$log->open;
-}
+# execute when fetch.pl is called directly or with cronjob and default or alternate flag
+if( !$cronjob || ( $cronjob && ($default || $alternate) ) ) {
+	LOGINF "Fetch additional weather data ...";
 
-# Grab some data from PWSCatchUpload
-if ( $pcfg->param("SERVER.PWSCATCHUPLOADGRABBER") ) {
-	LOGINF "Starting Grabber grabber_pwscatchupload.pl";
-	$log->close;
-	system ("$lbpbindir/grabber_pwscatchupload.pl $verbose_opt");
-	$log->open;
-}
-
-# Grab some data from Loxone Miniserver
-if ( $pcfg->param("SERVER.LOXGRABBER") ) {
-	LOGINF "Starting Grabber grabber_loxone.pl";
-	$log->close;
-	system ("$lbpbindir/grabber_loxone.pl $verbose_opt");
-	$log->open;
-}
-
-# Grab air quality / pollen data from Open-Meteo
-if ( $pcfg->param("SERVER.OPENMETEOAIRQUALITYGRABBER") ) {
-	LOGINF "Starting Grabber grabber_openmeteo_airquality.pl";
-	$log->close;
-	system ("$lbpbindir/grabber_openmeteo_airquality.pl $verbose_opt");
-	$log->open;
+	# Grab air quality / pollen data from Open-Meteo
+	if ( $pcfg->param("SERVER.OPENMETEOAIRQUALITYGRABBER") ) {
+		LOGINF "Starting Grabber grabber_openmeteo_airquality.pl $verbose_opt --interval $interval";
+		$log->close;
+		system ("$lbpbindir/grabber_openmeteo_airquality.pl $verbose_opt --interval $interval");
+		$log->open;
+	}
 }
 
 # Data to Loxone
-LOGINF "Starting script datatoloxone.pl";
+LOGINF "Starting script datatoloxone.pl $verbose_opt $maskkeys_opt";
 $log->close;
 system ("$lbpbindir/datatoloxone.pl $verbose_opt  $maskkeys_opt");
 $log->open;

@@ -240,6 +240,7 @@
     "tab_tomorrow": "Morgen",
     "tab_days": "Dagen",
     "now": "Nu",
+    "chart_title": "Temperatuurverloop",
     "hours_today": "Uren vandaag",
     "hours_tomorrow": "Uren morgen",
     "forecast_X_days": "{fcastDays}-daagse voorspelling",

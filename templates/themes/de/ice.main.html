@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0f172a">
-  <meta name="title" content="Arctic Mist Theme">
   <title>Weather4Lox Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -528,7 +527,7 @@
 
   function getMainIconPath(opts = {}) {
     const dayOrNight = opts.isDaytime ? "d" : "n";
-    const iconPath = `/plugins/weather4lox/icons/realistic/${dayOrNight}/${opts.weatherIcon}.png`;
+    const iconPath = `/plugins/weather4lox/icons/realistic/${opts.weatherIcon}.png`;
     return iconPath;
   }
 
@@ -1569,23 +1568,7 @@
         hourly = demoHourlyData;
         daily = demoDailyData;
         setStatus("demo", "demo");
-      } else if (CONFIG.mode === "w4l") {
-        const { indexTxt, weatherdata, maxHourly, maxDaily } = CONFIG.w4l;
-
-        const bust = `?_=${Date.now()}`;
-        const [indexText, wdText] = await Promise.all([
-          fetchWithTimeout(indexTxt + bust, { timeoutMs: CONFIG.timeoutMs, responseType: "text" }),
-          weatherdata
-            ? fetchWithTimeout(weatherdata + bust, { timeoutMs: CONFIG.timeoutMs, responseType: "text" }).catch(() => "")
-            : Promise.resolve("")
-        ]);
-
-        const idxParsed = parseIndexTxt(indexText);
-        const wdMap = wdText ? parseWeatherdataHtml(wdText) : {};
-        ({ current, hourly, daily } = buildUiDataFromW4L(idxParsed, wdMap, { maxHourly, maxDaily }));
-
-        setStatus("ok", "w4l");
-      } else if (CONFIG.mode === "json") {
+      } else {
         const { combinedUrl, currentUrl, hourlyUrl, dailyUrl, maxHourly } = CONFIG.json;
 
         if (combinedUrl) {
@@ -1604,21 +1587,7 @@
         }
 
         setStatus("ok", "live");
-      } else {
-        const { current: cu, hourly: hu, daily: du, maxHourly } = CONFIG.dat;
-
-        const [ct, ht, dt] = await Promise.all([
-          fetchWithTimeout(cu, { timeoutMs: CONFIG.timeoutMs, responseType: "text" }),
-          fetchWithTimeout(hu, { timeoutMs: CONFIG.timeoutMs, responseType: "text" }),
-          fetchWithTimeout(du, { timeoutMs: CONFIG.timeoutMs, responseType: "text" })
-        ]);
-
-        current = parseCurrentDat(ct);
-        hourly  = parseHourlyDat(ht, maxHourly);
-        daily   = parseDailyDat(dt);
-
-        setStatus("ok", "dat");
-      }
+      } 
 
       updateCurrentUI(current);
       updateHourlyUI(hourly);

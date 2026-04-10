@@ -164,64 +164,64 @@
       "iconNight": "tstorms"
     },
     "overcast_icepellets": {
-      "iconDay": "sleet_day",
-      "iconNight": "sleet_night"
+      "iconDay": "sleet",
+      "iconNight": "sleet"
     },
     "overcast_graupel": {
-      "iconDay": "sleet_day",
-      "iconNight": "sleet_night"
+      "iconDay": "sleet",
+      "iconNight": "sleet"
     },
     "overcast_hail_1": {
-      "iconDay": "sleet_day",
-      "iconNight": "sleet_night"
+      "iconDay": "sleet",
+      "iconNight": "sleet"
     },
     "overcast_hail_2": {
-      "iconDay": "sleet_day",
-      "iconNight": "sleet_night"
+      "iconDay": "sleet",
+      "iconNight": "sleet"
     },
     "mist": {
-      "iconDay": "fog_day",
-      "iconNight": "fog_night"
+      "iconDay": "fog",
+      "iconNight": "fog"
     },
     "smoke": {
-      "iconDay": "fog_day",
-      "iconNight": "fog_night"
+      "iconDay": "fog",
+      "iconNight": "fog"
     },
     "haze": {
-      "iconDay": "fog_day",
-      "iconNight": "fog_night"
+      "iconDay": "fog",
+      "iconNight": "fog"
     },
     "dust_whirls": {
-      "iconDay": "fog_day",
-      "iconNight": "fog_night"
+      "iconDay": "fog",
+      "iconNight": "fog"
     },
     "fog": {
-      "iconDay": "fog_day",
-      "iconNight": "fog_night"
+      "iconDay": "fog",
+      "iconNight": "fog"
     },
     "sand": {
-      "iconDay": "fog_day",
-      "iconNight": "fog_night"
+      "iconDay": "fog",
+      "iconNight": "fog"
     },
     "dust": {
-      "iconDay": "fog_day",
-      "iconNight": "fog_night"
+      "iconDay": "fog",
+      "iconNight": "fog"
     },
     "volcanic_ash": {
-      "iconDay": "fog_day",
-      "iconNight": "fog_night"
+      "iconDay": "fog",
+      "iconNight": "fog"
     },
     "squalls": {
-      "iconDay": "tstorms_day",
-      "iconNight": "tstorms_night"
+      "iconDay": "tstorms",
+      "iconNight": "tstorms"
     },
     "tornado": {
-      "iconDay": "tstorms_day",
-      "iconNight": "tstorms_night"
+      "iconDay": "tstorms",
+      "iconNight": "tstorms"
     },
     "no_data": {
-      "iconDay": "no_data_day",
-      "iconNight": "no_data_night"
+      "iconDay": "no_data",
+      "iconNight": "no_data"
     }
   }
 }

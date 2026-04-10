@@ -511,14 +511,23 @@ our $themeurlhfc = "./webpage.hfc.html";
 our $themeurlmap = "./webpage.map.html";
 our $webpath = "/plugins/$lbpplugindir";
 
-# new style themes only use the main template for all views, the specific templates are only used for old style themes
-my $newstyle = 0;
-if (!-e "$lbptemplatedir/themes/$lang/$theme.hfc.html" &&
+# new style themes have a single file in webfrontend/html/<pluginname> for CSS, JS and HTML,
+# so we check the existance of it first to determine if it's a new style theme
+my $newStyleTheme = 0;
+if (-e "$lbphtmldir/$theme.theme.html") {
+    $newStyleTheme = 1;
+}
+# interim style themes only use the main template for all views, the specific templates are only used for old style themes
+# TODO: we should remove the interim style theme option in the future and make the new style theme the default, 
+# but for now we want to give users the chance to switch to the new style theme while still providing a working template for the old style theme
+my $interimStyleTheme = 0;
+if (!$newStyleTheme && !-e "$lbptemplatedir/themes/$lang/$theme.hfc.html" &&
     !-e "$lbptemplatedir/themes/$lang/$theme.dfc.html") {
-  $newstyle = 1;
+  $interimStyleTheme = 1;
 }
 
-if (!-e "$lbptemplatedir/themes/$lang/$theme.main.html") {
+# fallback to english dark theme if the selected theme or language is not available, as the main template is required for both interim and classic themes
+if (!$newStyleTheme && !-e "$lbptemplatedir/themes/$lang/$theme.main.html") {
     $lang = "en";
     $theme = "dark";
 }
@@ -527,7 +536,7 @@ if (!-e "$lbptemplatedir/themes/$lang/$theme.main.html") {
 # MAP VIEW
 #############################################
 
-if (!$newstyle) {
+if (!$interimStyleTheme && !$newStyleTheme) {
     # Write cached webpage
     open(F1,">$lbplogdir/webpage.map.html");
     flock(F1,2);
@@ -535,7 +544,6 @@ if (!$newstyle) {
     {
         no strict 'refs';
         while (<F>) {
-            # $_ =~ s/<!--\$(.*?)-->/${$1}/g;
             $_ =~ s/<!--\$(.*?)-->/
                 if (!defined ${$1}) {
                     LOGWARN "Template variable '\$$1' is undefined (line $. in $lbptemplatedir\/themes\/$lang\/$theme.map.html)";
@@ -560,7 +568,7 @@ if (!$newstyle) {
 # Daily Forecast
 #############################################
 
-if (!$newstyle) {
+if (!$interimStyleTheme && !$newStyleTheme) {
     # Write cached webpage
     open(F1,">$lbplogdir/webpage.dfc.html");
     flock(F1,2);
@@ -568,7 +576,6 @@ if (!$newstyle) {
     {
         no strict 'refs';
         while (<F>) {
-            # $_ =~ s/<!--\$(.*?)-->/${$1}/g;
             $_ =~ s/<!--\$(.*?)-->/
                 if (!defined ${$1}) {
                     LOGWARN "Template variable '\$$1' is undefined (line $. in $lbptemplatedir\/themes\/$lang\/$theme.dfc.html)";
@@ -593,7 +600,7 @@ if (!$newstyle) {
 # Hourly Forecast
 #############################################
 
-if (!$newstyle) {
+if (!$interimStyleTheme && !$newStyleTheme) {
     # Write cached webpage
     # If Theme Lang is set, us it instead of system lang
     open(F1,">$lbplogdir/webpage.hfc.html");
@@ -602,7 +609,6 @@ if (!$newstyle) {
     {
         no strict 'refs';
         while (<F>) {
-            # $_ =~ s/<!--\$(.*?)-->/${$1}/g;
             $_ =~ s/<!--\$(.*?)-->/
                 if (!defined ${$1}) {
                     LOGWARN "Template variable '\$$1' is undefined (line $. in $lbptemplatedir\/themes\/$lang\/$theme.hfc.html)";
@@ -627,17 +633,28 @@ if (!$newstyle) {
 # CURRENT CONDITIONS
 #############################################
 
+my $sourceFile;
+
+if (!$newStyleTheme) {
+    # get main template for current conditions with classic style or all conditions with intermediate style themes
+    $sourceFile  = "$lbptemplatedir/themes/$lang/$theme.main.html";
+} else {
+    # new style themes only have a single 'template' that contains a redirect to to the specific theme file in the webfrontend/html/<pluginname> directory
+    $sourceFile  = "$lbptemplatedir/themes/new-style.theme.html";
+    # Create variable for searching and replacing in templates for themes (in case of old-style themes)
+    { no strict 'refs'; ${'themeurl'} = "./$theme.theme.html?iconset=$iconset&lang=$lang" }
+}
+
 # Write cached webpage
 open(F1,">$lbplogdir/webpage.html");
 flock(F1,2);
-open(F,"<$lbptemplatedir/themes/$lang/$theme.main.html");
+open(F,"<$sourceFile");
 {
     no strict 'refs';
     while (<F>) {
-        # $_ =~ s/<!--\$(.*?)-->/${$1}/g;
         $_ =~ s/<!--\$(.*?)-->/
             if (!defined ${$1}) {
-                LOGWARN "Template variable '\$$1' is undefined (line $. in $lbptemplatedir\/themes\/$lang\/$theme.main.html)";
+                LOGWARN "Template variable '\$$1' is undefined (line $. in $sourceFile)";
                 '';
             } else {
                 ${$1};
@@ -789,9 +806,9 @@ if ($emu) {
     print F ";" . ($location->{elevation} // "0") . ";" . ($location->{country} // "-") . ";" . ($location->{tzShort} // "UTC") . ";" . ($emuTzOffset // "+0.00");
     print F ";" . ($cur->{sunrise} // "-") . ";" . ($cur->{sunset} // "-") . ";\n";
     # Data line for current conditions (semicolon separated, in the order expected by Loxone)
-    print F $curDate->strftime('%d.%m.%Y') . ";\t";                     # Local date in format "dd.mm.yyyy"
-    print F $curDate->day_abbr() . ";\t";                               # Weekday (abbreviated)
-    printf F "%02d;\t",$curDate->hour();                                # Local time (hour)
+    print F $curDate->strftime('%d.%m.%Y') . ";\t";                      # Local date in format "dd.mm.yyyy"
+    print F $curDate->day_abbr() . ";\t";                                # Weekday (abbreviated)
+    printf F "%02d;\t",$curDate->hour();                                 # Local time (hour)
     printf F "%1.2f;\t", $cur->{temperature}{air};                       # Temperature in Celsius
     printf F "%1.1f;\t", $cur->{temperature}{feelsLike};                 # Feels like temperature in Celsius
     printf F "%1d;\t", $cur->{wind}{speed};                              # Wind speed in km/h
@@ -806,8 +823,8 @@ if ($emu) {
     printf F "%1d;\t", $cur->{pressure};                                 # Sea level pressure in hPa
     printf F "%1d;\t", $cur->{humidity};                                 # Relative humidity in %
     printf F "%1d;\t", 0;                                                # CAPE, Convective Available Potential Energy in J/kg, indicator for thunderstorm potential and strength (not available in Weather4Lox, so set to 0)
-    printf F "%1d;\t", $loxToEmu{int($cur->{weatherCode}{loxone})};  # Picto code (mapped from Loxone code to Weather Emulator code)
-    printf F "%1.2f;\n", $cur->{solarRadiation};                        # Solar radiation in W/m2
+    printf F "%1d;\t", $loxToEmu{int($cur->{weatherCode}{loxone})};      # Picto code (mapped from Loxone code to Weather Emulator code)
+    printf F "%1.2f;\n", $cur->{solarRadiation};                         # Solar radiation in W/m2
     #flock(F,8);
     close(F);
 

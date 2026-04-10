@@ -53,6 +53,7 @@ my $lon    = $pcfg->param("OPENMETEOAIRQUALITY.COORDLONG");
 my $grabberFile     = basename(__FILE__);
 my $grabberLabel    = "Open-Meteo Air Quality and Pollen";
 my $grabberKey      = "openmeteo_airquality";              # name in JSONs
+my $refresh         = $pcfg->param("SERVER.CRON") // 60;
 
 # Determine system timezone (Debian / DietPi)
 my $timezone = $ENV{TZ} // '';
@@ -81,6 +82,7 @@ my $log = LoxBerry::Log->new (
 # Commandline options
 my $verbose = '';
 GetOptions ('verbose' => \$verbose,
+            'interval=i' => \$refresh,
             'quiet'   => sub { $verbose = 0 },
             );
 
@@ -248,6 +250,12 @@ if ($curEnvelope && $curEnvelope->{current}) {
         schemaVersion => "v1.0",
     };
 
+    if ($refresh < $curEnvelope->{refresh}) {
+        LOGINF "Reducing refresh interval for air quality and pollen weather data from $curEnvelope->{refresh} to $refresh minutes.";
+        $curEnvelope->{refresh} = $refresh;
+        $curEnvelope->{generatedAt} = $generatedAt;
+    }
+
     writeJsonFile($lbplogdir, "current", $curEnvelope);
     LOGOK "Merged airQuality + pollen into current.json";
 } else {
@@ -292,6 +300,12 @@ if ($hfcEnvelope && $hfcEnvelope->{hourlyforecast}) {
         grabberScript => "grabber_openmeteo_airquality.pl",
         schemaVersion => "v1.0",
     };
+
+    if ($refresh < $hfcEnvelope->{refresh}) {
+        LOGINF "Reducing refresh interval for air quality and pollen weather data from $hfcEnvelope->{refresh} to $refresh minutes.";
+        $hfcEnvelope->{refresh} = $refresh;
+        $hfcEnvelope->{generatedAt} = $generatedAt;
+    }
 
     writeJsonFile($lbplogdir, "hourlyforecast", $hfcEnvelope);
     LOGOK "Merged pollen into hourlyforecast.json";
@@ -349,6 +363,12 @@ if ($dfcEnvelope && $dfcEnvelope->{dailyforecast}) {
         grabberScript => "grabber_openmeteo_airquality.pl",
         schemaVersion => "v1.0",
     };
+
+    if ($refresh < $dfcEnvelope->{refresh}) {
+        LOGINF "Reducing refresh interval for air quality and pollen weather data from $dfcEnvelope->{refresh} to $refresh minutes.";
+        $dfcEnvelope->{refresh} = $refresh;
+        $dfcEnvelope->{generatedAt} = $generatedAt;
+    }
 
     writeJsonFile($lbplogdir, "dailyforecast", $dfcEnvelope);
     LOGOK "Merged pollen into dailyforecast.json";

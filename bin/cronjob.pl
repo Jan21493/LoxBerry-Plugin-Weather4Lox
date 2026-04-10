@@ -46,6 +46,17 @@ if (!$cron_alternate || $cron_alternate eq "0") {
 my $usealternatedfc = $pcfg->param("SERVER.USEALTERNATEDFC");
 my $usealternatehfc = $pcfg->param("SERVER.USEALTERNATEHFC");
 
+my $cron_alternate = $pcfg->param("SERVER.CRON_ALTERNATE");
+if (!$cron_alternate || $cron_alternate eq "0") {
+	$cron_alternate = $cron; # Set to default weather service if not defined or 0
+}
+# Local / own weather station
+my $cron_local = $pcfg->param("SERVER.CRON_LOCAL");
+my $use_local = $pcfg->param('SERVER.WUGRABBER') || 
+				$pcfg->param('SERVER.FOSHKGRABBER') || 
+				$pcfg->param('SERVER.PWSCATCHUPLOADGRABBER') ||
+				$pcfg->param('SERVER.LOXGRABBER');
+
 # Commandline options
 my $verbose = '';
 
@@ -97,6 +108,16 @@ if ($usealternatedfc || $usealternatehfc) {
 	}
 } else {
 	LOGDEB "Alternate Weather services are disabled. Skipping.";
+}
+
+if ($use_local) {
+	LOGDEB "Calculate interval for own weather station / local service: $timestamp_minute_round_down / $cron_local = " . ($timestamp_minute_round_down / $cron_local);
+	if ( $timestamp_minute_round_down % $cron_local eq 0 ){
+		LOGINF "Fetch interval ($cron_local) for own weather station / local service reached";
+		$command_opt .= ' --local'
+	} else {
+		LOGINF "Fetch interval ($cron_local) for own weather station / local service NOT reached";
+	}
 }
 
 if ( $command_opt ne "" ){

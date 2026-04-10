@@ -49,6 +49,7 @@ my $pcfg         = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $grabberFile     = basename(__FILE__);
 my $grabberLabel    = "Loxone";
 my $grabberKey      = "loxone";              # name in JSONs
+my $refresh         = $60;
 
 # Read language phrases
 my %L = LoxBerry::System::readlanguage("language.ini");
@@ -64,6 +65,7 @@ my $log = LoxBerry::Log->new (
 my $verbose = '';
 
 GetOptions ('verbose' => \$verbose,
+            'interval=i' => \$refresh,
             'quiet'   => sub { $verbose = 0 });
 
 if ($verbose) {
@@ -162,16 +164,18 @@ _enrichWeatherId($cur);
 my $dtCurrent = localtime;
 $envelope->{$grabberKey} = {
 	filename        => "$lbplogdir/$weatherKey.json",
-	generatedAt     => $dtCurrent->datetime(),
+	generatedAt     => $dtCurrent->iso8601(),
 	grabberLabel    => $grabberLabel,
 	grabberScript   => $grabberFile,
 	schemaVersion   => "v1.0",
 };
 $envelope->{$weatherKey} = $cur;
 
-# Add refresh interval from CRON_PATCH config
-my $cronMinutes = $pcfg->param("SERVER.CRON_PATCH") // 1;
-$envelope->{refresh} = $cronMinutes * 60;
+if ($refresh < $envelope->{refresh}) {
+    LOGINF "Reducing refresh interval for $weatherKey weather data from $envelope->{refresh} to $refresh minutes.";
+    $envelope->{refresh} = $refresh;
+	$envelope->{generatedAt} = $dtCurrent->iso8601();
+}
 
 # Write JSON back to file
 writeJsonFile($lbplogdir, $weatherKey, $envelope);

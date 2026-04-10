@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0f172a">
-  <meta name="title" content="Arctic Mist Theme">
+  <meta name="title" content="Fresh Live Theme">
   <title>Weather4Lox Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>tailwind.config = { darkMode: 'class' };</script>
   <style>
-    * { font-family: 'Google Sans', sans-serif; }
-    .mono { font-family: 'Roboto Mono', monospace; }
+    * { font-family: 'Outfit', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
 
     /* ===== THEME CSS VARIABLES ===== */
     :root {
@@ -44,12 +44,12 @@
       --glass-border: rgba(255,255,255,0.08);
       --glass-hover-bg: rgba(255,255,255,0.06);
       --glass-hover-border: rgba(255,255,255,0.15);
-      --weather-from: rgba(255, 255, 255, 0.05);
-      --weather-to: rgba(255, 255, 255, 0.05);
-      --tab-from: rgba(56,248,189,0.2);
-      --tab-to: rgba(139,246,92,0.2);
-      --tab-border: rgba(56,248,189,0.4);
-      --glow-text: 0 0 40px rgba(56,248,189,0.4);
+      --weather-from: rgba(56,189,248,0.15);
+      --weather-to: rgba(139,92,246,0.15);
+      --tab-from: rgba(56,189,248,0.2);
+      --tab-to: rgba(139,92,246,0.2);
+      --tab-border: rgba(56,189,248,0.4);
+      --glow-text: 0 0 40px rgba(56,189,248,0.4);
       --glow-amber: 0 0 30px rgba(251,191,36,0.5);
       --grain-opacity: 0.03;
       --card-shadow: 0 4px 24px -6px rgba(0,0,0,0.3);
@@ -192,7 +192,7 @@
     <div id="tab-current" class="tab-content">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Main Weather Card -->
-        <div class="lg:col-span-2 glass rounded-xl p-8 weather-gradient">
+        <div class="lg:col-span-2 glass rounded-3xl p-8 weather-gradient">
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
             <div>
               <div class="flex items-end gap-2 mb-4">
@@ -203,8 +203,8 @@
               <p class="text-slate-400 dark:text-slate-500">Gefühlt <span id="feels-like">--</span>°C</p>
             </div>
             <div class="animate-float">
-              <div id="main-icon" class="w-80 h-80 flex items-center justify-center">
-                <img src="" alt="sunny" class="w-80 h-80 text-amber-500 dark:text-amber-400">
+              <div id="main-icon" class="w-40 h-40 rounded-full weather-gradient flex items-center justify-center">
+                <i data-lucide="sun" class="w-20 h-20 text-amber-400"></i>
               </div>
             </div>
           </div>
@@ -485,28 +485,28 @@
   };
 
   const demoHourlyData = [
-    { weekday: "So", hour: "10:00", temp: 8,  icon: "cloudy",       precip: 10, wind: 13 },
-    { weekday: "So", hour: "11:00", temp: 9,  icon: "cloudy",       precip: 15, wind: 14 },
-    { weekday: "So", hour: "12:00", temp: 9,  icon: "cloudy",       precip: 15, wind: 13 },
-    { weekday: "So", hour: "13:00", temp: 9,  icon: "cloudy",       precip: 20, wind: 14 },
-    { weekday: "So", hour: "14:00", temp: 9,  icon: "cloudy",       precip: 24, wind: 14 },
-    { weekday: "So", hour: "15:00", temp: 9,  icon: "cloudy",       precip: 17, wind: 14 },
-    { weekday: "So", hour: "16:00", temp: 10, icon: "cloudy",       precip: 16, wind: 14 },
-    { weekday: "So", hour: "17:00", temp: 9,  icon: "cloudy",       precip: 4,  wind: 13 },
-    { weekday: "So", hour: "18:00", temp: 9,  icon: "mostlycloudy", precip: 6,  wind: 11 },
-    { weekday: "So", hour: "19:00", temp: 8,  icon: "mostlycloudy", precip: 7,  wind: 8  },
-    { weekday: "So", hour: "20:00", temp: 8,  icon: "mostlycloudy", precip: 8,  wind: 8  },
-    { weekday: "So", hour: "21:00", temp: 7,  icon: "mostlycloudy", precip: 8,  wind: 8  }
+    { hour: "10:00", temp: 8,  icon: "cloudy",       precip: 10, wind: 13 },
+    { hour: "11:00", temp: 9,  icon: "cloudy",       precip: 15, wind: 14 },
+    { hour: "12:00", temp: 9,  icon: "cloudy",       precip: 15, wind: 13 },
+    { hour: "13:00", temp: 9,  icon: "cloudy",       precip: 20, wind: 14 },
+    { hour: "14:00", temp: 9,  icon: "cloudy",       precip: 24, wind: 14 },
+    { hour: "15:00", temp: 9,  icon: "cloudy",       precip: 17, wind: 14 },
+    { hour: "16:00", temp: 10, icon: "cloudy",       precip: 16, wind: 14 },
+    { hour: "17:00", temp: 9,  icon: "cloudy",       precip: 4,  wind: 13 },
+    { hour: "18:00", temp: 9,  icon: "mostlycloudy", precip: 6,  wind: 11 },
+    { hour: "19:00", temp: 8,  icon: "mostlycloudy", precip: 7,  wind: 8  },
+    { hour: "20:00", temp: 8,  icon: "mostlycloudy", precip: 8,  wind: 8  },
+    { hour: "21:00", temp: 7,  icon: "mostlycloudy", precip: 8,  wind: 8  }
   ];
 
   const demoDailyData = [
-    { weekday: "So", date: "09.10", high: 10, low: 4, icon: "cloudy",       precip: 20, desc: "Bedeckt" },
-    { weekday: "Mo", date: "10.10", high: 11, low: 4, icon: "partlycloudy", precip: 20, desc: "Teils wolkig" },
-    { weekday: "Di", date: "11.10", high: 10, low: 6, icon: "chancerain",   precip: 50, desc: "Regen möglich" },
-    { weekday: "Mi", date: "12.10", high: 9,  low: 7, icon: "chancerain",   precip: 70, desc: "Regen möglich" },
-    { weekday: "Do", date: "13.10", high: 12, low: 5, icon: "partlycloudy", precip: 30, desc: "Teils wolkig" },
-    { weekday: "Fr", date: "14.10", high: 14, low: 6, icon: "sunny",        precip: 10, desc: "Sonnig" },
-    { weekday: "Sa", date: "15.10", high: 15, low: 7, icon: "sunny",        precip: 5,  desc: "Sonnig" }
+    { day: "So", date: "09.10", high: 10, low: 4, icon: "cloudy",       precip: 20, desc: "Bedeckt" },
+    { day: "Mo", date: "10.10", high: 11, low: 4, icon: "partlycloudy", precip: 20, desc: "Teils wolkig" },
+    { day: "Di", date: "11.10", high: 10, low: 6, icon: "chancerain",   precip: 50, desc: "Regen möglich" },
+    { day: "Mi", date: "12.10", high: 9,  low: 7, icon: "chancerain",   precip: 70, desc: "Regen möglich" },
+    { day: "Do", date: "13.10", high: 12, low: 5, icon: "partlycloudy", precip: 30, desc: "Teils wolkig" },
+    { day: "Fr", date: "14.10", high: 14, low: 6, icon: "sunny",        precip: 10, desc: "Sonnig" },
+    { day: "Sa", date: "15.10", high: 15, low: 7, icon: "sunny",        precip: 5,  desc: "Sonnig" }
   ];
 
   // ===== ICON MAPPING =====
@@ -525,12 +525,6 @@
     hazy: "cloud-fog",
     default: "sun"
   };
-
-  function getMainIconPath(opts = {}) {
-    const dayOrNight = opts.isDaytime ? "d" : "n";
-    const iconPath = `/plugins/weather4lox/icons/realistic/${dayOrNight}/${opts.weatherIcon}.png`;
-    return iconPath;
-  }
 
   function getIconName(weatherIcon) {
     const key = String(weatherIcon || "").toLowerCase().trim();
@@ -644,7 +638,6 @@
     return lines.slice(0, max).map(line => {
       const p = line.split("|");
       return {
-        weekday: p[11] || "",
         hour: `${String(p[7]).padStart(2, "0")}:${String(p[8]).padStart(2, "0")}`,
         temp: Number(p[11]) || 0,
         icon: (p[28] || "cloudy").trim(),
@@ -662,7 +655,7 @@
     return lines.map(line => {
       const p = line.split("|");
       return {
-        weekday: p[10] || "",
+        day: p[10] || "",
         date: `${String(p[2]).padStart(2, "0")}.${String(p[3]).padStart(2, "0")}`,
         high: Number(p[11]) || 0,
         low: Number(p[12]) || 0,
@@ -762,7 +755,7 @@
     return { station, hourly, validUntil };
   }
 
-  function weekdaytoLang(abbr) {
+  function weekdayToDe(abbr) {
     const m = {
       Mon: "Mo", Tue: "Di", Wed: "Mi", Thu: "Do", Fri: "Fr", Sat: "Sa", Sun: "So",
       Mo: "Mo", Di: "Di", Mi: "Mi", Do: "Do", Fr: "Fr", Sa: "Sa", So: "So"
@@ -920,7 +913,6 @@
     };
 
     const hourly = hourlyAll.slice(0, maxHourly).map(rec => ({
-      weekday: rec.weekday || "",
       hour: `${String(rec.hour || "").padStart(2, "0")}:00`,
       temp: rec.temp,
       icon: deriveIconKey(rec),
@@ -950,12 +942,12 @@
       const mid = recs.find(r => String(r.hour) === "12") || recs[Math.floor(recs.length / 2)];
       const icon = deriveIconKey(mid);
 
-      const weekday = weekdaytoLang(recs[0]?.weekday);
+      const day = weekdayToDe(recs[0]?.weekday);
       const dateShort = dateStr.slice(0, 5); // "dd.mm.yyyy" -> "dd.mm"
 
       daily.push({
         __dateStr: dateStr,
-        weekday,
+        day,
         date: dateShort,
         high,
         low,
@@ -1046,7 +1038,6 @@
 
     if (Array.isArray(j)) {
       return j.slice(0, max).map(h => ({
-        weekday: first(h.day, h.weekday, ""),
         hour: first(h.hour, h.time, h.dt_txt, ""),
         temp: Number(first(h.temp, h.temperature, h.t, h.tempC)) || 0,
         icon: first(h.icon, h.weatherIcon, h.conditionIcon, "cloudy"),
@@ -1062,7 +1053,6 @@
       const pop = first(j.precipitation_probability, j.pop) || [];
       const wind = first(j.windspeed_10m, j.wind_speed) || [];
       return times.slice(0, max).map((t, i) => ({
-        weekday: formatWeekday(t),
         hour: formatHour(t),
         temp: Number(temps[i]) || 0,
         icon: "cloudy",
@@ -1080,14 +1070,14 @@
 
     if (Array.isArray(j)) {
       return j.map(d => ({
-        weekday: first(d.day, d.weekday, ""),
+        day: first(d.day, d.weekday, ""),
         date: first(d.date, d.dt, ""),
         high: Number(first(d.high, d.max, d.tempMax, d.temperature_max, d.temperatureMax)) || 0,
         low: Number(first(d.low, d.min, d.tempMin, d.temperature_min, d.temperatureMin)) || 0,
         icon: first(d.icon, d.weatherIcon, "cloudy"),
         precip: Number(first(d.precip, d.pop, d.precipitation_probability, 0)) || 0,
         desc: first(d.desc, d.description, d.summary, "")
-      })).map(d => ({ ...d, weekday: d.weekday || formatWeekday(d.date), date: formatDate(d.date) }));
+      })).map(d => ({ ...d, day: d.day || formatWeekday(d.date), date: formatDate(d.date) }));
     }
 
     if (isObj(j) && Array.isArray(j.time)) {
@@ -1096,7 +1086,7 @@
       const tmin = first(j.temperature_2m_min, j.temp_min, j.temperature_min) || [];
       const pop = first(j.precipitation_probability_max, j.pop) || [];
       return times.map((t, i) => ({
-        weekday: formatWeekday(t),
+        day: formatWeekday(t),
         date: formatDate(t),
         high: Number(tmax[i]) || 0,
         low: Number(tmin[i]) || 0,
@@ -1158,43 +1148,6 @@
     return `${s}${suffix}`;
   }
 
-  function isDaytime(opts = {}) {
-    const now = opts.now instanceof Date ? opts.now : new Date();
-
-    // sunrise/sunset aus opts (falls übergeben)
-    let sunriseStr = opts.sunrise ?? null;
-    let sunsetStr  = opts.sunset ?? null;
-
-    const toMinutes = (hhmm) => {
-      if (!hhmm) return null;
-      const m = String(hhmm).match(/^(\d{1,2}):(\d{2})$/);
-      if (!m) return null;
-      const hh = Number(m[1]);
-      const mm = Number(m[2]);
-      if (!Number.isFinite(hh) || !Number.isFinite(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
-      return hh * 60 + mm;
-    };
-
-    const sunriseMin = toMinutes(sunriseStr);
-    const sunsetMin  = toMinutes(sunsetStr);
-
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-
-    // Wenn keine gültigen Zeiten vorhanden -> simple Heuristik
-    if (sunriseMin === null || sunsetMin === null) {
-      return nowMin >= 6 * 60 && nowMin < 18 * 60;
-    }
-
-    // Normalfall: sunrise < sunset (typischer Tag)
-    if (sunriseMin < sunsetMin) {
-      return nowMin >= sunriseMin && nowMin < sunsetMin;
-    }
-
-    // Sonderfall: über Mitternacht (z.B. sehr hohe Breiten / Polartag-ähnliche Daten)
-    // Dann ist "Tag" außerhalb des Nachtintervalls [sunset, sunrise)
-    return nowMin >= sunriseMin || nowMin < sunsetMin;
-  }
-
   function updateCurrentUI(data) {
     const temp = Number(data?.temp);
     document.getElementById("location").textContent = data?.location || "—";
@@ -1233,8 +1186,8 @@
     moonCircle?.setAttribute("stroke-dasharray", `${miClamped} ${100 - miClamped}`);
 
     const mainIcon = document.getElementById("main-icon");
-    const iconPath = getMainIconPath({ weatherIcon: data?.weatherIcon, isDaytime: isDaytime({ now: new Date(), sunrise: data?.sunrise, sunset: data?.sunset }) });
-    mainIcon.innerHTML = `<img src="${iconPath}" alt="${data?.weatherDesc || ""}" class="w-80 h-80 text-amber-500 dark:text-amber-400">`;
+    const iconName = getIconName(data?.weatherIcon);
+    mainIcon.innerHTML = `<i data-lucide="${iconName}" class="w-20 h-20 text-amber-500 dark:text-amber-400"></i>`;
     if (typeof lucide !== "undefined") lucide.createIcons();
   }
 
@@ -1290,14 +1243,6 @@
     const n = Array.isArray(data) ? data.length : 0;
     if (!n) { svg.innerHTML = ""; return; }
 
-    const labelEvery = n > 24 ? 2 : 1;
-    let step;
-    if (labelEvery == 2) {
-      step = 22;
-    } else {
-      step = 33;
-    }
-    
     const tempsAll = data.map(d => Number(d.temp));
     const temps = tempsAll.filter(t => Number.isFinite(t));
     const minT = Math.min(...temps);
@@ -1305,6 +1250,7 @@
     const range = Math.max(1, maxT - minT);
 
     const H = 190;
+    const step = 44;
     const padL = 28;
     const padR = 18;
 
@@ -1316,7 +1262,7 @@
     const W = padL + padR + (n - 1) * step;
     svg.setAttribute("width", String(W));
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-    svg.classList.add("text-[#FFBB5C]");
+    svg.classList.add("text-sky-400");
 
     const xAt = (i) => padL + i * step;
     const yAt = (t) => {
@@ -1331,73 +1277,30 @@
       points.push([xAt(i), yAt(t)]);
     }
 
+    const labelEvery = n > 24 ? 2 : 1;
+
     // Theme-aware colors from CSS variables
     const cs = getComputedStyle(document.documentElement);
     const gridColor = cs.getPropertyValue('--chart-grid').trim() || "rgba(255,255,255,0.08)";
     const labelColor = cs.getPropertyValue('--chart-label').trim() || "rgba(148,163,184,0.9)";
 
     const grid = [];
-
-    function hourFromLabel(v) {
-      // Erwartet "HH:MM" oder "HH"
-      const s = String(v || "").trim();
-      const m = s.match(/^(\d{1,2})(?::(\d{2}))?/);
-      if (!m) return null;
-      const hh = Number(m[1]);
-      if (!Number.isFinite(hh) || hh < 0 || hh > 23) return null;
-      return hh;
+    for (let i = 0; i < n; i += 6) {
+      grid.push(`<line x1="${xAt(i)}" y1="${yTop}" x2="${xAt(i)}" y2="${yBottom}" stroke="${gridColor}" />`);
     }
-
-    for (let i = 0; i < n; i++) {
-      const hh = hourFromLabel(data?.[i]?.hour);
-      if (hh === null) continue;
-
-      // 00/06/12/18 -> durchgezogen (alle 6h)
-      if (hh % 6 === 0) {
-        grid.push(
-          `<line x1="${xAt(i)}" y1="${yTop}" x2="${xAt(i)}" y2="${yBottom}" stroke="${gridColor}" />`
-        );
-
-        // 00:00 extra betonen
-        if (hh === 0) {
-          grid.push(
-            `<line x1="${xAt(i)}" y1="${yTop}" x2="${xAt(i)}" y2="${yBottom}" stroke="${gridColor}" stroke-width="4" />`
-          );
-        }
-        continue;
-      }
-
-      // 03/09/15/21 -> gestrichelt
-      if (hh % 2 === 0) {
-        grid.push(
-          `<line x1="${xAt(i)}" y1="${yTop}" x2="${xAt(i)}" y2="${yBottom}" stroke="${gridColor}" stroke-dasharray="2 6" />`
-        );
-      }
-    }
-    // Horizontale Linie
     grid.push(`<line x1="${padL}" y1="${yBottom}" x2="${W - padR}" y2="${yBottom}" stroke="${gridColor}" />`);
 
     const hourLabels = data.map((h, i) => {
       const hourLabel = (h.hour || "").split(":")[0] || "";
-      const hh = hourFromLabel(hourLabel);
-      if (hh === null) return "";
-      if (hh % labelEvery !== 0) {
-        return "";
-      }
-      if (hh % 6 === 0) {
-        return `<text x="${xAt(i)}" y="${yHours}" text-anchor="middle" font-size="11" fill="${labelColor}" font-family="JetBrains Mono, monospace" font-weight="700">${hourLabel}</text>`;
+      if (i % labelEvery !== 0) {
+        return `<line x1="${xAt(i)}" y1="${yTop - 6}" x2="${xAt(i)}" y2="${yTop - 2}" stroke="${labelColor}" opacity="0.4" />`;
       }
       return `<text x="${xAt(i)}" y="${yHours}" text-anchor="middle" font-size="11" fill="${labelColor}" font-family="JetBrains Mono, monospace">${hourLabel}</text>`;
     }).join("");
 
     const tempLabels = data.map((h, i) => {
       const t = Number(h.temp);
-      const hourLabel = (h.hour || "").split(":")[0] || "";
-      const hh = hourFromLabel(hourLabel);
-      if (!Number.isFinite(t) ||hh === null) return "";
-      if (hh % labelEvery !== 0) {
-        return "";
-      }
+      if (!Number.isFinite(t) || i % labelEvery !== 0) return "";
       return `<text x="${xAt(i)}" y="${H - 10}" text-anchor="middle" font-size="11" fill="${labelColor}" font-family="JetBrains Mono, monospace">${Math.round(t)}°</text>`;
     }).join("");
 
@@ -1439,10 +1342,9 @@
     const container = document.getElementById("hourly-container");
     container.innerHTML = data.map((hour, i) => `
       <div class="glass rounded-2xl p-5 min-w-[120px] text-center stat-card glass-hover ${i === 0 ? "tab-active" : ""}">
-        <p class="text-slate-400 text-sm mb-3 mono">${weekdaytoLang(hour.weekday)}</p>
         <p class="text-slate-400 text-sm mb-3 mono">${hour.hour}</p>
-        <div class="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-3">
-          <img src="${getMainIconPath({ weatherIcon: hour.icon, isDaytime: isDaytime({ now: hour.hour }) })}" class="w-14 h-14 text-sky-500 dark:text-sky-400">
+        <div class="w-14 h-14 rounded-xl weather-gradient flex items-center justify-center mx-auto mb-3">
+          <i data-lucide="${getIconName(hour.icon)}" class="w-7 h-7 text-sky-500 dark:text-sky-400"></i>
         </div>
         <p class="text-2xl font-semibold mb-2">${Math.round(Number(hour.temp) || 0)}°</p>
         <div class="flex items-center justify-center gap-1 text-sky-500 dark:text-sky-400 text-sm">
@@ -1480,17 +1382,13 @@
       <div class="glass rounded-2xl p-5 stat-card glass-hover ${i === 0 ? "tab-active" : ""}">
         <div class="grid grid-cols-12 items-center gap-4">
           <div class="col-span-4 md:col-span-1">
-            <p class="font-semibold">${day.weekday}</p>
+            <p class="font-semibold">${day.day}</p>
             <p class="text-slate-400 dark:text-slate-500 text-sm mono">${day.date}</p>
           </div>
 
           <div class="col-span-2 md:col-span-1 flex justify-center">
-            <div class="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden">
-              <img
-                src="${getMainIconPath({ weatherIcon: day.icon, isDaytime: true })}"
-                class="w-full h-full object-contain"
-                alt=""
-              >
+            <div class="w-12 h-12 rounded-xl weather-gradient flex items-center justify-center">
+              <i data-lucide="${getIconName(day.icon)}" class="w-6 h-6 text-sky-500 dark:text-sky-400"></i>
             </div>
           </div>
 

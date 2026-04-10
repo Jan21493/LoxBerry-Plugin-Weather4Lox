@@ -240,6 +240,7 @@
     "tab_tomorrow": "Mañana",
     "tab_days": "Días",
     "now": "Ahora",
+    "chart_title": "Tendencia de temperatura",
     "hours_today": "Horas de hoy",
     "hours_tomorrow": "Horas de mañana",
     "forecast_X_days": "Pronóstico de {fcastDays} días",

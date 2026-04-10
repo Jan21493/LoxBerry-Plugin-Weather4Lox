@@ -249,6 +249,7 @@ eval {
     $cfg->param("SERVER.GETDATA", $R->{getdata} // "");
     $cfg->param("SERVER.CRON", $R->{cron} // "");
     $cfg->param("SERVER.CRON_ALTERNATE", $R->{cron_alternate} // "");
+    $cfg->param("SERVER.CRON_LOCAL", $R->{cron_local} // "");
     $cfg->param("SERVER.METRIC", $R->{metric} // "");
     $cfg->param("SERVER.COORDLAT", $central_lat // "");
     $cfg->param("SERVER.COORDLONG", $central_long // "");

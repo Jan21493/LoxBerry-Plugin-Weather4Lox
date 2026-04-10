@@ -234,6 +234,7 @@
     "tab_today": "Heute",
     "tab_tomorrow": "Morgen",
     "tab_days": "Tage",
+    "chart_title": "Temperaturverlauf",
     "hours_today": "Heutige Stunden",
     "hours_tomorrow": "Morgige Stunden",
     "forecast_X_days": "{fcastDays}-Tage Vorhersage",

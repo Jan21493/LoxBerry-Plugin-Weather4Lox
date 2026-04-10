@@ -61,8 +61,7 @@ my $city             = $pcfg->param("WETTERONLINE.STATIONID");
 my $grabberFile     = basename(__FILE__);
 my $grabberLabel    = "Wetter Online";
 my $grabberKey      = "wetteronline";          # name in JSONs
-my $cronMinutes     = $pcfg->param("SERVER.CRON") // 15;
-my $refresh         = $cronMinutes * 60;
+my $refresh         = $pcfg->param("SERVER.CRON") // 60;
 
 my $weatherKey;
 
@@ -121,6 +120,7 @@ my $daily = '';
 my $hourly = '';
 my $maskKeys = 1;
 GetOptions ('verbose'  => \$verbose,
+            'interval=i' => \$refresh,
             'quiet'    => sub { $verbose = 0 },
             'current'  => \$current,
             'daily'    => \$daily,
@@ -711,6 +711,7 @@ if ( $current ) {
     $weatherKey = "current";
     my $envelope = {
         refresh  => $refresh,
+        generatedAt     => $dtCurrent->iso8601(),
         location => $location,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
@@ -910,6 +911,7 @@ if ( $daily ) {
     $weatherKey = "dailyforecast";
     my $envelope = {
         refresh  => $refresh,
+        generatedAt     => $dtCurrent->iso8601(),
         location => $location,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
@@ -1273,6 +1275,7 @@ if ( $hourly ) {
     $weatherKey = "hourlyforecast";
     my $envelope = {
         refresh  => $refresh,
+        generatedAt     => $dtCurrent->iso8601(),
         location => $location,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",

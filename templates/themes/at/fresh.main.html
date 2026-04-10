@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="at">
+<html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1024,8 +1024,8 @@
         weatherDesc: first(j.weather?.[0]?.description, ""),
         moonPhase: "—",
         moonIllum: 0,
-        sunrise: j.sys?.sunrise ? new Date(j.sys.sunrise * 1000).toLocaleTimeString("de-AE",{hour:"2-digit",minute:"2-digit"}) : "—",
-        sunset: j.sys?.sunset ? new Date(j.sys.sunset * 1000).toLocaleTimeString("de-AE",{hour:"2-digit",minute:"2-digit"}) : "—"
+        sunrise: j.sys?.sunrise ? new Date(j.sys.sunrise * 1000).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}) : "—",
+        sunset: j.sys?.sunset ? new Date(j.sys.sunset * 1000).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}) : "—"
       };
     }
 
@@ -1102,20 +1102,20 @@
   function formatHour(v) {
     if (!v) return "--:--";
     const d = new Date(v);
-    if (!isNaN(d.getTime())) return d.toLocaleTimeString("de-AE", { hour: "2-digit", minute: "2-digit" });
+    if (!isNaN(d.getTime())) return d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
     if (String(v).includes(":")) return String(v).slice(0,5);
     return String(v);
   }
 
   function formatDate(v) {
     const d = new Date(v);
-    if (!isNaN(d.getTime())) return d.toLocaleDateString("de-AE", { day: "2-digit", month: "2-digit" });
+    if (!isNaN(d.getTime())) return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
     return String(v || "");
   }
 
   function formatWeekday(v) {
     const d = new Date(v);
-    if (!isNaN(d.getTime())) return d.toLocaleDateString("de-AE", { weekday: "short" }).replace(".", "");
+    if (!isNaN(d.getTime())) return d.toLocaleDateString("de-DE", { weekday: "short" }).replace(".", "");
     return "";
   }
 
@@ -1438,7 +1438,7 @@
   function updateTime() {
     const now = new Date();
     document.getElementById("current-time").textContent =
-      now.toLocaleTimeString("de-AE", { hour: "2-digit", minute: "2-digit" });
+      now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
   }
   setInterval(updateTime, 1000);
   updateTime();
@@ -1522,13 +1522,13 @@
       updateDailyUI(daily);
 
       lastOkAt = new Date();
-      const t = lastOkAt.toLocaleTimeString("de-AE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      const t = lastOkAt.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
       const modeLabel = (CONFIG.mode === "json") ? "live" : CONFIG.mode;
       setStatus("ok", `${modeLabel} • ${t}`);
     } catch (e) {
       console.warn("⚠️ Update fehlgeschlagen:", e);
       const last = lastOkAt
-        ? lastOkAt.toLocaleTimeString("de-AE", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        ? lastOkAt.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
         : "—";
       setStatus("error", `fehler • last ok ${last}`);
       showToast(`Update fehlgeschlagen: ${e.message || "Netzwerkfehler"}`, "error");

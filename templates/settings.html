@@ -334,6 +334,21 @@
                                                             <font size="-1"><TMPL_VAR SETTINGS.HINT_LOXGRABBER></font>
                                                         </td>
                                                     </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelauto"><TMPL_VAR SETTINGS.LABEL_FETCH_DATA_LOCAL></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR CRON_LOCAL>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_LOCAL_ACCOUNT></font>
+                                                        </td>
+                                                    </tr>
+
                                                 </table>
                                             </div>
 
@@ -773,6 +788,7 @@
                                     $('select[name=serverlang]').attr('data-mini','true');
                                     $('select[name=cron]').attr('data-mini','true');
                                     $('select[name=cron_alternate]').attr('data-mini','true');
+                                    $('select[name=cron_local]').attr('data-mini','true');
                                     $('select[name=pollen_grasses]').attr('data-mini','true');
                                     $('select[name=pollen_birch]').attr('data-mini','true');
                                     $('select[name=pollen_alder]').attr('data-mini','true');
@@ -1417,8 +1433,15 @@
 
                                     // Preview Link for theme and iconset
                                     function preview() {
-                                        var url = './show.cgi?theme=' + $('#theme').val() + '&iconset=' + $('#iconset').val() + '&lang=' + $('#themelang').val();
-                                        window.open(url, 'NewWindow');
+                                        var themeName = $('#theme').val();
+                                        // Old themes (dark, light, custom) are shown via show.cgi, new themes are shown via static html files
+                                        if (themeName === "dark" || themeName === "light" || themeName === "fresh" || themeName === "sea" || themeName === "ice" || themeName === "custom") {
+                                            var url = './show.cgi?theme=' + themeName + '&iconset=' + $('#iconset').val() + '&lang=' + $('#themelang').val();
+                                            window.open(url, 'NewWindow');
+                                        } else {
+                                            var url = '/plugins/<TMPL_VAR LBPPLUGINDIR>/' + themeName + '.theme.html?iconset=' + $('#iconset').val() + '&lang=' + $('#themelang').val();
+                                            window.open(url, 'NewWindow');
+                                        }
                                     }
 
                                     // Open Weathercodes page
@@ -1480,6 +1503,9 @@
                                         <tr>
                                             <td align="center">
                                                 <h2><TMPL_VAR SETTINGS.HINT_OK></h2>
+                                                <p>
+                                                    <TMPL_VAR SAVEMESSAGE>
+                                                </p>
                                                 <p>
                                                     <TMPL_VAR SETTINGS.OK_SETTINGS_SAVED>
                                                 </p>

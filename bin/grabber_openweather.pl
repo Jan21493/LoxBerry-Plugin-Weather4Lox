@@ -50,17 +50,14 @@ require "$lbpbindir/grabber_utils.pl";
 my $version = LoxBerry::System::pluginversion();
 
 # params from config
-my $pcfg             = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
-my $url          = $pcfg->param("OPENWEATHER.URL");
-my $apikey       = $pcfg->param("OPENWEATHER.APIKEY");
-my $lang         = $pcfg->param("OPENWEATHER.LANG");
-my $stationid    = "lat=" . $pcfg->param("OPENWEATHER.COORDLAT") . "&lon=" . $pcfg->param("OPENWEATHER.COORDLONG");
-my $city         = $pcfg->param("OPENWEATHER.STATION");
-my $country      = $pcfg->param("OPENWEATHER.COUNTRY");
-
-# refresh interval in seconds (from CRON config, default 15 minutes)
-my $cronMinutes  = $pcfg->param("SERVER.CRON") // 15;
-my $refresh      = $cronMinutes * 60;
+my $pcfg            = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
+my $url             = $pcfg->param("OPENWEATHER.URL");
+my $apikey          = $pcfg->param("OPENWEATHER.APIKEY");
+my $lang            = $pcfg->param("OPENWEATHER.LANG");
+my $stationid       = "lat=" . $pcfg->param("OPENWEATHER.COORDLAT") . "&lon=" . $pcfg->param("OPENWEATHER.COORDLONG");
+my $city            = $pcfg->param("OPENWEATHER.STATION");
+my $country         = $pcfg->param("OPENWEATHER.COUNTRY");
+my $refresh         = $pcfg->param("SERVER.CRON") // 60;    # default to 60 if not set in config, otherwise to default weather service refresh time, normally set by command line option --interval from fetch.pl
 
 # names for JSON
 my $grabberFile     = basename(__FILE__);
@@ -119,6 +116,7 @@ my $daily = '';
 my $hourly = '';
 my $maskKeys = 1;
 GetOptions ('verbose'  => \$verbose,
+            'interval=i' => \$refresh,
             'quiet'    => sub { $verbose = 0 },
             'current'  => \$current,
             'daily'    => \$daily,
@@ -136,19 +134,13 @@ LOGDEB "This is $0 Version $version";
 
 requireOrLogdie('DateTime::Format::ISO8601');
 
-if ($hourly) {
-    #require_or_logdie('Lexical::Sub');
-    requireOrLogdie('Math::Function::Interpolator');
-    requireOrLogdie('Math::Function::Interpolator::Linear');
-}
-
 # Get weather data from openweathermap.org (API request) for current conditions
 my $results = apiCall(
     url => $oneCallURL,
     maskkeys => $maskKeys,
     keyparam => 'appid',
     # apikey => $apiKey,      # Key is not included in output JSON, so no masking needed here
-    info => "for Location $city (Current Weather Data)",
+    info => "for Location $city (current, daily and hourly weather data)",
 );
 
 my $t;
@@ -653,6 +645,7 @@ if ( $current ) {
     my $envelope = {
         location => $location,
         refresh  => $refresh,
+        generatedAt => $dtCurrent->iso8601(),
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
             generatedAt     => $dtCurrent->iso8601(),
@@ -751,8 +744,8 @@ if ( $daily ) {
             },
             moon => {
                 age        => sprintf("%.1f", $moonage) + 0,                                                                   # dfc<X>_moon_a    - moon age in days
-                rise       => getTimeFormatted('%H:%M', $timezone, $resDay, 'moonrise'),                                       #                  - moon rise in HH:MM in local time (API provides in Unix epoch time)
-                set        => getTimeFormatted('%H:%M', $timezone, $resDay, 'moonset'),                                        #                  - moon set in HH:MM in local time (API provides in Unix epoch time)
+                rise       => getTimeFromEpochFormatted('%H:%M', $timezone, $resDay, 'moonrise'),                              #                  - moon rise in HH:MM in local time (API provides in Unix epoch time)
+                set        => getTimeFromEpochFormatted('%H:%M', $timezone, $resDay, 'moonset'),                               #                  - moon set in HH:MM in local time (API provides in Unix epoch time)
                 percent    => sprintf("%.1f", $moonillum * 100) + 0,                                                           # dfc<X>_moon_p    - moon percent
                 phase      => sprintf("%.1f", $moonphase * 100) + 0,                                                           # dfc<X>_moon_ph   - moon phase
                 direction  => getMoonDirection($moonphase),                                                                    #                  - moon direction (waxing, waning)
@@ -765,8 +758,8 @@ if ( $daily ) {
             pressure         => getFormatted('%.0f', $resDay, 'pressure'),                                                     # dfc<X>_pr        - air pressure (hPa)
             dewpoint         => getFormatted('%.0f', $resDay, 'dew_point'),                                                    # dfc<X>_dp        - average dew point (°C)
             uvIndex          => getFormatted('%.1f', $resDay, 'uvi'),                                                          # dfc<X>_uvi       - UV index, maximum value for the day
-            sunrise          => getTimeFormatted('%H:%M', $timezone, $resDay, 'sunrise'),                                      # dfc<X>_sun_r     - sunrise time (HH:MM) from Unix epoch time
-            sunset           => getTimeFormatted('%H:%M', $timezone, $resDay, 'sunset'),                                       # dfc<X>_sun_s     - sunset time (HH:MM) from Unix epoch time
+            sunrise          => getTimeFromEpochFormatted('%H:%M', $timezone, $resDay, 'sunrise'),                             # dfc<X>_sun_r     - sunrise time (HH:MM) from Unix epoch time
+            sunset           => getTimeFromEpochFormatted('%H:%M', $timezone, $resDay, 'sunset'),                              # dfc<X>_sun_s     - sunset time (HH:MM) from Unix epoch time
             visibility       => undef,                                                                                         # dfc<X>_vis       - visibility (m/km as needed)
             solarRadiation   => undef,                                                                                         # dfc<X>_sr        - solar radiation (not present)
             heatIndex        => undef,                                                                                         # dfc<X>_hi        - heat index (not present)
@@ -781,6 +774,7 @@ if ( $daily ) {
     my $envelope = {
         location => $location,
         refresh  => $refresh,
+        generatedAt => $dtCurrent->iso8601(),
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
             generatedAt     => $dtCurrent->iso8601(),
@@ -885,7 +879,7 @@ if ( $hourly ) {
     # OpenWeatherMap only offers 48h of hourly forecasts in the free account. Interpolate with 3-hours data to have more entries for the weather emulator
     if ($hour < 168) {
 
-        LOGINF "Fetching additional 3-Hourly Forecat Data to interpolite hourly data (only 48h of hourly data available via OneCall API).";
+        LOGINF "Fetching additional 3-hourly forecast data to interpolate hourly data (only 48h of hourly data available via OneCall API).";
 
         # Get data from openweathermap.org (API request) for 3-hourly forecasts via free 5 day / 3 hour forecast data
         my $res3Hourly = apiCall(
@@ -893,7 +887,7 @@ if ( $hourly ) {
             maskkeys => $maskKeys,
             keyparam => 'appid',
             # apikey => $apikey,	# not needed here as the URL is already masked and the key won't appear elsewhere in the response
-            info => "for Location $stationid (3-Hourly Weather Forecast Data)",
+            info => "for location $stationid (3-hourly weather forecast data)",
         );
         my $lastHourlyData = $hourlyData; # to keep track of the last hourly data for interpolation
 
@@ -1044,6 +1038,7 @@ if ( $hourly ) {
     my $envelope = {
         location => $location,
         refresh  => $refresh,
+        generatedAt => $dtCurrent->iso8601(),
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
             generatedAt     => $dtCurrent->iso8601(),

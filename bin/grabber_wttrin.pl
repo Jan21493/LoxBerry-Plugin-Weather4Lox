@@ -52,8 +52,7 @@ my $stationid    = $pcfg->param("WTTRIN.STATIONID");
 my $grabberKey   = "wttrin";
 my $grabberLabel = "wttr.in";
 my $grabberFile  = "grabber_wttrin.pl";
-my $cronMinutes  = $pcfg->param("SERVER.CRON") // 15;
-my $refresh      = $cronMinutes * 60;
+my $refresh      = $pcfg->param("SERVER.CRON") // 60;
 
 # Read language phrases
 my %L = LoxBerry::System::readlanguage("language.ini");
@@ -71,6 +70,7 @@ my $current = '';
 my $daily = '';
 my $hourly = '';
 GetOptions ('verbose' => \$verbose,
+            'interval=i' => \$refresh,
             'quiet'   => sub { $verbose = 0 },
             'current' => \$current,
             'daily' => \$daily,
@@ -292,6 +292,7 @@ if ( $current ) {
     my $weatherKey = "current";
     my $envelope = {
         refresh     => $refresh,
+        generatedAt   => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
@@ -476,6 +477,7 @@ if ( $daily ) {
     my $weatherKey = "dailyforecast";
     my $envelope = {
         refresh     => $refresh,
+        generatedAt   => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
@@ -663,6 +665,7 @@ if ( $hourly ) {
     my $weatherKey = "hourlyforecast";
     my $envelope = {
         refresh     => $refresh,
+        generatedAt   => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",

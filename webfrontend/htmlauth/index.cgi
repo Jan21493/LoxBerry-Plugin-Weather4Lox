@@ -25,6 +25,7 @@ use LWP::UserAgent;
 use JSON qw( decode_json );
 use LoxBerry::System;
 use LoxBerry::Web;
+use File::Glob qw(bsd_glob);
 
 use strict;
 use warnings;
@@ -108,7 +109,7 @@ my $template = HTML::Template->new(
 );
 
 # Language
-my %L = LoxBerry::Web::readlanguage($template, "language.ini");
+my %L = LoxBerry::System::readlanguage($template, "language.ini");
 
 ##########################################################################
 # Save Form 1 (Server Settings)
@@ -147,7 +148,7 @@ if ($R::saveformdata2) {
 
     $cfg->save();
 
-    save();
+    save('');
     exit;
 }
 
@@ -166,6 +167,34 @@ if ($R::saveformdata3) {
 
     $cfg->save();
 
+    my $message = '';
+    # Write cached webpage
+    open(F1,">$lbplogdir/webpage.html");
+    flock(F1,2);
+    open(F,"<$lbptemplatedir/themes/new-style.theme.html");
+    { no strict 'refs'; ${'themeurl'} = "./$R::theme.theme.html?iconset=$R::iconset&lang=$R::themelang" }
+    {
+        no strict 'refs';
+        while (<F>) {
+            $_ =~ s/<!--\$(.*?)-->/
+                if (!defined ${$1}) {
+                    $message = "Template variable '\$$1' is undefined (line $. in $lbptemplatedir\/themes\/new-style.theme.html)";
+                    '';
+                } else {
+                    ${$1};
+                }
+            /ge;
+            print F1 $_;
+        }
+    }
+    close(F);
+    #flock(F1,8);
+    close(F1);
+
+    if (-e "$lbplogdir/webpage.html") {
+        $message .= "$lbplogdir/webpage.html created.";
+    }
+
     # Enable/Disable CloudEmu
     if ( $R::emu ) {
         system("sudo $lbpbindir/cloudemu enable > /dev/null 2>&1");
@@ -173,7 +202,7 @@ if ($R::saveformdata3) {
         system("sudo $lbpbindir/cloudemu disable > /dev/null 2>&1");
     }
 
-    save();
+    save($message);
     exit;
 }
 
@@ -202,202 +231,202 @@ if ($R::form eq "1" || !$R::form) {
     $template->param( "FORM1", 1);
 
 
-  my @values;
-  my %labels;
+    my @values;
+    my %labels;
 
-  # Weather Service
-  $template->param("CURRENT_WEATHERSERVICE", $cfg->param("SERVER.WEATHERSERVICE"));
+    # Weather Service
+    $template->param("CURRENT_WEATHERSERVICE", $cfg->param("SERVER.WEATHERSERVICE"));
 
-  @values = ( 'visualcrossing', 'openweather', 'wttrin', 'wetteronline', 'weatherflow', );
-  %labels = (
+    @values = ( 'visualcrossing', 'openweather', 'wttrin', 'wetteronline', 'weatherflow', );
+    %labels = (
         'visualcrossing' => 'Visual Crossing',
         'openweather' => 'OpenWeatherMap',
         'wttrin' => 'wttr.in',
         'wetteronline' => 'WetterOnline',
         'weatherflow' => 'Weatherflow',
     );
-  my $wservice = $cgi->popup_menu(
+    my $wservice = $cgi->popup_menu(
         -name    => 'weatherservice',
         -id      => 'weatherservice',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.WEATHERSERVICE'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.WEATHERSERVICE'),
     );
-  $template->param( WEATHERSERVICE => $wservice );
+    $template->param( WEATHERSERVICE => $wservice );
 
-  # DFC Weather Service
-  $template->param("CURRENT_WEATHERSERVICEDFC", $cfg->param("SERVER.WEATHERSERVICEDFC"));
+    # DFC Weather Service
+    $template->param("CURRENT_WEATHERSERVICEDFC", $cfg->param("SERVER.WEATHERSERVICEDFC"));
 
-  @values = ( 'visualcrossing', 'openweather', 'wttrin', 'wetteronline', 'weatherflow', );
-  %labels = (
+    @values = ( 'visualcrossing', 'openweather', 'wttrin', 'wetteronline', 'weatherflow', );
+    %labels = (
         'visualcrossing' => 'Visual Crossing',
         'openweather' => 'OpenWeatherMap',
         'wttrin' => 'wttr.in',
         'wetteronline' => 'WetterOnline',
         'weatherflow' => 'Weatherflow',
     );
-  my $wservicedfc = $cgi->popup_menu(
+    my $wservicedfc = $cgi->popup_menu(
         -name    => 'weatherservicedfc',
         -id      => 'weatherservicedfc',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.WEATHERSERVICEDFC'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.WEATHERSERVICEDFC'),
     );
-  $template->param( WEATHERSERVICEDFC => $wservicedfc );
+    $template->param( WEATHERSERVICEDFC => $wservicedfc );
 
-  # Use alternate DFC Weather Service
-  @values = ('0', '1' );
-  %labels = (
+    # Use alternate DFC Weather Service
+    @values = ('0', '1' );
+    %labels = (
         '0' => $L{'SETTINGS.LABEL_OFF'},
         '1' => $L{'SETTINGS.LABEL_ON'},
     );
-  my $usealternatedfc = $cgi->popup_menu(
+    my $usealternatedfc = $cgi->popup_menu(
         -name    => 'usealternatedfc',
         -id      => 'usealternatedfc',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.USEALTERNATEDFC'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.USEALTERNATEDFC'),
     );
-  $template->param( USEALTERNATEDFC => $usealternatedfc );
+    $template->param( USEALTERNATEDFC => $usealternatedfc );
 
-  # HFC Weather Service
-  $template->param("CURRENT_WEATHERSERVICEHFC", $cfg->param("SERVER.WEATHERSERVICEHFC"));
+    # HFC Weather Service
+    $template->param("CURRENT_WEATHERSERVICEHFC", $cfg->param("SERVER.WEATHERSERVICEHFC"));
 
-  @values = ( 'visualcrossing', 'openweather', 'wttrin', 'wetteronline', 'weatherflow', );
-  %labels = (
+    @values = ( 'visualcrossing', 'openweather', 'wttrin', 'wetteronline', 'weatherflow', );
+    %labels = (
         'visualcrossing' => 'Visual Crossing',
         'openweather' => 'OpenWeatherMap',
         'wttrin' => 'wttr.in',
         'wetteronline' => 'WetterOnline',
         'weatherflow' => 'Weatherflow',
     );
-  my $wservicehfc = $cgi->popup_menu(
+    my $wservicehfc = $cgi->popup_menu(
         -name    => 'weatherservicehfc',
         -id      => 'weatherservicehfc',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.WEATHERSERVICEHFC'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.WEATHERSERVICEHFC'),
     );
-  $template->param( WEATHERSERVICEHFC => $wservicehfc );
+    $template->param( WEATHERSERVICEHFC => $wservicehfc );
 
-  # Use alternate HFC Weather Service
-  @values = ('0', '1' );
-  %labels = (
+    # Use alternate HFC Weather Service
+    @values = ('0', '1' );
+    %labels = (
         '0' => $L{'SETTINGS.LABEL_OFF'},
         '1' => $L{'SETTINGS.LABEL_ON'},
     );
-  my $usealternatehfc = $cgi->popup_menu(
+    my $usealternatehfc = $cgi->popup_menu(
         -name    => 'usealternatehfc',
         -id      => 'usealternatehfc',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.USEALTERNATEHFC'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.USEALTERNATEHFC'),
     );
-  $template->param( USEALTERNATEHFC => $usealternatehfc );
+    $template->param( USEALTERNATEHFC => $usealternatehfc );
 
-  # Units
-  @values = ('1', '0' );
-  %labels = (
+    # Units
+    @values = ('1', '0' );
+    %labels = (
         '1' => $L{'SETTINGS.LABEL_METRIC'},
         '0' => $L{'SETTINGS.LABEL_IMPERIAL'},
     );
-  my $metric = $cgi->popup_menu(
+    my $metric = $cgi->popup_menu(
         -name    => 'metric',
         -id      => 'metric',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.METRIC'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.METRIC'),
     );
-  $template->param( METRIC => $metric );
+    $template->param( METRIC => $metric );
 
-  # LoxGrabber
-  @values = ('0', '1' );
-  %labels = (
+    # LoxGrabber
+    @values = ('0', '1' );
+    %labels = (
         '0' => $L{'SETTINGS.LABEL_OFF'},
         '1' => $L{'SETTINGS.LABEL_ON'},
     );
-  my $loxgrabber = $cgi->popup_menu(
+    my $loxgrabber = $cgi->popup_menu(
         -name    => 'loxgrabber',
         -id      => 'loxgrabber',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.LOXGRABBER'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.LOXGRABBER'),
     );
-  $template->param( LOXGRABBER => $loxgrabber );
+    $template->param( LOXGRABBER => $loxgrabber );
 
-  # WUGrabber
-  @values = ('0', '1' );
-  %labels = (
+    # WUGrabber
+    @values = ('0', '1' );
+    %labels = (
         '0' => $L{'SETTINGS.LABEL_OFF'},
         '1' => $L{'SETTINGS.LABEL_ON'},
     );
-  my $wugrabber = $cgi->popup_menu(
+    my $wugrabber = $cgi->popup_menu(
         -name    => 'wugrabber',
         -id      => 'wugrabber',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.WUGRABBER'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.WUGRABBER'),
     );
-  $template->param( WUGRABBER => $wugrabber );
+    $template->param( WUGRABBER => $wugrabber );
 
-  # FOSHKGrabber
-  @values = ('0', '1' );
-  %labels = (
+    # FOSHKGrabber
+    @values = ('0', '1' );
+    %labels = (
         '0' => $L{'SETTINGS.LABEL_OFF'},
         '1' => $L{'SETTINGS.LABEL_ON'},
     );
-  my $foshkgrabber = $cgi->popup_menu(
+    my $foshkgrabber = $cgi->popup_menu(
         -name    => 'foshkgrabber',
         -id      => 'foshkgrabber',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.FOSHKGRABBER'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.FOSHKGRABBER'),
     );
-  $template->param( FOSHKGRABBER => $foshkgrabber );
+    $template->param( FOSHKGRABBER => $foshkgrabber );
 
-  # PWSCatchUploadGrabber
-  @values = ('0', '1' );
-  %labels = (
+    # PWSCatchUploadGrabber
+    @values = ('0', '1' );
+    %labels = (
         '0' => $L{'SETTINGS.LABEL_OFF'},
         '1' => $L{'SETTINGS.LABEL_ON'},
     );
-  my $pwscatchuploadgrabber = $cgi->popup_menu(
+    my $pwscatchuploadgrabber = $cgi->popup_menu(
         -name    => 'pwscatchuploadgrabber',
         -id      => 'pwscatchuploadgrabber',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.PWSCATCHUPLOADGRABBER'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.PWSCATCHUPLOADGRABBER'),
     );
-  $template->param( PWSCATCHUPLOADGRABBER => $pwscatchuploadgrabber );
+    $template->param( PWSCATCHUPLOADGRABBER => $pwscatchuploadgrabber );
 
-  # OpenMeteoAirQualityGrabber
-  @values = ('0', '1' );
-  %labels = (
+    # OpenMeteoAirQualityGrabber
+    @values = ('0', '1' );
+    %labels = (
         '0' => $L{'SETTINGS.LABEL_OFF'},
         '1' => $L{'SETTINGS.LABEL_ON'},
     );
-  my $openmeteoairqualitygrabber = $cgi->popup_menu(
+    my $openmeteoairqualitygrabber = $cgi->popup_menu(
         -name    => 'openmeteoairqualitygrabber',
         -id      => 'openmeteoairqualitygrabber',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.OPENMETEOAIRQUALITYGRABBER'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.OPENMETEOAIRQUALITYGRABBER'),
     );
-  $template->param( OPENMETEOAIRQUALITYGRABBER => $openmeteoairqualitygrabber );
+    $template->param( OPENMETEOAIRQUALITYGRABBER => $openmeteoairqualitygrabber );
 
-  # Pollen sensitivity dropdowns (0-7 scale)
-  # Read defaults from config
-  my %pollen_defaults = (
-    grasses => $cfg->param("POLLEN.GRASS")   // 0,
-    birch   => $cfg->param("POLLEN.BIRCH")   // 0,
-    alder   => $cfg->param("POLLEN.ALDER")   // 0,
-    mugwort => $cfg->param("POLLEN.MUGWORT") // 0,
-    olive   => $cfg->param("POLLEN.OLIVE")   // 0,
-    ragweed => $cfg->param("POLLEN.RAGWEED") // 0,
-  );
+    # Pollen sensitivity dropdowns (0-7 scale)
+    # Read defaults from config
+    my %pollen_defaults = (
+        grasses => $cfg->param("POLLEN.GRASS")   // 0,
+        birch   => $cfg->param("POLLEN.BIRCH")   // 0,
+        alder   => $cfg->param("POLLEN.ALDER")   // 0,
+        mugwort => $cfg->param("POLLEN.MUGWORT") // 0,
+        olive   => $cfg->param("POLLEN.OLIVE")   // 0,
+        ragweed => $cfg->param("POLLEN.RAGWEED") // 0,
+    );
 
-  @values = ('0', '1', '2', '3', '4', '5', '6', '7');
-  %labels = (
+    @values = ('0', '1', '2', '3', '4', '5', '6', '7');
+    %labels = (
         '0' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_0'},
         '1' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_1'},
         '2' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_2'},
@@ -408,113 +437,113 @@ if ($R::form eq "1" || !$R::form) {
         '7' => $L{'SETTINGS.LABEL_POLLEN_LEVEL_7'},
     );
 
-  my $pollen_grasses = $cgi->popup_menu(
+    my $pollen_grasses = $cgi->popup_menu(
         -name    => 'pollen_grasses',
         -id      => 'pollen_grasses',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $pollen_defaults{grasses},
+        -labels  => \%labels,
+        -default => $pollen_defaults{grasses},
     );
-  $template->param( POLLEN_GRASSES => $pollen_grasses );
+    $template->param( POLLEN_GRASSES => $pollen_grasses );
 
-  my $pollen_birch = $cgi->popup_menu(
+    my $pollen_birch = $cgi->popup_menu(
         -name    => 'pollen_birch',
         -id      => 'pollen_birch',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $pollen_defaults{birch},
+        -labels  => \%labels,
+        -default => $pollen_defaults{birch},
     );
-  $template->param( POLLEN_BIRCH => $pollen_birch );
+    $template->param( POLLEN_BIRCH => $pollen_birch );
 
-  my $pollen_alder = $cgi->popup_menu(
+    my $pollen_alder = $cgi->popup_menu(
         -name    => 'pollen_alder',
         -id      => 'pollen_alder',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $pollen_defaults{alder},
+        -labels  => \%labels,
+        -default => $pollen_defaults{alder},
     );
-  $template->param( POLLEN_ALDER => $pollen_alder );
+    $template->param( POLLEN_ALDER => $pollen_alder );
 
-  my $pollen_mugwort = $cgi->popup_menu(
+    my $pollen_mugwort = $cgi->popup_menu(
         -name    => 'pollen_mugwort',
         -id      => 'pollen_mugwort',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $pollen_defaults{mugwort},
+        -labels  => \%labels,
+        -default => $pollen_defaults{mugwort},
     );
-  $template->param( POLLEN_MUGWORT => $pollen_mugwort );
+    $template->param( POLLEN_MUGWORT => $pollen_mugwort );
 
-  my $pollen_olive = $cgi->popup_menu(
+    my $pollen_olive = $cgi->popup_menu(
         -name    => 'pollen_olive',
         -id      => 'pollen_olive',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $pollen_defaults{olive},
+        -labels  => \%labels,
+        -default => $pollen_defaults{olive},
     );
-  $template->param( POLLEN_OLIVE => $pollen_olive );
+    $template->param( POLLEN_OLIVE => $pollen_olive );
 
-  my $pollen_ragweed = $cgi->popup_menu(
+    my $pollen_ragweed = $cgi->popup_menu(
         -name    => 'pollen_ragweed',
         -id      => 'pollen_ragweed',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $pollen_defaults{ragweed},
+        -labels  => \%labels,
+        -default => $pollen_defaults{ragweed},
     );
-  $template->param( POLLEN_RAGWEED => $pollen_ragweed );
+    $template->param( POLLEN_RAGWEED => $pollen_ragweed );
 
 
-  @values = ('0', '1' );
-  %labels = (
+    @values = ('0', '1' );
+    %labels = (
         '0' => $L{'SETTINGS.LABEL_OFF'},
         '1' => $L{'SETTINGS.LABEL_ON'},
     );
-  my $maskkeys = $cgi->popup_menu(
+    my $maskkeys = $cgi->popup_menu(
         -name    => 'maskkeys',
         -id      => 'maskkeys',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.MASKKEYS'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.MASKKEYS'),
     );
-  $template->param( MASKKEYS => $maskkeys );
+    $template->param( MASKKEYS => $maskkeys );
 
-  # GetData
-  @values = ('0', '1' );
-  %labels = (
+    # GetData
+    @values = ('0', '1' );
+    %labels = (
         '0' => $L{'SETTINGS.LABEL_OFF'},
         '1' => $L{'SETTINGS.LABEL_ON'},
     );
-  my $getdata = $cgi->popup_menu(
+    my $getdata = $cgi->popup_menu(
         -name    => 'getdata',
         -id      => 'getdata',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.GETDATA'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.GETDATA'),
     );
-  $template->param( GETDATA => $getdata );
+    $template->param( GETDATA => $getdata );
 
-  # Cron
-  @values = ('1', '3', '5', '10', '15', '30', '60' );
-  %labels = (
-        '1' => $L{'SETTINGS.LABEL_1MINUTE'},
-        '3' => $L{'SETTINGS.LABEL_3MINUTE'},
-        '5' => $L{'SETTINGS.LABEL_5MINUTE'},
+    # Cron
+    @values = ('1', '3', '5', '10', '15', '30', '60' );
+    %labels = (
+         '1' => $L{'SETTINGS.LABEL_1MINUTE'},
+         '3' => $L{'SETTINGS.LABEL_3MINUTE'},
+         '5' => $L{'SETTINGS.LABEL_5MINUTE'},
         '10' => $L{'SETTINGS.LABEL_10MINUTE'},
         '15' => $L{'SETTINGS.LABEL_15MINUTE'},
         '30' => $L{'SETTINGS.LABEL_30MINUTE'},
         '60' => $L{'SETTINGS.LABEL_60MINUTE'},
     );
-  my $cron = $cgi->popup_menu(
+    my $cron = $cgi->popup_menu(
         -name    => 'cron',
         -id      => 'cron',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.CRON'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.CRON'),
     );
-  $template->param( CRON => $cron );
+    $template->param( CRON => $cron );
 
-  # Cron Forecast
-  @values = ('0', '1', '3', '5', '10', '15', '30', '60' );
-  %labels = (
+    # Cron Forecast
+    @values = ('0', '1', '3', '5', '10', '15', '30', '60' );
+    %labels = (
         '0' => $L{'SETTINGS.LABEL_SAME_AS_DEFAULT'},
         '1' => $L{'SETTINGS.LABEL_1MINUTE'},
         '3' => $L{'SETTINGS.LABEL_3MINUTE'},
@@ -524,318 +553,383 @@ if ($R::form eq "1" || !$R::form) {
         '30' => $L{'SETTINGS.LABEL_30MINUTE'},
         '60' => $L{'SETTINGS.LABEL_60MINUTE'},
     );
-  my $cron_alternate = $cgi->popup_menu(
+    my $cron_alternate = $cgi->popup_menu(
         -name    => 'cron_alternate',
         -id      => 'cron_alternate',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.CRON_ALTERNATE'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.CRON_ALTERNATE'),
     );
-  $template->param( CRON_ALTERNATE => $cron_alternate );
+    $template->param( CRON_ALTERNATE => $cron_alternate );
 
-  # OPenweather Language
-  @values = ('af', 'ar', 'az', 'bg', 'ca', 'cz', 'da', 'de', 'el', 'en', 'es', 'eu', 'fa', 'fi', 'fr', 'gl', 'he', 'hi', 'hr', 'hu', 'id', 'it', 'ja', 'kr', 'la', 'lt', 'mk', 'no', 'nl', 'pl', 'pt', 'pt_br', 'ro', 'ru', 'se', 'sk', 'sl', 'sr', 'th', 'tr', 'uk', 'vi', 'zh_cn', 'zh_tw', 'zu');
-
-  %labels = (
-    'af' => 'Africaans',
-    'ar' => 'Arabic',
-    'az' => 'Azerbaijani',
-    'bg' => 'Bulgarian',
-    'ca' => 'Catalan',
-    'ca' => 'Catalan',
-    'cz' => 'Czech',
-    'da' => 'Danish',
-    'de' => 'German',
-    'el' => 'Greek',
-    'en' => 'English',
-    'es' => 'Spanish',
-    'eu' => 'Basque',
-    'fa' => 'Persian (Farsi)',
-    'fi' => 'Finnish',
-    'fr' => 'French',
-    'hr' => 'Croatian',
-    'ga' => 'Galician',
-    'he' => 'Hebrew',
-    'hi' => 'Hindi',
-    'hr' => 'Croatian',
-    'hu' => 'Hungarian',
-    'id' => 'Indonesian',
-    'it' => 'Italian',
-    'ja' => 'Japanese',
-    'kr' => 'Korean',
-    'la' => 'Latvian',
-    'lt' => 'Lithuanian',
-    'mk' => 'Macedonian',
-    'no' => 'Norwegian',
-    'nl' => 'Dutch',
-    'pl' => 'Polish',
-    'pt' => 'Portuguese',
-    'pt_br' => 'Portuguese Brasil',
-    'ro' => 'Romanian',
-    'ru' => 'Russian',
-    'se' => 'Swedish',
-    'sk' => 'Slovak',
-    'sl' => 'Slovenian',
-    'sr' => 'Serbian',
-    'th' => 'Thai',
-    'tr' => 'Turkish',
-    'uk' => 'Ukrainian',
-    'vi' => 'Vietnamese',
-    'zh_cn' => 'simplified Chinese',
-    'zh_tw' => 'traditional Chinese',
-    'zu' => 'Zulu',
+    # Cron local / own weather station for more accurate current weather data
+    @values = ('0', '1', '3', '5', '10', '15', '30', '60' );
+    %labels = (
+        '0' => $L{'SETTINGS.LABEL_SAME_AS_DEFAULT'},
+        '1' => $L{'SETTINGS.LABEL_1MINUTE'},
+        '3' => $L{'SETTINGS.LABEL_3MINUTE'},
+        '5' => $L{'SETTINGS.LABEL_5MINUTE'},
+        '10' => $L{'SETTINGS.LABEL_10MINUTE'},
+        '15' => $L{'SETTINGS.LABEL_15MINUTE'},
+        '30' => $L{'SETTINGS.LABEL_30MINUTE'},
+        '60' => $L{'SETTINGS.LABEL_60MINUTE'},
     );
-  my $openweatherlang = $cgi->popup_menu(
+    my $cron_local = $cgi->popup_menu(
+        -name    => 'cron_local',
+        -id      => 'cron_local',
+        -values  => \@values,
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.CRON_LOCAL'),
+    );
+    $template->param( CRON_LOCAL => $cron_local );
+
+    # OpenWeather Language
+    @values = ('af', 'ar', 'az', 'bg', 'ca', 'cz', 'da', 'de', 'el', 'en', 'es', 'eu', 'fa', 'fi', 'fr', 'gl', 'he', 'hi', 'hr', 'hu', 'id', 'it', 'ja', 'kr', 'la', 'lt', 'mk', 'no', 'nl', 'pl', 'pt', 'pt_br', 'ro', 'ru', 'se', 'sk', 'sl', 'sr', 'th', 'tr', 'uk', 'vi', 'zh_cn', 'zh_tw', 'zu');
+
+    %labels = (
+        'af' => 'Africaans',
+        'ar' => 'Arabic',
+        'az' => 'Azerbaijani',
+        'bg' => 'Bulgarian',
+        'ca' => 'Catalan',
+        'ca' => 'Catalan',
+        'cz' => 'Czech',
+        'da' => 'Danish',
+        'de' => 'German',
+        'el' => 'Greek',
+        'en' => 'English',
+        'es' => 'Spanish',
+        'eu' => 'Basque',
+        'fa' => 'Persian (Farsi)',
+        'fi' => 'Finnish',
+        'fr' => 'French',
+        'hr' => 'Croatian',
+        'ga' => 'Galician',
+        'he' => 'Hebrew',
+        'hi' => 'Hindi',
+        'hr' => 'Croatian',
+        'hu' => 'Hungarian',
+        'id' => 'Indonesian',
+        'it' => 'Italian',
+        'ja' => 'Japanese',
+        'kr' => 'Korean',
+        'la' => 'Latvian',
+        'lt' => 'Lithuanian',
+        'mk' => 'Macedonian',
+        'no' => 'Norwegian',
+        'nl' => 'Dutch',
+        'pl' => 'Polish',
+        'pt' => 'Portuguese',
+        'pt_br' => 'Portuguese Brasil',
+        'ro' => 'Romanian',
+        'ru' => 'Russian',
+        'se' => 'Swedish',
+        'sk' => 'Slovak',
+        'sl' => 'Slovenian',
+        'sr' => 'Serbian',
+        'th' => 'Thai',
+        'tr' => 'Turkish',
+        'uk' => 'Ukrainian',
+        'vi' => 'Vietnamese',
+        'zh_cn' => 'simplified Chinese',
+        'zh_tw' => 'traditional Chinese',
+        'zu' => 'Zulu',
+    );
+    my $openweatherlang = $cgi->popup_menu(
         -name    => 'openweatherlang',
         -id      => 'openweatherlang',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('OPENWEATHER.LANG'),
+        -labels  => \%labels,
+        -default => $cfg->param('OPENWEATHER.LANG'),
     );
-  $template->param( OPENWEATHERLANG => $openweatherlang );
+    $template->param( OPENWEATHERLANG => $openweatherlang );
 
-  # Weatherflow Language
-  @values = ('en');
+    # Weatherflow Language
+    @values = ('en');
 
-  %labels = (
-    'en' => 'English',
+    %labels = (
+        'en' => 'English',
     );
-  my $weatherflowlang = $cgi->popup_menu(
+    my $weatherflowlang = $cgi->popup_menu(
         -name    => 'weatherflowlang',
         -id      => 'weatherflowlang',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('WEATHERFLOW.LANG'),
+        -labels  => \%labels,
+        -default => $cfg->param('WEATHERFLOW.LANG'),
     );
-  $template->param( WEATHERFLOWLANG => $weatherflowlang );
+    $template->param( WEATHERFLOWLANG => $weatherflowlang );
 
-  # VisualCrossing Language
-  @values = ('de', 'en', 'es', 'fi', 'fr', 'it', 'ja', 'ko', 'pt', 'ru', 'nl', 'sr', 'zh');
+    # VisualCrossing Language
+    @values = ('de', 'en', 'es', 'fi', 'fr', 'it', 'ja', 'ko', 'pt', 'ru', 'nl', 'sr', 'zh');
 
-  %labels = (
-    'de' => 'German',
-    'en' => 'English',
-    'es' => 'Spanish',
-    'fi' => 'Finnish',
-    'fr' => 'French',
-    'it' => 'Italian',
-    'ja' => 'Japanese',
-    'ko' => 'Korean',
-    'nl' => 'Netherlands',
-    'pt' => 'Portuguese',
-    'ru' => 'Russian',
-    'sr' => 'Serbian',
-    'zh' => 'simplified Chinese',
+    %labels = (
+        'de' => 'German',
+        'en' => 'English',
+        'es' => 'Spanish',
+        'fi' => 'Finnish',
+        'fr' => 'French',
+        'it' => 'Italian',
+        'ja' => 'Japanese',
+        'ko' => 'Korean',
+        'nl' => 'Netherlands',
+        'pt' => 'Portuguese',
+        'ru' => 'Russian',
+        'sr' => 'Serbian',
+        'zh' => 'simplified Chinese',
     );
-  my $visualcrossinglang = $cgi->popup_menu(
+    my $visualcrossinglang = $cgi->popup_menu(
         -name    => 'visualcrossinglang',
         -id      => 'visualcrossinglang',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('VISUALCROSSING.LANG'),
+        -labels  => \%labels,
+        -default => $cfg->param('VISUALCROSSING.LANG'),
     );
-  $template->param( VISUALCROSSINGLANG => $visualcrossinglang );
+    $template->param( VISUALCROSSINGLANG => $visualcrossinglang );
 
-  # wttr.in Language
-  @values = ('af', 'am', 'ar', 'be', 'bn', 'ca', 'da', 'de', 'el', 'en', 'et', 'fa', 'fr', 'gl', 'hi', 'hu', 'ia', 'id', 'it', 'lt', 'mg', 'nb', 'nl', 'oc', 'pl', 'pt-br', 'ro', 'ru', 'ta', 'th', 'tr', 'uk', 'vi', 'zh-cn', 'zh-tw');
+    # wttr.in Language
+    @values = ('af', 'am', 'ar', 'be', 'bn', 'ca', 'da', 'de', 'el', 'en', 'et', 'fa', 'fr', 'gl', 'hi', 'hu', 'ia', 'id', 'it', 'lt', 'mg', 'nb', 'nl', 'oc', 'pl', 'pt-br', 'ro', 'ru', 'ta', 'th', 'tr', 'uk', 'vi', 'zh-cn', 'zh-tw');
 
-  %labels = (
-    'af' => 'Africaans',
-    'am' => 'Amharic',
-    'ar' => 'Arabic',
-    'be' => 'Belarusian',
-    'bn' => 'Bengali',
-    'ca' => 'Catalan',
-    'da' => 'Danish',
-    'de' => 'German',
-    'el' => 'Greek',
-    'en' => 'English',
-    'et' => 'Estonian',
-    'fa' => 'Persian (Farsi)',
-    'fr' => 'French',
-    'gl' => 'Galician',
-    'hi' => 'Hindi',
-    'ia' => 'Interlingua',
-    'id' => 'Indonesian',
-    'it' => 'Italian',
-    'lt' => 'Lithuanian',
-    'mg' => 'Malagasy',
-    'nb' => 'Norwegian Bokmal',
-    'nl' => 'Dutch',
-    'oc' => 'Occitan',
-    'pl' => 'Polish',
-    'pt-br' => 'Portuguese Brasil',
-    'ro' => 'Romanian',
-    'ru' => 'Russian',
-    'ta' => 'Tamil',
-    'th' => 'Thai',
-    'tr' => 'Turkish',
-    'uk' => 'Ukrainian',
-    'vi' => 'Vietnamese',
-    'zh-cn' => 'simplified Chinese',
+    %labels = (
+        'af' => 'Africaans',
+        'am' => 'Amharic',
+        'ar' => 'Arabic',
+        'be' => 'Belarusian',
+        'bn' => 'Bengali',
+        'ca' => 'Catalan',
+        'da' => 'Danish',
+        'de' => 'German',
+        'el' => 'Greek',
+        'en' => 'English',
+        'et' => 'Estonian',
+        'fa' => 'Persian (Farsi)',
+        'fr' => 'French',
+        'gl' => 'Galician',
+        'hi' => 'Hindi',
+        'ia' => 'Interlingua',
+        'id' => 'Indonesian',
+        'it' => 'Italian',
+        'lt' => 'Lithuanian',
+        'mg' => 'Malagasy',
+        'nb' => 'Norwegian Bokmal',
+        'nl' => 'Dutch',
+        'oc' => 'Occitan',
+        'pl' => 'Polish',
+        'pt-br' => 'Portuguese Brasil',
+        'ro' => 'Romanian',
+        'ru' => 'Russian',
+        'ta' => 'Tamil',
+        'th' => 'Thai',
+        'tr' => 'Turkish',
+        'uk' => 'Ukrainian',
+        'vi' => 'Vietnamese',
+        'zh-cn' => 'simplified Chinese',
     'zh-tw' => 'traditional Chinese',
     );
-  my $wttrinweatherlang = $cgi->popup_menu(
+    my $wttrinweatherlang = $cgi->popup_menu(
         -name    => 'wttrinlang',
         -id      => 'wttrinlang',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('WTTRIN.LANG'),
+        -labels  => \%labels,
+        -default => $cfg->param('WTTRIN.LANG'),
     );
-  $template->param( WTTRINLANG => $wttrinweatherlang );
+    $template->param( WTTRINLANG => $wttrinweatherlang );
 
-  # Central language selector (used by all services)
-  @values = ('de', 'en', 'da', 'el', 'es', 'fa', 'fr', 'hi', 'hu', 'id', 'it', 'lt', 'nl', 'pl', 'ro', 'ru', 'th', 'tr', 'uk', 'vi');
-  %labels = (
-    'da' => 'Danish',
-    'de' => 'German',
-    'el' => 'Greek',
-    'en' => 'English',
-    'es' => 'Spanish',
-    'fa' => 'Persian',
-    'fr' => 'French',
-    'hi' => 'Hindi',
-    'hu' => 'Hungarian',
-    'id' => 'Indonesian',
-    'it' => 'Italian',
-    'lt' => 'Lithuanian',
-    'nl' => 'Dutch',
-    'pl' => 'Polish',
-    'ro' => 'Romanian',
-    'ru' => 'Russian',
-    'th' => 'Thai',
-    'tr' => 'Turkish',
-    'uk' => 'Ukrainian',
-    'vi' => 'Vietnamese',
-  );
-  my $serverlang = $cgi->popup_menu(
+    # Central language selector (used by all services)
+    @values = ('de', 'en', 'da', 'el', 'es', 'fa', 'fr', 'hi', 'hu', 'id', 'it', 'lt', 'nl', 'pl', 'ro', 'ru', 'th', 'tr', 'uk', 'vi');
+    %labels = (
+        'da' => 'Danish',
+        'de' => 'German',
+        'el' => 'Greek',
+        'en' => 'English',
+        'es' => 'Spanish',
+        'fa' => 'Persian',
+        'fr' => 'French',
+        'hi' => 'Hindi',
+        'hu' => 'Hungarian',
+        'id' => 'Indonesian',
+        'it' => 'Italian',
+        'lt' => 'Lithuanian',
+        'nl' => 'Dutch',
+        'pl' => 'Polish',
+        'ro' => 'Romanian',
+        'ru' => 'Russian',
+        'th' => 'Thai',
+        'tr' => 'Turkish',
+        'uk' => 'Ukrainian',
+        'vi' => 'Vietnamese',
+    );
+    my $serverlang = $cgi->popup_menu(
         -name    => 'serverlang',
         -id      => 'serverlang',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.LANG') || 'en',
-  );
-  $template->param( SERVERLANG => $serverlang );
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.LANG') || 'en',
+    );
+    $template->param( SERVERLANG => $serverlang );
 
-
-# Menu: Miniserver
+#########################################################################################
+# Menu: Send to Miniserver
+#########################################################################################
 } elsif ($R::form eq "2") {
-  $navbar{2}{active} = 1;
-  $template->param( "FORM2", 1);
-  $template->param( "WEBSITE", "http://$ENV{HTTP_HOST}/plugins/$lbpplugindir/weatherdata.html");
+    $navbar{2}{active} = 1;
+    $template->param( "FORM2", 1);
+    $template->param( "WEBSITE", "http://$ENV{HTTP_HOST}/plugins/$lbpplugindir/weatherdata.html");
 
-  # Miniserver
-  my $mshtml = mslist_select_html( FORMID => 'msno', SELECTED => $cfg->param('SERVER.MSNO'), DATA_MINI => 1 );
-  $template->param( MINISERVER => $mshtml );
+    # Miniserver
+    my $mshtml = mslist_select_html( FORMID => 'msno', SELECTED => $cfg->param('SERVER.MSNO'), DATA_MINI => 1 );
+    $template->param( MINISERVER => $mshtml );
 
-  # SendUDP
-  my @values = ('0', '1' );
-  my %labels = (
+    # SendUDP
+    my @values = ('0', '1' );
+    my %labels = (
         '0' => $L{'SETTINGS.LABEL_OFF'},
         '1' => $L{'SETTINGS.LABEL_ON'},
     );
-  my $sendudp = $cgi->popup_menu(
+    my $sendudp = $cgi->popup_menu(
         -name    => 'sendudp',
         -id      => 'sendudp',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.SENDUDP'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.SENDUDP'),
     );
-  $template->param( SENDUDP => $sendudp );
+    $template->param( SENDUDP => $sendudp );
 
-  # DFC
-  my $dfc;
-  my $n;
-  my $checked;
-  my @fields = split(/;/,$cfg->param('SERVER.SENDDFC'));
-  for (my $i=1;$i<=8;$i++) {
-    $checked = 0;
-    foreach ( split( /;/,$cfg->param('SERVER.SENDDFC') ) ) {
-      if ($_ eq $i) {
-        $checked = 1;
-      }
+    # DFC
+    my $dfc;
+    my $n;
+    my $checked;
+    my @fields = split(/;/,$cfg->param('SERVER.SENDDFC'));
+    for (my $i=1; $i<=8; $i++) {
+        $checked = 0;
+        foreach ( split( /;/,$cfg->param('SERVER.SENDDFC') ) ) {
+            if ($_ eq $i) {
+                $checked = 1;
+            }
+        }
+        $n = $i-1;
+        $dfc .= $cgi->checkbox(
+            -name    => "dfc$i",
+            -id      => "dfc$i",
+            -checked => $checked,
+            -value   => '1',
+            -label   => "+$n $L{'SETTINGS.LABEL_DAYS'}",
+        );
     }
-    $n = $i-1;
-    $dfc .= $cgi->checkbox(
-        -name    => "dfc$i",
-        -id      => "dfc$i",
-    -checked => $checked,
-        -value   => '1',
-    -label   => "+$n $L{'SETTINGS.LABEL_DAYS'}",
-      );
-  }
-  $template->param( DFC => $dfc );
+    $template->param( DFC => $dfc );
 
-  # HFC
-  my $hfc;
-  @fields = split(/;/,$cfg->param('SERVER.SENDHFC'));
-  for (my $i=1;$i<=48;$i++) {
-    $checked = 0;
-    foreach ( split( /;/,$cfg->param('SERVER.SENDHFC') ) ) {
-      if ($_ eq $i) {
-        $checked = 1;
-      }
+    # HFC
+    my $hfc;
+    @fields = split(/;/,$cfg->param('SERVER.SENDHFC'));
+    for (my $i=1; $i<=48; $i++) {
+        $checked = 0;
+        foreach ( split( /;/,$cfg->param('SERVER.SENDHFC') ) ) {
+            if ($_ eq $i) {
+                $checked = 1;
+            }
+        }
+        $hfc .= $cgi->checkbox(
+            -name    => "hfc$i",
+            -id      => "hfc$i",
+            -checked => $checked,
+            -value   => '1',
+            -label   => "+$i $L{'SETTINGS.LABEL_HOURS'}",
+        );
     }
-    $hfc .= $cgi->checkbox(
-        -name    => "hfc$i",
-        -id      => "hfc$i",
-    -checked => $checked,
-        -value   => '1',
-    -label   => "+$i $L{'SETTINGS.LABEL_HOURS'}",
-      );
-  }
-  $template->param( HFC => $hfc );
+    $template->param( HFC => $hfc );
 
-# Menu: Cloudweather / Website
+#########################################################################################
+# Menu: Website / Cloud weather Emulator
+#########################################################################################
 } elsif ($R::form eq "3") {
-  $navbar{3}{active} = 1;
-  $template->param( "FORM3", 1);
-  $template->param( "WEBSITE", "http://$ENV{HTTP_HOST}/plugins/$lbpplugindir/webpage.html");
+    $navbar{3}{active} = 1;
+    $template->param( "FORM3", 1);
+    $template->param( "WEBSITE", "http://$ENV{HTTP_HOST}/plugins/$lbpplugindir/webpage.html");
 
-  # Check for installed DNSMASQ-Plugin
-  my $checkdnsmasq = LoxBerry::System::plugindata('DNSmasq');
-  if ( $checkdnsmasq->{PLUGINDB_TITLE} ) {
-    $template->param( EMUWARNING => $L{'SETTINGS.ERR_DNSMASQ_PLUGIN'} );
-  }
+    # Check for installed DNSMASQ-Plugin
+    my $checkdnsmasq = LoxBerry::System::plugindata('DNSmasq');
+    if ( $checkdnsmasq->{PLUGINDB_TITLE} ) {
+        $template->param( EMUWARNING => $L{'SETTINGS.ERR_DNSMASQ_PLUGIN'} );
+    }
 
-  # Cloudweather Emu
-  my @values = ('0', '1' );
-  my %labels = (
+    # Cloudweather Emu
+    my @values = ('0', '1' );
+    my %labels = (
         '0' => $L{'SETTINGS.LABEL_OFF'},
         '1' => $L{'SETTINGS.LABEL_ON'},
     );
-  my $emu = $cgi->popup_menu(
+    my $emu = $cgi->popup_menu(
         -name    => 'emu',
         -id      => 'emu',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('SERVER.EMU'),
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.EMU'),
     );
-  $template->param( EMU => $emu );
-  $template->param( MYIP => LoxBerry::System::get_localip() );
+    $template->param( EMU => $emu );
+    $template->param( MYIP => LoxBerry::System::get_localip() );
 
-  # Theme
-  my @values = ('dark', 'light', 'fresh', 'arctic', 'ocean', 'custom' );
-  my %labels = (
+    # Theme
+    my @values = ('dark', 'light', 'fresh', 'sea', 'cold', 'custom' );
+    my %labels = (
         'dark' => "Dark Theme (Classic)",
         'light' => "Light Theme (Classic)",
-        'fresh' => "Fresh Theme (New Style)",
-        'arctic' => "Arctic Mist Theme (New Style)",
-        'ocean' => "Deep Ocean Theme (New Style)",
+        'fresh' => "Fresh Theme (To be removed in future)",
+        'sea' => "Blue sea Theme (To be removed in future)",
+        'cold' => "Cold ice Theme (To be removed in future)",
         'custom' => "Custom Theme (your own)",
     );
-  my $theme = $cgi->popup_menu(
+
+    # Find all 'new style' theme files in $lbphtmldir and add them to the list
+    my @theme_files;
+    if (opendir(my $dh, $lbphtmldir)) {
+        @theme_files = sort grep {
+            /\.theme\.html$/ && -f "$lbphtmldir/$_"
+        } readdir($dh);
+        closedir($dh);
+
+        @theme_files = map { "$lbphtmldir/$_" } @theme_files;
+    }
+
+    # Get theme titles from files meta infos and add to selection list
+    foreach my $theme_file (@theme_files) {
+
+        # Extract theme key from filename, e.g. "arctic.theme.html" -> "arctic"
+        my ($theme_key) = $theme_file =~ m{([^/\\]+)\.theme\.html$};
+        next if !defined $theme_key || $theme_key eq '';
+
+        # Read title from file
+        my $title = $theme_key;
+        if (open my $fh, '<', $theme_file) {
+            while (my $line = <$fh>) {
+                # 
+                if ($line =~ /<meta\s+[^>]*name\s*=\s*["']title["'][^>]*content\s*=\s*["']([^"']+)["']/i) {
+                    $title = $1;
+                    last;
+                }
+            }
+            close $fh;
+        }
+
+        # Add theme to selection list if not already present
+        if (!grep { $_ eq $theme_key } @values) {
+            push @values, $theme_key;
+            
+            # Set label for the theme
+            $labels{$theme_key} = $title . " (New Style)";
+        }
+    }
+
+    my $theme = $cgi->popup_menu(
         -name    => 'theme',
         -id      => 'theme',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('WEB.THEME'),
+        -labels  => \%labels,
+        -default => $cfg->param('WEB.THEME'),
     );
-  $template->param( THEME => $theme );
+    $template->param( THEME => $theme );
 
-  # Icon Set
-  my @values = ('color', 'flat', 'dark', 'light', 'green', 'silver', 'realistic', 'naturalistic', 'custom' );
-  my %labels = (
+    # Icon Set
+    my @values = ('color', 'flat', 'dark', 'light', 'green', 'silver', 'realistic', 'naturalistic', 'custom' );
+    my %labels = (
         'color' => "Color Set (42 icons, PNG format, 150x150)",
         'flat' => "Flat Set (42 icons, PNG format, 150x150)",
         'dark' => "Dark Set (42 icons, PNG format, 150x150)",
@@ -847,38 +941,38 @@ if ($R::form eq "1" || !$R::form) {
         'naturalistic' => "Naturalistic Set (168 icons, PNG format, 600x600)",
         'custom' => "Custom Set",
     );
-  my $iconset = $cgi->popup_menu(
+    my $iconset = $cgi->popup_menu(
         -name    => 'iconset',
         -id      => 'iconset',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('WEB.ICONSET'),
+        -labels  => \%labels,
+        -default => $cfg->param('WEB.ICONSET'),
     );
-  $template->param( ICONSET => $iconset );
+    $template->param( ICONSET => $iconset );
 
-  # Theme LANG
-  @values = ('at', 'nl', 'en', 'de', 'es' );
-  %labels = (
+    # Theme LANG
+    @values = ('at', 'nl', 'en', 'de', 'es' );
+    %labels = (
         'at' => "Austrian",
         'nl' => "Dutch",
         'en' => "English",
         'de' => "German",
         'es' => "Spanish",
     );
-  my $themelang = $cgi->popup_menu(
+    my $themelang = $cgi->popup_menu(
         -name    => 'themelang',
         -id      => 'themelang',
         -values  => \@values,
-    -labels  => \%labels,
-    -default => $cfg->param('WEB.LANG'),
+        -labels  => \%labels,
+        -default => $cfg->param('WEB.LANG'),
     );
-  $template->param( THEMELANG => $themelang );
+    $template->param( THEMELANG => $themelang );
 
 # Menu: Logfiles
 } elsif ($R::form eq "99") {
-  $navbar{99}{active} = 1;
-  $template->param( "FORM99", 1 );
-  $template->param( "LOGLIST_HTML", LoxBerry::Web::loglist_html() );
+    $navbar{99}{active} = 1;
+    $template->param( "FORM99", 1 );
+    $template->param( "LOGLIST_HTML", LoxBerry::Web::loglist_html() );
 
 }
 
@@ -932,6 +1026,7 @@ sub error {
 # Save
 ##########################################################################
 sub save {
+    my ($message) = @_;
     if ($saving_page_started) {
         print qq{<script>window.location.href="./index.cgi?form=$R::form";</script>};
         STDOUT->flush();
@@ -941,6 +1036,7 @@ sub save {
 
     $template->param( "SAVING", 0);
     $template->param( "SAVE", 1);
+    $template->param( "SAVEMESSAGE", $message);
 
     LoxBerry::Web::lbheader($L{'SETTINGS.LABEL_PLUGINTITLE'} . " V$version", "https://wiki.loxberry.de/plugins/weather4loxone/start", "help.html");
     print $template->output();

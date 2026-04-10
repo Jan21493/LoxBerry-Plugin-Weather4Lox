@@ -4,13 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta id="meta-theme" name="theme-color" content="#0f172a">
-  <title>Weather4Lox — <!--$cur_loc_n--></title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <meta name="title" content="Deep Ocean Theme">
+  <title>Weather4Lox -- Ocean Live</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    * { font-family: 'Outfit', sans-serif; }
-    .mono { font-family: 'JetBrains Mono', monospace; }
+    * { font-family: 'Outfit', sans-serif; -webkit-user-select: none; user-select: none; }
+    .mono { font-family: 'Outfit', sans-serif; font-variant-numeric: tabular-nums; }
 
     /* ===== THEME VARIABLES ===== */
     :root {
@@ -120,29 +121,51 @@
       background: linear-gradient(135deg, var(--tab-from), var(--tab-to));
       border-color: var(--tab-border); color: var(--sky);
     }
-    .tab-panel { display: none; } .tab-panel.active { display: block; }
 
-    /* ===== CURRENT TAB — LOXONE STYLE ===== */
-    /* Top: selected hour detail, Bottom: hour strip */
+    /* Tab panels -- fade transition (EXTRA-02) */
+    .tab-panel { display: none; opacity: 0; }
+    .tab-panel.active { display: block; }
+    .tab-panel.fade-in { opacity: 1; transition: opacity 0.3s ease; }
 
+    /* ===== HERO SECTION ===== */
+    .hero-section { margin-bottom: 16px; }
     .cur-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
 
     /* Hero card */
     .hero { padding: 28px; }
-    .hero-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
-    .hero-temp { font-size: 4.5rem; font-weight: 300; line-height: 1; letter-spacing: -0.04em; text-shadow: var(--glow); }
+    .hero-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: nowrap; }
+    .hero-row > div:first-child { flex: 1 1 auto; min-width: 0; }
+    .hero-temp { font-size: 4.5rem; font-weight: 300; line-height: 1; letter-spacing: -0.04em; text-shadow: var(--glow); transition: opacity 0.15s; }
+    .hero-feels { color: var(--text-muted); font-size: 0.85rem; }
     .hero-temp sup { font-size: 1.8rem; font-weight: 400; opacity: 0.5; vertical-align: super; }
     .hero-desc { font-size: 1.1rem; color: var(--text-secondary); margin-top: 6px; }
-    .hero-feels { color: var(--text-muted); font-size: 0.85rem; }
+    .hero-wind { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+    .hero-wind-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 6px;
+      align-items: baseline;
+      min-width: 0;
+    }
+    .hero-wind,
+    .hero-gust {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 4px;
+      white-space: nowrap;
+    }
     .hero-icon-box {
-      width: 130px; height: 130px; border-radius: 50%;
+      flex: 0 0 150px;
+      width: 150px; height: 150px; 
+      min-width: 100px; min-height: 100px; 
+      border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       animation: bobble 6s ease-in-out infinite;
     }
-    .hero-icon { width: 100px; height: 100px; filter: drop-shadow(0 6px 24px rgba(56,189,248,0.2)); }
+    .hero-icon { width: 120px; height: 120px; flex: 0 0 auto; filter: drop-shadow(0 6px 24px rgba(56,189,248,0.2)); }
     @keyframes bobble { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
 
-    /* Sun/Moon compact */
+    /* Astro row */
     .astro-row {
       display: grid; grid-template-columns: repeat(4,1fr); gap: 12px;
       margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);
@@ -164,7 +187,7 @@
     .extra { padding: 14px; text-align: center; }
     .extra .stat-val { font-size: 1.1rem; }
 
-    /* ===== HOURLY STRIP (Loxone style — bottom section) ===== */
+    /* ===== HOURLY STRIP ===== */
     .hour-strip-wrap { margin-top: 16px; }
     .hour-strip-title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; padding-left: 4px; }
     .hour-strip {
@@ -181,28 +204,9 @@
     }
     .hcard.selected { background: linear-gradient(135deg, var(--tab-from), var(--tab-to)); border-color: var(--tab-border); }
     .hcard-time { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; }
-    .hcard-icon { width: 32px; height: 32px; margin: 0 auto 6px; }
+    .hcard-icon { width: 32px; height: 32px; margin: 0 auto 6px; display: block; }
     .hcard-temp { font-size: 1.1rem; font-weight: 600; }
-    .hcard-pop { font-size: 0.68rem; color: var(--sky); margin-top: 2px; }
-
-    /* ===== SVG TEMP CHART ===== */
-    .chart-wrap {
-      margin-top: 16px; overflow-x: auto; padding-bottom: 4px;
-      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
-    }
-    .chart-wrap::-webkit-scrollbar { height: 6px; }
-    .chart-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-    /* ===== HOURLY TAB ===== */
-    .hourly-detail { padding: 24px; }
-    .hourly-detail h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; }
-    .hourly-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px,1fr)); gap: 8px; }
-    .hg-card { padding: 14px 8px; text-align: center; border-radius: 14px; }
-    .hg-time { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; }
-    .hg-icon { width: 36px; height: 36px; margin: 0 auto 6px; }
-    .hg-temp { font-size: 1.15rem; font-weight: 600; }
-    .hg-pop { font-size: 0.68rem; color: var(--sky); }
-    .hg-wind { font-size: 0.68rem; color: var(--text-muted); }
+    .hcard-rainProb { font-size: 0.68rem; color: var(--sky); margin-top: 2px; }
 
     /* ===== DAILY TAB ===== */
     .daily-wrap { padding: 24px; }
@@ -216,12 +220,30 @@
     .drow-date { font-size: 0.75rem; color: var(--text-muted); }
     .drow-icon { width: 40px; height: 40px; }
     .drow-desc { font-size: 0.8rem; color: var(--text-secondary); }
-    .drow-pop { font-size: 0.75rem; color: var(--sky); text-align: center; }
+    .drow-rainProb { font-size: 0.75rem; color: var(--sky); text-align: center; }
+    .drow-rainProb i { width: 14px; height: 14px; flex-shrink: 0; }
     .drow-temps { display: flex; align-items: center; gap: 6px; }
     .drow-lo { color: var(--sky); font-weight: 500; min-width: 30px; text-align: right; font-size: 0.85rem; }
     .drow-hi { color: var(--amber); font-weight: 500; min-width: 30px; font-size: 0.85rem; }
     .drow-bar { flex: 1; height: 5px; border-radius: 3px; background: var(--temp-bar-bg); position: relative; overflow: hidden; }
     .drow-fill { position: absolute; top: 0; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--sky), var(--amber)); }
+    .drow { cursor: pointer; transition: all 0.2s; }
+    .drow:hover { border-color: var(--border-hover); }
+    .drow-detail { display: none; grid-column: 1 / -1; padding: 12px 0 4px; border-top: 1px solid var(--border); margin-top: 8px; }
+    .drow.expanded .drow-detail { display: block; }
+    .drow-detail-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .drow-detail-item { text-align: center; }
+    .drow-detail-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 2px; }
+    .drow-detail-val { font-size: 0.9rem; font-weight: 500; }
+
+    /* ===== SVG TEMP CHART ===== */
+    .chart-wrap {
+      margin-top: 16px; overflow-x: auto; padding-bottom: 4px;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+    .chart-wrap::-webkit-scrollbar { height: 6px; }
+    .chart-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .chart-wrap svg { width: 100%; height: auto; }
 
     .footer { text-align: center; color: var(--text-muted); font-size: 0.75rem; margin-top: 24px; padding: 12px; }
 
@@ -232,20 +254,594 @@
       .astro-row { grid-template-columns: repeat(2,1fr); }
     }
     @media (max-width: 600px) {
-      body { padding: 6px; }
-      .hero-temp { font-size: 3.5rem; }
-      .hero-icon-box { width: 100px; height: 100px; }
-      .hero-icon { width: 76px; height: 76px; }
+      body { padding: 4px; }
+      .header { margin-bottom: 12px; gap: 8px; }
+      .hdr-title { font-size: 1.1rem; }
+      .hdr-meta { font-size: 0.72rem; }
+      .hdr-logo { width: 30px; height: 30px; border-radius: 8px; }
+      .controls { gap: 6px; }
+      .theme-btn { width: 34px; height: 34px; border-radius: 10px; }
+      .tabs { flex-wrap: nowrap; gap: 2px; padding: 3px; }
+      .tab { padding: 6px 12px; font-size: 0.75rem; white-space: nowrap; }
+      .glass { border-radius: 14px; }
+      .hero { padding: 16px; }
+      .hero-row { gap: 12px; }
+      .hero-temp { font-size: 3.2rem; }
+      .hero-temp sup { font-size: 1.4rem; }
+      .hero-desc { font-size: 0.95rem; }
+      .hero-icon-box { width: 90px; height: 90px; }
+      .hero-icon { width: 68px; height: 68px; }
+      .astro-row { grid-template-columns: repeat(2,1fr); gap: 8px; margin-top: 14px; padding-top: 12px; }
+      .astro-emoji { width: 32px; height: 32px; font-size: 1.1rem; border-radius: 8px; }
+      .astro-label { font-size: 0.6rem; }
+      .astro-val { font-size: 0.85rem; }
+      .side-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .stat { padding: 12px; }
+      .stat-label { font-size: 0.6rem; }
+      .stat-val { font-size: 1rem; }
+      .extra-row { grid-template-columns: repeat(3,1fr); gap: 6px; margin-top: 10px; }
+      .extra { padding: 10px 8px; }
+      .hour-strip-wrap { padding: 0 4px; }
+      .hour-strip-title { font-size: 0.68rem; margin-bottom: 6px; }
+      .hcard { min-width: 72px; padding: 10px 6px; border-radius: 12px; }
+      .hcard-icon { width: 28px; height: 28px; margin: 0 auto 4px; }
+      .hcard-temp { font-size: 1rem; }
+      .hcard-time { font-size: 0.65rem; margin-bottom: 4px; }
+      .hcard-rainProb { font-size: 0.62rem; }
+      .chart-wrap { margin-top: 10px; }
+      .daily-wrap { padding: 14px; }
+      .daily-wrap h2 { font-size: 0.95rem; margin-bottom: 10px; }
+      .drow { grid-template-columns: 52px 36px 1fr; gap: 8px; padding: 10px 12px; border-radius: 12px; margin-bottom: 4px; }
+      .drow-desc, .drow-rainProb { display: none; }
+      .drow-day { font-size: 0.82rem; }
+      .drow-date { font-size: 0.68rem; }
+      .drow-icon { width: 32px; height: 32px; }
+      .drow-lo, .drow-hi { font-size: 0.78rem; min-width: 26px; }
+      .drow-detail-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .drow-detail-label { font-size: 0.6rem; }
+      .drow-detail-val { font-size: 0.82rem; }
+      .footer { margin-top: 16px; padding: 8px; font-size: 0.68rem; }
+    }
+    @media (max-width: 380px) {
+      .hero-row { flex-direction: column; align-items: flex-start; }
+      .hero-icon-box { align-self: center; }
+      .hero-temp { font-size: 2.8rem; }
+      .astro-row { grid-template-columns: 1fr 1fr; gap: 6px; }
       .extra-row { grid-template-columns: repeat(2,1fr); }
-      .drow { grid-template-columns: 56px 40px 1fr; }
-      .drow-desc, .drow-pop { display: none; }
-      .tabs { flex-wrap: wrap; }
-      .tab { padding: 7px 12px; font-size: 0.78rem; }
-      .side-stats { grid-template-columns: 1fr 1fr; }
+      .drow { grid-template-columns: 44px 30px 1fr; gap: 6px; padding: 8px 10px; }
+      .drow-icon { width: 28px; height: 28px; }
+      .hcard { min-width: 64px; padding: 8px 4px; }
+    }
+
+    /* ===== LOADING OVERLAY ===== */
+    .loading-overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.6);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    }
+    html.light .loading-overlay { background: rgba(240,244,248,0.6); }
+    .loading-spinner {
+      width: 48px; height: 48px; border-radius: 50%;
+      border: 3px solid rgba(56,189,248,0.3);
+      border-top-color: var(--sky);
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-banner {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(244,63,94,0.15); border: 1px solid var(--rose);
+      color: var(--text-primary); padding: 12px 24px; border-radius: 12px;
+      z-index: 101; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      font-size: 0.9rem; max-width: 90%;
     }
   </style>
 </head>
 <body>
+
+<script>
+// ===== CONFIGURATION =====
+var JSON_BASE = './';
+var SUPPORTED_LANGS = ['de', 'en', 'es', 'nl', 'sk'];
+var REFRESH_INTERVAL_MS = 60 * 60 * 1000;
+
+// getUrlParam is needed here; defined again in second script block as well
+// Use a self-contained version to avoid ordering issues
+function getUrlParam(name) {
+  var m = location.search.match(new RegExp('[?&]' + name + '=([^&]*)'));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+var ICONSET = getUrlParam('iconset') || 'naturalistic';
+var currentLang = (function() {
+  var p = getUrlParam('lang');
+  return (p && SUPPORTED_LANGS.indexOf(p) !== -1) ? p : 'de';
+})();
+
+// Global state
+var liveData = {
+  current: null,
+  location: null,
+  refreshInterval: null,
+  hourlyToday: [],
+  hourlyTomorrow: [],
+  daily: [],
+  dailyCount: 0,
+  lang: null,
+  icons: null
+};
+
+// Rendered hourly arrays for preselectHour
+var hourlyTodayRendered = [];
+var hourlyTomorrowRendered = [];
+
+// Selection state (persisted across refreshes)
+var selectedTab = 'heute';
+var selectedHourIdx = 0;
+var selectedHourValue = 'now';
+
+// ===== FETCH HELPERS =====
+function checkOk(response) {
+  if (!response.ok) throw new Error('HTTP ' + response.status + ' bei ' + response.url);
+  return response;
+}
+
+/**
+ * Bestimmt, ob der Mond zunimmt (waxing) oder abnimmt (waning)
+ * @param {number} age - Mondalter in Tagen (0..29.53)
+ * @returns {'waxing'|'waning'}
+ */
+function getMoonDirection(age) {
+    const synodicMonth = 29.53;
+    age = age % synodicMonth; // normalisieren
+
+    // Zunehmend < Vollmond, abnehmend > Vollmond
+    if (age < (synodicMonth / 2)) {
+        return 'waxing';
+    } else {
+        return 'waning';
+    }
+}
+
+
+/**
+ * Gibt die Mondphasenzahl (0...4 bei quarter, 0...2 bei half) zurück.
+ * 0 = Neumond, 1 = Zunehmend, 2 = Erstes Viertel, 3 = Zunehmend gibbous, 4 = Vollmond usw.
+ * @param {number} age: Mondalter in Tagen (0..29.53)
+ * @param {number} resolution: 5 für "quarter" (default), 3 für "half"
+ * @returns {number}
+ */
+function getMoonPhasePart(age, resolution = 5) {
+    const synodicMonth = 29.53;
+
+    // Alter auf 0..29.53 normieren
+    age = age % synodicMonth;
+
+    // Vollmond liegt bei der Hälfte des Monats
+    const fullSize = synodicMonth / 2;
+
+    // Für die zweite Hälfte (abnehmend bis Neumond), Spiegelung um Vollmond
+    if (age > fullSize) {
+        age = synodicMonth - age;
+    }
+
+    return Math.round(age / fullSize * (resolution - 1));
+}
+
+function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
+function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+function showError(msg) {
+  var b = document.getElementById('errorBanner');
+  var m = document.getElementById('errorMsg');
+  m.textContent = msg || (liveData.lang ? liveData.lang.theme.error_loading : 'Daten konnten nicht geladen werden.');
+  b.style.display = 'block';
+  setTimeout(function() { b.style.display = 'none'; }, 8000);
+}
+
+// ===== DATA LOADING =====
+function loadAllData() {
+  showLoading();
+  return Promise.all([
+    fetch(JSON_BASE + 'current.json').then(checkOk).then(function(r) { return r.json(); }),
+    fetch(JSON_BASE + 'hourlyforecast.json').then(checkOk).then(function(r) { return r.json(); }),
+    fetch(JSON_BASE + 'dailyforecast.json').then(checkOk).then(function(r) { return r.json(); }),
+    fetch(JSON_BASE + 'lang-' + currentLang + '.json').then(checkOk).then(function(r) { return r.json(); }),
+    fetch(JSON_BASE + 'icons/' + ICONSET + '/icon_mapping.json').then(checkOk).then(function(r) { return r.json(); })
+  ]).then(function(results) {
+    hideLoading();
+
+    // Parse envelopes from new camelCase JSON structure
+    var currentEnvelope = results[0] || {};
+    liveData.current = currentEnvelope.current || {};
+    liveData.location = currentEnvelope.location || {};
+    liveData.refreshInterval = (currentEnvelope.refresh || 15) * 60 * 1000;
+
+    liveData.lang = results[3];
+    liveData.icons = (results[4] && results[4].icons) || {};
+    liveData.iconFormat = (results[4] && results[4].format) || 'png';
+
+    // Derive datetime from time object if missing
+    var curTime = liveData.current.time || {};
+    if (!curTime.datetime && curTime.epoch) {
+      curTime.datetime = new Date(curTime.epoch * 1000).toISOString();
+    }
+    if (!curTime.datetime) {
+      curTime.datetime = new Date().toISOString();
+    }
+    if (!liveData.current.time) liveData.current.time = curTime;
+
+    // Dynamic refresh interval
+    REFRESH_INTERVAL_MS = liveData.refreshInterval || REFRESH_INTERVAL_MS;
+
+    // Split hourly into today/tomorrow using datetime from current.json as reference
+    var todayStr = curTime.datetime.slice(0, 10);
+    var todayDate = new Date(todayStr + 'T00:00:00');
+    var tomorrowDate = new Date(todayDate);
+    tomorrowDate.setDate(todayDate.getDate() + 1);
+    var pad2 = function(n) { return n < 10 ? '0' + n : '' + n; };
+    var tomorrowStr = tomorrowDate.getFullYear() + '-' + pad2(tomorrowDate.getMonth() + 1) + '-' + pad2(tomorrowDate.getDate());
+
+    var hourlyEnvelope = results[1] || {};
+    var hourlyRaw = hourlyEnvelope.hourlyforecast || [];
+    if (!Array.isArray(hourlyRaw)) hourlyRaw = [];
+    hourlyRaw.forEach(function(h) {
+      var ht = h.time || {};
+      if (!ht.datetime && ht.epoch) ht.datetime = new Date(ht.epoch * 1000).toISOString();
+      if (!h.time) h.time = ht;
+    });
+    liveData.hourlyToday = hourlyRaw.filter(function (h) {
+      return h.time &&
+        h.time.datetime &&
+        h.time.datetime.slice(0, 10) === todayStr &&
+        parseInt(h.time.datetime.slice(11, 13), 10) > parseInt(curTime.datetime.slice(11, 13), 10);
+    });
+    liveData.hourlyTomorrow = hourlyRaw.filter(function(h) { return h.time && h.time.datetime && h.time.datetime.slice(0, 10) === tomorrowStr; });
+
+    // Transform daily data
+    var dailyEnvelope = results[2] || {};
+    var dailyRaw = dailyEnvelope.dailyforecast || [];
+    if (!Array.isArray(dailyRaw)) dailyRaw = [];
+    dailyRaw.forEach(function(d) {
+      var dt = d.time || {};
+      if (!dt.datetime && dt.epoch) dt.datetime = new Date(dt.epoch * 1000).toISOString().slice(0, 10);
+      if (!d.time) d.time = dt;
+    });
+    var weekdaysShort = (liveData.lang && liveData.lang.theme && liveData.lang.theme.weekdays_short) || ['So','Mo','Di','Mi','Do','Fr','Sa'];
+    liveData.daily = dailyRaw.map(function(d) {
+      var dtime = (d.time && d.time.datetime) || new Date().toISOString();
+      var dt = new Date(dtime);
+      return {
+        day: weekdaysShort[dt.getDay()],
+        date: pad2(dt.getDate()) + '.' + pad2(dt.getMonth() + 1) + '.',
+        weatherCode: d.weatherCode ? d.weatherCode.weather4lox : undefined,
+        high: d.temperature && d.temperature.max ? d.temperature.max.air : undefined,
+        low: d.temperature && d.temperature.min ? d.temperature.min.air : undefined,
+        rainProb: d.precipitation ? d.precipitation.probability : undefined,
+        desc: d.weatherCode ? d.weatherCode.description : undefined,
+        wind: d.wind && d.wind.avg ? d.wind.avg.speed : undefined,
+        windGust: d.wind && d.wind.max ? d.wind.max.gust : undefined,
+        windDir: d.wind && d.wind.avg ? d.wind.avg.dirLabel : undefined,
+        humidity: d.humidity ? d.humidity.avg : undefined,
+        humidityMax: d.humidity ? d.humidity.max : undefined,
+        humidityMin: d.humidity ? d.humidity.min : undefined,
+        sunrise: d.sunrise,
+        sunset: d.sunset,
+        rainAmount: d.precipitation ? d.precipitation.rainHigh : undefined,
+        snow: d.precipitation ? d.precipitation.snowHigh : undefined,
+        uvi: d.uvIndex
+      };
+    });
+    liveData.dailyCount = liveData.daily.length;
+
+    renderAll();
+    return liveData;
+  }).catch(function(err) {
+    hideLoading();
+    showError(err.message);
+    throw err;
+  });
+}
+
+// ===== ICON RESOLUTION via icon_mapping.json =====
+function isDaytime(datetimeStr, sunriseStr, sunsetStr) {
+  if (!datetimeStr) return true;
+  var h = parseInt(datetimeStr.slice(11, 13));
+  var sr = parseInt((sunriseStr || '06:00').split(':')[0]);
+  var ss = parseInt((sunsetStr || '18:00').split(':')[0]);
+  return h >= sr && h < ss;
+}
+
+function buildIconPath(filename) {
+  return 'icons/' + ICONSET + '/' + filename;
+}
+
+function phaseFilename(baseFilename, phaseIdx, pchar, ext) {
+  return buildIconPath(baseFilename + '_' + phaseIdx + pchar + ext);
+}
+
+function resolveIcon(weatherCode, isNight, moonAge) {
+
+  const ext = '.' + (liveData.iconFormat || 'png');
+  const iconEntry = liveData.icons && liveData.icons[weatherCode];
+  var iconName = null;
+
+  if (iconEntry) {
+    if (isNight) {
+      const moonPhases = iconEntry.moonPhases || 0;
+      if (moonPhases === 3) {
+        return phaseFilename(iconEntry.iconNight, getMoonPhasePart(moonAge, 3), 'h', ext);
+      } else if (moonPhases === 5) {
+        return phaseFilename(iconEntry.iconNight, getMoonPhasePart(moonAge, 5), 'q', ext);
+      } else {
+        return buildIconPath(iconEntry.iconNight + ext);
+      }
+    } else {
+      return buildIconPath(iconEntry.iconDay + ext);
+    }
+  } else {
+    // If no mapping found, fallback to a generic icon based on weather code category
+    return 'icons/' + ICONSET + '/no_data_day.png'; 
+  }
+}
+
+// ===== TRANSFORM HOURLY for renderHourStrip =====
+function transformHourly(hourlyArray, sunriseStr, sunsetStr) {
+  return hourlyArray.map(function(h) {
+    var hTime = (h.time && h.time.datetime) || '';
+    var hourValue = hTime ? parseInt(hTime.slice(11, 13), 10) : null;
+
+    return {
+      hour: hTime ? hTime.slice(11, 13) : '--',
+      hourValue: hourValue,
+      temp: h.temperature ? h.temperature.air : undefined,
+      feelsLike: h.temperature ? h.temperature.feelsLike : undefined,
+      rainProb: h.precipitation ? h.precipitation.probability : undefined,
+      rainAmount: h.precipitation ? h.precipitation.rainHigh : undefined,
+      wind: h.wind ? h.wind.speed : undefined,
+      windDir: h.wind ? h.wind.direction : undefined,
+      humidity: h.humidity,
+      pressure: h.pressure,
+      uvi: h.uvIndex,
+      clouds: h.cloudCover,
+      weatherCode: h.weatherCode ? h.weatherCode.weather4lox : undefined,
+      moonAge: h.moon ? h.moon.age : 0,
+      moonDirection: h.moon ? h.moon.direction : null,
+      isNight: h.isNight,
+      desc: h.weatherCode ? h.weatherCode.description : undefined,
+      dewpoint: h.dewpoint,
+      gust: h.wind ? h.wind.gust : undefined,
+      visibility: h.visibility,
+      time: h.time,
+      isNow: false
+    };
+  });
+}
+
+function getWindDirLabel(deg) {
+   // Verify input & value
+  if (deg === null || deg === undefined) return "--";
+  if (typeof deg === 'string') deg = deg.trim();
+  // Float-Parsing with Regex (like Perl)
+  if (!/^-?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(String(deg))) return "--";
+
+  deg = Number(deg);
+  // Normalize to 0..360
+  deg = ((deg % 360) + 360) % 360;
+
+  // Directions (8-point compass)
+  const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  const idx = Math.floor((deg + 22.5) / 45) % 8;
+
+  const dirKey = dirs[idx];
+  var translations = liveData.lang && liveData.lang.wind_directions;
+  var label = (translations && translations[dirKey]) ? translations[dirKey] : dirKey;
+
+  return label || '--';
+}
+
+function getWindDirShort(deg) {
+  var labelMatches = getWindDirLabel(deg).match(/[A-Z]/g);
+  var labelShort = labelMatches ? labelMatches.join('') : "--";
+  return labelShort;
+}
+
+
+// ===== i18n =====
+function formatI18nString(str, vars) {
+  if (!str || typeof str !== 'string') return str;
+  return str.replace(/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g, function(_, key) {
+    return vars && vars[key] !== undefined ? String(vars[key]) : '{' + key + '}';
+  });
+}
+
+function applyLang(strings, vars) {
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n');
+    var parts = key.split('.');
+    var val = strings;
+
+    for (var i = 0; i < parts.length; i++) {
+      val = val && val[parts[i]];
+    }
+
+    if (val && typeof val === 'string') {
+      el.textContent = formatI18nString(val, vars);
+    }
+  });
+}
+
+function getRoundedCurrentHour(date) {
+  var rounded = new Date(date);
+  rounded.setMinutes(0, 0, 0);
+  return rounded;
+}
+
+function buildNowEntry(currentData, nowLabel) {
+  var currentTime = currentData.time && currentData.time.datetime
+    ? new Date(currentData.time.datetime)
+    : new Date();
+
+  var roundedTime = getRoundedCurrentHour(currentTime);
+  var hourValue = roundedTime.getHours();
+
+  var cTemp = currentData.temperature || {};
+  var cWind = currentData.wind || {};
+  var cWx = currentData.weatherCode || {};
+  var cPrecip = currentData.precipitation || {};
+
+  return {
+    hour: nowLabel,
+    hourValue: hourValue,
+    time: {
+      datetime: roundedTime.toISOString()
+    },
+    temp: cTemp.air,
+    feelsLike: cTemp.feelsLike,
+    rainProb: cPrecip.probability,
+    rainAmount: cPrecip.rainToday,
+    wind: cWind.speed,
+    windDir: cWind.direction,
+    humidity: currentData.humidity,
+    pressure: currentData.pressure,
+    uvi: currentData.uvIndex,
+    clouds: currentData.cloudCover,
+    weatherCode: cWx.weather4lox,
+    moonAge: currentData.moon ? currentData.moon.age : 0,
+    moonDirection: currentData.moon ? currentData.moon.direction : null,
+    isNight: currentData.isNight,
+    desc: cWx.description,
+    dewpoint: currentData.dewpoint,
+    gust: cWind.gust,
+    visibility: currentData.visibility,
+    isNow: true
+  };
+}
+
+function findHourIndex(dataArray, hourValue) {
+  for (var i = 0; i < dataArray.length; i++) {
+    if (dataArray[i].hourValue === hourValue) return i;
+  }
+  return 0;
+}
+
+function restoreSelectionAfterRender() {
+  var activeTabEl = document.querySelector('.tab.active');
+  var currentActiveTab = activeTabEl ? activeTabEl.getAttribute('data-tab') : 'heute';
+
+  if (currentActiveTab !== selectedTab) {
+    selectedTab = currentActiveTab;
+  }
+
+  var stripId = (selectedTab === 'heute') ? 'hourStripHeute' : 'hourStripMorgen';
+  var dataArray = (selectedTab === 'heute') ? hourlyTodayRendered : hourlyTomorrowRendered;
+  var cards = document.getElementById(stripId).querySelectorAll('.hcard');
+
+  var idx = selectedHourIdx;
+  if (selectedTab === 'heute' && selectedHourValue === 'now') {
+    idx = 0;
+  } else if (selectedTab === 'morgen' && selectedHourValue === '12') {
+    idx = findHourIndex(dataArray, '12');
+  }
+
+  if (!cards.length) return;
+  idx = Math.min(Math.max(idx, 0), cards.length - 1);
+  if (cards[idx]) {
+    selectHour(cards[idx], dataArray);
+    cards[idx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+}
+
+// ===== RENDER ALL =====
+function renderAll() {
+  var c = liveData.current;
+  var sunrise = c.sunrise || '--:--';
+  var sunset = c.sunset || '--:--';
+  var cTemp = c.temperature || {};
+  var cWind = c.wind || {};
+  var cWx = c.weatherCode || {};
+  var cPrecip = c.precipitation || {};
+  var cTime = c.time || {};
+  var pad2 = function(n) { return n < 10 ? '0' + n : '' + n; };
+
+  // Get localized "now" label from language file
+  var nowLabel = (liveData.lang && liveData.lang.theme && liveData.lang.theme.now) || 'Now';
+  var nowEntry = buildNowEntry(c, nowLabel);
+
+  // Transform hourly arrays; prepend nowEntry to heute
+  hourlyTodayRendered = [nowEntry].concat(transformHourly(liveData.hourlyToday, sunrise, sunset));
+  hourlyTomorrowRendered = transformHourly(liveData.hourlyTomorrow, sunrise, sunset);
+
+  // Render hour strips (handle empty tomorrow gracefully)
+  renderHourStrip('hourStripHeute', hourlyTodayRendered);
+  if (hourlyTomorrowRendered.length > 0) {
+    renderHourStrip('hourStripMorgen', hourlyTomorrowRendered);
+  } else {
+    var morgenStrip = document.getElementById('hourStripMorgen');
+    if (morgenStrip) morgenStrip.innerHTML = '<div style="color:var(--text-muted);padding:16px;font-size:0.85rem;">' + (liveData.lang ? liveData.lang.theme.loading : 'Keine Daten') + '</div>';
+  }
+  renderDaily('dailyWrap', liveData.daily);
+
+  // Update header city
+  document.getElementById('hdrCity').textContent = (liveData.location && liveData.location.city) || '--';
+
+  // Reset hero context
+  var ctx = document.getElementById('heroContext');
+  ctx.textContent = (liveData.lang && liveData.lang.theme && liveData.lang.theme.current) || 'Aktuell';
+  ctx.style.opacity = '0.6';
+
+  // Update hero with current data
+  document.getElementById('heroTemp').innerHTML = Math.round(cTemp.air * 10) / 10 + '<sup>\u00b0C</sup>';
+  document.getElementById('heroFeelsLike').textContent = (cTemp.feelsLike != null ? Math.round(cTemp.feelsLike * 10) / 10 : '--') + '\u00b0C';
+  document.getElementById('heroDesc').textContent = cWx.description || '--';
+  document.getElementById('heroWind').textContent = (cWind.speed != null ? cWind.speed : '--') + ' km/h ' + getWindDirLabel(cWind.direction) + ', ';
+  document.getElementById('heroGust').textContent = (cWind.gust != null ? cWind.gust : '--') + ' km/h';
+  document.getElementById('heroHumidity').textContent = (c.humidity != null ? c.humidity : '--') + '%';
+  document.getElementById('heroIcon').src = resolveIcon(cWx.weather4lox, c.isNight, c.moon ? c.moon.age : 0);
+
+  // Sunrise/Sunset
+  document.getElementById('heroSunrise').textContent = sunrise;
+  document.getElementById('heroSunset').textContent = sunset;
+  
+  // Side stats
+  document.getElementById('statHumidity').textContent = (c.humidity != null ? c.humidity : '--') + '%';
+  document.getElementById('statWind').textContent = (cWind.speed != null ? cWind.speed : '--') + ' km/h';
+  document.getElementById('statWindDir').textContent = getWindDirShort(cWind.direction);
+  document.getElementById('statPressure').innerHTML = (c.pressure != null ? c.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
+  document.getElementById('statVisibility').innerHTML = (c.visibility != null ? c.visibility : '--') + ' <small style="color:var(--text-muted)">km</small>';
+
+  // Extra stats
+  document.getElementById('statDewpoint').textContent = (c.dewpoint != null ? Math.round(c.dewpoint * 10) / 10 : '--') + '\u00b0C';
+  document.getElementById('statPrecip').textContent = (cPrecip.rainToday != null ? cPrecip.rainToday : 0) + ' mm';
+  document.getElementById('statUVI').textContent = c.uvIndex != null ? c.uvIndex : '--';
+  document.getElementById('statClouds').textContent = (c.cloudCover != null ? c.cloudCover : '--') + '%';
+
+  // Render temperature charts
+  renderTempChart('tempChartHeute', hourlyTodayRendered);
+  renderTempChart('tempChartMorgen', hourlyTomorrowRendered);
+
+  // Apply i18n
+  if (liveData.lang) applyLang(liveData.lang, { fcastDays: liveData.dailyCount });
+
+  // Hide stats with no data
+  hideEmptyStats();
+
+  // Restore previously selected hour/tab, or preselect default
+  restoreSelectionAfterRender();
+
+  // Drag scroll
+  makeDragScroll(document.getElementById('hourStripHeute'));
+  makeDragScroll(document.getElementById('hourStripMorgen'));
+}
+
+// ===== AUTO-REFRESH =====
+function scheduleRefresh() {
+  setTimeout(function() {
+    loadAllData()
+      .then(function() { scheduleRefresh(); })
+      .catch(function() { scheduleRefresh(); });
+  }, REFRESH_INTERVAL_MS);
+}
+</script>
+
 <div class="grain"></div>
 <div class="page">
 
@@ -260,11 +856,11 @@
       </div>
       <div class="hdr-meta">
         <span class="dot"></span>
-        <span class="mono"><!--$cur_hour-->:<!--$cur_min--></span>
-        <span>•</span>
-        <span><!--$cur_loc_n--></span>
-        <span>•</span>
-        <span class="mono" style="font-size:0.7rem"><!--$cur_day-->.<!--$cur_month-->.<!--$cur_year--></span>
+        <span id="hdrCity" style="font-weight:500;color:var(--text-secondary)">--</span>
+        <span>&bull;</span>
+        <span id="hdrTime" class="mono">--:--</span>
+        <span>&bull;</span>
+        <span class="mono" style="font-size:0.7rem" id="hdrDate">--.--.----</span>
       </div>
     </div>
     <div class="controls">
@@ -273,31 +869,31 @@
         <svg id="ic-moon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
       <div class="tabs glass">
-        <button class="tab active" data-tab="current">Aktuell</button>
-        <button class="tab" data-tab="hourly">Stündlich</button>
-        <button class="tab" data-tab="daily">Tage</button>
+        <button class="tab active" data-tab="heute" data-i18n="theme.tab_today">Heute</button>
+        <button class="tab" data-tab="morgen" data-i18n="theme.tab_tomorrow">Morgen</button>
+        <button class="tab" data-tab="tage" data-i18n="theme.tab_days">Tage</button>
       </div>
     </div>
   </header>
 
-  <!-- ===================================================== -->
-  <!-- TAB: CURRENT — Loxone-Style (detail top + strip bottom) -->
-  <!-- ===================================================== -->
-  <div id="panel-current" class="tab-panel active">
-
+  <!-- ===== HERO SECTION (shared for Heute + Morgen, hidden for Tage) ===== -->
+  <div id="heroSection" class="hero-section">
     <div class="cur-layout">
       <!-- Main hero -->
       <div class="glass hero accent-bg">
         <div class="hero-row">
           <div>
-            <div class="hero-temp" id="heroTemp"><!--$cur_tt--><sup>°C</sup></div>
-            <div class="hero-feels" id="heroFeels">Gefühlt <!--$cur_tt_fl--> °C</div>
-            <div class="hero-desc" id="heroDesc"><!--$cur_we_des--></div>
+            <div id="heroContext" style="font-size:0.75rem;font-weight:600;color:var(--sky);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;opacity:0;transition:opacity 0.3s"></div>
+            <div class="hero-temp" id="heroTemp">--<sup>&deg;C</sup></div>
+            <div class="hero-feels" id="heroFeelsLike" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">--<sup>&deg;C</sup></div>
+            <div class="hero-desc" id="heroDesc">--</div>
+            <div class="hero-wind-group" style="display:flex;gap:8px;align-items:center;margin-top:4px">
+              <span class="hero-wind" id="heroWind" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">-- km/h,</span>
+              <span class="hero-gust" id="heroGust" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">-- km/h</span>
+            </div>
           </div>
-          <div class="hero-icon-box accent-bg" id="heroIconBox">
-            <img class="hero-icon" id="heroIcon"
-                 src="<!--$webpath-->/icons/<!--$iconset-->/<!--$cur_dayornight-->/<!--$cur_we_icon-->.png"
-                 alt="<!--$cur_we_des-->">
+          <div class="hero-icon-box accent-bg">
+            <img class="hero-icon" id="heroIcon" src="icons/color/cloudy_day.png" alt="">
           </div>
         </div>
 
@@ -305,58 +901,40 @@
         <div class="astro-row">
           <div class="astro-item">
             <div class="astro-emoji" style="background:rgba(251,191,36,0.1)">
-              <svg
-                id="ic-sunrise" width="24" height="24" viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m 11.75,2.73 v 2" stroke="#fbbf24" />
                 <path d="m 5.5,4.75 1.4,1.4" stroke="#fbbf24" />
                 <path d="m 2.75,11 h 2" stroke="#fbbf24" />
                 <path d="m 18.5,11 h 2" stroke="#fbbf24" />
                 <path d="m 18.15,5 -1.4,1.4" stroke="#fbbf24" />
-                <path d="m 11.75,7.73 c -2,0 -4,1.3 -4,4 H 15.75 C 15.75,9 13.75,7.73 11.75,7.73 Z" />
                 <path d="M 11.75 7.73 C 9.75 7.73 7.75 9 7.75 11.73 L 15.75 11.725 C 15.75 9 13.75 7.73 11.75 7.73 z" style="fill:#fbbf24;stroke:#fbbf24" />
                 <path d="M 20.75,14.73 H 2.75" />
-                <path d="M 12 17 L 8 21 L 16 21 L 12 17 z M 8 21 L 16 21 L 8 21 z " style="fill:currentColor" />
+                <path d="M 12 17 L 8 21 L 16 21 L 12 17 z" style="fill:currentColor" />
               </svg>
             </div>
-            <div><div class="astro-label">Sonnenaufgang</div><div class="astro-val mono"><!--$cur_sun_r--></div></div>
+            <div><div class="astro-label" data-i18n="theme.sunrise">Sonnenaufgang</div><div class="astro-val mono" id="heroSunrise">06:23</div></div>
           </div>
           <div class="astro-item">
             <div class="astro-emoji" style="background:rgba(249,115,22,0.1)">
-              <svg
-                id="ic-sunrise" width="24" height="24" viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m 11.75,2.73 v 2" stroke="#fbbf24" />
                 <path d="m 5.5,4.75 1.4,1.4" stroke="#fbbf24" />
                 <path d="m 2.75,11 h 2" stroke="#fbbf24" />
                 <path d="m 18.5,11 h 2" stroke="#fbbf24" />
                 <path d="m 18.15,5 -1.4,1.4" stroke="#fbbf24" />
-                <path d="m 11.75,7.73 c -2,0 -4,1.3 -4,4 H 15.75 C 15.75,9 13.75,7.73 11.75,7.73 Z" />
                 <path d="M 11.75 7.73 C 9.75 7.73 7.75 9 7.75 11.73 L 15.75 11.725 C 15.75 9 13.75 7.73 11.75 7.73 z" style="fill:#fbbf24;stroke:#fbbf24" />
                 <path d="M 20.75,14.73 H 2.75" />
                 <path d="m 12,22 4,-4 H 8 Z" style="fill:currentColor" />
               </svg>
             </div>
-            <div><div class="astro-label">Sonnenuntergang</div><div class="astro-val mono"><!--$cur_sun_s--></div></div>
+            <div><div class="astro-label" data-i18n="theme.sunset">Sonnenuntergang</div><div class="astro-val mono" id="heroSunset">18:05</div></div>
           </div>
           <div class="astro-item">
-            <div class="astro-emoji" style="background:rgba(139,92,246,0.1)">🌙</div>
+            <div class="astro-emoji" style="background:rgba(139,92,246,0.1)">&nbsp;&#x1F4A7;</div>
             <div>
-              <div class="astro-label">Mondlicht</div>
-              <div class="astro-val mono"><!--$cur_moon_p-->%</div>
+              <div class="astro-label" data-i18n="theme.humidity">Luftfeuchte</div>
+              <div class="astro-val mono" id="heroHumidity">--%</div>
             </div>
-          </div>
-          <div class="astro-item">
-            <div class="astro-emoji" style="background:rgba(99,102,241,0.1)">🌓</div>
-            <div><div class="astro-label">Mondphase</div><div class="astro-val" style="font-size:0.82rem"><!--$cur_moon_ph--></div></div>
           </div>
         </div>
       </div>
@@ -364,179 +942,88 @@
       <!-- Side stats -->
       <div class="side-stats">
         <div class="glass stat">
-          <div class="stat-label">Luftfeuchte</div>
-          <div class="stat-val"><!--$cur_hu-->%</div>
+          <div class="stat-label" data-i18n="theme.humidity">Luftfeuchte</div>
+          <div class="stat-val" id="statHumidity">68%</div>
         </div>
         <div class="glass stat">
-          <div class="stat-label">Wind</div>
-          <div class="stat-val"><!--$cur_w_sp--> km/h</div>
-          <div class="stat-sub"><!--$cur_w_dirdes--></div>
+          <div class="stat-label" data-i18n="theme.wind">Wind</div>
+          <div class="stat-val" id="statWind">18 km/h</div>
+          <div class="stat-sub" id="statWindDir">NW</div>
         </div>
         <div class="glass stat">
-          <div class="stat-label">Luftdruck</div>
-          <div class="stat-val"><!--$cur_pr--> <small style="color:var(--text-muted)">hPa</small></div>
+          <div class="stat-label" data-i18n="theme.pressure">Luftdruck</div>
+          <div class="stat-val" id="statPressure">1013 <small style="color:var(--text-muted)">hPa</small></div>
         </div>
         <div class="glass stat">
-          <div class="stat-label">Sichtweite</div>
-          <div class="stat-val"><!--$cur_vis--> <small style="color:var(--text-muted)">km</small></div>
+          <div class="stat-label" data-i18n="theme.visibility">Sichtweite</div>
+          <div class="stat-val" id="statVisibility">14 <small style="color:var(--text-muted)">km</small></div>
         </div>
       </div>
     </div>
 
     <!-- Extra stats -->
     <div class="extra-row">
-      <div class="glass extra"><div class="stat-label">Taupunkt</div><div class="stat-val mono"><!--$cur_dp-->°</div></div>
-      <div class="glass extra"><div class="stat-label">Niederschlag</div><div class="stat-val mono"><!--$cur_prec_today--> mm</div></div>
-      <div class="glass extra"><div class="stat-label">UV-Index</div><div class="stat-val mono"><!--$cur_uvi--></div></div>
-      <div class="glass extra"><div class="stat-label">Bewölkung</div><div class="stat-val mono"><!--$cur_sky-->%</div></div>
-      <div class="glass extra"><div class="stat-label">Böen</div><div class="stat-val mono"><!--$cur_w_gu--> km/h</div></div>
-      <div class="glass extra"><div class="stat-label">Gefühlt</div><div class="stat-val mono"><!--$cur_tt_fl-->°</div></div>
+      <div class="glass extra"><div class="stat-label" data-i18n="theme.dew_point">Taupunkt</div><div class="stat-val mono" id="statDewpoint">6&deg;</div></div>
+      <div class="glass extra"><div class="stat-label" data-i18n="theme.precipitation">Niederschlag</div><div class="stat-val mono" id="statPrecip">0.2 mm</div></div>
+      <div class="glass extra"><div class="stat-label" data-i18n="theme.uv_index">UV-Index</div><div class="stat-val mono" id="statUVI">3</div></div>
+      <div class="glass extra"><div class="stat-label" data-i18n="theme.cloud_cover">Bewoelkung</div><div class="stat-val mono" id="statClouds">45%</div></div>
     </div>
+  </div>
 
-    <!-- ===== HOURLY STRIP (Loxone-Style bottom) ===== -->
+  <!-- ===== TAB PANEL: HEUTE ===== -->
+  <div id="panel-heute" class="tab-panel active">
     <div class="hour-strip-wrap">
-      <div class="hour-strip-title">Stündliche Vorhersage — klicke für Details</div>
-      <div class="hour-strip" id="hourStrip">
-        <!--HFC1--><div class="hcard glass selected" data-idx="1" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc1_hour-->:<!--$hfc1_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc1_dayornight-->/<!--$hfc1_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc1_tt-->°</div><div class="hcard-pop"><!--$hfc1_pop-->%</div></div>
-        <!--HFC2--><div class="hcard glass" data-idx="2" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc2_hour-->:<!--$hfc2_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc2_dayornight-->/<!--$hfc2_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc2_tt-->°</div><div class="hcard-pop"><!--$hfc2_pop-->%</div></div>
-        <!--HFC3--><div class="hcard glass" data-idx="3" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc3_hour-->:<!--$hfc3_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc3_dayornight-->/<!--$hfc3_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc3_tt-->°</div><div class="hcard-pop"><!--$hfc3_pop-->%</div></div>
-        <!--HFC4--><div class="hcard glass" data-idx="4" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc4_hour-->:<!--$hfc4_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc4_dayornight-->/<!--$hfc4_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc4_tt-->°</div><div class="hcard-pop"><!--$hfc4_pop-->%</div></div>
-        <!--HFC5--><div class="hcard glass" data-idx="5" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc5_hour-->:<!--$hfc5_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc5_dayornight-->/<!--$hfc5_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc5_tt-->°</div><div class="hcard-pop"><!--$hfc5_pop-->%</div></div>
-        <!--HFC6--><div class="hcard glass" data-idx="6" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc6_hour-->:<!--$hfc6_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc6_dayornight-->/<!--$hfc6_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc6_tt-->°</div><div class="hcard-pop"><!--$hfc6_pop-->%</div></div>
-        <!--HFC7--><div class="hcard glass" data-idx="7" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc7_hour-->:<!--$hfc7_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc7_dayornight-->/<!--$hfc7_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc7_tt-->°</div><div class="hcard-pop"><!--$hfc7_pop-->%</div></div>
-        <!--HFC8--><div class="hcard glass" data-idx="8" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc8_hour-->:<!--$hfc8_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc8_dayornight-->/<!--$hfc8_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc8_tt-->°</div><div class="hcard-pop"><!--$hfc8_pop-->%</div></div>
-        <!--HFC9--><div class="hcard glass" data-idx="9" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc9_hour-->:<!--$hfc9_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc9_dayornight-->/<!--$hfc9_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc9_tt-->°</div><div class="hcard-pop"><!--$hfc9_pop-->%</div></div>
-        <!--HFC10--><div class="hcard glass" data-idx="10" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc10_hour-->:<!--$hfc10_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc10_dayornight-->/<!--$hfc10_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc10_tt-->°</div><div class="hcard-pop"><!--$hfc10_pop-->%</div></div>
-        <!--HFC11--><div class="hcard glass" data-idx="11" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc11_hour-->:<!--$hfc11_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc11_dayornight-->/<!--$hfc11_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc11_tt-->°</div><div class="hcard-pop"><!--$hfc11_pop-->%</div></div>
-        <!--HFC12--><div class="hcard glass" data-idx="12" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc12_hour-->:<!--$hfc12_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc12_dayornight-->/<!--$hfc12_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc12_tt-->°</div><div class="hcard-pop"><!--$hfc12_pop-->%</div></div>
-        <!--HFC13--><div class="hcard glass" data-idx="13" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc13_hour-->:<!--$hfc13_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc13_dayornight-->/<!--$hfc13_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc13_tt-->°</div><div class="hcard-pop"><!--$hfc13_pop-->%</div></div>
-        <!--HFC14--><div class="hcard glass" data-idx="14" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc14_hour-->:<!--$hfc14_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc14_dayornight-->/<!--$hfc14_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc14_tt-->°</div><div class="hcard-pop"><!--$hfc14_pop-->%</div></div>
-        <!--HFC15--><div class="hcard glass" data-idx="15" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc15_hour-->:<!--$hfc15_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc15_dayornight-->/<!--$hfc15_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc15_tt-->°</div><div class="hcard-pop"><!--$hfc15_pop-->%</div></div>
-        <!--HFC16--><div class="hcard glass" data-idx="16" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc16_hour-->:<!--$hfc16_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc16_dayornight-->/<!--$hfc16_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc16_tt-->°</div><div class="hcard-pop"><!--$hfc16_pop-->%</div></div>
-        <!--HFC17--><div class="hcard glass" data-idx="17" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc17_hour-->:<!--$hfc17_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc17_dayornight-->/<!--$hfc17_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc17_tt-->°</div><div class="hcard-pop"><!--$hfc17_pop-->%</div></div>
-        <!--HFC18--><div class="hcard glass" data-idx="18" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc18_hour-->:<!--$hfc18_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc18_dayornight-->/<!--$hfc18_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc18_tt-->°</div><div class="hcard-pop"><!--$hfc18_pop-->%</div></div>
-        <!--HFC19--><div class="hcard glass" data-idx="19" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc19_hour-->:<!--$hfc19_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc19_dayornight-->/<!--$hfc19_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc19_tt-->°</div><div class="hcard-pop"><!--$hfc19_pop-->%</div></div>
-        <!--HFC20--><div class="hcard glass" data-idx="20" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc20_hour-->:<!--$hfc20_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc20_dayornight-->/<!--$hfc20_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc20_tt-->°</div><div class="hcard-pop"><!--$hfc20_pop-->%</div></div>
-        <!--HFC21--><div class="hcard glass" data-idx="21" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc21_hour-->:<!--$hfc21_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc21_dayornight-->/<!--$hfc21_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc21_tt-->°</div><div class="hcard-pop"><!--$hfc21_pop-->%</div></div>
-        <!--HFC22--><div class="hcard glass" data-idx="22" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc22_hour-->:<!--$hfc22_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc22_dayornight-->/<!--$hfc22_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc22_tt-->°</div><div class="hcard-pop"><!--$hfc22_pop-->%</div></div>
-        <!--HFC23--><div class="hcard glass" data-idx="23" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc23_hour-->:<!--$hfc23_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc23_dayornight-->/<!--$hfc23_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc23_tt-->°</div><div class="hcard-pop"><!--$hfc23_pop-->%</div></div>
-        <!--HFC24--><div class="hcard glass" data-idx="24" onclick="selectHour(this)"><div class="hcard-time mono"><!--$hfc24_hour-->:<!--$hfc24_min--></div><img class="hcard-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc24_dayornight-->/<!--$hfc24_we_icon-->.png" alt=""><div class="hcard-temp"><!--$hfc24_tt-->°</div><div class="hcard-pop"><!--$hfc24_pop-->%</div></div>
-      </div>
+      <div class="hour-strip-title"><span data-i18n="theme.hours_today">Heutige Stunden</span> &#8729; <span data-i18n="theme.click_hour_detail">Stunde anklicken fuer Details</span></div>
+      <div class="hour-strip" id="hourStripHeute"></div>
     </div>
-
-    <!-- SVG Temperature chart -->
-    <div class="chart-wrap" id="chartWrap">
-      <svg id="tempChart" height="140" xmlns="http://www.w3.org/2000/svg"></svg>
-    </div>
-
-  </div>
-
-  <!-- ===================================================== -->
-  <!-- TAB: HOURLY (full grid hfc1-36)                        -->
-  <!-- ===================================================== -->
-  <div id="panel-hourly" class="tab-panel">
-    <div class="glass hourly-detail">
-      <h2>36-Stunden Vorhersage</h2>
-      <div class="hourly-grid">
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc1_hour-->:<!--$hfc1_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc1_dayornight-->/<!--$hfc1_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc1_tt-->°</div><div class="hg-pop">💧<!--$hfc1_pop-->%</div><div class="hg-wind"><!--$hfc1_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc2_hour-->:<!--$hfc2_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc2_dayornight-->/<!--$hfc2_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc2_tt-->°</div><div class="hg-pop">💧<!--$hfc2_pop-->%</div><div class="hg-wind"><!--$hfc2_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc3_hour-->:<!--$hfc3_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc3_dayornight-->/<!--$hfc3_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc3_tt-->°</div><div class="hg-pop">💧<!--$hfc3_pop-->%</div><div class="hg-wind"><!--$hfc3_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc4_hour-->:<!--$hfc4_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc4_dayornight-->/<!--$hfc4_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc4_tt-->°</div><div class="hg-pop">💧<!--$hfc4_pop-->%</div><div class="hg-wind"><!--$hfc4_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc5_hour-->:<!--$hfc5_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc5_dayornight-->/<!--$hfc5_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc5_tt-->°</div><div class="hg-pop">💧<!--$hfc5_pop-->%</div><div class="hg-wind"><!--$hfc5_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc6_hour-->:<!--$hfc6_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc6_dayornight-->/<!--$hfc6_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc6_tt-->°</div><div class="hg-pop">💧<!--$hfc6_pop-->%</div><div class="hg-wind"><!--$hfc6_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc7_hour-->:<!--$hfc7_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc7_dayornight-->/<!--$hfc7_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc7_tt-->°</div><div class="hg-pop">💧<!--$hfc7_pop-->%</div><div class="hg-wind"><!--$hfc7_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc8_hour-->:<!--$hfc8_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc8_dayornight-->/<!--$hfc8_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc8_tt-->°</div><div class="hg-pop">💧<!--$hfc8_pop-->%</div><div class="hg-wind"><!--$hfc8_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc9_hour-->:<!--$hfc9_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc9_dayornight-->/<!--$hfc9_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc9_tt-->°</div><div class="hg-pop">💧<!--$hfc9_pop-->%</div><div class="hg-wind"><!--$hfc9_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc10_hour-->:<!--$hfc10_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc10_dayornight-->/<!--$hfc10_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc10_tt-->°</div><div class="hg-pop">💧<!--$hfc10_pop-->%</div><div class="hg-wind"><!--$hfc10_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc11_hour-->:<!--$hfc11_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc11_dayornight-->/<!--$hfc11_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc11_tt-->°</div><div class="hg-pop">💧<!--$hfc11_pop-->%</div><div class="hg-wind"><!--$hfc11_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc12_hour-->:<!--$hfc12_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc12_dayornight-->/<!--$hfc12_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc12_tt-->°</div><div class="hg-pop">💧<!--$hfc12_pop-->%</div><div class="hg-wind"><!--$hfc12_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc13_hour-->:<!--$hfc13_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc13_dayornight-->/<!--$hfc13_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc13_tt-->°</div><div class="hg-pop">💧<!--$hfc13_pop-->%</div><div class="hg-wind"><!--$hfc13_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc14_hour-->:<!--$hfc14_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc14_dayornight-->/<!--$hfc14_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc14_tt-->°</div><div class="hg-pop">💧<!--$hfc14_pop-->%</div><div class="hg-wind"><!--$hfc14_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc15_hour-->:<!--$hfc15_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc15_dayornight-->/<!--$hfc15_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc15_tt-->°</div><div class="hg-pop">💧<!--$hfc15_pop-->%</div><div class="hg-wind"><!--$hfc15_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc16_hour-->:<!--$hfc16_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc16_dayornight-->/<!--$hfc16_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc16_tt-->°</div><div class="hg-pop">💧<!--$hfc16_pop-->%</div><div class="hg-wind"><!--$hfc16_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc17_hour-->:<!--$hfc17_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc17_dayornight-->/<!--$hfc17_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc17_tt-->°</div><div class="hg-pop">💧<!--$hfc17_pop-->%</div><div class="hg-wind"><!--$hfc17_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc18_hour-->:<!--$hfc18_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc18_dayornight-->/<!--$hfc18_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc18_tt-->°</div><div class="hg-pop">💧<!--$hfc18_pop-->%</div><div class="hg-wind"><!--$hfc18_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc19_hour-->:<!--$hfc19_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc19_dayornight-->/<!--$hfc19_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc19_tt-->°</div><div class="hg-pop">💧<!--$hfc19_pop-->%</div><div class="hg-wind"><!--$hfc19_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc20_hour-->:<!--$hfc20_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc20_dayornight-->/<!--$hfc20_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc20_tt-->°</div><div class="hg-pop">💧<!--$hfc20_pop-->%</div><div class="hg-wind"><!--$hfc20_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc21_hour-->:<!--$hfc21_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc21_dayornight-->/<!--$hfc21_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc21_tt-->°</div><div class="hg-pop">💧<!--$hfc21_pop-->%</div><div class="hg-wind"><!--$hfc21_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc22_hour-->:<!--$hfc22_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc22_dayornight-->/<!--$hfc22_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc22_tt-->°</div><div class="hg-pop">💧<!--$hfc22_pop-->%</div><div class="hg-wind"><!--$hfc22_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc23_hour-->:<!--$hfc23_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc23_dayornight-->/<!--$hfc23_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc23_tt-->°</div><div class="hg-pop">💧<!--$hfc23_pop-->%</div><div class="hg-wind"><!--$hfc23_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc24_hour-->:<!--$hfc24_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc24_dayornight-->/<!--$hfc24_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc24_tt-->°</div><div class="hg-pop">💧<!--$hfc24_pop-->%</div><div class="hg-wind"><!--$hfc24_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc25_hour-->:<!--$hfc25_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc25_dayornight-->/<!--$hfc25_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc25_tt-->°</div><div class="hg-pop">💧<!--$hfc25_pop-->%</div><div class="hg-wind"><!--$hfc25_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc26_hour-->:<!--$hfc26_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc26_dayornight-->/<!--$hfc26_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc26_tt-->°</div><div class="hg-pop">💧<!--$hfc26_pop-->%</div><div class="hg-wind"><!--$hfc26_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc27_hour-->:<!--$hfc27_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc27_dayornight-->/<!--$hfc27_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc27_tt-->°</div><div class="hg-pop">💧<!--$hfc27_pop-->%</div><div class="hg-wind"><!--$hfc27_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc28_hour-->:<!--$hfc28_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc28_dayornight-->/<!--$hfc28_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc28_tt-->°</div><div class="hg-pop">💧<!--$hfc28_pop-->%</div><div class="hg-wind"><!--$hfc28_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc29_hour-->:<!--$hfc29_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc29_dayornight-->/<!--$hfc29_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc29_tt-->°</div><div class="hg-pop">💧<!--$hfc29_pop-->%</div><div class="hg-wind"><!--$hfc29_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc30_hour-->:<!--$hfc30_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc30_dayornight-->/<!--$hfc30_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc30_tt-->°</div><div class="hg-pop">💧<!--$hfc30_pop-->%</div><div class="hg-wind"><!--$hfc30_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc31_hour-->:<!--$hfc31_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc31_dayornight-->/<!--$hfc31_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc31_tt-->°</div><div class="hg-pop">💧<!--$hfc31_pop-->%</div><div class="hg-wind"><!--$hfc31_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc32_hour-->:<!--$hfc32_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc32_dayornight-->/<!--$hfc32_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc32_tt-->°</div><div class="hg-pop">💧<!--$hfc32_pop-->%</div><div class="hg-wind"><!--$hfc32_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc33_hour-->:<!--$hfc33_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc33_dayornight-->/<!--$hfc33_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc33_tt-->°</div><div class="hg-pop">💧<!--$hfc33_pop-->%</div><div class="hg-wind"><!--$hfc33_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc34_hour-->:<!--$hfc34_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc34_dayornight-->/<!--$hfc34_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc34_tt-->°</div><div class="hg-pop">💧<!--$hfc34_pop-->%</div><div class="hg-wind"><!--$hfc34_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc35_hour-->:<!--$hfc35_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc35_dayornight-->/<!--$hfc35_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc35_tt-->°</div><div class="hg-pop">💧<!--$hfc35_pop-->%</div><div class="hg-wind"><!--$hfc35_w_sp--> km/h</div></div>
-        <div class="hg-card glass"><div class="hg-time mono"><!--$hfc36_hour-->:<!--$hfc36_min--></div><img class="hg-icon" src="<!--$webpath-->/icons/<!--$iconset-->/<!--$hfc36_dayornight-->/<!--$hfc36_we_icon-->.png" alt=""><div class="hg-temp"><!--$hfc36_tt-->°</div><div class="hg-pop">💧<!--$hfc36_pop-->%</div><div class="hg-wind"><!--$hfc36_w_sp--> km/h</div></div>
-      </div>
+    <div class="chart-wrap" id="chartWrapHeute">
+      <div class="chart-title"><span data-i18n="theme.chart_title">Temperaturverlauf</span> &#8729; <span data-i18n="theme.hours_today">Heutige Stunden</span></div>
+      <svg id="tempChartHeute" height="140" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
   </div>
 
-  <!-- ===================================================== -->
-  <!-- TAB: DAILY (dfc0-3)                                    -->
-  <!-- ===================================================== -->
-  <div id="panel-daily" class="tab-panel">
+  <!-- ===== TAB PANEL: MORGEN ===== -->
+  <div id="panel-morgen" class="tab-panel">
+    <div class="hour-strip-wrap">
+      <div class="hour-strip-title"><span data-i18n="theme.hours_tomorrow">Morgige Stunden</span> &#8729; <span data-i18n="theme.click_hour_detail">Stunde anklicken fuer Details</span></div>
+      <div class="hour-strip" id="hourStripMorgen"></div>
+    </div>
+    <div class="chart-wrap" id="chartWrapMorgen">
+      <div class="chart-title"><span data-i18n="theme.chart_title">Temperaturverlauf</span> &#8729; <span data-i18n="theme.hours_tomorrow">Morgige Stunden</span></div>
+      <svg id="tempChartMorgen" height="140" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+
+  <!-- ===== TAB PANEL: TAGE ===== -->
+  <div id="panel-tage" class="tab-panel">
     <div class="glass daily-wrap">
-      <h2>4-Tage Vorhersage</h2>
-      <div class="drow glass today"><div><div class="drow-day"><!--$dfc0_wday_sh--></div><div class="drow-date mono"><!--$dfc0_day-->.<!--$dfc0_month--></div></div><img class="drow-icon" src="<!--$webpath-->/icons/<!--$iconset-->/d/<!--$dfc0_we_icon-->.png" alt=""><div class="drow-desc"><!--$dfc0_we_des--></div><div class="drow-pop">💧<!--$dfc0_pop-->%</div><div class="drow-temps"><span class="drow-lo mono"><!--$dfc0_tt_l-->°</span><div class="drow-bar"><div class="drow-fill" id="bar0"></div></div><span class="drow-hi mono"><!--$dfc0_tt_h-->°</span></div></div>
-      <div class="drow glass"><div><div class="drow-day"><!--$dfc1_wday_sh--></div><div class="drow-date mono"><!--$dfc1_day-->.<!--$dfc1_month--></div></div><img class="drow-icon" src="<!--$webpath-->/icons/<!--$iconset-->/d/<!--$dfc1_we_icon-->.png" alt=""><div class="drow-desc"><!--$dfc1_we_des--></div><div class="drow-pop">💧<!--$dfc1_pop-->%</div><div class="drow-temps"><span class="drow-lo mono"><!--$dfc1_tt_l-->°</span><div class="drow-bar"><div class="drow-fill" id="bar1"></div></div><span class="drow-hi mono"><!--$dfc1_tt_h-->°</span></div></div>
-      <div class="drow glass"><div><div class="drow-day"><!--$dfc2_wday_sh--></div><div class="drow-date mono"><!--$dfc2_day-->.<!--$dfc2_month--></div></div><img class="drow-icon" src="<!--$webpath-->/icons/<!--$iconset-->/d/<!--$dfc2_we_icon-->.png" alt=""><div class="drow-desc"><!--$dfc2_we_des--></div><div class="drow-pop">💧<!--$dfc2_pop-->%</div><div class="drow-temps"><span class="drow-lo mono"><!--$dfc2_tt_l-->°</span><div class="drow-bar"><div class="drow-fill" id="bar2"></div></div><span class="drow-hi mono"><!--$dfc2_tt_h-->°</span></div></div>
-      <div class="drow glass"><div><div class="drow-day"><!--$dfc3_wday_sh--></div><div class="drow-date mono"><!--$dfc3_day-->.<!--$dfc3_month--></div></div><img class="drow-icon" src="<!--$webpath-->/icons/<!--$iconset-->/d/<!--$dfc3_we_icon-->.png" alt=""><div class="drow-desc"><!--$dfc3_we_des--></div><div class="drow-pop">💧<!--$dfc3_pop-->%</div><div class="drow-temps"><span class="drow-lo mono"><!--$dfc3_tt_l-->°</span><div class="drow-bar"><div class="drow-fill" id="bar3"></div></div><span class="drow-hi mono"><!--$dfc3_tt_h-->°</span></div></div>
+      <h2 data-i18n="theme.forecast_X_days" data-i18n-args='{"fcastDays":7}'>7-Tage Vorhersage</h2>
+      <div id="dailyWrap"></div>
     </div>
   </div>
 
-  <footer class="footer">Weather4Lox Dashboard • Powered by LoxBerry</footer>
+  <footer class="footer">Weather4Lox Dashboard &bull; Powered by LoxBerry</footer>
+</div>
+
+<div id="loadingOverlay" class="loading-overlay" style="display:none">
+  <div class="loading-spinner"></div>
+</div>
+<div id="errorBanner" class="error-banner" style="display:none">
+  <span id="errorMsg"></span>
 </div>
 
 <script>
-// ===== HOURLY DATA (embedded by show.cgi) =====
-var HFC = [
-  {h:"<!--$hfc1_hour-->",m:"<!--$hfc1_min-->",t:<!--$hfc1_tt-->,pop:<!--$hfc1_pop-->,w:<!--$hfc1_w_sp-->,icon:"<!--$hfc1_we_icon-->",dn:"<!--$hfc1_dayornight-->",des:"<!--$hfc1_we_des-->"},
-  {h:"<!--$hfc2_hour-->",m:"<!--$hfc2_min-->",t:<!--$hfc2_tt-->,pop:<!--$hfc2_pop-->,w:<!--$hfc2_w_sp-->,icon:"<!--$hfc2_we_icon-->",dn:"<!--$hfc2_dayornight-->",des:"<!--$hfc2_we_des-->"},
-  {h:"<!--$hfc3_hour-->",m:"<!--$hfc3_min-->",t:<!--$hfc3_tt-->,pop:<!--$hfc3_pop-->,w:<!--$hfc3_w_sp-->,icon:"<!--$hfc3_we_icon-->",dn:"<!--$hfc3_dayornight-->",des:"<!--$hfc3_we_des-->"},
-  {h:"<!--$hfc4_hour-->",m:"<!--$hfc4_min-->",t:<!--$hfc4_tt-->,pop:<!--$hfc4_pop-->,w:<!--$hfc4_w_sp-->,icon:"<!--$hfc4_we_icon-->",dn:"<!--$hfc4_dayornight-->",des:"<!--$hfc4_we_des-->"},
-  {h:"<!--$hfc5_hour-->",m:"<!--$hfc5_min-->",t:<!--$hfc5_tt-->,pop:<!--$hfc5_pop-->,w:<!--$hfc5_w_sp-->,icon:"<!--$hfc5_we_icon-->",dn:"<!--$hfc5_dayornight-->",des:"<!--$hfc5_we_des-->"},
-  {h:"<!--$hfc6_hour-->",m:"<!--$hfc6_min-->",t:<!--$hfc6_tt-->,pop:<!--$hfc6_pop-->,w:<!--$hfc6_w_sp-->,icon:"<!--$hfc6_we_icon-->",dn:"<!--$hfc6_dayornight-->",des:"<!--$hfc6_we_des-->"},
-  {h:"<!--$hfc7_hour-->",m:"<!--$hfc7_min-->",t:<!--$hfc7_tt-->,pop:<!--$hfc7_pop-->,w:<!--$hfc7_w_sp-->,icon:"<!--$hfc7_we_icon-->",dn:"<!--$hfc7_dayornight-->",des:"<!--$hfc7_we_des-->"},
-  {h:"<!--$hfc8_hour-->",m:"<!--$hfc8_min-->",t:<!--$hfc8_tt-->,pop:<!--$hfc8_pop-->,w:<!--$hfc8_w_sp-->,icon:"<!--$hfc8_we_icon-->",dn:"<!--$hfc8_dayornight-->",des:"<!--$hfc8_we_des-->"},
-  {h:"<!--$hfc9_hour-->",m:"<!--$hfc9_min-->",t:<!--$hfc9_tt-->,pop:<!--$hfc9_pop-->,w:<!--$hfc9_w_sp-->,icon:"<!--$hfc9_we_icon-->",dn:"<!--$hfc9_dayornight-->",des:"<!--$hfc9_we_des-->"},
-  {h:"<!--$hfc10_hour-->",m:"<!--$hfc10_min-->",t:<!--$hfc10_tt-->,pop:<!--$hfc10_pop-->,w:<!--$hfc10_w_sp-->,icon:"<!--$hfc10_we_icon-->",dn:"<!--$hfc10_dayornight-->",des:"<!--$hfc10_we_des-->"},
-  {h:"<!--$hfc11_hour-->",m:"<!--$hfc11_min-->",t:<!--$hfc11_tt-->,pop:<!--$hfc11_pop-->,w:<!--$hfc11_w_sp-->,icon:"<!--$hfc11_we_icon-->",dn:"<!--$hfc11_dayornight-->",des:"<!--$hfc11_we_des-->"},
-  {h:"<!--$hfc12_hour-->",m:"<!--$hfc12_min-->",t:<!--$hfc12_tt-->,pop:<!--$hfc12_pop-->,w:<!--$hfc12_w_sp-->,icon:"<!--$hfc12_we_icon-->",dn:"<!--$hfc12_dayornight-->",des:"<!--$hfc12_we_des-->"},
-  {h:"<!--$hfc13_hour-->",m:"<!--$hfc13_min-->",t:<!--$hfc13_tt-->,pop:<!--$hfc13_pop-->,w:<!--$hfc13_w_sp-->,icon:"<!--$hfc13_we_icon-->",dn:"<!--$hfc13_dayornight-->",des:"<!--$hfc13_we_des-->"},
-  {h:"<!--$hfc14_hour-->",m:"<!--$hfc14_min-->",t:<!--$hfc14_tt-->,pop:<!--$hfc14_pop-->,w:<!--$hfc14_w_sp-->,icon:"<!--$hfc14_we_icon-->",dn:"<!--$hfc14_dayornight-->",des:"<!--$hfc14_we_des-->"},
-  {h:"<!--$hfc15_hour-->",m:"<!--$hfc15_min-->",t:<!--$hfc15_tt-->,pop:<!--$hfc15_pop-->,w:<!--$hfc15_w_sp-->,icon:"<!--$hfc15_we_icon-->",dn:"<!--$hfc15_dayornight-->",des:"<!--$hfc15_we_des-->"},
-  {h:"<!--$hfc16_hour-->",m:"<!--$hfc16_min-->",t:<!--$hfc16_tt-->,pop:<!--$hfc16_pop-->,w:<!--$hfc16_w_sp-->,icon:"<!--$hfc16_we_icon-->",dn:"<!--$hfc16_dayornight-->",des:"<!--$hfc16_we_des-->"},
-  {h:"<!--$hfc17_hour-->",m:"<!--$hfc17_min-->",t:<!--$hfc17_tt-->,pop:<!--$hfc17_pop-->,w:<!--$hfc17_w_sp-->,icon:"<!--$hfc17_we_icon-->",dn:"<!--$hfc17_dayornight-->",des:"<!--$hfc17_we_des-->"},
-  {h:"<!--$hfc18_hour-->",m:"<!--$hfc18_min-->",t:<!--$hfc18_tt-->,pop:<!--$hfc18_pop-->,w:<!--$hfc18_w_sp-->,icon:"<!--$hfc18_we_icon-->",dn:"<!--$hfc18_dayornight-->",des:"<!--$hfc18_we_des-->"},
-  {h:"<!--$hfc19_hour-->",m:"<!--$hfc19_min-->",t:<!--$hfc19_tt-->,pop:<!--$hfc19_pop-->,w:<!--$hfc19_w_sp-->,icon:"<!--$hfc19_we_icon-->",dn:"<!--$hfc19_dayornight-->",des:"<!--$hfc19_we_des-->"},
-  {h:"<!--$hfc20_hour-->",m:"<!--$hfc20_min-->",t:<!--$hfc20_tt-->,pop:<!--$hfc20_pop-->,w:<!--$hfc20_w_sp-->,icon:"<!--$hfc20_we_icon-->",dn:"<!--$hfc20_dayornight-->",des:"<!--$hfc20_we_des-->"},
-  {h:"<!--$hfc21_hour-->",m:"<!--$hfc21_min-->",t:<!--$hfc21_tt-->,pop:<!--$hfc21_pop-->,w:<!--$hfc21_w_sp-->,icon:"<!--$hfc21_we_icon-->",dn:"<!--$hfc21_dayornight-->",des:"<!--$hfc21_we_des-->"},
-  {h:"<!--$hfc22_hour-->",m:"<!--$hfc22_min-->",t:<!--$hfc22_tt-->,pop:<!--$hfc22_pop-->,w:<!--$hfc22_w_sp-->,icon:"<!--$hfc22_we_icon-->",dn:"<!--$hfc22_dayornight-->",des:"<!--$hfc22_we_des-->"},
-  {h:"<!--$hfc23_hour-->",m:"<!--$hfc23_min-->",t:<!--$hfc23_tt-->,pop:<!--$hfc23_pop-->,w:<!--$hfc23_w_sp-->,icon:"<!--$hfc23_we_icon-->",dn:"<!--$hfc23_dayornight-->",des:"<!--$hfc23_we_des-->"},
-  {h:"<!--$hfc24_hour-->",m:"<!--$hfc24_min-->",t:<!--$hfc24_tt-->,pop:<!--$hfc24_pop-->,w:<!--$hfc24_w_sp-->,icon:"<!--$hfc24_we_icon-->",dn:"<!--$hfc24_dayornight-->",des:"<!--$hfc24_we_des-->"}
-];
-var ICONSET = "<!--$iconset-->";
-var WEBPATH = "<!--$webpath-->";
-
 // ===== THEME (dark/light/auto) via URL param =====
 function getUrlParam(name) {
   var m = location.search.match(new RegExp('[?&]' + name + '=([^&]*)'));
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-var modeParam = getUrlParam('mode'); // dark, light, auto, or null
+var modeParam = getUrlParam('mode');
 
 function getTheme() {
   if (modeParam === 'dark') return 'dark';
   if (modeParam === 'light') return 'light';
-  // auto or null: use system preference
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 }
 
@@ -558,7 +1045,6 @@ function applyTheme(theme) {
 var currentTheme = getTheme();
 applyTheme(currentTheme);
 
-// Only show toggle when mode=auto or not set
 var themeBtn = document.getElementById('themeBtn');
 if (modeParam === 'dark' || modeParam === 'light') {
   themeBtn.style.display = 'none';
@@ -569,7 +1055,6 @@ function toggleTheme() {
   applyTheme(currentTheme);
 }
 
-// System preference change (only in auto mode)
 window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e) {
   if (!modeParam || modeParam === 'auto') {
     currentTheme = e.matches ? 'light' : 'dark';
@@ -577,130 +1062,616 @@ window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', fu
   }
 });
 
-// ===== TAB NAVIGATION =====
-document.querySelectorAll('.tab').forEach(function(btn) {
-  btn.addEventListener('click', function() {
-    document.querySelectorAll('.tab').forEach(function(b) { b.classList.remove('active'); });
-    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
-    btn.classList.add('active');
-    document.getElementById('panel-' + btn.getAttribute('data-tab')).classList.add('active');
-  });
-});
+// ===== LIVE CLOCK =====
+(function updateClock() {
+  var now = new Date();
+  var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
+  document.getElementById('hdrTime').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
+  document.getElementById('hdrDate').textContent = pad(now.getDate()) + '.' + pad(now.getMonth() + 1) + '.' + now.getFullYear();
+  setTimeout(updateClock, 10000);
+})();
 
-// ===== HOUR SELECTION (Loxone-Style: click hour → update hero) =====
-function selectHour(el) {
+// ===== RENDER HOUR STRIP =====
+function renderHourStrip(containerId, dataArray) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  for (var i = 0; i < dataArray.length; i++) {
+    var d = dataArray[i];
+    var card = document.createElement('div');
+    card.className = 'hcard glass';
+    card.setAttribute('data-idx', i);
+    (function(el, arr) {
+      el.onclick = function() { selectHour(el, arr); };
+    })(card, dataArray);
+    // Show "Now" label directly; for regular hours append ':00'
+    var timeLabel = d.isNow ? d.hour : d.hour + ':00';
+    card.innerHTML =
+      '<div class="hcard-time mono">' + (d.isNow ? d.hour : d.hour + ':00') + '</div>' +
+      '<img class="hcard-icon" src="' + resolveIcon(d.weatherCode, d.isNight, d.moonAge) + '" alt="">' +
+      '<div class="hcard-temp">' + Math.round(d.temp) + '&deg;</div>' +
+      (d.rainProb != null ? '<div class="hcard-rainProb">' + d.rainProb + '%</div>' : '');
+
+    container.appendChild(card);
+  }
+}
+
+// ===== RENDER DAILY =====
+function renderDaily(containerId, dataArray) {
+  var container = document.getElementById(containerId);
+  const isDay = false; // equals not is day
+  if (!container) return;
+  container.innerHTML = '';
+  for (var i = 0; i < dataArray.length; i++) {
+    var d = dataArray[i];
+    var row = document.createElement('div');
+    row.className = 'drow glass' + (i === 0 ? ' today' : '');
+    var detailHtml = '<div class="drow-detail"><div class="drow-detail-grid">';
+    if (d.wind != null) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Wind</div><div class="drow-detail-val">' + d.wind + ' km/h' + (d.windDir ? ' ' + d.windDir : '') + '</div></div>';
+    if (d.windGust != null) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">B\u00f6en</div><div class="drow-detail-val">' + d.windGust + ' km/h</div></div>';
+    if (d.humidity != null) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Feuchte</div><div class="drow-detail-val">' + d.humidity + '%' + (d.humidityMin != null && d.humidityMax != null ? ' (' + d.humidityMin + '-' + d.humidityMax + ')' : '') + '</div></div>';
+    if (d.rainAmount != null) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Niederschlag</div><div class="drow-detail-val">' + d.rainAmount + ' mm</div></div>';
+    if (d.sunrise) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Sonnenaufgang</div><div class="drow-detail-val">' + d.sunrise + '</div></div>';
+    if (d.sunset) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Sonnenuntergang</div><div class="drow-detail-val">' + d.sunset + '</div></div>';
+    if (d.uvi != null) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">UV-Index</div><div class="drow-detail-val">' + d.uvi + '</div></div>';
+    if (d.snow != null && d.snow > 0) detailHtml += '<div class="drow-detail-item"><div class="drow-detail-label">Schnee</div><div class="drow-detail-val">' + d.snow + ' cm</div></div>';
+    detailHtml += '</div></div>';
+
+    row.innerHTML =
+      '<div><div class="drow-day">' + d.day + '</div><div class="drow-date mono">' + d.date + '</div></div>' +
+      '<img class="drow-icon" src="' + resolveIcon(d.weatherCode, isDay, 0) + '" alt="">' +
+      (d.desc ? '<div class="drow-desc">' + d.desc + '</div>' : '<div class="drow-desc"></div>') +
+      (d.rainProb != null ? '<div class="drow-rainProb" style="display:flex;align-items:center;justify-content:center;gap:4px;">' +
+                              '<i data-lucide="umbrella" style="width:14px;height:14px;"></i>' +
+                              '<span>' + d.rainProb + '%</span>' +
+                            '</div>' : '<div class="drow-rainProb"></div>') +
+      '<div class="drow-temps"><span class="drow-lo mono">' + Math.round(d.low) + '&deg;C</span><div class="drow-bar"><div class="drow-fill" id="bar' + i + '"></div></div><span class="drow-hi mono">' + Math.round(d.high) + '&deg;C</span></div>' +
+      detailHtml;
+    (function(r) {
+      r.onclick = function() {
+        var wasExpanded = r.classList.contains('expanded');
+        // Collapse all other rows (accordion)
+        container.querySelectorAll('.drow.expanded').forEach(function(c) { c.classList.remove('expanded'); });
+        if (!wasExpanded) r.classList.add('expanded');
+      };
+    })(row);
+    container.appendChild(row);
+  }
+  lucide.createIcons();
+  // Calculate temp bar positions
+  var allTemps = [];
+  for (var i = 0; i < dataArray.length; i++) {
+    allTemps.push(dataArray[i].low);
+    allTemps.push(dataArray[i].high);
+  }
+  var mn = Math.min.apply(null, allTemps);
+  var mx = Math.max.apply(null, allTemps);
+  var rng = Math.max(1, mx - mn);
+  for (var i = 0; i < dataArray.length; i++) {
+    var b = document.getElementById('bar' + i);
+    if (!b) continue;
+    b.style.left = ((dataArray[i].low - mn) / rng * 100) + '%';
+    b.style.width = Math.max(4, (dataArray[i].high - dataArray[i].low) / rng * 100) + '%';
+  }
+}
+
+// ===== SELECT HOUR =====
+function selectHour(el, dataArray) {
   document.querySelectorAll('.hcard').forEach(function(c) { c.classList.remove('selected'); });
   el.classList.add('selected');
 
-  var idx = parseInt(el.getAttribute('data-idx')) - 1;
-  if (idx < 0 || idx >= HFC.length) return;
-  var d = HFC[idx];
+  var idx = parseInt(el.getAttribute('data-idx'), 10);
+  var d = dataArray[idx];
 
-  document.getElementById('heroTemp').innerHTML = Math.round(d.t) + '<sup>°C</sup>';
-  document.getElementById('heroFeels').textContent = d.h + ':' + d.m;
-  document.getElementById('heroDesc').textContent = d.des;
-  document.getElementById('heroIcon').src = WEBPATH + '/icons/' + ICONSET + '/' + d.dn + '/' + d.icon + '.png';
+  // Update selection state
+  selectedHourIdx = idx;
+  selectedHourValue = (d && typeof d.hourValue === 'number') ? String(d.hourValue) : 'now';
 
-  // Highlight chart point
-  highlightChartPoint(idx);
+  // Determine active tab for context label
+  var activeTab = document.querySelector('.tab.active');
+  var tabName = activeTab ? activeTab.getAttribute('data-tab') : 'heute';
+  var tabLabel = activeTab ? activeTab.textContent : 'Heute';
+  var ctx = document.getElementById('heroContext');
+  // For the now entry show label directly; for regular hours append ':00'
+  ctx.textContent = tabLabel + '∙' + (d.isNow ? d.hour : d.hour + ':00');
+  ctx.style.opacity = '1';
+
+  var heroTemp = document.getElementById('heroTemp');
+  heroTemp.style.opacity = '0';
+  setTimeout(function() {
+    heroTemp.innerHTML = Math.round(d.temp * 10) / 10 + '<sup>\u00b0C</sup>';
+    heroTemp.style.opacity = '1';
+  }, 150);
+  document.getElementById('heroDesc').textContent = d.desc || '--';
+  document.getElementById('heroWind').textContent = textContent =
+    (liveData.lang && liveData.lang.theme.wind_from ? liveData.lang.theme.wind_from + ' ' : ' ') +
+    getWindDirLabel(d.windDir) + ' ' + (liveData.lang && liveData.lang.theme.with ? ' ' + liveData.lang.theme.with + ' ' : ' ') + ' ' + (d.wind != null ? d.wind : '--') + ' km/h' + ', ';
+  document.getElementById('heroGust').textContent = textContent =
+    (liveData.lang && liveData.lang.theme.gusts ? liveData.lang.theme.gusts + ' ' + liveData.lang.theme.up_to + ' ' : '') + (d.gust != null ? d.gust : '--') + ' km/h';
+  document.getElementById('heroHumidity').textContent = (d.humidity != null ? d.humidity : '--') + '%';
+  document.getElementById('heroFeelsLike').textContent = (liveData.lang && liveData.lang.theme.feelsLike ? liveData.lang.theme.feelsLike + ' ' : ' ') + (d.feelsLike != null ? d.feelsLike : '--') + '\u00b0C';
+  document.getElementById('heroIcon').src = resolveIcon(d.weatherCode, d.isNight, d.moonAge);
+
+  // Update stat boxes with hourly data
+  document.getElementById('statHumidity').textContent = (d.humidity != null ? d.humidity : '--') + '%';
+  document.getElementById('statWind').textContent = (d.wind != null ? d.wind : '--') + ' km/h';
+  document.getElementById('statWindDir').textContent = getWindDirShort(d.windDir);
+  document.getElementById('statPressure').innerHTML = (d.pressure != null ? d.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
+  document.getElementById('statVisibility').innerHTML = (d.visibility != null ? d.visibility : '--') + ' <small style="color:var(--text-muted)">km</small>';
+  document.getElementById('statDewpoint').textContent = (d.dewpoint != null ? d.dewpoint : '--') + '\u00b0';
+  document.getElementById('statPrecip').textContent = (d.rainAmount != null ? d.rainAmount : 0) + ' mm';
+  document.getElementById('statUVI').textContent = d.uvi != null ? d.uvi : '--';
+  document.getElementById('statClouds').textContent = (d.clouds != null ? d.clouds : '--') + '%';
+
+  // Hide empty stats after update
+  hideEmptyStats();
+
+  // Highlight correct hour slot on the active chart (use hourValue, not array index)
+  var chartId = (selectedTab === 'heute') ? 'tempChartHeute' : 'tempChartMorgen';
+  if (d && typeof d.hourValue === 'number') {
+    highlightChartPoint(chartId, d.hourValue);
+  }
+} 
+
+// ===== PRESELECT HOUR =====
+function preselectHour(tabName) {
+  if (tabName === 'tage') return;
+  var stripId = (tabName === 'heute') ? 'hourStripHeute' : 'hourStripMorgen';
+  var dataArray = (tabName === 'heute') ? hourlyTodayRendered : hourlyTomorrowRendered;
+  if (!dataArray || dataArray.length === 0) return;
+  var cards = document.getElementById(stripId).querySelectorAll('.hcard');
+  var targetIdx = 0;
+  if (tabName === 'morgen') {
+    // For morgen: select hour 12:00 by default
+    for (var i = 0; i < dataArray.length; i++) {
+      if (dataArray[i].hour === '12') { targetIdx = i; break; }
+    }
+  }
+  // For heute: select index 0 (nowEntry) by default
+
+  // Update selection state
+  selectedTab = tabName;
+  if (tabName === 'heute' || tabName === 'morgen') {
+    renderAll();
+  }
+  selectedHourIdx = targetIdx;
+
+  if (cards[targetIdx]) {
+    selectHour(cards[targetIdx], dataArray);
+    cards[targetIdx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
 }
 
-// ===== TEMPERATURE CHART (SVG, compressed X-axis) =====
-function renderChart() {
-  var svg = document.getElementById('tempChart');
-  var n = HFC.length;
-  if (!n) return;
+function refreshActiveTabView(tabName) {
+  selectedTab = tabName;
 
-  var temps = HFC.map(function(d) { return d.t; });
+  if (tabName === 'heute') {
+    renderHourStrip('hourStripHeute', hourlyTodayRendered);
+    renderTempChart('tempChartHeute', hourlyTodayRendered);
+    restoreSelectionAfterRender();
+  } else if (tabName === 'morgen') {
+    renderHourStrip('hourStripMorgen', hourlyTomorrowRendered);
+    renderTempChart('tempChartMorgen', hourlyTomorrowRendered);
+    restoreSelectionAfterRender();
+  }
+}
+
+// ===== TAB SWITCHING with fade (EXTRA-02) =====
+document.querySelectorAll('.tab').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var activePanel = document.querySelector('.tab-panel.fade-in');
+    if (activePanel) {
+      activePanel.classList.remove('fade-in');
+      setTimeout(function() {
+        document.querySelectorAll('.tab-panel').forEach(function(p) {
+          p.classList.remove('active');
+        });
+        document.querySelectorAll('.tab').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        var tabName = btn.getAttribute('data-tab');
+        var newPanel = document.getElementById('panel-' + tabName);
+        newPanel.classList.add('active');
+        requestAnimationFrame(function() { newPanel.classList.add('fade-in'); });
+        var hero = document.getElementById('heroSection');
+        if (hero) hero.style.display = (tabName === 'tage') ? 'none' : '';
+        refreshActiveTabView(tabName);
+      }, 300);
+    } else {
+      document.querySelectorAll('.tab').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active', 'fade-in'); });
+      btn.classList.add('active');
+      var tabName = btn.getAttribute('data-tab');
+      var newPanel = document.getElementById('panel-' + tabName);
+      newPanel.classList.add('active');
+      requestAnimationFrame(function() { newPanel.classList.add('fade-in'); });
+      var hero = document.getElementById('heroSection');
+      if (hero) hero.style.display = (tabName === 'tage') ? 'none' : '';
+      refreshActiveTabView(tabName);
+    }
+  });
+});
+
+// ===== DRAG SCROLL for hour strips =====
+function makeDragScroll(el) {
+  if (!el) return;
+  var down = false, dragged = false, sx = 0, sl = 0;
+  el.addEventListener('mousedown', function(e) {
+    if (e.button !== 0) return;
+    down = true; dragged = false; sx = e.clientX; sl = el.scrollLeft;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', function(e) {
+    if (!down) return;
+    if (Math.abs(e.clientX - sx) > 5) dragged = true;
+    if (dragged) el.scrollLeft = sl - (e.clientX - sx);
+  });
+  document.addEventListener('mouseup', function() {
+    if (!down) return;
+    down = false;
+  });
+  // Touch support
+  el.addEventListener('touchstart', function(e) {
+    down = true; dragged = false; sx = e.touches[0].clientX; sl = el.scrollLeft;
+  }, {passive: true});
+  el.addEventListener('touchmove', function(e) {
+    if (!down) return;
+    if (Math.abs(e.touches[0].clientX - sx) > 5) dragged = true;
+    if (dragged) el.scrollLeft = sl - (e.touches[0].clientX - sx);
+  }, {passive: true});
+  el.addEventListener('touchend', function() { down = false; });
+  // Block click after drag
+  el.addEventListener('click', function(e) {
+    if (dragged) { e.stoprainProbagation(); dragged = false; }
+  }, true);
+  el.addEventListener('wheel', function(e) {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      el.scrollLeft += e.deltaY;
+      e.preventDefault();
+    }
+  }, {passive: false});
+}
+
+// ===== TEMPERATURE CHART (SVG, responsive) =====
+function renderTempChart(svgId, dataArray) {
+  var svg = document.getElementById(svgId);
+  if (!svg) return;
+
+  // --- Chart constants (must match highlightChartPoint) ---
+  var H = 140;
+  var padL = 40;
+  var padR = 16;
+  var yTop = 28;
+  var yBot = H - 28;
+  var chartH = yBot - yTop;
+  var stepX = 28; // pixels per hour slot
+  var W = padL + padR + (24 * stepX);
+
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+
+  // --- Helper: fixed x position for hour slots 0..24 ---
+  function xPos(hour) {
+    return padL + hour * stepX;
+  }
+
+  // --- Build fixed slots 0..24 (inclusive) ---
+  var slots = [];
+  for (var h = 0; h <= 24; h++) {
+    slots.push({
+      hour: h,
+      // point is the original data item (now or forecast) if present
+      point: null,
+      // temp is the numeric temperature used for the curve
+      temp: null
+    });
+  }
+
+  // --- Map incoming points by hourValue (0..23). hour 24 is kept as duplicate of hour 0/23 line end. ---
+  var pointByHour = new Map();
+  if (Array.isArray(dataArray)) {
+    dataArray.forEach(function(entry) {
+      if (!entry) return;
+      var hv = entry.hourValue;
+      if (typeof hv === 'string' && /^\d+$/.test(hv)) hv = parseInt(hv, 10);
+      if (typeof hv !== 'number' || isNaN(hv)) return;
+      if (hv < 0 || hv > 23) return; // hourValue must be 0..23
+      pointByHour.set(hv, entry);
+    });
+  }
+
+  var testTemps = {
+    0: -20,
+    1: -15,
+    2: -10,
+    3: -5,
+    4: -2,
+    5: 0,
+    6: 2,
+    7: 4,
+    8: 6,
+    9: 8,
+    10: 10,
+    11: 12,
+    12: 14,
+    13: 16,
+    14: 18,
+    15: 20,
+    16: 22,
+    17: 24,
+    18: 26,
+    19: 28,
+    20: 30,
+    21: 32,
+    22: 34,
+    23: 40
+  };
+
+  // Apply mapped points into slots[0..23]
+  for (var hh = 0; hh <= 23; hh++) {
+    var p = pointByHour.get(hh) || null;
+    if (p && p.temp != null && !isNaN(p.temp)) {
+      slots[hh].point = p;
+      slots[hh].temp = Number(p.temp);
+     // slots[hh].temp = testTemps[hh] != null ? testTemps[hh] : 0;
+    }
+  }
+
+  // Slot 24: close the curve at hour 24 using hour 23 value (or fallback later)
+  // This keeps the axis 0..24 consistent visually.
+  if (slots[23].temp != null) {
+    slots[24].temp = slots[23].temp;
+  }
+
+  // --- Fill missing temps so the polyline ALWAYS exists from 0..24 ---
+  // Strategy:
+  // 1) Find first known temperature
+  // 2) Forward fill until next known
+  // 3) Backward fill before first known with the first known temp
+  var firstKnownIdx = -1;
+  for (var i = 0; i < slots.length; i++) {
+    if (slots[i].temp != null && !isNaN(slots[i].temp)) {
+      firstKnownIdx = i;
+      break;
+    }
+  }
+
+  // No data at all -> clear SVG and stop
+  if (firstKnownIdx === -1) {
+    svg.innerHTML = '';
+    return;
+  }
+
+  // Backfill before first known with the first known temp (optional, can be left as gaps if preferred)
+//  for (var b = 0; b < firstKnownIdx; b++) {
+//    slots[b].temp = slots[firstKnownIdx].temp;
+//  }
+
+  // Forward fill gaps
+  var lastTemp = slots[firstKnownIdx].temp;
+  for (var f = firstKnownIdx + 1; f < slots.length; f++) {
+    if (slots[f].temp == null || isNaN(slots[f].temp)) {
+      slots[f].temp = lastTemp;
+    } else {
+      lastTemp = slots[f].temp;
+    }
+  }
+
+  // Ensure slot 24 exists (again) after filling
+  if (slots[24].temp == null || isNaN(slots[24].temp)) {
+    slots[24].temp = slots[23].temp;
+  }
+
+  // --- Determine min/max for y scale ---
+  var temps = slots.map(function(s) { return s.temp; }).filter(function(t) { return t != null && !isNaN(t); });
   var minT = Math.min.apply(null, temps);
   var maxT = Math.max.apply(null, temps);
   var range = Math.max(1, maxT - minT);
 
-  var H = 140, step = 32, padL = 24, padR = 16;
-  var yTop = 32, yBot = H - 28;
-  var chartH = yBot - yTop;
-  var W = padL + padR + (n - 1) * step;
+  function yPos(temp) {
+    return yBot - ((temp - minT) / range) * chartH;
+  }
 
-  svg.setAttribute('width', W);
-  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  function hueForY(y) {
+    var t = 1 - ((y - yTop) / (yBot - yTop));
+    t = Math.max(0, Math.min(1, t));
+    return Math.round(200 - t * 160);
+  }
 
-  function x(i) { return padL + i * step; }
-  function y(t) { return yBot - ((t - minT) / range) * chartH; }
+  function hueForTemp(temp) {
+    var minTemp = -10;
+    var maxTemp = 30;
+    var gamma = 0.8; // stretches the color range for better visual distinction in typical temp ranges
 
-  var pts = [];
-  for (var i = 0; i < n; i++) pts.push(x(i) + ',' + y(temps[i]));
+    if (temp == null || isNaN(temp)) return 0;
 
-  var area = padL + ',' + yBot + ' ' + pts.join(' ') + ' ' + x(n-1) + ',' + yBot;
+    if (temp < minTemp) temp = minTemp;
+    if (temp > maxTemp) temp = maxTemp;
+    var t = (temp - minTemp) / (maxTemp - minTemp);
+    t = Math.max(0, Math.min(1, t));
+    t = Math.pow(t, gamma);
 
-  var labels = '', dots = '', gridLines = '';
+    return Math.round(255 - t * 255);
+  }
+
+  // --- Styles from CSS variables ---
   var cs = getComputedStyle(document.documentElement);
   var gridC = cs.getPropertyValue('--border').trim();
   var labelC = cs.getPropertyValue('--text-muted').trim();
 
-  for (var i = 0; i < n; i++) {
-    if (i % 3 === 0) {
-      gridLines += '<line x1="'+x(i)+'" y1="'+yTop+'" x2="'+x(i)+'" y2="'+yBot+'" stroke="'+gridC+'" />';
-      labels += '<text x="'+x(i)+'" y="14" text-anchor="middle" font-size="9" fill="'+labelC+'" font-family="JetBrains Mono,monospace">'+HFC[i].h+'</text>';
-      labels += '<text x="'+x(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9" fill="'+labelC+'" font-family="JetBrains Mono,monospace">'+Math.round(temps[i])+'°</text>';
-    }
-    dots += '<circle cx="'+x(i)+'" cy="'+y(temps[i])+'" r="3" fill="var(--sky)" stroke="rgba(255,255,255,0.2)" stroke-width="1" class="chart-dot" data-idx="'+i+'" />';
+  // --- Y grid + labels ---
+  var yAxis = '';
+  var ySteps = Math.max(2, Math.min(5, Math.ceil(range)));
+  var yStep = range / ySteps;
+
+  for (var y = 0; y <= ySteps; y++) {
+    var tv = minT + y * yStep;
+    var yp = yPos(tv);
+    yAxis += '<text x="' + (padL - 6) + '" y="' + (yp + 3) + '" text-anchor="end" font-size="9" fill="' + labelC + '" font-family="Outfit,sans-serif">' + Math.round(tv) + '\u00b0</text>';
+    yAxis += '<line x1="' + padL + '" y1="' + yp + '" x2="' + (W - padR) + '" y2="' + yp + '" stroke="' + gridC + '" stroke-dasharray="3,3" />';
   }
+
+  // --- X grid + labels 0..24 ---
+  var xLabels = '';
+  var gridLines = '';
+  for (var h2 = 0; h2 <= 24; h2++) {
+    if (h2 % 3 === 0) {
+      gridLines += '<line x1="' + xPos(h2) + '" y1="' + yTop + '" x2="' + xPos(h2) + '" y2="' + (yBot + 5) + '" stroke="' + gridC + '" />';
+      xLabels += '<text x="' + xPos(h2) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="9" fill="' + labelC + '" font-family="Outfit,sans-serif">' + String(h2).padStart(2, '0') + '</text>';
+    }
+    if ((h2 < 24) && (h2 % 3 !== 0)) {
+      xLabels += '<line x1="' + xPos(h2) + '" y1="' + yTop + '" x2="' + xPos(h2) + '" y2="' + yBot + '" stroke="' + gridC + '" opacity="0.5" />';
+    }
+  }
+
+  // --- Build polyline points ---
+  var polyPoints = [];
+  for (var p = 0; p < slots.length; p++) {
+    if (slots[p].point) {
+      polyPoints.push(xPos(slots[p].hour) + ',' + yPos(slots[p].temp));
+    } 
+  }
+
+  // --- Build area under curve ---
+  var areaPoints = xPos(firstKnownIdx) + ',' + yBot + ' ' + polyPoints.join(' ') + ' ' + xPos(24) + ',' + yBot;
+
+  // --- Dots only for real measured/forecast points (not for filled ones) ---
+  // We add data-hour to support highlight + click mapping.
+  var dots = '';
+  for (var d = 0; d <= 23; d++) {
+    var slot = slots[d];
+    if (slot.point) {
+      var dotY = yPos(slot.temp);
+      var hue = hueForY(dotY);
+      var hue = hueForTemp(slot.temp);
+      dots += '<circle class="chart-dot" cx="' + xPos(d) + '" cy="' + dotY + '" r="4" ' +
+              'fill="url(#dotG-'+svgId+')" stroke="rgba(255,255,255,0.2)" stroke-width="1" ' +
+              'data-hour="' + d + '" style="cursor:pointer"><set attributeName="fill" to="hsl('+hue+',80%,55%)"/></circle>';
+    }
+  }
+
+ // Build gradient stops based on actual temperature at each point
+  var lineStops = '';
+  for (var d = 0; d <= 23; d++) {
+    var slot = slots[d];
+    var pct = ((d - firstKnownIdx) / Math.max(1, slots.length - firstKnownIdx) * 100).toFixed(1);
+    if (slot.point) {
+      var pointY = yPos(slot.temp);
+      //var hue = hueForY(pointY, yTop, yBot);
+      var hue = hueForTemp(slot.temp);
+      lineStops += '<stop offset="'+pct+'%" stop-color="hsl('+hue+',80%,55%)"/>';
+    } 
+  }
+
+  var defs =
+    '<defs>' +
+    '<linearGradient id="lineG-'+svgId+'" x1="0" y1="0" x2="1" y2="0">' + lineStops + '</linearGradient>' +
+    '<linearGradient id="areaG-'+svgId+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--sky)" stop-opacity="0.15"/><stop offset="100%" stop-color="var(--amber)" stop-opacity="0"/></linearGradient>' +
+    '</defs>';
+
+  // --- Baseline ---
+  var baseLine = '<line x1="' + padL + '" y1="' + yBot + '" x2="' + (W - padR) + '" y2="' + yBot + '" stroke="' + gridC + '" />';
+
+  // --- Highlight circle (will be moved by highlightChartPoint) ---
+  // Default highlight = hour 0
+  var highlight = '<circle class="chart-highlight" cx="' + xPos(0) + '" cy="' + (yPos(slots[0].temp) - 1.5) + '" r="6" fill="var(--amber)" stroke="var(--text-primary)" stroke-width="2" opacity="0.9" />';
 
   svg.innerHTML =
-    '<defs><linearGradient id="areaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--sky)" stop-opacity="0.2"/><stop offset="100%" stop-color="var(--sky)" stop-opacity="0"/></linearGradient></defs>' +
+    defs +
+    yAxis +
+    xLabels +
     gridLines +
-    '<line x1="'+padL+'" y1="'+yBot+'" x2="'+(W-padR)+'" y2="'+yBot+'" stroke="'+gridC+'" />' +
-    '<path d="M '+area+'" fill="url(#areaG)" />' +
-    '<polyline points="'+pts.join(' ')+'" fill="none" stroke="var(--sky)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' +
-    dots + labels +
-    '<circle id="chartHighlight" cx="'+x(0)+'" cy="'+y(temps[0])+'" r="6" fill="var(--sky)" stroke="var(--text-primary)" stroke-width="2" opacity="0.9" />';
-}
+    baseLine +
+    '<path d="M ' + areaPoints + '" fill="url(#areaG-' + svgId + ')" />' +
+    '<polyline points="' + polyPoints.join(' ') + '" fill="none" stroke="url(#lineG-'+svgId+')" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' +
+    dots +
+    highlight;
 
-function highlightChartPoint(idx) {
-  var hl = document.getElementById('chartHighlight');
-  if (!hl || idx >= HFC.length) return;
-  var temps = HFC.map(function(d) { return d.t; });
-  var minT = Math.min.apply(null, temps), maxT = Math.max.apply(null, temps), range = Math.max(1, maxT - minT);
-  var H = 140, step = 32, padL = 24, yTop = 32, yBot = H - 28, chartH = yBot - yTop;
-  hl.setAttribute('cx', padL + idx * step);
-  hl.setAttribute('cy', yBot - ((temps[idx] - minT) / range) * chartH);
+  // --- Click dots -> select matching hour in hour-strip ---
+  var isToday = (svgId === 'tempChartHeute');
+  var stripId = isToday ? 'hourStripHeute' : 'hourStripMorgen';
+  var stripData = isToday ? hourlyTodayRendered : hourlyTomorrowRendered;
 
-  // Sync-scroll chart to selected hour
-  var wrap = document.getElementById('chartWrap');
-  if (wrap) wrap.scrollLeft = Math.max(0, (padL + idx * step) - wrap.clientWidth / 2);
-}
+  svg.querySelectorAll('.chart-dot').forEach(function(dot) {
+    dot.addEventListener('click', function() {
+      var hourValue = parseInt(dot.getAttribute('data-hour'), 10);
 
-renderChart();
-lucide.createIcons();
+      var targetIdx = 0;
+      for (var i2 = 0; i2 < stripData.length; i2++) {
+        if (stripData[i2] && stripData[i2].hourValue === hourValue) {
+          targetIdx = i2;
+          break;
+        }
+      }
 
-// ===== DAILY TEMP BARS =====
-(function() {
-  var lo = [<!--$dfc0_tt_l-->,<!--$dfc1_tt_l-->,<!--$dfc2_tt_l-->,<!--$dfc3_tt_l-->];
-  var hi = [<!--$dfc0_tt_h-->,<!--$dfc1_tt_h-->,<!--$dfc2_tt_h-->,<!--$dfc3_tt_h-->];
-  var all = lo.concat(hi);
-  var mn = Math.min.apply(null, all), mx = Math.max.apply(null, all), rng = Math.max(1, mx - mn);
-  for (var i = 0; i < 4; i++) {
-    var b = document.getElementById('bar' + i);
-    if (!b) continue;
-    b.style.left = (Math.max(0, (lo[i] - mn) / rng) * 100) + '%';
-    b.style.width = (Math.max(2, (hi[i] - lo[i]) / rng) * 100) + '%';
+      var cards = document.getElementById(stripId).querySelectorAll('.hcard');
+      if (cards[targetIdx]) selectHour(cards[targetIdx], stripData);
+    });
+  });
+
+  // --- Apply current highlight after render ---
+  // If selectedHourValue is "now", highlight the rounded hourValue (stored in selectedHourIdx's data entry)
+  var hvToHighlight = 0;
+  if (selectedTab === (isToday ? 'heute' : 'morgen')) {
+    var selArray = stripData;
+    if (selArray && selArray[selectedHourIdx] && typeof selArray[selectedHourIdx].hourValue === 'number') {
+      hvToHighlight = selArray[selectedHourIdx].hourValue;
+    }
   }
-})();
+  highlightChartPoint(svgId, hvToHighlight);
+}
 
-// ===== DRAG SCROLL for hour strip =====
-(function() {
-  var el = document.getElementById('hourStrip');
-  if (!el) return;
-  var down = false, sx = 0, sl = 0;
-  el.style.cursor = 'grab';
-  el.addEventListener('pointerdown', function(e) { if (e.button !== 0) return; down = true; sx = e.clientX; sl = el.scrollLeft; el.style.cursor = 'grabbing'; });
-  el.addEventListener('pointermove', function(e) { if (!down) return; el.scrollLeft = sl - (e.clientX - sx); });
-  var end = function() { down = false; el.style.cursor = 'grab'; };
-  el.addEventListener('pointerup', end);
-  el.addEventListener('pointercancel', end);
-  el.addEventListener('mouseleave', end);
-  el.addEventListener('wheel', function(e) { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { el.scrollLeft += e.deltaY; e.preventDefault(); } }, {passive:false});
-})();
+function highlightChartPoint(svgId, hourValue) {
+  var svg = document.getElementById(svgId);
+  if (!svg) return;
+
+  var highlight = svg.querySelector('.chart-highlight');
+  if (!highlight) return;
+
+  if (hourValue == null || isNaN(hourValue)) hourValue = 0;
+  hourValue = Math.max(0, Math.min(24, hourValue));
+
+  // Must match renderTempChart constants
+  var padL = 40;
+  var stepX = 28;
+
+  var dot = svg.querySelector('.chart-dot[data-hour="' + hourValue + '"]');
+  if (dot) {
+    highlight.setAttribute('cx', dot.getAttribute('cx'));
+    highlight.setAttribute('cy', dot.getAttribute('cy'));
+  } else {
+    // If there is no real dot for this hour, move highlight horizontally only
+    highlight.setAttribute('cx', padL + hourValue * stepX);
+  }
+}
+
+// ===== HIDE EMPTY DATA =====
+function hideEmptyStats() {
+  var statIds = ['statHumidity', 'statWind', 'statPressure', 'statVisibility',
+                 'statDewpoint', 'statPrecip', 'statUVI', 'statClouds', 'statGusts', 'statFeelslike'];
+  for (var i = 0; i < statIds.length; i++) {
+    var el = document.getElementById(statIds[i]);
+    if (!el) continue;
+    var val = el.textContent.trim();
+    var card = el.closest('.glass');
+    if (card && (val === '--' || val === '--%' || val === '-- km/h' || val === '-- hPa' || val === '-- km' || val === '--°')) {
+      card.style.display = 'none';
+    } else if (card) {
+      card.style.display = '';
+    }
+  }
+}
+
+// ===== BOOT =====
+document.querySelector('.tab-panel.active').classList.add('fade-in');
+lucide.createIcons();
+loadAllData()
+  .then(function() {
+    scheduleRefresh();
+  })
+  .catch(function(err) {
+    console.error('Initial load failed:', err);
+  });
 </script>
 </body>
 </html>

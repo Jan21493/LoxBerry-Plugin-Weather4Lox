@@ -342,7 +342,8 @@ sub getTimeFormatted {
     }
     $dt->set_time_zone($timezone);
 
-    return $dt->strftime('%H:%M');
+    $fmt = '%H:%M' if !defined($fmt) || $fmt eq '';
+    return $dt->strftime($fmt);
 }
 
 ##########################################################################
@@ -365,11 +366,17 @@ sub getTimeFromEpochFormatted {
     if (!defined $timezone || $timezone eq '') {
         $timezone = 'UTC';
     }
-    my $dt = DateTime->from_epoch( epoch => $epoch_time, time_zone => $timezone );
+    my $dt = DateTime->from_epoch(
+        epoch     => $epoch_time,
+        time_zone => $timezone
+    );
+
     return undef unless $dt;
 
-    return $dt->strftime('%H:%M');
+    $fmt = '%H:%M' if !defined($fmt) || $fmt eq '';
+    return $dt->strftime($fmt);
 }
+
 ##########################################################################
 # Get a percentage value by calling getFormatted and multiplying the result by 100.
 # Parameters:
