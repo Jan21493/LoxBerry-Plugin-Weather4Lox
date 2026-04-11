@@ -804,8 +804,8 @@ function renderAll() {
   ctx.style.opacity = '0.6';
 
   // Update hero with current data
-  document.getElementById('heroTemp').innerHTML = Math.round(cTemp.air * 10) / 10 + '<sup>\u00b0C</sup>';
-  document.getElementById('heroFeelsLike').textContent = (cTemp.feelsLike != null ? Math.round(cTemp.feelsLike * 10) / 10 : '--') + '\u00b0C';
+  document.getElementById('heroTemp').innerHTML = (cTemp.air != null ? cTemp.air.toFixed(1) : '--') + '<sup>\u00b0C</sup>';
+  document.getElementById('heroFeelsLike').textContent = (cTemp.feelsLike != null ? cTemp.feelsLike.toFixed(1) : '--') + '\u00b0C';
   document.getElementById('heroDesc').textContent = cWx.description || '--';
   document.getElementById('heroWind').textContent = (cWind.speed != null ? cWind.speed : '--') + ' km/h ' + getWindDirLabel(cWind.direction) + ', ';
   document.getElementById('heroGust').textContent = (cWind.gust != null ? cWind.gust : '--') + ' km/h';
@@ -819,7 +819,7 @@ function renderAll() {
   // Extra stats (sunrise/sunset + weather details)
   document.getElementById('statSunrise').textContent = sunrise;
   document.getElementById('statSunset').textContent = sunset;
-  document.getElementById('statDewpoint').textContent = (c.dewpoint != null ? Math.round(c.dewpoint * 10) / 10 : '--') + '\u00b0C';
+  document.getElementById('statDewpoint').textContent = (c.dewpoint != null ? c.dewpoint.toFixed(1) : '--') + '\u00b0C';
   document.getElementById('statHumidity').textContent = (c.humidity != null ? c.humidity : '--') + '%';
   document.getElementById('statUVI').textContent = c.uvIndex != null ? c.uvIndex : '--';
   document.getElementById('statClouds').textContent = (c.cloudCover != null ? c.cloudCover : '--') + '%';
@@ -1224,26 +1224,21 @@ function selectHour(el, dataArray) {
   ctx.textContent = tabLabel + '∙' + (d.isNow ? d.hour : d.hour + ':00');
   ctx.style.opacity = '1';
 
-  var heroTemp = document.getElementById('heroTemp');
-  heroTemp.style.opacity = '0';
-  setTimeout(function() {
-    heroTemp.innerHTML = Math.round(d.temp * 10) / 10 + '<sup>\u00b0C</sup>';
-    heroTemp.style.opacity = '1';
-  }, 150);
+  document.getElementById('heroTemp').innerHTML = (d.temp != null ? d.temp.toFixed(1) : '--') + '<sup>\u00b0C</sup>';
   document.getElementById('heroDesc').textContent = d.desc || '--';
   document.getElementById('heroWind').textContent = textContent =
     (liveData.lang && liveData.lang.theme.wind_from ? liveData.lang.theme.wind_from + ' ' : ' ') +
     getWindDirLabel(d.windDir) + ' ' + (liveData.lang && liveData.lang.theme.with ? ' ' + liveData.lang.theme.with + ' ' : ' ') + ' ' + (d.wind != null ? d.wind : '--') + ' km/h' + ', ';
   document.getElementById('heroGust').textContent = textContent =
     (liveData.lang && liveData.lang.theme.gusts ? liveData.lang.theme.gusts + ' ' + liveData.lang.theme.up_to + ' ' : '') + (d.gust != null ? d.gust : '--') + ' km/h';
-  document.getElementById('heroFeelsLike').textContent = (liveData.lang && liveData.lang.theme.feelsLike ? liveData.lang.theme.feelsLike + ' ' : ' ') + (d.feelsLike != null ? d.feelsLike : '--') + '\u00b0C';
+  document.getElementById('heroFeelsLike').textContent = (liveData.lang && liveData.lang.theme.feelsLike ? liveData.lang.theme.feelsLike + ' ' : ' ') + (d.feelsLike != null ? d.feelsLike.toFixed(1) : '--') + '\u00b0C';
   document.getElementById('heroIcon').src = resolveIcon(d.weatherCode, d.isNight, d.moonAge);
 
   // Update stat boxes with hourly data
   document.getElementById('statHumidity').textContent = (d.humidity != null ? d.humidity : '--') + '%';
   document.getElementById('statPressure').innerHTML = (d.pressure != null ? d.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
   document.getElementById('statVisibility').innerHTML = (d.visibility != null ? d.visibility : '--') + ' <small style="color:var(--text-muted)">km</small>';
-  document.getElementById('statDewpoint').textContent = (d.dewpoint != null ? d.dewpoint : '--') + '\u00b0';
+  document.getElementById('statDewpoint').textContent = (d.dewpoint != null ? d.dewpoint.toFixed(1) : '--') + '\u00b0';
   document.getElementById('statPrecip').textContent = (d.rainAmount != null ? d.rainAmount : 0) + ' mm';
   document.getElementById('statUVI').textContent = d.uvi != null ? d.uvi : '--';
   document.getElementById('statClouds').textContent = (d.clouds != null ? d.clouds : '--') + '%';

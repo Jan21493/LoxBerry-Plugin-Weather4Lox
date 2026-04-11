@@ -1,15 +1,4440 @@
 {
-  "refresh": 900,
-  "location": {
-    "city": "--",
-    "country": "--",
-    "countryCode": "--",
-    "elevation": 0,
-    "latitude": 0,
-    "longitude": 0,
-    "timezone": "UTC",
-    "tzOffset": "+0000",
-    "tzShort": "UTC"
-  },
-  "hourlyforecast": []
+   "generatedAt" : "2026-04-12T01:00:06",
+   "hourlyforecast" : [
+      {
+         "cloudCover" : 86,
+         "dewpoint" : 0.2,
+         "hour" : 1,
+         "humidity" : 50,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 23.8,
+            "direction" : "waxing",
+            "percent" : 33.1,
+            "phase" : 80.5
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1011,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 10.2,
+            "feelsLike" : 8.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T01:00:00+02:00",
+            "epoch" : 1775948400
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "SE",
+            "direction" : 136,
+            "gust" : 55.7,
+            "speed" : 23.1
+         }
+      },
+      {
+         "cloudCover" : 86,
+         "dewpoint" : 0.3,
+         "hour" : 2,
+         "humidity" : 52,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 23.8,
+            "direction" : "waxing",
+            "percent" : 32.7,
+            "phase" : 80.6
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1011,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 9.7,
+            "feelsLike" : 7.3,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T02:00:00+02:00",
+            "epoch" : 1775952000
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "SE",
+            "direction" : 153,
+            "gust" : 44.1,
+            "speed" : 16.7
+         }
+      },
+      {
+         "cloudCover" : 92,
+         "dewpoint" : 1.4,
+         "hour" : 3,
+         "humidity" : 60,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 23.8,
+            "direction" : "waxing",
+            "percent" : 32.3,
+            "phase" : 80.7
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 80,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1011,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 8.7,
+            "feelsLike" : 6.9,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T03:00:00+02:00",
+            "epoch" : 1775955600
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "SE",
+            "direction" : 150,
+            "gust" : 31.1,
+            "speed" : 11.4
+         }
+      },
+      {
+         "cloudCover" : 94,
+         "dewpoint" : 1.8,
+         "hour" : 4,
+         "humidity" : 67,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 23.9,
+            "direction" : "waxing",
+            "percent" : 31.9,
+            "phase" : 80.9
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : 0.2,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1012,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.5,
+            "feelsLike" : 5.7,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T04:00:00+02:00",
+            "epoch" : 1775959200
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "SE",
+            "direction" : 136,
+            "gust" : 23,
+            "speed" : 9.5
+         }
+      },
+      {
+         "cloudCover" : 97,
+         "dewpoint" : 2.5,
+         "hour" : 5,
+         "humidity" : 78,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 23.9,
+            "direction" : "waxing",
+            "percent" : 31.5,
+            "phase" : 81
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : 1.5,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6,
+            "feelsLike" : 4.8,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T05:00:00+02:00",
+            "epoch" : 1775962800
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Mäßiger Regen",
+            "loxone" : 11,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_2"
+         },
+         "wind" : {
+            "cardinal" : "SE",
+            "direction" : 135,
+            "gust" : 11.9,
+            "speed" : 6.4
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 4.5,
+         "hour" : 6,
+         "humidity" : 93,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 24,
+            "direction" : "waxing",
+            "percent" : 31.1,
+            "phase" : 81.2
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : 0.3,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1014,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 4.1,
+            "feelsLike" : 4.1,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T06:00:00+02:00",
+            "epoch" : 1775966400
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "S",
+            "direction" : 189,
+            "gust" : 7,
+            "speed" : 3.5
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 4.9,
+         "hour" : 7,
+         "humidity" : 93,
+         "isNight" : null,
+         "moon" : {
+            "age" : 24,
+            "direction" : "waxing",
+            "percent" : 30.8,
+            "phase" : 81.3
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 80,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1015,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 4.5,
+            "feelsLike" : 4.5,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T07:00:00+02:00",
+            "epoch" : 1775970000
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "N",
+            "direction" : 340,
+            "gust" : 8.4,
+            "speed" : 2.4
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.6,
+         "hour" : 8,
+         "humidity" : 94,
+         "isNight" : null,
+         "moon" : {
+            "age" : 24,
+            "direction" : "waxing",
+            "percent" : 30.4,
+            "phase" : 81.4
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 80,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1015,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 5.2,
+            "feelsLike" : 3.9,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T08:00:00+02:00",
+            "epoch" : 1775973600
+         },
+         "uvIndex" : 0.3,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 280,
+            "gust" : 19.5,
+            "speed" : 6.2
+         }
+      },
+      {
+         "cloudCover" : 97,
+         "dewpoint" : 5.9,
+         "hour" : 9,
+         "humidity" : 86,
+         "isNight" : null,
+         "moon" : {
+            "age" : 24.1,
+            "direction" : "waxing",
+            "percent" : 30,
+            "phase" : 81.6
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1016,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.5,
+            "feelsLike" : 5.7,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T09:00:00+02:00",
+            "epoch" : 1775977200
+         },
+         "uvIndex" : 0.8,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "NW",
+            "direction" : 301,
+            "gust" : 16.7,
+            "speed" : 9.5
+         }
+      },
+      {
+         "cloudCover" : 64,
+         "dewpoint" : 5.3,
+         "hour" : 10,
+         "humidity" : 74,
+         "isNight" : null,
+         "moon" : {
+            "age" : 24.1,
+            "direction" : "waxing",
+            "percent" : 29.6,
+            "phase" : 81.7
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1017,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 9.9,
+            "feelsLike" : 8.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T10:00:00+02:00",
+            "epoch" : 1775980800
+         },
+         "uvIndex" : 1.6,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Überwiegend bewölkt",
+            "loxone" : 4,
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "cardinal" : "NW",
+            "direction" : 293,
+            "gust" : 12.7,
+            "speed" : 10
+         }
+      },
+      {
+         "cloudCover" : 54,
+         "dewpoint" : 5,
+         "hour" : 11,
+         "humidity" : 67,
+         "isNight" : null,
+         "moon" : {
+            "age" : 24.2,
+            "direction" : "waxing",
+            "percent" : 29.2,
+            "phase" : 81.8
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1017,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 11.5,
+            "feelsLike" : 10.5,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T11:00:00+02:00",
+            "epoch" : 1775984400
+         },
+         "uvIndex" : 2.5,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Überwiegend bewölkt",
+            "loxone" : 4,
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 285,
+            "gust" : 9.2,
+            "speed" : 8.6
+         }
+      },
+      {
+         "cloudCover" : 61,
+         "dewpoint" : 4.3,
+         "hour" : 12,
+         "humidity" : 60,
+         "isNight" : null,
+         "moon" : {
+            "age" : 24.2,
+            "direction" : "waxing",
+            "percent" : 28.8,
+            "phase" : 82
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1017,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 12.6,
+            "feelsLike" : 11.5,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T12:00:00+02:00",
+            "epoch" : 1775988000
+         },
+         "uvIndex" : 3.3,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Überwiegend bewölkt",
+            "loxone" : 4,
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 271,
+            "gust" : 8.9,
+            "speed" : 8.4
+         }
+      },
+      {
+         "cloudCover" : 68,
+         "dewpoint" : 3.3,
+         "hour" : 13,
+         "humidity" : 53,
+         "isNight" : null,
+         "moon" : {
+            "age" : 24.2,
+            "direction" : "waxing",
+            "percent" : 28.4,
+            "phase" : 82.1
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1016,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 13.6,
+            "feelsLike" : 12.4,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T13:00:00+02:00",
+            "epoch" : 1775991600
+         },
+         "uvIndex" : 3.7,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Überwiegend bewölkt",
+            "loxone" : 4,
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 264,
+            "gust" : 7.9,
+            "speed" : 8.1
+         }
+      },
+      {
+         "cloudCover" : 74,
+         "dewpoint" : 2.6,
+         "hour" : 14,
+         "humidity" : 48,
+         "isNight" : null,
+         "moon" : {
+            "age" : 24.3,
+            "direction" : "waxing",
+            "percent" : 28,
+            "phase" : 82.2
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1016,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 13.8,
+            "feelsLike" : 12.5,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T14:00:00+02:00",
+            "epoch" : 1775995200
+         },
+         "uvIndex" : 3.6,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Überwiegend bewölkt",
+            "loxone" : 4,
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 261,
+            "gust" : 7.7,
+            "speed" : 8.1
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 2.1,
+         "hour" : 15,
+         "humidity" : 46,
+         "isNight" : null,
+         "moon" : {
+            "age" : 24.3,
+            "direction" : "waxing",
+            "percent" : 27.7,
+            "phase" : 82.4
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1016,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 13.5,
+            "feelsLike" : 12.1,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T15:00:00+02:00",
+            "epoch" : 1775998800
+         },
+         "uvIndex" : 2.9,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 262,
+            "gust" : 6.5,
+            "speed" : 7.1
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 1.7,
+         "hour" : 16,
+         "humidity" : 44,
+         "isNight" : null,
+         "moon" : {
+            "age" : 24.4,
+            "direction" : "waxing",
+            "percent" : 27.3,
+            "phase" : 82.5
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1016,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 13.7,
+            "feelsLike" : 12.2,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T16:00:00+02:00",
+            "epoch" : 1776002400
+         },
+         "uvIndex" : 2,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 251,
+            "gust" : 4.9,
+            "speed" : 5.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 1.4,
+         "hour" : 17,
+         "humidity" : 44,
+         "isNight" : null,
+         "moon" : {
+            "age" : 24.4,
+            "direction" : "waxing",
+            "percent" : 26.9,
+            "phase" : 82.6
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1016,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 13.5,
+            "feelsLike" : 12.1,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T17:00:00+02:00",
+            "epoch" : 1776006000
+         },
+         "uvIndex" : 1.1,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 259,
+            "gust" : 4.4,
+            "speed" : 4.4
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 1.7,
+         "hour" : 18,
+         "humidity" : 45,
+         "isNight" : null,
+         "moon" : {
+            "age" : 24.4,
+            "direction" : "waxing",
+            "percent" : 26.5,
+            "phase" : 82.8
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1017,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 13.2,
+            "feelsLike" : 11.7,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T18:00:00+02:00",
+            "epoch" : 1776009600
+         },
+         "uvIndex" : 0.5,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 251,
+            "gust" : 3.8,
+            "speed" : 3.9
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 3.8,
+         "hour" : 19,
+         "humidity" : 57,
+         "isNight" : null,
+         "moon" : {
+            "age" : 24.5,
+            "direction" : "waxing",
+            "percent" : 26.1,
+            "phase" : 82.9
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1017,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 12,
+            "feelsLike" : 10.7,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T19:00:00+02:00",
+            "epoch" : 1776013200
+         },
+         "uvIndex" : 0.2,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "N",
+            "direction" : 343,
+            "gust" : 2.6,
+            "speed" : 1.5
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 4.3,
+         "hour" : 20,
+         "humidity" : 70,
+         "isNight" : null,
+         "moon" : {
+            "age" : 24.5,
+            "direction" : "waxing",
+            "percent" : 25.8,
+            "phase" : 83.1
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1017,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 9.6,
+            "feelsLike" : 8.5,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T20:00:00+02:00",
+            "epoch" : 1776016800
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 70,
+            "gust" : 13.2,
+            "speed" : 7.8
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.5,
+         "hour" : 21,
+         "humidity" : 83,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 24.6,
+            "direction" : "waxing",
+            "percent" : 25.4,
+            "phase" : 83.2
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 8,
+            "feelsLike" : 5.7,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T21:00:00+02:00",
+            "epoch" : 1776020400
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 95,
+            "gust" : 28,
+            "speed" : 13.8
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.6,
+         "hour" : 22,
+         "humidity" : 86,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 24.6,
+            "direction" : "waxing",
+            "percent" : 25,
+            "phase" : 83.3
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 5.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T22:00:00+02:00",
+            "epoch" : 1776024000
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 97,
+            "gust" : 23.7,
+            "speed" : 10.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.3,
+         "hour" : 23,
+         "humidity" : 89,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 24.6,
+            "direction" : "waxing",
+            "percent" : 24.6,
+            "phase" : 83.5
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6.9,
+            "feelsLike" : 5.3,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-12T23:00:00+02:00",
+            "epoch" : 1776027600
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 96,
+            "gust" : 17.9,
+            "speed" : 8.2
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 4.9,
+         "hour" : 24,
+         "humidity" : 91,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 24.7,
+            "direction" : "waxing",
+            "percent" : 24.3,
+            "phase" : 83.6
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6.3,
+            "feelsLike" : 4.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T00:00:00+02:00",
+            "epoch" : 1776031200
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 87,
+            "gust" : 14.5,
+            "speed" : 8.2
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 4.6,
+         "hour" : 25,
+         "humidity" : 91,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 24.7,
+            "direction" : "waxing",
+            "percent" : 23.9,
+            "phase" : 83.7
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 5.9,
+            "feelsLike" : 4.2,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T01:00:00+02:00",
+            "epoch" : 1776034800
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 77,
+            "gust" : 12.2,
+            "speed" : 7.9
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 4,
+         "hour" : 26,
+         "humidity" : 92,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 24.8,
+            "direction" : "waxing",
+            "percent" : 23.5,
+            "phase" : 83.9
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1018,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 5.1,
+            "feelsLike" : 3.2,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T02:00:00+02:00",
+            "epoch" : 1776038400
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "NE",
+            "direction" : 62,
+            "gust" : 10.7,
+            "speed" : 8.3
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 3.2,
+         "hour" : 27,
+         "humidity" : 88,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 24.8,
+            "direction" : "waxing",
+            "percent" : 23.2,
+            "phase" : 84
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1017,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 5,
+            "feelsLike" : 3.2,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T03:00:00+02:00",
+            "epoch" : 1776042000
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "NE",
+            "direction" : 61,
+            "gust" : 13.2,
+            "speed" : 8
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 2.9,
+         "hour" : 28,
+         "humidity" : 88,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 24.9,
+            "direction" : "waxing",
+            "percent" : 22.8,
+            "phase" : 84.2
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1017,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 4.7,
+            "feelsLike" : 2.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T04:00:00+02:00",
+            "epoch" : 1776045600
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "NE",
+            "direction" : 57,
+            "gust" : 16,
+            "speed" : 8.6
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 3,
+         "hour" : 29,
+         "humidity" : 93,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 24.9,
+            "direction" : "waxing",
+            "percent" : 22.4,
+            "phase" : 84.3
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1017,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 4,
+            "feelsLike" : 1.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T05:00:00+02:00",
+            "epoch" : 1776049200
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "NE",
+            "direction" : 61,
+            "gust" : 19.9,
+            "speed" : 9.5
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 3,
+         "hour" : 30,
+         "humidity" : 96,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 24.9,
+            "direction" : "waxing",
+            "percent" : 22.1,
+            "phase" : 84.4
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1017,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 3.5,
+            "feelsLike" : 1.2,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T06:00:00+02:00",
+            "epoch" : 1776052800
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 69,
+            "gust" : 17.6,
+            "speed" : 8.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 3.3,
+         "hour" : 31,
+         "humidity" : 94,
+         "isNight" : null,
+         "moon" : {
+            "age" : 25,
+            "direction" : "waxing",
+            "percent" : 21.7,
+            "phase" : 84.6
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1017,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 4.1,
+            "feelsLike" : 2,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T07:00:00+02:00",
+            "epoch" : 1776056400
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 75,
+            "gust" : 20.6,
+            "speed" : 8.3
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 4.1,
+         "hour" : 32,
+         "humidity" : 89,
+         "isNight" : null,
+         "moon" : {
+            "age" : 25,
+            "direction" : "waxing",
+            "percent" : 21.3,
+            "phase" : 84.7
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1017,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 5.8,
+            "feelsLike" : 3.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T08:00:00+02:00",
+            "epoch" : 1776060000
+         },
+         "uvIndex" : 0.2,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 93,
+            "gust" : 21.1,
+            "speed" : 10.3
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.1,
+         "hour" : 33,
+         "humidity" : 86,
+         "isNight" : null,
+         "moon" : {
+            "age" : 25.1,
+            "direction" : "waxing",
+            "percent" : 21,
+            "phase" : 84.9
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1016,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.3,
+            "feelsLike" : 5,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T09:00:00+02:00",
+            "epoch" : 1776063600
+         },
+         "uvIndex" : 0.5,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 103,
+            "gust" : 24,
+            "speed" : 12.9
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.6,
+         "hour" : 34,
+         "humidity" : 85,
+         "isNight" : null,
+         "moon" : {
+            "age" : 25.1,
+            "direction" : "waxing",
+            "percent" : 20.6,
+            "phase" : 85
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 20,
+            "rainHigh" : 0.1,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1016,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.8,
+            "feelsLike" : 5.3,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T10:00:00+02:00",
+            "epoch" : 1776067200
+         },
+         "uvIndex" : 1,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 98,
+            "gust" : 24.4,
+            "speed" : 14.1
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.7,
+         "hour" : 35,
+         "humidity" : 93,
+         "isNight" : null,
+         "moon" : {
+            "age" : 25.1,
+            "direction" : "waxing",
+            "percent" : 20.3,
+            "phase" : 85.1
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : 0.6,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1016,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6.7,
+            "feelsLike" : 4.3,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T11:00:00+02:00",
+            "epoch" : 1776070800
+         },
+         "uvIndex" : 1.1,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 81,
+            "gust" : 26.1,
+            "speed" : 12.1
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.7,
+         "hour" : 36,
+         "humidity" : 95,
+         "isNight" : null,
+         "moon" : {
+            "age" : 25.2,
+            "direction" : "waxing",
+            "percent" : 19.9,
+            "phase" : 85.3
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : 0.9,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1016,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6.3,
+            "feelsLike" : 3.7,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T12:00:00+02:00",
+            "epoch" : 1776074400
+         },
+         "uvIndex" : 0.3,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 78,
+            "gust" : 28.7,
+            "speed" : 12.8
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.6,
+         "hour" : 37,
+         "humidity" : 96,
+         "isNight" : null,
+         "moon" : {
+            "age" : 25.2,
+            "direction" : "waxing",
+            "percent" : 19.6,
+            "phase" : 85.4
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : 1.6,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1016,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6.1,
+            "feelsLike" : 3.4,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T13:00:00+02:00",
+            "epoch" : 1776078000
+         },
+         "uvIndex" : 0.3,
+         "visibility" : 8,
+         "weatherCode" : {
+            "description" : "Mäßiger Regen",
+            "loxone" : 11,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_2"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 80,
+            "gust" : 30.2,
+            "speed" : 13.3
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.6,
+         "hour" : 38,
+         "humidity" : 96,
+         "isNight" : null,
+         "moon" : {
+            "age" : 25.3,
+            "direction" : "waxing",
+            "percent" : 19.2,
+            "phase" : 85.6
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : 1.9,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1015,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6.2,
+            "feelsLike" : 3.1,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T14:00:00+02:00",
+            "epoch" : 1776081600
+         },
+         "uvIndex" : 0.3,
+         "visibility" : 7,
+         "weatherCode" : {
+            "description" : "Mäßiger Regen",
+            "loxone" : 11,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_2"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 81,
+            "gust" : 34.2,
+            "speed" : 15.5
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.4,
+         "hour" : 39,
+         "humidity" : 95,
+         "isNight" : null,
+         "moon" : {
+            "age" : 25.3,
+            "direction" : "waxing",
+            "percent" : 18.9,
+            "phase" : 85.7
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : 2.7,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1015,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6.1,
+            "feelsLike" : 3,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T15:00:00+02:00",
+            "epoch" : 1776085200
+         },
+         "uvIndex" : 0.2,
+         "visibility" : 9,
+         "weatherCode" : {
+            "description" : "Mäßiger Regen",
+            "loxone" : 11,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_2"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 78,
+            "gust" : 35.2,
+            "speed" : 15.6
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.4,
+         "hour" : 40,
+         "humidity" : 95,
+         "isNight" : null,
+         "moon" : {
+            "age" : 25.3,
+            "direction" : "waxing",
+            "percent" : 18.5,
+            "phase" : 85.8
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : 1.2,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1014,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6.1,
+            "feelsLike" : 2.8,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T16:00:00+02:00",
+            "epoch" : 1776088800
+         },
+         "uvIndex" : 0.2,
+         "visibility" : 8,
+         "weatherCode" : {
+            "description" : "Mäßiger Regen",
+            "loxone" : 11,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_2"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 75,
+            "gust" : 38.2,
+            "speed" : 17.5
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.4,
+         "hour" : 41,
+         "humidity" : 92,
+         "isNight" : null,
+         "moon" : {
+            "age" : 25.4,
+            "direction" : "waxing",
+            "percent" : 18.2,
+            "phase" : 86
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : 0.4,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1014,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6.4,
+            "feelsLike" : 3.5,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T17:00:00+02:00",
+            "epoch" : 1776092400
+         },
+         "uvIndex" : 0.1,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 75,
+            "gust" : 41.3,
+            "speed" : 15.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.5,
+         "hour" : 42,
+         "humidity" : 92,
+         "isNight" : null,
+         "moon" : {
+            "age" : 25.4,
+            "direction" : "waxing",
+            "percent" : 17.8,
+            "phase" : 86.1
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : 0.6,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1014,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6.5,
+            "feelsLike" : 4.2,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T18:00:00+02:00",
+            "epoch" : 1776096000
+         },
+         "uvIndex" : 0.1,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 69,
+            "gust" : 29.5,
+            "speed" : 11.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.6,
+         "hour" : 43,
+         "humidity" : 94,
+         "isNight" : null,
+         "moon" : {
+            "age" : 25.5,
+            "direction" : "waxing",
+            "percent" : 17.5,
+            "phase" : 86.3
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : 0.6,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1014,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6.5,
+            "feelsLike" : 4.7,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T19:00:00+02:00",
+            "epoch" : 1776099600
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "NE",
+            "direction" : 49,
+            "gust" : 21.8,
+            "speed" : 8.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.8,
+         "hour" : 44,
+         "humidity" : 94,
+         "isNight" : null,
+         "moon" : {
+            "age" : 25.5,
+            "direction" : "waxing",
+            "percent" : 17.2,
+            "phase" : 86.4
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : 0.3,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1014,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6.6,
+            "feelsLike" : 5.2,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T20:00:00+02:00",
+            "epoch" : 1776103200
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "NE",
+            "direction" : 23,
+            "gust" : 13.5,
+            "speed" : 7.4
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.9,
+         "hour" : 45,
+         "humidity" : 94,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 25.6,
+            "direction" : "waxing",
+            "percent" : 16.8,
+            "phase" : 86.5
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 60,
+            "rainHigh" : 0.1,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6.7,
+            "feelsLike" : 5,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T21:00:00+02:00",
+            "epoch" : 1776106800
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "N",
+            "direction" : 11,
+            "gust" : 13.3,
+            "speed" : 8.8
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 5.9,
+         "hour" : 46,
+         "humidity" : 93,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 25.6,
+            "direction" : "waxing",
+            "percent" : 16.5,
+            "phase" : 86.7
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 50,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 6.9,
+            "feelsLike" : 5.3,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T22:00:00+02:00",
+            "epoch" : 1776110400
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "N",
+            "direction" : 6,
+            "gust" : 11.4,
+            "speed" : 8.3
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 47,
+         "humidity" : 93,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 25.6,
+            "direction" : "waxing",
+            "percent" : 16.2,
+            "phase" : 86.8
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 40,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.1,
+            "feelsLike" : 6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-13T23:00:00+02:00",
+            "epoch" : 1776114000
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "NE",
+            "direction" : 24,
+            "gust" : 8.4,
+            "speed" : 6.6
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 48,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 25.7,
+            "direction" : "waxing",
+            "percent" : 15.8,
+            "phase" : 87
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 30,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-14T00:00:00+02:00",
+            "epoch" : 1776117600
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 90,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 49,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 25.7,
+            "direction" : "waxing",
+            "percent" : 15.5,
+            "phase" : 87.1
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 25,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-14T01:00:00+02:00",
+            "epoch" : 1776121200
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "SE",
+            "direction" : 127,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 50,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 25.8,
+            "direction" : "waxing",
+            "percent" : 14.9,
+            "phase" : 87.4
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 20,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-14T03:00:00+02:00",
+            "epoch" : 1776128400
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "S",
+            "direction" : 165,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 51,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 25.9,
+            "direction" : "waxing",
+            "percent" : 14.5,
+            "phase" : 87.5
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 60,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-14T04:00:00+02:00",
+            "epoch" : 1776132000
+         },
+         "uvIndex" : 0,
+         "visibility" : 8.5,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "SW",
+            "direction" : 229,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 52,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 25.9,
+            "direction" : "waxing",
+            "percent" : 13.9,
+            "phase" : 87.8
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-14T06:00:00+02:00",
+            "epoch" : 1776139200
+         },
+         "uvIndex" : 0,
+         "visibility" : 7,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "NW",
+            "direction" : 293,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 53,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 26,
+            "direction" : "waxing",
+            "percent" : 13.6,
+            "phase" : 88
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-14T07:00:00+02:00",
+            "epoch" : 1776142800
+         },
+         "uvIndex" : 0,
+         "visibility" : 7,
+         "weatherCode" : {
+            "description" : "Mäßiger Regen",
+            "loxone" : 11,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_2"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 291,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 54,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 26.1,
+            "direction" : "waxing",
+            "percent" : 13,
+            "phase" : 88.3
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-14T09:00:00+02:00",
+            "epoch" : 1776150000
+         },
+         "uvIndex" : 0,
+         "visibility" : 7,
+         "weatherCode" : {
+            "description" : "Mäßiger Regen",
+            "loxone" : 11,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_2"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 289,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 55,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 26.1,
+            "direction" : "waxing",
+            "percent" : 12.7,
+            "phase" : 88.4
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-14T10:00:00+02:00",
+            "epoch" : 1776153600
+         },
+         "uvIndex" : 0,
+         "visibility" : 8.5,
+         "weatherCode" : {
+            "description" : "Mäßiger Regen",
+            "loxone" : 11,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_2"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 286,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 56,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 26.2,
+            "direction" : "waxing",
+            "percent" : 12.1,
+            "phase" : 88.7
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-14T12:00:00+02:00",
+            "epoch" : 1776160800
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Mäßiger Regen",
+            "loxone" : 11,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_2"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 283,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 57,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 26.2,
+            "direction" : "waxing",
+            "percent" : 11.8,
+            "phase" : 88.9
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-14T13:00:00+02:00",
+            "epoch" : 1776164400
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 283,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 58,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 26.3,
+            "direction" : "waxing",
+            "percent" : 11.2,
+            "phase" : 89.1
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 100,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-14T15:00:00+02:00",
+            "epoch" : 1776171600
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 284,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 59,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 26.4,
+            "direction" : "waxing",
+            "percent" : 10.9,
+            "phase" : 89.3
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 60,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-14T16:00:00+02:00",
+            "epoch" : 1776175200
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 288,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 60,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 26.5,
+            "direction" : "waxing",
+            "percent" : 10.3,
+            "phase" : 89.6
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 20,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-14T18:00:00+02:00",
+            "epoch" : 1776182400
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 292,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 61,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 26.5,
+            "direction" : "waxing",
+            "percent" : 10,
+            "phase" : 89.7
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 10,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-14T19:00:00+02:00",
+            "epoch" : 1776186000
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 289,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 62,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 26.6,
+            "direction" : "waxing",
+            "percent" : 9.5,
+            "phase" : 90
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-14T21:00:00+02:00",
+            "epoch" : 1776193200
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 286,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 63,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 26.6,
+            "direction" : "waxing",
+            "percent" : 9.2,
+            "phase" : 90.2
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-14T22:00:00+02:00",
+            "epoch" : 1776196800
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 268,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 64,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 26.7,
+            "direction" : "waxing",
+            "percent" : 8.7,
+            "phase" : 90.5
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-15T00:00:00+02:00",
+            "epoch" : 1776204000
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "W",
+            "direction" : 250,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 65,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 26.8,
+            "direction" : "waxing",
+            "percent" : 8.4,
+            "phase" : 90.6
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-15T01:00:00+02:00",
+            "epoch" : 1776207600
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Überwiegend bewölkt",
+            "loxone" : 4,
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "cardinal" : "SW",
+            "direction" : 243,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 66,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 26.8,
+            "direction" : "waxing",
+            "percent" : 7.9,
+            "phase" : 90.9
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-15T03:00:00+02:00",
+            "epoch" : 1776214800
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Überwiegend bewölkt",
+            "loxone" : 4,
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "cardinal" : "SW",
+            "direction" : 237,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 67,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 26.9,
+            "direction" : "waxing",
+            "percent" : 7.7,
+            "phase" : 91.1
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-15T04:00:00+02:00",
+            "epoch" : 1776218400
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "SW",
+            "direction" : 231,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 68,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 27,
+            "direction" : "waxing",
+            "percent" : 7.2,
+            "phase" : 91.4
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-15T06:00:00+02:00",
+            "epoch" : 1776225600
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "SW",
+            "direction" : 225,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 69,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 27,
+            "direction" : "waxing",
+            "percent" : 6.9,
+            "phase" : 91.5
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-15T07:00:00+02:00",
+            "epoch" : 1776229200
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "SW",
+            "direction" : 220,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 70,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 27.1,
+            "direction" : "waxing",
+            "percent" : 6.5,
+            "phase" : 91.8
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-15T09:00:00+02:00",
+            "epoch" : 1776236400
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "SW",
+            "direction" : 216,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 71,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 27.2,
+            "direction" : "waxing",
+            "percent" : 6.2,
+            "phase" : 92
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-15T10:00:00+02:00",
+            "epoch" : 1776240000
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "SW",
+            "direction" : 207,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 72,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 27.2,
+            "direction" : "waxing",
+            "percent" : 5.8,
+            "phase" : 92.3
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-15T12:00:00+02:00",
+            "epoch" : 1776247200
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "S",
+            "direction" : 198,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 73,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 27.3,
+            "direction" : "waxing",
+            "percent" : 5.6,
+            "phase" : 92.4
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 10,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-15T13:00:00+02:00",
+            "epoch" : 1776250800
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "S",
+            "direction" : 189,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 74,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 27.4,
+            "direction" : "waxing",
+            "percent" : 5.1,
+            "phase" : 92.7
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 20,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-15T15:00:00+02:00",
+            "epoch" : 1776258000
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "S",
+            "direction" : 180,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 75,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 27.4,
+            "direction" : "waxing",
+            "percent" : 4.9,
+            "phase" : 92.9
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 10,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-15T16:00:00+02:00",
+            "epoch" : 1776261600
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Überwiegend bewölkt",
+            "loxone" : 4,
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "cardinal" : "SE",
+            "direction" : 151,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 76,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 27.5,
+            "direction" : "waxing",
+            "percent" : 4.5,
+            "phase" : 93.2
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-15T18:00:00+02:00",
+            "epoch" : 1776268800
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Überwiegend bewölkt",
+            "loxone" : 4,
+            "metar" : "BKN",
+            "weather4lox" : "cloudy"
+         },
+         "wind" : {
+            "cardinal" : "SE",
+            "direction" : 123,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 77,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 27.6,
+            "direction" : "waxing",
+            "percent" : 4.3,
+            "phase" : 93.3
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 10,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-15T19:00:00+02:00",
+            "epoch" : 1776272400
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "SE",
+            "direction" : 115,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 78,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 27.7,
+            "direction" : "waxing",
+            "percent" : 3.9,
+            "phase" : 93.6
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 20,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Rain"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-15T21:00:00+02:00",
+            "epoch" : 1776279600
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Leichter Regen",
+            "loxone" : 10,
+            "metar" : "OVC",
+            "weather4lox" : "overcast_rain_1"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 108,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 79,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 27.7,
+            "direction" : "waxing",
+            "percent" : 3.8,
+            "phase" : 93.8
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 10,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-15T22:00:00+02:00",
+            "epoch" : 1776283200
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Mäßig bewölkt",
+            "loxone" : 3,
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 110,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 80,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 27.8,
+            "direction" : "waxing",
+            "percent" : 3.4,
+            "phase" : 94.1
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-16T00:00:00+02:00",
+            "epoch" : 1776290400
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Mäßig bewölkt",
+            "loxone" : 3,
+            "metar" : "SCT",
+            "weather4lox" : "partly_cloudy"
+         },
+         "wind" : {
+            "cardinal" : "SE",
+            "direction" : 113,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 81,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 27.8,
+            "direction" : "waxing",
+            "percent" : 3.2,
+            "phase" : 94.2
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-16T01:00:00+02:00",
+            "epoch" : 1776294000
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Ein paar Wolken",
+            "loxone" : 2,
+            "metar" : "FEW",
+            "weather4lox" : "fair"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 110,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 82,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 27.9,
+            "direction" : "waxing",
+            "percent" : 2.9,
+            "phase" : 94.6
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-16T03:00:00+02:00",
+            "epoch" : 1776301200
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Ein paar Wolken",
+            "loxone" : 2,
+            "metar" : "FEW",
+            "weather4lox" : "fair"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 107,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 83,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 28,
+            "direction" : "waxing",
+            "percent" : 2.7,
+            "phase" : 94.7
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clear"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-16T04:00:00+02:00",
+            "epoch" : 1776304800
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Klarer Himmel",
+            "loxone" : 1,
+            "metar" : "SKC",
+            "weather4lox" : "clear"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 102,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 84,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 28.1,
+            "direction" : "waxing",
+            "percent" : 2.4,
+            "phase" : 95
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clear"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-16T06:00:00+02:00",
+            "epoch" : 1776312000
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Klarer Himmel",
+            "loxone" : 1,
+            "metar" : "SKC",
+            "weather4lox" : "clear"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 97,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 85,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 28.1,
+            "direction" : "waxing",
+            "percent" : 2.3,
+            "phase" : 95.2
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-16T07:00:00+02:00",
+            "epoch" : 1776315600
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Ein paar Wolken",
+            "loxone" : 2,
+            "metar" : "FEW",
+            "weather4lox" : "fair"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 104,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 86,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 28.2,
+            "direction" : "waxing",
+            "percent" : 2,
+            "phase" : 95.5
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-16T09:00:00+02:00",
+            "epoch" : 1776322800
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Ein paar Wolken",
+            "loxone" : 2,
+            "metar" : "FEW",
+            "weather4lox" : "fair"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 111,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 87,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 28.2,
+            "direction" : "waxing",
+            "percent" : 1.9,
+            "phase" : 95.6
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-16T10:00:00+02:00",
+            "epoch" : 1776326400
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "SE",
+            "direction" : 117,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 88,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 28.3,
+            "direction" : "waxing",
+            "percent" : 1.6,
+            "phase" : 95.9
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-16T12:00:00+02:00",
+            "epoch" : 1776333600
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "SE",
+            "direction" : 124,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 89,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 28.4,
+            "direction" : "waxing",
+            "percent" : 1.5,
+            "phase" : 96.1
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-16T13:00:00+02:00",
+            "epoch" : 1776337200
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "SE",
+            "direction" : 119,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 90,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 28.5,
+            "direction" : "waxing",
+            "percent" : 1.3,
+            "phase" : 96.4
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-16T15:00:00+02:00",
+            "epoch" : 1776344400
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "SE",
+            "direction" : 114,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 91,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 28.5,
+            "direction" : "waxing",
+            "percent" : 1.2,
+            "phase" : 96.6
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-16T16:00:00+02:00",
+            "epoch" : 1776348000
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 94,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 92,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 28.6,
+            "direction" : "waxing",
+            "percent" : 1,
+            "phase" : 96.9
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-16T18:00:00+02:00",
+            "epoch" : 1776355200
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 75,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 93,
+         "humidity" : 90,
+         "isNight" : null,
+         "moon" : {
+            "age" : 28.7,
+            "direction" : "waxing",
+            "percent" : 0.9,
+            "phase" : 97
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-16T19:00:00+02:00",
+            "epoch" : 1776358800
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "NE",
+            "direction" : 62,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 94,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 28.7,
+            "direction" : "waxing",
+            "percent" : 0.7,
+            "phase" : 97.4
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-16T21:00:00+02:00",
+            "epoch" : 1776366000
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "NE",
+            "direction" : 50,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 95,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 28.8,
+            "direction" : "waxing",
+            "percent" : 0.6,
+            "phase" : 97.5
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-16T22:00:00+02:00",
+            "epoch" : 1776369600
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "NE",
+            "direction" : 61,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      },
+      {
+         "cloudCover" : 100,
+         "dewpoint" : 6,
+         "hour" : 96,
+         "humidity" : 90,
+         "isNight" : 1,
+         "moon" : {
+            "age" : 28.9,
+            "direction" : "waxing",
+            "percent" : 0.5,
+            "phase" : 97.8
+         },
+         "ozone" : null,
+         "precipitation" : {
+            "probability" : 0,
+            "rainHigh" : null,
+            "snowHigh" : null,
+            "type" : "Clouds"
+         },
+         "pressure" : 1013,
+         "solarRadiation" : null,
+         "temperature" : {
+            "air" : 7.6,
+            "feelsLike" : 7.6,
+            "heatIndex" : null,
+            "windChill" : null
+         },
+         "time" : {
+            "datetime" : "2026-04-17T00:00:00+02:00",
+            "epoch" : 1776376800
+         },
+         "uvIndex" : 0,
+         "visibility" : 10,
+         "weatherCode" : {
+            "description" : "Bedeckt",
+            "loxone" : 5,
+            "metar" : "OVC",
+            "weather4lox" : "overcast"
+         },
+         "wind" : {
+            "cardinal" : "E",
+            "direction" : 72,
+            "gust" : 19,
+            "speed" : 3.7
+         }
+      }
+   ],
+   "location" : {
+      "city" : "Schwarzenbek",
+      "country" : "Deutschland",
+      "countryCode" : "DE",
+      "elevation" : null,
+      "latitude" : 53.5,
+      "longitude" : 10.47,
+      "timezone" : "Europe/Berlin",
+      "tzOffset" : "+0200",
+      "tzShort" : "CEST"
+   },
+   "openweather" : {
+      "filename" : "/opt/loxberry/log/plugins/weather4lox/hourlyforecast.json",
+      "generatedAt" : "2026-04-12T01:00:06",
+      "grabberLabel" : "OpenWeather",
+      "grabberScript" : "grabber_openweather.pl",
+      "schemaVersion" : "v1.0"
+   },
+   "refresh" : 30
 }

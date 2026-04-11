@@ -178,8 +178,8 @@ $envelope->{$weatherKey} = $cur;
 if ($refresh < $envelope->{refresh}) {
     LOGINF "Reducing refresh interval for $weatherKey weather data from $envelope->{refresh} to $refresh minutes.";
     $envelope->{refresh} = $refresh;
-    $envelope->{generatedAt} = $dtCurrent->iso8601();
 }
+$envelope->{generatedAt} = $dtCurrent->iso8601();
 
 # Write JSON back to file
 writeJsonFile($lbplogdir, $weatherKey, $envelope);

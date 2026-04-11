@@ -1,35 +1,80 @@
 {
-  "refresh": 900,
-  "location": {
-    "city": "--",
-    "country": "--",
-    "countryCode": "--",
-    "elevation": 0,
-    "latitude": 0,
-    "longitude": 0,
-    "timezone": "UTC",
-    "tzOffset": "+0000",
-    "tzShort": "UTC"
-  },
-  "current": {
-    "temperature": { "air": null, "feelsLike": null, "windChill": null, "heatIndex": null },
-    "wind": { "direction": null, "dirLabel": null, "speed": null, "gust": null },
-    "precipitation": { "rainToday": null, "rain1hr": null, "probability": null, "type": "none", "snowToday": null, "snow1h": null },
-    "weatherCode": { "loxone": null, "weather4lox": null, "description": "--", "image": null, "metar": null },
-    "moon": { "age": null, "percent": null, "phase": null, "direction": null },
-    "time": { "datetime": null, "epoch": null, "timezone": "UTC", "tzOffset": "+0000", "tzShort": "UTC" },
-    "humidity": null,
-    "pressure": null,
-    "dewpoint": null,
-    "visibility": null,
-    "solarRadiation": null,
-    "uvIndex": null,
-    "cloudCover": null,
-    "ozone": null,
-    "isNight": 0,
-    "sunrise": "--:--",
-    "sunset": "--:--",
-    "airQuality": null,
-    "pollen": null
-  }
+   "current" : {
+      "cloudCover" : 86,
+      "dewpoint" : 0.2,
+      "humidity" : 50,
+      "isNight" : 1,
+      "moon" : {
+         "age" : 23.8,
+         "direction" : "waxing",
+         "percent" : 33.1,
+         "phase" : 80.5
+      },
+      "ozone" : null,
+      "precipitation" : {
+         "probability" : 0,
+         "rain1hr" : 0,
+         "rainToday" : 0,
+         "snow1h" : null,
+         "type" : "Clouds"
+      },
+      "pressure" : 1011,
+      "solarRadiation" : 0,
+      "sunrise" : "06:25",
+      "sunset" : "20:11",
+      "temperature" : {
+         "air" : 10.1,
+         "feelsLike" : 8.6,
+         "heatIndex" : 10.1,
+         "windChill" : 10.1
+      },
+      "time" : {
+         "datetime" : "2026-04-12T01:00:06+02:00",
+         "epoch" : 1775948406
+      },
+      "uvIndex" : 0,
+      "visibility" : null,
+      "weatherCode" : {
+         "description" : "Bedeckt",
+         "image" : null,
+         "loxone" : 5,
+         "metar" : "OVC",
+         "weather4lox" : "overcast"
+      },
+      "wind" : {
+         "cardinal" : "SE",
+         "direction" : 125,
+         "gust" : 11.3,
+         "speed" : 3.2
+      }
+   },
+   "generatedAt" : "2026-04-12T01:20:06",
+   "location" : {
+      "city" : "Schwarzenbek",
+      "country" : "Deutschland",
+      "countryCode" : "DE",
+      "elevation" : null,
+      "latitude" : 53.5,
+      "longitude" : 10.47,
+      "timezone" : "Europe/Berlin",
+      "tzOffset" : "+0200",
+      "tzShort" : "CEST"
+   },
+   "openweather" : {
+      "filename" : "/opt/loxberry/log/plugins/weather4lox/current.json",
+      "generatedAt" : "2026-04-12T01:00:06",
+      "grabberLabel" : "OpenWeather",
+      "grabberScript" : "grabber_openweather.pl",
+      "schemaVersion" : "v1.0"
+   },
+   "refresh" : 5,
+   "wunderground" : {
+      "filename" : "/opt/loxberry/log/plugins/weather4lox/current.json",
+      "generatedAt" : "2026-04-12T01:20:06",
+      "grabberLabel" : "Weather Underground",
+      "grabberScript" : "grabber_wu.pl",
+      "observedAt" : null,
+      "schemaVersion" : "v1.0",
+      "stationID" : null
+   }
 }

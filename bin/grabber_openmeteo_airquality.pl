@@ -253,8 +253,8 @@ if ($curEnvelope && $curEnvelope->{current}) {
     if ($refresh < $curEnvelope->{refresh}) {
         LOGINF "Reducing refresh interval for air quality and pollen weather data from $curEnvelope->{refresh} to $refresh minutes.";
         $curEnvelope->{refresh} = $refresh;
-        $curEnvelope->{generatedAt} = $generatedAt;
     }
+    $curEnvelope->{generatedAt} = $generatedAt;
 
     writeJsonFile($lbplogdir, "current", $curEnvelope);
     LOGOK "Merged airQuality + pollen into current.json";
@@ -304,8 +304,8 @@ if ($hfcEnvelope && $hfcEnvelope->{hourlyforecast}) {
     if ($refresh < $hfcEnvelope->{refresh}) {
         LOGINF "Reducing refresh interval for air quality and pollen weather data from $hfcEnvelope->{refresh} to $refresh minutes.";
         $hfcEnvelope->{refresh} = $refresh;
-        $hfcEnvelope->{generatedAt} = $generatedAt;
     }
+    $hfcEnvelope->{generatedAt} = $generatedAt;
 
     writeJsonFile($lbplogdir, "hourlyforecast", $hfcEnvelope);
     LOGOK "Merged pollen into hourlyforecast.json";
@@ -367,8 +367,8 @@ if ($dfcEnvelope && $dfcEnvelope->{dailyforecast}) {
     if ($refresh < $dfcEnvelope->{refresh}) {
         LOGINF "Reducing refresh interval for air quality and pollen weather data from $dfcEnvelope->{refresh} to $refresh minutes.";
         $dfcEnvelope->{refresh} = $refresh;
-        $dfcEnvelope->{generatedAt} = $generatedAt;
     }
+    $dfcEnvelope->{generatedAt} = $generatedAt;
 
     writeJsonFile($lbplogdir, "dailyforecast", $dfcEnvelope);
     LOGOK "Merged pollen into dailyforecast.json";
