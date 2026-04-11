@@ -167,16 +167,18 @@
 
     /* Side stats */
     .side-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: start; }
-    .stat { padding: 16px; }
-    .stat-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 6px; }
-    .stat-icon { margin-bottom: 6px; }
-    .stat-icon svg { width: 20px; height: 20px; }
+    .stat { padding: 16px; display: flex; align-items: center; gap: 10px; }
+    .stat-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 4px; }
+    .stat-icon { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
+    .stat-icon svg { width: 32px; height: 32px; }
+    .stat-content { flex: 1; min-width: 0; }
     .stat-val { font-size: 1.35rem; font-weight: 600; }
     .stat-sub { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
 
     /* Extra stats row */
     .extra-row { display: grid; grid-template-columns: repeat(6,1fr); gap: 10px; margin-top: 16px; }
-    .extra { padding: 14px; text-align: center; }
+    .extra { padding: 14px; display: flex; align-items: center; gap: 8px; }
+    .extra .stat-icon svg { width: 24px; height: 24px; }
     .extra .stat-val { font-size: 1.1rem; }
 
     /* ===== HOURLY STRIP ===== */
@@ -263,11 +265,13 @@
       .hero-icon-box { width: 90px; height: 90px; }
       .hero-icon { width: 68px; height: 68px; }
       .side-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
-      .stat { padding: 12px; }
+      .stat { padding: 12px; gap: 8px; }
       .stat-label { font-size: 0.6rem; }
+      .stat-icon svg { width: 24px; height: 24px; }
       .stat-val { font-size: 1rem; }
       .extra-row { grid-template-columns: repeat(3,1fr); gap: 6px; margin-top: 10px; }
       .extra { padding: 10px 8px; }
+      .extra .stat-icon svg { width: 20px; height: 20px; }
       .hour-strip-wrap { padding: 0 4px; }
       .hour-strip-title { font-size: 0.68rem; margin-bottom: 6px; }
       .hcard { min-width: 72px; padding: 10px 6px; border-radius: 12px; }
@@ -293,6 +297,8 @@
       .hero-row { flex-direction: column; align-items: flex-start; }
       .hero-icon-box { align-self: center; }
       .hero-temp { font-size: 2.8rem; }
+      .stat-icon svg { width: 20px; height: 20px; }
+      .extra .stat-icon svg { width: 18px; height: 18px; }
       .extra-row { grid-template-columns: repeat(2,1fr); }
       .drow { grid-template-columns: 44px 30px 1fr; gap: 6px; padding: 8px 10px; }
       .drow-icon { width: 28px; height: 28px; }
@@ -328,7 +334,6 @@
 // ===== CONFIGURATION =====
 var JSON_BASE = './';
 var SUPPORTED_LANGS = ['de', 'en', 'es', 'nl', 'sk'];
-var REFRESH_INTERVAL_MS = 60 * 60 * 1000;
 
 // getUrlParam is needed here; defined again in second script block as well
 // Use a self-contained version to avoid ordering issues
@@ -347,13 +352,19 @@ var currentLang = (function() {
 var liveData = {
   current: null,
   location: null,
-  refreshInterval: null,
   hourlyToday: [],
   hourlyTomorrow: [],
   daily: [],
   dailyCount: 0,
   lang: null,
   icons: null
+};
+
+// Per-data-type refresh state (generatedAt + refresh interval)
+var refreshState = {
+  current: { timer: null, refresh: 900, generatedAt: null },
+  hourly: { timer: null, refresh: 900, generatedAt: null },
+  daily: { timer: null, refresh: 900, generatedAt: null }
 };
 
 // Rendered hourly arrays for preselectHour
@@ -423,6 +434,99 @@ function showError(msg) {
   setTimeout(function() { b.style.display = 'none'; }, 8000);
 }
 
+// ===== DATA PROCESSING (per data type) =====
+function processCurrentEnvelope(envelope) {
+  var currentEnvelope = envelope || {};
+  liveData.current = currentEnvelope.current || {};
+  liveData.location = currentEnvelope.location || {};
+
+  refreshState.current.refresh = currentEnvelope.refresh || 900;
+  refreshState.current.generatedAt = currentEnvelope.generatedAt || null;
+
+  var curTime = liveData.current.time || {};
+  if (!curTime.datetime && curTime.epoch) {
+    curTime.datetime = new Date(curTime.epoch * 1000).toISOString();
+  }
+  if (!curTime.datetime) {
+    curTime.datetime = new Date().toISOString();
+  }
+  if (!liveData.current.time) liveData.current.time = curTime;
+}
+
+function processHourlyEnvelope(envelope) {
+  var hourlyEnvelope = envelope || {};
+  refreshState.hourly.refresh = hourlyEnvelope.refresh || 900;
+  refreshState.hourly.generatedAt = hourlyEnvelope.generatedAt || null;
+
+  var curTime = (liveData.current && liveData.current.time) || {};
+  var todayStr = curTime.datetime ? curTime.datetime.slice(0, 10) : new Date().toISOString().slice(0, 10);
+  var todayDate = new Date(todayStr + 'T00:00:00');
+  var tomorrowDate = new Date(todayDate);
+  tomorrowDate.setDate(todayDate.getDate() + 1);
+  var pad2 = function(n) { return n < 10 ? '0' + n : '' + n; };
+  var tomorrowStr = tomorrowDate.getFullYear() + '-' + pad2(tomorrowDate.getMonth() + 1) + '-' + pad2(tomorrowDate.getDate());
+
+  var hourlyRaw = hourlyEnvelope.hourlyforecast || [];
+  if (!Array.isArray(hourlyRaw)) hourlyRaw = [];
+  hourlyRaw.forEach(function(h) {
+    var ht = h.time || {};
+    if (!ht.datetime && ht.epoch) ht.datetime = new Date(ht.epoch * 1000).toISOString();
+    if (!h.time) h.time = ht;
+  });
+
+  var currentHour = curTime.datetime ? parseInt(curTime.datetime.slice(11, 13), 10) : new Date().getHours();
+  liveData.hourlyToday = hourlyRaw.filter(function(h) {
+    return h.time && h.time.datetime &&
+      h.time.datetime.slice(0, 10) === todayStr &&
+      parseInt(h.time.datetime.slice(11, 13), 10) > currentHour;
+  });
+  liveData.hourlyTomorrow = hourlyRaw.filter(function(h) {
+    return h.time && h.time.datetime && h.time.datetime.slice(0, 10) === tomorrowStr;
+  });
+}
+
+function processDailyEnvelope(envelope) {
+  var dailyEnvelope = envelope || {};
+  refreshState.daily.refresh = dailyEnvelope.refresh || 900;
+  refreshState.daily.generatedAt = dailyEnvelope.generatedAt || null;
+
+  var dailyRaw = dailyEnvelope.dailyforecast || [];
+  if (!Array.isArray(dailyRaw)) dailyRaw = [];
+  var pad2 = function(n) { return n < 10 ? '0' + n : '' + n; };
+  dailyRaw.forEach(function(d) {
+    var dt = d.time || {};
+    if (!dt.datetime && dt.epoch) dt.datetime = new Date(dt.epoch * 1000).toISOString().slice(0, 10);
+    if (!d.time) d.time = dt;
+  });
+
+  var weekdaysShort = (liveData.lang && liveData.lang.theme && liveData.lang.theme.weekdays_short) || ['So','Mo','Di','Mi','Do','Fr','Sa'];
+  liveData.daily = dailyRaw.map(function(d) {
+    var dtime = (d.time && d.time.datetime) || new Date().toISOString();
+    var dt = new Date(dtime);
+    return {
+      day: weekdaysShort[dt.getDay()],
+      date: pad2(dt.getDate()) + '.' + pad2(dt.getMonth() + 1) + '.',
+      weatherCode: d.weatherCode ? d.weatherCode.weather4lox : undefined,
+      high: d.temperature && d.temperature.max ? d.temperature.max.air : undefined,
+      low: d.temperature && d.temperature.min ? d.temperature.min.air : undefined,
+      rainProb: d.precipitation ? d.precipitation.probability : undefined,
+      desc: d.weatherCode ? d.weatherCode.description : undefined,
+      wind: d.wind && d.wind.avg ? d.wind.avg.speed : undefined,
+      windGust: d.wind && d.wind.max ? d.wind.max.gust : undefined,
+      windDir: d.wind && d.wind.avg ? d.wind.avg.dirLabel : undefined,
+      humidity: d.humidity ? d.humidity.avg : undefined,
+      humidityMax: d.humidity ? d.humidity.max : undefined,
+      humidityMin: d.humidity ? d.humidity.min : undefined,
+      sunrise: d.sunrise,
+      sunset: d.sunset,
+      rainAmount: d.precipitation ? d.precipitation.rainHigh : undefined,
+      snow: d.precipitation ? d.precipitation.snowHigh : undefined,
+      uvi: d.uvIndex
+    };
+  });
+  liveData.dailyCount = liveData.daily.length;
+}
+
 // ===== DATA LOADING =====
 function loadAllData() {
   showLoading();
@@ -435,88 +539,13 @@ function loadAllData() {
   ]).then(function(results) {
     hideLoading();
 
-    // Parse envelopes from new camelCase JSON structure
-    var currentEnvelope = results[0] || {};
-    liveData.current = currentEnvelope.current || {};
-    liveData.location = currentEnvelope.location || {};
-    liveData.refreshInterval = (currentEnvelope.refresh || 15) * 60 * 1000;
-
     liveData.lang = results[3];
     liveData.icons = (results[4] && results[4].icons) || {};
     liveData.iconFormat = (results[4] && results[4].format) || 'png';
 
-    // Derive datetime from time object if missing
-    var curTime = liveData.current.time || {};
-    if (!curTime.datetime && curTime.epoch) {
-      curTime.datetime = new Date(curTime.epoch * 1000).toISOString();
-    }
-    if (!curTime.datetime) {
-      curTime.datetime = new Date().toISOString();
-    }
-    if (!liveData.current.time) liveData.current.time = curTime;
-
-    // Dynamic refresh interval
-    REFRESH_INTERVAL_MS = liveData.refreshInterval || REFRESH_INTERVAL_MS;
-
-    // Split hourly into today/tomorrow using datetime from current.json as reference
-    var todayStr = curTime.datetime.slice(0, 10);
-    var todayDate = new Date(todayStr + 'T00:00:00');
-    var tomorrowDate = new Date(todayDate);
-    tomorrowDate.setDate(todayDate.getDate() + 1);
-    var pad2 = function(n) { return n < 10 ? '0' + n : '' + n; };
-    var tomorrowStr = tomorrowDate.getFullYear() + '-' + pad2(tomorrowDate.getMonth() + 1) + '-' + pad2(tomorrowDate.getDate());
-
-    var hourlyEnvelope = results[1] || {};
-    var hourlyRaw = hourlyEnvelope.hourlyforecast || [];
-    if (!Array.isArray(hourlyRaw)) hourlyRaw = [];
-    hourlyRaw.forEach(function(h) {
-      var ht = h.time || {};
-      if (!ht.datetime && ht.epoch) ht.datetime = new Date(ht.epoch * 1000).toISOString();
-      if (!h.time) h.time = ht;
-    });
-    liveData.hourlyToday = hourlyRaw.filter(function (h) {
-      return h.time &&
-        h.time.datetime &&
-        h.time.datetime.slice(0, 10) === todayStr &&
-        parseInt(h.time.datetime.slice(11, 13), 10) > parseInt(curTime.datetime.slice(11, 13), 10);
-    });
-    liveData.hourlyTomorrow = hourlyRaw.filter(function(h) { return h.time && h.time.datetime && h.time.datetime.slice(0, 10) === tomorrowStr; });
-
-    // Transform daily data
-    var dailyEnvelope = results[2] || {};
-    var dailyRaw = dailyEnvelope.dailyforecast || [];
-    if (!Array.isArray(dailyRaw)) dailyRaw = [];
-    dailyRaw.forEach(function(d) {
-      var dt = d.time || {};
-      if (!dt.datetime && dt.epoch) dt.datetime = new Date(dt.epoch * 1000).toISOString().slice(0, 10);
-      if (!d.time) d.time = dt;
-    });
-    var weekdaysShort = (liveData.lang && liveData.lang.theme && liveData.lang.theme.weekdays_short) || ['So','Mo','Di','Mi','Do','Fr','Sa'];
-    liveData.daily = dailyRaw.map(function(d) {
-      var dtime = (d.time && d.time.datetime) || new Date().toISOString();
-      var dt = new Date(dtime);
-      return {
-        day: weekdaysShort[dt.getDay()],
-        date: pad2(dt.getDate()) + '.' + pad2(dt.getMonth() + 1) + '.',
-        weatherCode: d.weatherCode ? d.weatherCode.weather4lox : undefined,
-        high: d.temperature && d.temperature.max ? d.temperature.max.air : undefined,
-        low: d.temperature && d.temperature.min ? d.temperature.min.air : undefined,
-        rainProb: d.precipitation ? d.precipitation.probability : undefined,
-        desc: d.weatherCode ? d.weatherCode.description : undefined,
-        wind: d.wind && d.wind.avg ? d.wind.avg.speed : undefined,
-        windGust: d.wind && d.wind.max ? d.wind.max.gust : undefined,
-        windDir: d.wind && d.wind.avg ? d.wind.avg.dirLabel : undefined,
-        humidity: d.humidity ? d.humidity.avg : undefined,
-        humidityMax: d.humidity ? d.humidity.max : undefined,
-        humidityMin: d.humidity ? d.humidity.min : undefined,
-        sunrise: d.sunrise,
-        sunset: d.sunset,
-        rainAmount: d.precipitation ? d.precipitation.rainHigh : undefined,
-        snow: d.precipitation ? d.precipitation.snowHigh : undefined,
-        uvi: d.uvIndex
-      };
-    });
-    liveData.dailyCount = liveData.daily.length;
+    processCurrentEnvelope(results[0]);
+    processHourlyEnvelope(results[1]);
+    processDailyEnvelope(results[2]);
 
     renderAll();
     return liveData;
@@ -782,8 +811,8 @@ function renderAll() {
   document.getElementById('heroGust').textContent = (cWind.gust != null ? cWind.gust : '--') + ' km/h';
   document.getElementById('heroIcon').src = resolveIcon(cWx.weather4lox, c.isNight, c.moon ? c.moon.age : 0);
 
-  // Side stats
-  document.getElementById('statHumidity').textContent = (c.humidity != null ? c.humidity : '--') + '%';
+  // Side stats (precipitation, pressure, visibility)
+  document.getElementById('statPrecip').textContent = (cPrecip.rainToday != null ? cPrecip.rainToday : 0) + ' mm';
   document.getElementById('statPressure').innerHTML = (c.pressure != null ? c.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
   document.getElementById('statVisibility').innerHTML = (c.visibility != null ? c.visibility : '--') + ' <small style="color:var(--text-muted)">km</small>';
 
@@ -791,7 +820,7 @@ function renderAll() {
   document.getElementById('statSunrise').textContent = sunrise;
   document.getElementById('statSunset').textContent = sunset;
   document.getElementById('statDewpoint').textContent = (c.dewpoint != null ? Math.round(c.dewpoint * 10) / 10 : '--') + '\u00b0C';
-  document.getElementById('statPrecip').textContent = (cPrecip.rainToday != null ? cPrecip.rainToday : 0) + ' mm';
+  document.getElementById('statHumidity').textContent = (c.humidity != null ? c.humidity : '--') + '%';
   document.getElementById('statUVI').textContent = c.uvIndex != null ? c.uvIndex : '--';
   document.getElementById('statClouds').textContent = (c.cloudCover != null ? c.cloudCover : '--') + '%';
 
@@ -813,13 +842,49 @@ function renderAll() {
   makeDragScroll(document.getElementById('hourStripMorgen'));
 }
 
-// ===== AUTO-REFRESH =====
+// ===== AUTO-REFRESH (per data type, using generatedAt) =====
+function calculateRefreshDelay(generatedAt, refreshSec) {
+  var refreshMs = (refreshSec || 900) * 1000;
+  if (generatedAt) {
+    var genTime = new Date(generatedAt).getTime();
+    if (!isNaN(genTime)) {
+      var delay = (genTime + refreshMs) - Date.now();
+      return Math.max(10000, delay);
+    }
+  }
+  return refreshMs;
+}
+
+function refreshDataType(type) {
+  var urls = {
+    current: JSON_BASE + 'current.json',
+    hourly: JSON_BASE + 'hourlyforecast.json',
+    daily: JSON_BASE + 'dailyforecast.json'
+  };
+  return fetch(urls[type]).then(checkOk).then(function(r) { return r.json(); })
+    .then(function(envelope) {
+      if (type === 'current') processCurrentEnvelope(envelope);
+      else if (type === 'hourly') processHourlyEnvelope(envelope);
+      else if (type === 'daily') processDailyEnvelope(envelope);
+      renderAll();
+    });
+}
+
+function scheduleDataRefresh(type) {
+  var state = refreshState[type];
+  if (state.timer) { clearTimeout(state.timer); state.timer = null; }
+  var delay = calculateRefreshDelay(state.generatedAt, state.refresh);
+  state.timer = setTimeout(function() {
+    refreshDataType(type)
+      .then(function() { scheduleDataRefresh(type); })
+      .catch(function() { scheduleDataRefresh(type); });
+  }, delay);
+}
+
 function scheduleRefresh() {
-  setTimeout(function() {
-    loadAllData()
-      .then(function() { scheduleRefresh(); })
-      .catch(function() { scheduleRefresh(); });
-  }, REFRESH_INTERVAL_MS);
+  scheduleDataRefresh('current');
+  scheduleDataRefresh('hourly');
+  scheduleDataRefresh('daily');
 }
 </script>
 
@@ -869,6 +934,7 @@ function scheduleRefresh() {
             <div class="hero-feels" id="heroFeelsLike" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">--<sup>&deg;C</sup></div>
             <div class="hero-desc" id="heroDesc">--</div>
             <div class="hero-wind-group" style="display:flex;gap:8px;align-items:center;margin-top:4px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.6"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>
               <span class="hero-wind" id="heroWind" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">-- km/h,</span>
               <span class="hero-gust" id="heroGust" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">-- km/h</span>
             </div>
@@ -882,17 +948,25 @@ function scheduleRefresh() {
       <!-- Side stats -->
       <div class="side-stats">
         <div class="glass stat">
-          <div class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
-          <div class="stat-label" data-i18n="theme.humidity">Luftfeuchte</div>
-          <div class="stat-val" id="statHumidity">68%</div>
+          <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg></div>
+          <div class="stat-content">
+            <div class="stat-label" data-i18n="theme.precipitation">Niederschlag</div>
+            <div class="stat-val mono" id="statPrecip">0 mm</div>
+          </div>
         </div>
         <div class="glass stat">
-          <div class="stat-label" data-i18n="theme.pressure">Luftdruck</div>
-          <div class="stat-val" id="statPressure">1013 <small style="color:var(--text-muted)">hPa</small></div>
+          <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg></div>
+          <div class="stat-content">
+            <div class="stat-label" data-i18n="theme.pressure">Luftdruck</div>
+            <div class="stat-val" id="statPressure">1013 <small style="color:var(--text-muted)">hPa</small></div>
+          </div>
         </div>
         <div class="glass stat">
-          <div class="stat-label" data-i18n="theme.visibility">Sichtweite</div>
-          <div class="stat-val" id="statVisibility">14 <small style="color:var(--text-muted)">km</small></div>
+          <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <div class="stat-content">
+            <div class="stat-label" data-i18n="theme.visibility">Sichtweite</div>
+            <div class="stat-val" id="statVisibility">14 <small style="color:var(--text-muted)">km</small></div>
+          </div>
         </div>
       </div>
     </div>
@@ -933,19 +1007,47 @@ function scheduleRefresh() {
   <!-- Extra stats (below all tab panels) -->
   <div class="extra-row" id="extraStatsRow">
     <div class="glass extra">
-      <div class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m 11.75,2.73 v 2"/><path d="m 5.5,4.75 1.4,1.4"/><path d="m 2.75,11 h 2"/><path d="m 18.5,11 h 2"/><path d="m 18.15,5 -1.4,1.4"/><path d="M 11.75 7.73 C 9.75 7.73 7.75 9 7.75 11.73 L 15.75 11.725 C 15.75 9 13.75 7.73 11.75 7.73 z" style="fill:#fbbf24;stroke:#fbbf24"/><path d="M 20.75,14.73 H 2.75" stroke="currentColor"/><path d="M 12 17 L 8 21 L 16 21 L 12 17 z" style="fill:currentColor"/></svg></div>
-      <div class="stat-label" data-i18n="theme.sunrise">Sonnenaufgang</div>
-      <div class="stat-val mono" id="statSunrise">--:--</div>
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m 11.75,2.73 v 2"/><path d="m 5.5,4.75 1.4,1.4"/><path d="m 2.75,11 h 2"/><path d="m 18.5,11 h 2"/><path d="m 18.15,5 -1.4,1.4"/><path d="M 11.75 7.73 C 9.75 7.73 7.75 9 7.75 11.73 L 15.75 11.725 C 15.75 9 13.75 7.73 11.75 7.73 z" style="fill:#fbbf24;stroke:#fbbf24"/><path d="M 20.75,14.73 H 2.75" stroke="currentColor"/><path d="M 12 17 L 8 21 L 16 21 L 12 17 z" style="fill:currentColor"/></svg></div>
+      <div class="stat-content">
+        <div class="stat-label" data-i18n="theme.sunrise">Sonnenaufgang</div>
+        <div class="stat-val mono" id="statSunrise">--:--</div>
+      </div>
     </div>
     <div class="glass extra">
-      <div class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m 11.75,2.73 v 2"/><path d="m 5.5,4.75 1.4,1.4"/><path d="m 2.75,11 h 2"/><path d="m 18.5,11 h 2"/><path d="m 18.15,5 -1.4,1.4"/><path d="M 11.75 7.73 C 9.75 7.73 7.75 9 7.75 11.73 L 15.75 11.725 C 15.75 9 13.75 7.73 11.75 7.73 z" style="fill:#fbbf24;stroke:#fbbf24"/><path d="M 20.75,14.73 H 2.75" stroke="currentColor"/><path d="m 12,22 4,-4 H 8 Z" style="fill:currentColor"/></svg></div>
-      <div class="stat-label" data-i18n="theme.sunset">Sonnenuntergang</div>
-      <div class="stat-val mono" id="statSunset">--:--</div>
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m 11.75,2.73 v 2"/><path d="m 5.5,4.75 1.4,1.4"/><path d="m 2.75,11 h 2"/><path d="m 18.5,11 h 2"/><path d="m 18.15,5 -1.4,1.4"/><path d="M 11.75 7.73 C 9.75 7.73 7.75 9 7.75 11.73 L 15.75 11.725 C 15.75 9 13.75 7.73 11.75 7.73 z" style="fill:#fbbf24;stroke:#fbbf24"/><path d="M 20.75,14.73 H 2.75" stroke="currentColor"/><path d="m 12,22 4,-4 H 8 Z" style="fill:currentColor"/></svg></div>
+      <div class="stat-content">
+        <div class="stat-label" data-i18n="theme.sunset">Sonnenuntergang</div>
+        <div class="stat-val mono" id="statSunset">--:--</div>
+      </div>
     </div>
-    <div class="glass extra"><div class="stat-label" data-i18n="theme.dew_point">Taupunkt</div><div class="stat-val mono" id="statDewpoint">6&deg;</div></div>
-    <div class="glass extra"><div class="stat-label" data-i18n="theme.precipitation">Niederschlag</div><div class="stat-val mono" id="statPrecip">0.2 mm</div></div>
-    <div class="glass extra"><div class="stat-label" data-i18n="theme.uv_index">UV-Index</div><div class="stat-val mono" id="statUVI">3</div></div>
-    <div class="glass extra"><div class="stat-label" data-i18n="theme.cloud_cover">Bewoelkung</div><div class="stat-val mono" id="statClouds">45%</div></div>
+    <div class="glass extra">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg></div>
+      <div class="stat-content">
+        <div class="stat-label" data-i18n="theme.dew_point">Taupunkt</div>
+        <div class="stat-val mono" id="statDewpoint">6&deg;</div>
+      </div>
+    </div>
+    <div class="glass extra">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
+      <div class="stat-content">
+        <div class="stat-label" data-i18n="theme.humidity">Luftfeuchtigkeit</div>
+        <div class="stat-val mono" id="statHumidity">68%</div>
+      </div>
+    </div>
+    <div class="glass extra">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></div>
+      <div class="stat-content">
+        <div class="stat-label" data-i18n="theme.uv_index">UV-Index</div>
+        <div class="stat-val mono" id="statUVI">3</div>
+      </div>
+    </div>
+    <div class="glass extra">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg></div>
+      <div class="stat-content">
+        <div class="stat-label" data-i18n="theme.cloud_cover">Bewölkung</div>
+        <div class="stat-val mono" id="statClouds">45%</div>
+      </div>
+    </div>
   </div>
 
   <footer class="footer">Weather4Lox Dashboard &bull; Powered by LoxBerry</footer>
