@@ -165,20 +165,12 @@
     .hero-icon { width: 120px; height: 120px; flex: 0 0 auto; filter: drop-shadow(0 6px 24px rgba(56,189,248,0.2)); }
     @keyframes bobble { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
 
-    /* Astro row */
-    .astro-row {
-      display: grid; grid-template-columns: repeat(4,1fr); gap: 12px;
-      margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);
-    }
-    .astro-item { display: flex; align-items: center; gap: 10px; }
-    .astro-emoji { font-size: 1.3rem; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-    .astro-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
-    .astro-val { font-size: 0.95rem; font-weight: 500; }
-
     /* Side stats */
     .side-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: start; }
     .stat { padding: 16px; }
     .stat-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 6px; }
+    .stat-icon { margin-bottom: 6px; }
+    .stat-icon svg { width: 20px; height: 20px; }
     .stat-val { font-size: 1.35rem; font-weight: 600; }
     .stat-sub { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
 
@@ -251,7 +243,6 @@
     @media (max-width: 900px) {
       .cur-layout { grid-template-columns: 1fr; }
       .extra-row { grid-template-columns: repeat(3,1fr); }
-      .astro-row { grid-template-columns: repeat(2,1fr); }
     }
     @media (max-width: 600px) {
       body { padding: 4px; }
@@ -271,10 +262,6 @@
       .hero-desc { font-size: 0.95rem; }
       .hero-icon-box { width: 90px; height: 90px; }
       .hero-icon { width: 68px; height: 68px; }
-      .astro-row { grid-template-columns: repeat(2,1fr); gap: 8px; margin-top: 14px; padding-top: 12px; }
-      .astro-emoji { width: 32px; height: 32px; font-size: 1.1rem; border-radius: 8px; }
-      .astro-label { font-size: 0.6rem; }
-      .astro-val { font-size: 0.85rem; }
       .side-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
       .stat { padding: 12px; }
       .stat-label { font-size: 0.6rem; }
@@ -306,7 +293,6 @@
       .hero-row { flex-direction: column; align-items: flex-start; }
       .hero-icon-box { align-self: center; }
       .hero-temp { font-size: 2.8rem; }
-      .astro-row { grid-template-columns: 1fr 1fr; gap: 6px; }
       .extra-row { grid-template-columns: repeat(2,1fr); }
       .drow { grid-template-columns: 44px 30px 1fr; gap: 6px; padding: 8px 10px; }
       .drow-icon { width: 28px; height: 28px; }
@@ -794,21 +780,16 @@ function renderAll() {
   document.getElementById('heroDesc').textContent = cWx.description || '--';
   document.getElementById('heroWind').textContent = (cWind.speed != null ? cWind.speed : '--') + ' km/h ' + getWindDirLabel(cWind.direction) + ', ';
   document.getElementById('heroGust').textContent = (cWind.gust != null ? cWind.gust : '--') + ' km/h';
-  document.getElementById('heroHumidity').textContent = (c.humidity != null ? c.humidity : '--') + '%';
   document.getElementById('heroIcon').src = resolveIcon(cWx.weather4lox, c.isNight, c.moon ? c.moon.age : 0);
 
-  // Sunrise/Sunset
-  document.getElementById('heroSunrise').textContent = sunrise;
-  document.getElementById('heroSunset').textContent = sunset;
-  
   // Side stats
   document.getElementById('statHumidity').textContent = (c.humidity != null ? c.humidity : '--') + '%';
-  document.getElementById('statWind').textContent = (cWind.speed != null ? cWind.speed : '--') + ' km/h';
-  document.getElementById('statWindDir').textContent = getWindDirShort(cWind.direction);
   document.getElementById('statPressure').innerHTML = (c.pressure != null ? c.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
   document.getElementById('statVisibility').innerHTML = (c.visibility != null ? c.visibility : '--') + ' <small style="color:var(--text-muted)">km</small>';
 
-  // Extra stats
+  // Extra stats (sunrise/sunset + weather details)
+  document.getElementById('statSunrise').textContent = sunrise;
+  document.getElementById('statSunset').textContent = sunset;
   document.getElementById('statDewpoint').textContent = (c.dewpoint != null ? Math.round(c.dewpoint * 10) / 10 : '--') + '\u00b0C';
   document.getElementById('statPrecip').textContent = (cPrecip.rainToday != null ? cPrecip.rainToday : 0) + ' mm';
   document.getElementById('statUVI').textContent = c.uvIndex != null ? c.uvIndex : '--';
@@ -896,59 +877,14 @@ function scheduleRefresh() {
             <img class="hero-icon" id="heroIcon" src="icons/color/cloudy_day.png" alt="">
           </div>
         </div>
-
-        <!-- Astro row -->
-        <div class="astro-row">
-          <div class="astro-item">
-            <div class="astro-emoji" style="background:rgba(251,191,36,0.1)">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m 11.75,2.73 v 2" stroke="#fbbf24" />
-                <path d="m 5.5,4.75 1.4,1.4" stroke="#fbbf24" />
-                <path d="m 2.75,11 h 2" stroke="#fbbf24" />
-                <path d="m 18.5,11 h 2" stroke="#fbbf24" />
-                <path d="m 18.15,5 -1.4,1.4" stroke="#fbbf24" />
-                <path d="M 11.75 7.73 C 9.75 7.73 7.75 9 7.75 11.73 L 15.75 11.725 C 15.75 9 13.75 7.73 11.75 7.73 z" style="fill:#fbbf24;stroke:#fbbf24" />
-                <path d="M 20.75,14.73 H 2.75" />
-                <path d="M 12 17 L 8 21 L 16 21 L 12 17 z" style="fill:currentColor" />
-              </svg>
-            </div>
-            <div><div class="astro-label" data-i18n="theme.sunrise">Sonnenaufgang</div><div class="astro-val mono" id="heroSunrise">06:23</div></div>
-          </div>
-          <div class="astro-item">
-            <div class="astro-emoji" style="background:rgba(249,115,22,0.1)">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m 11.75,2.73 v 2" stroke="#fbbf24" />
-                <path d="m 5.5,4.75 1.4,1.4" stroke="#fbbf24" />
-                <path d="m 2.75,11 h 2" stroke="#fbbf24" />
-                <path d="m 18.5,11 h 2" stroke="#fbbf24" />
-                <path d="m 18.15,5 -1.4,1.4" stroke="#fbbf24" />
-                <path d="M 11.75 7.73 C 9.75 7.73 7.75 9 7.75 11.73 L 15.75 11.725 C 15.75 9 13.75 7.73 11.75 7.73 z" style="fill:#fbbf24;stroke:#fbbf24" />
-                <path d="M 20.75,14.73 H 2.75" />
-                <path d="m 12,22 4,-4 H 8 Z" style="fill:currentColor" />
-              </svg>
-            </div>
-            <div><div class="astro-label" data-i18n="theme.sunset">Sonnenuntergang</div><div class="astro-val mono" id="heroSunset">18:05</div></div>
-          </div>
-          <div class="astro-item">
-            <div class="astro-emoji" style="background:rgba(139,92,246,0.1)">&nbsp;&#x1F4A7;</div>
-            <div>
-              <div class="astro-label" data-i18n="theme.humidity">Luftfeuchte</div>
-              <div class="astro-val mono" id="heroHumidity">--%</div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- Side stats -->
       <div class="side-stats">
         <div class="glass stat">
+          <div class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
           <div class="stat-label" data-i18n="theme.humidity">Luftfeuchte</div>
           <div class="stat-val" id="statHumidity">68%</div>
-        </div>
-        <div class="glass stat">
-          <div class="stat-label" data-i18n="theme.wind">Wind</div>
-          <div class="stat-val" id="statWind">18 km/h</div>
-          <div class="stat-sub" id="statWindDir">NW</div>
         </div>
         <div class="glass stat">
           <div class="stat-label" data-i18n="theme.pressure">Luftdruck</div>
@@ -959,14 +895,6 @@ function scheduleRefresh() {
           <div class="stat-val" id="statVisibility">14 <small style="color:var(--text-muted)">km</small></div>
         </div>
       </div>
-    </div>
-
-    <!-- Extra stats -->
-    <div class="extra-row">
-      <div class="glass extra"><div class="stat-label" data-i18n="theme.dew_point">Taupunkt</div><div class="stat-val mono" id="statDewpoint">6&deg;</div></div>
-      <div class="glass extra"><div class="stat-label" data-i18n="theme.precipitation">Niederschlag</div><div class="stat-val mono" id="statPrecip">0.2 mm</div></div>
-      <div class="glass extra"><div class="stat-label" data-i18n="theme.uv_index">UV-Index</div><div class="stat-val mono" id="statUVI">3</div></div>
-      <div class="glass extra"><div class="stat-label" data-i18n="theme.cloud_cover">Bewoelkung</div><div class="stat-val mono" id="statClouds">45%</div></div>
     </div>
   </div>
 
@@ -1000,6 +928,24 @@ function scheduleRefresh() {
       <h2 data-i18n="theme.forecast_X_days" data-i18n-args='{"fcastDays":7}'>7-Tage Vorhersage</h2>
       <div id="dailyWrap"></div>
     </div>
+  </div>
+
+  <!-- Extra stats (below all tab panels) -->
+  <div class="extra-row" id="extraStatsRow">
+    <div class="glass extra">
+      <div class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m 11.75,2.73 v 2"/><path d="m 5.5,4.75 1.4,1.4"/><path d="m 2.75,11 h 2"/><path d="m 18.5,11 h 2"/><path d="m 18.15,5 -1.4,1.4"/><path d="M 11.75 7.73 C 9.75 7.73 7.75 9 7.75 11.73 L 15.75 11.725 C 15.75 9 13.75 7.73 11.75 7.73 z" style="fill:#fbbf24;stroke:#fbbf24"/><path d="M 20.75,14.73 H 2.75" stroke="currentColor"/><path d="M 12 17 L 8 21 L 16 21 L 12 17 z" style="fill:currentColor"/></svg></div>
+      <div class="stat-label" data-i18n="theme.sunrise">Sonnenaufgang</div>
+      <div class="stat-val mono" id="statSunrise">--:--</div>
+    </div>
+    <div class="glass extra">
+      <div class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m 11.75,2.73 v 2"/><path d="m 5.5,4.75 1.4,1.4"/><path d="m 2.75,11 h 2"/><path d="m 18.5,11 h 2"/><path d="m 18.15,5 -1.4,1.4"/><path d="M 11.75 7.73 C 9.75 7.73 7.75 9 7.75 11.73 L 15.75 11.725 C 15.75 9 13.75 7.73 11.75 7.73 z" style="fill:#fbbf24;stroke:#fbbf24"/><path d="M 20.75,14.73 H 2.75" stroke="currentColor"/><path d="m 12,22 4,-4 H 8 Z" style="fill:currentColor"/></svg></div>
+      <div class="stat-label" data-i18n="theme.sunset">Sonnenuntergang</div>
+      <div class="stat-val mono" id="statSunset">--:--</div>
+    </div>
+    <div class="glass extra"><div class="stat-label" data-i18n="theme.dew_point">Taupunkt</div><div class="stat-val mono" id="statDewpoint">6&deg;</div></div>
+    <div class="glass extra"><div class="stat-label" data-i18n="theme.precipitation">Niederschlag</div><div class="stat-val mono" id="statPrecip">0.2 mm</div></div>
+    <div class="glass extra"><div class="stat-label" data-i18n="theme.uv_index">UV-Index</div><div class="stat-val mono" id="statUVI">3</div></div>
+    <div class="glass extra"><div class="stat-label" data-i18n="theme.cloud_cover">Bewoelkung</div><div class="stat-val mono" id="statClouds">45%</div></div>
   </div>
 
   <footer class="footer">Weather4Lox Dashboard &bull; Powered by LoxBerry</footer>
@@ -1188,14 +1134,11 @@ function selectHour(el, dataArray) {
     getWindDirLabel(d.windDir) + ' ' + (liveData.lang && liveData.lang.theme.with ? ' ' + liveData.lang.theme.with + ' ' : ' ') + ' ' + (d.wind != null ? d.wind : '--') + ' km/h' + ', ';
   document.getElementById('heroGust').textContent = textContent =
     (liveData.lang && liveData.lang.theme.gusts ? liveData.lang.theme.gusts + ' ' + liveData.lang.theme.up_to + ' ' : '') + (d.gust != null ? d.gust : '--') + ' km/h';
-  document.getElementById('heroHumidity').textContent = (d.humidity != null ? d.humidity : '--') + '%';
   document.getElementById('heroFeelsLike').textContent = (liveData.lang && liveData.lang.theme.feelsLike ? liveData.lang.theme.feelsLike + ' ' : ' ') + (d.feelsLike != null ? d.feelsLike : '--') + '\u00b0C';
   document.getElementById('heroIcon').src = resolveIcon(d.weatherCode, d.isNight, d.moonAge);
 
   // Update stat boxes with hourly data
   document.getElementById('statHumidity').textContent = (d.humidity != null ? d.humidity : '--') + '%';
-  document.getElementById('statWind').textContent = (d.wind != null ? d.wind : '--') + ' km/h';
-  document.getElementById('statWindDir').textContent = getWindDirShort(d.windDir);
   document.getElementById('statPressure').innerHTML = (d.pressure != null ? d.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
   document.getElementById('statVisibility').innerHTML = (d.visibility != null ? d.visibility : '--') + ' <small style="color:var(--text-muted)">km</small>';
   document.getElementById('statDewpoint').textContent = (d.dewpoint != null ? d.dewpoint : '--') + '\u00b0';
@@ -1246,13 +1189,49 @@ function refreshActiveTabView(tabName) {
   selectedTab = tabName;
 
   if (tabName === 'heute') {
+    // Reset selection to 'now' for heute
+    selectedHourValue = 'now';
+    selectedHourIdx = 0;
     renderHourStrip('hourStripHeute', hourlyTodayRendered);
     renderTempChart('tempChartHeute', hourlyTodayRendered);
-    restoreSelectionAfterRender();
+    // Update sunrise/sunset from current data
+    if (liveData && liveData.current) {
+      document.getElementById('statSunrise').textContent = liveData.current.sunrise || '--:--';
+      document.getElementById('statSunset').textContent = liveData.current.sunset || '--:--';
+    }
+    // Select 'now' and scroll into view
+    var cardsH = document.getElementById('hourStripHeute').querySelectorAll('.hcard');
+    if (cardsH[0]) {
+      selectHour(cardsH[0], hourlyTodayRendered);
+      cardsH[0].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
   } else if (tabName === 'morgen') {
+    // Reset selection to 12:00 for morgen
+    var targetIdx = 0;
+    for (var i = 0; i < hourlyTomorrowRendered.length; i++) {
+      if (hourlyTomorrowRendered[i].hour === '12') { targetIdx = i; break; }
+    }
+    selectedHourValue = '12';
+    selectedHourIdx = targetIdx;
     renderHourStrip('hourStripMorgen', hourlyTomorrowRendered);
     renderTempChart('tempChartMorgen', hourlyTomorrowRendered);
-    restoreSelectionAfterRender();
+    // Update sunrise/sunset from tomorrow's daily data if available
+    if (liveData && liveData.daily && liveData.daily.length > 1) {
+      document.getElementById('statSunrise').textContent = liveData.daily[1].sunrise || '--:--';
+      document.getElementById('statSunset').textContent = liveData.daily[1].sunset || '--:--';
+    }
+    // Select 12:00 and scroll into view
+    var cardsM = document.getElementById('hourStripMorgen').querySelectorAll('.hcard');
+    if (cardsM[targetIdx]) {
+      selectHour(cardsM[targetIdx], hourlyTomorrowRendered);
+      cardsM[targetIdx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  } else if (tabName === 'tage') {
+    // Restore sunrise/sunset from current data for tage view
+    if (liveData && liveData.current) {
+      document.getElementById('statSunrise').textContent = liveData.current.sunrise || '--:--';
+      document.getElementById('statSunset').textContent = liveData.current.sunset || '--:--';
+    }
   }
 }
 
@@ -1647,14 +1626,15 @@ function highlightChartPoint(svgId, hourValue) {
 
 // ===== HIDE EMPTY DATA =====
 function hideEmptyStats() {
-  var statIds = ['statHumidity', 'statWind', 'statPressure', 'statVisibility',
-                 'statDewpoint', 'statPrecip', 'statUVI', 'statClouds', 'statGusts', 'statFeelslike'];
+  var statIds = ['statHumidity', 'statPressure', 'statVisibility',
+                 'statDewpoint', 'statPrecip', 'statUVI', 'statClouds', 'statGusts', 'statFeelslike',
+                 'statSunrise', 'statSunset'];
   for (var i = 0; i < statIds.length; i++) {
     var el = document.getElementById(statIds[i]);
     if (!el) continue;
     var val = el.textContent.trim();
     var card = el.closest('.glass');
-    if (card && (val === '--' || val === '--%' || val === '-- km/h' || val === '-- hPa' || val === '-- km' || val === '--°')) {
+    if (card && (val === '--' || val === '--%' || val === '-- km/h' || val === '-- hPa' || val === '-- km' || val === '--°' || val === '--:--')) {
       card.style.display = 'none';
     } else if (card) {
       card.style.display = '';
