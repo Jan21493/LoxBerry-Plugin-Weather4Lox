@@ -1473,11 +1473,6 @@ function renderTempChart(svgId, dataArray) {
     return Math.round(255 - t * 255);
   }
 
-  // --- Styles from CSS variables ---
-  var cs = getComputedStyle(document.documentElement);
-  var gridC = cs.getPropertyValue('--border').trim();
-  var labelC = cs.getPropertyValue('--text-muted').trim();
-
   // --- Y grid + labels ---
   var yAxis = '';
   var ySteps = Math.max(2, Math.min(5, Math.ceil(range)));
@@ -1486,8 +1481,8 @@ function renderTempChart(svgId, dataArray) {
   for (var y = 0; y <= ySteps; y++) {
     var tv = minT + y * yStep;
     var yp = yPos(tv);
-    yAxis += '<text x="' + (padL - 6) + '" y="' + (yp + 3) + '" text-anchor="end" font-size="9" fill="' + labelC + '" font-family="Outfit,sans-serif">' + Math.round(tv) + '\u00b0</text>';
-    yAxis += '<line x1="' + padL + '" y1="' + yp + '" x2="' + (W - padR) + '" y2="' + yp + '" stroke="' + gridC + '" stroke-dasharray="3,3" />';
+    yAxis += '<text x="' + (padL - 6) + '" y="' + (yp + 3) + '" text-anchor="end" font-size="9" style="fill:var(--text-muted)" font-family="Outfit,sans-serif">' + Math.round(tv) + '\u00b0</text>';
+    yAxis += '<line x1="' + padL + '" y1="' + yp + '" x2="' + (W - padR) + '" y2="' + yp + '" style="stroke:var(--border)" stroke-dasharray="3,3" />';
   }
 
   // --- X grid + labels 0..24 ---
@@ -1495,11 +1490,11 @@ function renderTempChart(svgId, dataArray) {
   var gridLines = '';
   for (var h2 = 0; h2 <= 24; h2++) {
     if (h2 % 3 === 0) {
-      gridLines += '<line x1="' + xPos(h2) + '" y1="' + yTop + '" x2="' + xPos(h2) + '" y2="' + (yBot + 5) + '" stroke="' + gridC + '" />';
-      xLabels += '<text x="' + xPos(h2) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="9" fill="' + labelC + '" font-family="Outfit,sans-serif">' + String(h2).padStart(2, '0') + '</text>';
+      gridLines += '<line x1="' + xPos(h2) + '" y1="' + yTop + '" x2="' + xPos(h2) + '" y2="' + (yBot + 5) + '" style="stroke:var(--border)" />';
+      xLabels += '<text x="' + xPos(h2) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="9" style="fill:var(--text-muted)" font-family="Outfit,sans-serif">' + String(h2).padStart(2, '0') + '</text>';
     }
     if ((h2 < 24) && (h2 % 3 !== 0)) {
-      xLabels += '<line x1="' + xPos(h2) + '" y1="' + yTop + '" x2="' + xPos(h2) + '" y2="' + yBot + '" stroke="' + gridC + '" opacity="0.5" />';
+      xLabels += '<line x1="' + xPos(h2) + '" y1="' + yTop + '" x2="' + xPos(h2) + '" y2="' + yBot + '" style="stroke:var(--border)" opacity="0.5" />';
     }
   }
 
@@ -1549,7 +1544,7 @@ function renderTempChart(svgId, dataArray) {
     '</defs>';
 
   // --- Baseline ---
-  var baseLine = '<line x1="' + padL + '" y1="' + yBot + '" x2="' + (W - padR) + '" y2="' + yBot + '" stroke="' + gridC + '" />';
+  var baseLine = '<line x1="' + padL + '" y1="' + yBot + '" x2="' + (W - padR) + '" y2="' + yBot + '" style="stroke:var(--border)" />';
 
   // --- Highlight circle (will be moved by highlightChartPoint) ---
   // Default highlight = hour 0
