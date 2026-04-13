@@ -367,7 +367,7 @@ var refreshState = {
   daily: { timer: null, refresh: 900, generatedAt: null }
 };
 
-// Rendered hourly arrays for preselectHour
+// Rendered hourly arrays
 var hourlyTodayRendered = [];
 var hourlyTomorrowRendered = [];
 
@@ -732,8 +732,9 @@ function buildNowEntry(currentData, nowLabel) {
 }
 
 function findHourIndex(dataArray, hourValue) {
+  var numVal = Number(hourValue);
   for (var i = 0; i < dataArray.length; i++) {
-    if (dataArray[i].hourValue === hourValue) return i;
+    if (Number(dataArray[i].hourValue) === numVal) return i;
   }
   return 0;
 }
@@ -753,8 +754,8 @@ function restoreSelectionAfterRender() {
   var idx = selectedHourIdx;
   if (selectedTab === 'heute' && selectedHourValue === 'now') {
     idx = 0;
-  } else if (selectedTab === 'morgen' && selectedHourValue === '12') {
-    idx = findHourIndex(dataArray, '12');
+  } else if (selectedHourValue !== 'now') {
+    idx = findHourIndex(dataArray, selectedHourValue);
   }
 
   if (!cards.length) return;
@@ -837,9 +838,11 @@ function renderAll() {
   // Restore previously selected hour/tab, or preselect default
   restoreSelectionAfterRender();
 
-  // Drag scroll
-  makeDragScroll(document.getElementById('hourStripHeute'));
-  makeDragScroll(document.getElementById('hourStripMorgen'));
+  // Drag scroll (only once per element)
+  var heuteStrip = document.getElementById('hourStripHeute');
+  var morgenStrip2 = document.getElementById('hourStripMorgen');
+  if (heuteStrip && !heuteStrip._dragScrollInit) { makeDragScroll(heuteStrip); heuteStrip._dragScrollInit = true; }
+  if (morgenStrip2 && !morgenStrip2._dragScrollInit) { makeDragScroll(morgenStrip2); morgenStrip2._dragScrollInit = true; }
 }
 
 // ===== AUTO-REFRESH (per data type, using generatedAt) =====
@@ -1205,7 +1208,9 @@ function renderDaily(containerId, dataArray) {
 
 // ===== SELECT HOUR =====
 function selectHour(el, dataArray) {
-  document.querySelectorAll('.hcard').forEach(function(c) { c.classList.remove('selected'); });
+  var strip = el.closest('.hour-strip');
+  if (strip) { strip.querySelectorAll('.hcard').forEach(function(c) { c.classList.remove('selected'); }); }
+  else { document.querySelectorAll('.hcard').forEach(function(c) { c.classList.remove('selected'); }); }
   el.classList.add('selected');
 
   var idx = parseInt(el.getAttribute('data-idx'), 10);
@@ -1213,7 +1218,7 @@ function selectHour(el, dataArray) {
 
   // Update selection state
   selectedHourIdx = idx;
-  selectedHourValue = (d && typeof d.hourValue === 'number') ? String(d.hourValue) : 'now';
+  selectedHourValue = (d && d.isNow) ? 'now' : ((d && typeof d.hourValue === 'number') ? String(d.hourValue) : 'now');
 
   // Determine active tab for context label
   var activeTab = document.querySelector('.tab.active');
@@ -1257,35 +1262,6 @@ function selectHour(el, dataArray) {
     highlightChartPoint(chartId, d.hourValue);
   }
 } 
-
-// ===== PRESELECT HOUR =====
-function preselectHour(tabName) {
-  if (tabName === 'tage') return;
-  var stripId = (tabName === 'heute') ? 'hourStripHeute' : 'hourStripMorgen';
-  var dataArray = (tabName === 'heute') ? hourlyTodayRendered : hourlyTomorrowRendered;
-  if (!dataArray || dataArray.length === 0) return;
-  var cards = document.getElementById(stripId).querySelectorAll('.hcard');
-  var targetIdx = 0;
-  if (tabName === 'morgen') {
-    // For morgen: select hour 12:00 by default
-    for (var i = 0; i < dataArray.length; i++) {
-      if (dataArray[i].hour === '12') { targetIdx = i; break; }
-    }
-  }
-  // For heute: select index 0 (nowEntry) by default
-
-  // Update selection state
-  selectedTab = tabName;
-  if (tabName === 'heute' || tabName === 'morgen') {
-    renderAll();
-  }
-  selectedHourIdx = targetIdx;
-
-  if (cards[targetIdx]) {
-    selectHour(cards[targetIdx], dataArray);
-    cards[targetIdx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }
-}
 
 function refreshActiveTabView(tabName) {
   selectedTab = tabName;
@@ -1402,7 +1378,7 @@ function makeDragScroll(el) {
   el.addEventListener('touchend', function() { down = false; });
   // Block click after drag
   el.addEventListener('click', function(e) {
-    if (dragged) { e.stoprainProbagation(); dragged = false; }
+    if (dragged) { e.stopPropagation(); dragged = false; }
   }, true);
   el.addEventListener('wheel', function(e) {
     if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
