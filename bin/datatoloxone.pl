@@ -469,16 +469,16 @@ foreach my $hfcEntry (@$hfc) {
 }
 $doLog = 1;
 for my $p (@periods) {
-    LOGINF "Processing 4-hourly aggregated forecast entries for period $p (calc+${p}) and sending data to MS.";
+    LOGINF "Processing 4-hourly aggregated forecast entries for period $p (calc_plus${p}) and sending data to MS.";
 
-    sendToLox($toMS, $doLog, "calc+$p\_prec", !$metric ? sprintf("%.2f", $var{prec}{$p}*0.0393700787) : sprintf("%.2f", $var{prec}{$p}));
-    sendToLox($toMS, $doLog, "calc+$p\_snow", !$metric ? sprintf("%.2f", $var{snow}{$p}*0.393700787) : sprintf("%.2f", $var{snow}{$p}));
-    sendToLox($toMS, $doLog, "calc+$p\_sr", sprintf("%.0f", $var{sr}{$p}));
-    sendToLox($toMS, $doLog, "calc+$p\_ttmin", !$metric ? sprintf("%.1f", $var{ttmin}{$p}*1.8+32) : sprintf("%.1f", $var{ttmin}{$p}));
-    sendToLox($toMS, $doLog, "calc+$p\_ttmax", !$metric ? sprintf("%.1f", $var{ttmax}{$p}*1.8+32) : sprintf("%.1f", $var{ttmax}{$p}));
-    sendToLox($toMS, $doLog, "calc+$p\_ttmean", !$metric ? sprintf("%.1f", mean(@{ $var{ttmean}{$p} })*1.8+32) : sprintf("%.1f", mean(@{ $var{ttmean}{$p} })));
-    sendToLox($toMS, $doLog, "calc+$p\_popmin", sprintf("%.0f", $var{popmin}{$p}));
-    sendToLox($toMS, $doLog, "calc+$p\_popmax", sprintf("%.0f", $var{popmax}{$p}));
+    sendToLox($toMS, $doLog, "calc_plus{$p}_prec", !$metric ? sprintf("%.2f", $var{prec}{$p}*0.0393700787) : sprintf("%.2f", $var{prec}{$p}));
+    sendToLox($toMS, $doLog, "calc_plus{$p}_snow", !$metric ? sprintf("%.2f", $var{snow}{$p}*0.393700787) : sprintf("%.2f", $var{snow}{$p}));
+    sendToLox($toMS, $doLog, "calc_plus{$p}_sr", sprintf("%.0f", $var{sr}{$p}));
+    sendToLox($toMS, $doLog, "calc_plus{$p}_ttmin", !$metric ? sprintf("%.1f", $var{ttmin}{$p}*1.8+32) : sprintf("%.1f", $var{ttmin}{$p}));
+    sendToLox($toMS, $doLog, "calc_plus{$p}_ttmax", !$metric ? sprintf("%.1f", $var{ttmax}{$p}*1.8+32) : sprintf("%.1f", $var{ttmax}{$p}));
+    sendToLox($toMS, $doLog, "calc_plus{$p}_ttmean", !$metric ? sprintf("%.1f", mean(@{ $var{ttmean}{$p} })*1.8+32) : sprintf("%.1f", mean(@{ $var{ttmean}{$p} })));
+    sendToLox($toMS, $doLog, "calc_plus{$p}_popmin", sprintf("%.0f", $var{popmin}{$p}));
+    sendToLox($toMS, $doLog, "calc_plus{$p}_popmax", sprintf("%.0f", $var{popmax}{$p}));
     $doLog = 0;
 }
 

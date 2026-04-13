@@ -873,9 +873,6 @@ if ($R::form eq "1" || !$R::form) {
     my %labels = (
         'dark' => "Dark Theme (Classic)",
         'light' => "Light Theme (Classic)",
-        'fresh' => "Fresh Theme (To be removed in future)",
-        'sea' => "Blue sea Theme (To be removed in future)",
-        'cold' => "Cold ice Theme (To be removed in future)",
         'custom' => "Custom Theme (your own)",
     );
 

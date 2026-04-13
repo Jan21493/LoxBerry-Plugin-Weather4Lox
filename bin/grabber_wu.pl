@@ -166,7 +166,7 @@ my $dtCurrent = DateTime->now( time_zone => $timezone );
 
 $envelope->{$grabberKey} = {
     filename        => "$lbplogdir/$weatherKey.json",
-    generatedAt     => $dtCurrent->iso8601(),
+    generatedAt     => _epochToIso($dtCurrent->epoch, $tzLong),
     observedAt      => $obsTimeLocal,
     grabberLabel    => $grabberLabel,
     grabberScript   => $grabberFile,
@@ -179,7 +179,7 @@ if ($refresh < $envelope->{refresh}) {
     LOGINF "Reducing refresh interval for $weatherKey weather data from $envelope->{refresh} to $refresh minutes.";
     $envelope->{refresh} = $refresh;
 }
-$envelope->{generatedAt} = $dtCurrent->iso8601();
+$envelope->{generatedAt} = _epochToIso($dtCurrent->epoch, $tzLong);
 
 # Write JSON back to file
 writeJsonFile($lbplogdir, $weatherKey, $envelope);

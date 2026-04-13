@@ -569,9 +569,9 @@ my $location = {
     city         => $cityName,                                                           # cur_loc_n, e.g. "Schwarzenbek"
     country      => $country,                                                            # country name, e.g. Deutschland
     countryCode  => getValue($resGeodata, 'location_info', 'geoObject', 'iso-3166-1'),   # country code
-    elevation    => getFormatted('%.0f', $resGeodata, 'alt'),                           # altitude in meters
-    latitude     => getFormatted('%.3f', $resGeodata, 'lat'),                           # latitude
-    longitude    => getFormatted('%.3f', $resGeodata, 'lon'),                           # longitude
+    elevation    => getFormatted('%.0f', $resGeodata, 'alt'),                            # altitude in meters
+    latitude     => getFormatted('%.3f', $resGeodata, 'lat'),                            # latitude
+    longitude    => getFormatted('%.3f', $resGeodata, 'lon'),                            # longitude
     timezone     => $timezone,                                                           # timezone string (e.g. "Europe/Berlin")
     tzShort      => $dtCurrent->strftime('%Z'),                                          # timezone abbreviation (e.g. "CET")
     tzOffset     => $dtCurrent->strftime('%z'),                                          # timezone offset (e.g. "+0100")
@@ -591,7 +591,7 @@ if ( $current ) {
 
     my %time;
     # $time{date}      = getValue($resCurrent, 'current', 'date');
-    $time{datetime}  = _epochToIso($dtCurrent->epoch, $timezone);                                                            # cur_date_des
+    $time{datetime}  = _epochToIso($dtCurrent->epoch, $timezone);                                                              # cur_date_des
     $time{epoch}     = $dtCurrent->epoch;                                                                                      # cur_date
 
     # cur_date_tz_des (e.g. Europe/Berlin), cur_date_tz_des_sh (e.g. "CET"), cur_date_tz (e.g. "+0100") are send in location section 
