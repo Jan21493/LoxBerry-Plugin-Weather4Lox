@@ -176,7 +176,7 @@
     .stat-sub { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
 
     /* Extra stats row */
-    .extra-row { display: grid; grid-template-columns: repeat(6,1fr); gap: 10px; margin-top: 16px; }
+    .extra-row { display: grid; grid-template-columns: repeat(7,1fr); gap: 10px; margin-top: 16px; }
     .extra { padding: 14px; display: flex; align-items: center; gap: 8px; }
     .extra .stat-icon svg { width: 24px; height: 24px; }
     .extra .stat-val { font-size: 1.1rem; }
@@ -231,6 +231,9 @@
     .drow-detail-val { font-size: 0.9rem; font-weight: 500; }
 
     /* ===== SVG TEMP CHART ===== */
+    .chart-title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; padding-left: 4px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+    .chart-title .precip-toggle { cursor: pointer; color: var(--sky); border-bottom: 1px dashed var(--sky); transition: opacity 0.2s; }
+    .chart-title .precip-toggle:hover { opacity: 0.7; }
     .chart-wrap {
       margin-top: 16px; overflow-x: auto; padding-bottom: 4px;
       scrollbar-width: thin; scrollbar-color: var(--border) transparent;
@@ -280,6 +283,7 @@
       .hcard-time { font-size: 0.65rem; margin-bottom: 4px; }
       .hcard-rainProb { font-size: 0.62rem; }
       .chart-wrap { margin-top: 10px; }
+      .chart-title { font-size: 0.65rem; }
       .daily-wrap { padding: 14px; }
       .daily-wrap h2 { font-size: 0.95rem; margin-bottom: 10px; }
       .drow { grid-template-columns: 52px 36px 1fr; gap: 8px; padding: 10px 12px; border-radius: 12px; margin-bottom: 4px; }
@@ -370,6 +374,9 @@ var refreshState = {
 // Rendered hourly arrays
 var hourlyTodayRendered = [];
 var hourlyTomorrowRendered = [];
+
+// Precipitation mode per chart: 'prob' (probability %) or 'amount' (mm)
+var chartPrecipMode = {};
 
 // Selection state (persisted across refreshes)
 var selectedTab = 'heute';
@@ -812,12 +819,12 @@ function renderAll() {
   document.getElementById('heroGust').textContent = (cWind.gust != null ? cWind.gust : '--') + ' km/h';
   document.getElementById('heroIcon').src = resolveIcon(cWx.weather4lox, c.isNight, c.moon ? c.moon.age : 0);
 
-  // Side stats (precipitation, pressure, visibility)
+  // Side stats (precipitation, pressure); visibility is now in extra-stats row
   document.getElementById('statPrecip').textContent = (cPrecip.rainToday != null ? cPrecip.rainToday : 0) + ' mm';
   document.getElementById('statPressure').innerHTML = (c.pressure != null ? c.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
   document.getElementById('statVisibility').innerHTML = (c.visibility != null ? c.visibility : '--') + ' <small style="color:var(--text-muted)">km</small>';
 
-  // Extra stats (sunrise/sunset + weather details)
+  // Extra stats (sunrise/sunset + weather details + visibility)
   document.getElementById('statSunrise').textContent = sunrise;
   document.getElementById('statSunset').textContent = sunset;
   document.getElementById('statDewpoint').textContent = (c.dewpoint != null ? c.dewpoint.toFixed(1) : '--') + '\u00b0C';
@@ -971,13 +978,6 @@ function scheduleRefresh() {
             <div class="stat-val" id="statPressure">1013 <small style="color:var(--text-muted)">hPa</small></div>
           </div>
         </div>
-        <div class="glass stat">
-          <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div>
-          <div class="stat-content">
-            <div class="stat-label" data-i18n="theme.visibility">Sichtweite</div>
-            <div class="stat-val" id="statVisibility">14 <small style="color:var(--text-muted)">km</small></div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -989,7 +989,7 @@ function scheduleRefresh() {
       <div class="hour-strip" id="hourStripHeute"></div>
     </div>
     <div class="chart-wrap" id="chartWrapHeute">
-      <div class="chart-title"><span data-i18n="theme.chart_title">Temperaturverlauf</span> &#8729; <span data-i18n="theme.hours_today">Heutige Stunden</span></div>
+      <div class="chart-title"><span data-i18n="theme.chart_title">Temperaturverlauf</span> &#8729; <span data-i18n="theme.hours_today">Heutige Stunden</span> &#8729; <span class="precip-toggle" id="precipToggle-tempChartHeute" onclick="toggleChartPrecipMode('tempChartHeute')">Niederschlagswahrscheinlichkeit</span></div>
       <svg id="tempChartHeute" height="140" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
   </div>
@@ -1001,7 +1001,7 @@ function scheduleRefresh() {
       <div class="hour-strip" id="hourStripMorgen"></div>
     </div>
     <div class="chart-wrap" id="chartWrapMorgen">
-      <div class="chart-title"><span data-i18n="theme.chart_title">Temperaturverlauf</span> &#8729; <span data-i18n="theme.hours_tomorrow">Morgige Stunden</span></div>
+      <div class="chart-title"><span data-i18n="theme.chart_title">Temperaturverlauf</span> &#8729; <span data-i18n="theme.hours_tomorrow">Morgige Stunden</span> &#8729; <span class="precip-toggle" id="precipToggle-tempChartMorgen" onclick="toggleChartPrecipMode('tempChartMorgen')">Niederschlagswahrscheinlichkeit</span></div>
       <svg id="tempChartMorgen" height="140" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
   </div>
@@ -1049,6 +1049,13 @@ function scheduleRefresh() {
       <div class="stat-content">
         <div class="stat-label" data-i18n="theme.uv_index">UV-Index</div>
         <div class="stat-val mono" id="statUVI">3</div>
+      </div>
+    </div>
+    <div class="glass extra">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div>
+      <div class="stat-content">
+        <div class="stat-label" data-i18n="theme.visibility">Sichtweite</div>
+        <div class="stat-val" id="statVisibility">-- <small style="color:var(--text-muted)">km</small></div>
       </div>
     </div>
     <div class="glass extra">
@@ -1406,6 +1413,22 @@ function makeDragScroll(el) {
   }, {passive: false});
 }
 
+// ===== TOGGLE PRECIPITATION MODE IN CHART =====
+function toggleChartPrecipMode(svgId) {
+  var current = chartPrecipMode[svgId] || 'prob';
+  chartPrecipMode[svgId] = (current === 'prob') ? 'amount' : 'prob';
+  // Update the toggle button label to reflect the now-active mode
+  var btn = document.getElementById('precipToggle-' + svgId);
+  if (btn) {
+    btn.textContent = (chartPrecipMode[svgId] === 'prob')
+      ? 'Niederschlagswahrscheinlichkeit'
+      : 'Niederschlagsmenge';
+  }
+  // Re-render chart with the updated precipitation mode
+  var dataArray = (svgId === 'tempChartHeute') ? hourlyTodayRendered : hourlyTomorrowRendered;
+  renderTempChart(svgId, dataArray);
+}
+
 // ===== TEMPERATURE CHART (SVG, responsive) =====
 function renderTempChart(svgId, dataArray) {
   var svg = document.getElementById(svgId);
@@ -1414,7 +1437,7 @@ function renderTempChart(svgId, dataArray) {
   // --- Chart constants (must match highlightChartPoint) ---
   var H = 140;
   var padL = 40;
-  var padR = 16;
+  var padR = 36; // wider right padding to fit precipitation right-side scale labels
   var yTop = 28;
   var yBot = H - 28;
   var chartH = yBot - yTop;
@@ -1639,6 +1662,64 @@ function renderTempChart(svgId, dataArray) {
     '<linearGradient id="areaG-'+svgId+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--sky)" stop-opacity="0.15"/><stop offset="100%" stop-color="var(--amber)" stop-opacity="0"/></linearGradient>' +
     '</defs>';
 
+  // --- Precipitation bars (rendered behind the temperature curve) ---
+  // Read the current mode for this chart: 'prob' = probability (%), 'amount' = rain amount (mm)
+  var precipMode = chartPrecipMode[svgId] || 'prob';
+  var precipBars = '';
+  var precipScale = '';
+
+  // For 'amount' mode, find the maximum value to set the bar scale
+  var maxPrecipAmount = 0;
+  if (precipMode === 'amount') {
+    for (var pa = 0; pa <= 23; pa++) {
+      var paSlot = slots[pa];
+      if (paSlot.point && paSlot.point.rainAmount != null && paSlot.point.rainAmount > maxPrecipAmount) {
+        maxPrecipAmount = paSlot.point.rainAmount;
+      }
+    }
+    maxPrecipAmount = Math.max(1, Math.ceil(maxPrecipAmount));
+  }
+
+  // Build one bar rect per hour slot that has a data point with precipitation info
+  for (var pb = 0; pb <= 23; pb++) {
+    var pbSlot = slots[pb];
+    if (!pbSlot.point) continue;
+    var precipVal = (precipMode === 'prob') ? pbSlot.point.rainProb : pbSlot.point.rainAmount;
+    if (precipVal == null) continue;
+    var maxVal = (precipMode === 'prob') ? 100 : maxPrecipAmount;
+    var barH = (precipVal / maxVal) * chartH;
+    barH = Math.max(0, Math.min(chartH, barH));
+    if (barH < 0.5) continue;
+    // Bar occupies the hour slot: starts 1px after the hour gridline, spans (stepX-2) px wide
+    precipBars += '<rect x="' + (xPos(pb) + 1) + '" y="' + (yBot - barH) +
+                  '" width="' + (stepX - 2) + '" height="' + barH +
+                  '" fill="var(--sky)" opacity="0.35" rx="2" />';
+  }
+
+  // Build right-side axis scale labels for the precipitation bars
+  var rightScaleX = W - padR + 4; // 4px gap between chart area and labels
+  if (precipMode === 'prob') {
+    // Fixed 0 – 50 – 100 % scale for probability
+    var probTicks = [0, 50, 100];
+    for (var pt = 0; pt < probTicks.length; pt++) {
+      var pv = probTicks[pt];
+      var ry = yBot - (pv / 100) * chartH;
+      precipScale += '<text x="' + rightScaleX + '" y="' + (ry + 3) +
+                     '" text-anchor="start" font-size="9" style="fill:var(--sky)" font-family="Outfit,sans-serif">' +
+                     pv + '%</text>';
+    }
+  } else if (maxPrecipAmount > 0) {
+    // Dynamic 0 – mid – max scale for amount
+    var amtTicks = [0, maxPrecipAmount / 2, maxPrecipAmount];
+    for (var at = 0; at < amtTicks.length; at++) {
+      var av = amtTicks[at];
+      var ry2 = yBot - (av / maxPrecipAmount) * chartH;
+      precipScale += '<text x="' + rightScaleX + '" y="' + (ry2 + 3) +
+                     '" text-anchor="start" font-size="9" style="fill:var(--sky)" font-family="Outfit,sans-serif">' +
+                     (Number.isInteger(av) ? av : av.toFixed(1)) + 'mm</text>';
+    }
+  }
+
   // --- Baseline ---
   var baseLine = '<line x1="' + padL + '" y1="' + yBot + '" x2="' + (W - padR) + '" y2="' + yBot + '" style="stroke:var(--border)" />';
 
@@ -1649,9 +1730,11 @@ function renderTempChart(svgId, dataArray) {
   svg.innerHTML =
     defs +
     yAxis +
+    precipScale +
     xLabels +
     gridLines +
     baseLine +
+    precipBars +
     '<path d="M ' + areaPoints + '" fill="url(#areaG-' + svgId + ')" />' +
     '<polyline points="' + polyPoints.join(' ') + '" fill="none" stroke="url(#lineG-'+svgId+')" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' +
     dots +
