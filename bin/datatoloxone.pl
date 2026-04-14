@@ -51,8 +51,9 @@ my  $hfcAllowed       = { map { $_ => 1 } split /;/, $pcfg->param('SERVER.SENDHF
 our $sendUDP          = $pcfg->param("SERVER.SENDUDP");
 our $metric           = $pcfg->param("SERVER.METRIC");
 our $emu              = $pcfg->param("SERVER.EMU");
-our $stdtheme         = $pcfg->param("WEB.THEME");
-our $stdiconset       = $pcfg->param("WEB.ICONSET");
+our $stdTheme         = $pcfg->param("WEB.THEME");
+our $stdIconSet       = $pcfg->param("WEB.ICONSET");
+our $stdMode          = $pcfg->param("WEB.MODE") // "system";
 our $topic            = $pcfg->param("SERVER.TOPIC") // "w4lx";
 our $sendMQTT         = 0;
 our $mqtt;
@@ -146,7 +147,7 @@ $weatherKey = "hourlyforecast";
 $envelope = readJsonFile($lbplogdir, $weatherKey);
 my $hfc = $envelope->{$weatherKey} // [];
 
-my $iconMapping = readJsonFile("$lbphtmldir/icons/$stdiconset", "icon_mapping") // {};
+my $iconMapping = readJsonFile("$lbphtmldir/icons/$stdIconSet", "icon_mapping") // {};
 
 LOGOK "JSON data files loaded successfully.";
 
@@ -471,14 +472,14 @@ $doLog = 1;
 for my $p (@periods) {
     LOGINF "Processing 4-hourly aggregated forecast entries for period $p (calc_plus${p}) and sending data to MS.";
 
-    sendToLox($toMS, $doLog, "calc_plus{$p}_prec", !$metric ? sprintf("%.2f", $var{prec}{$p}*0.0393700787) : sprintf("%.2f", $var{prec}{$p}));
-    sendToLox($toMS, $doLog, "calc_plus{$p}_snow", !$metric ? sprintf("%.2f", $var{snow}{$p}*0.393700787) : sprintf("%.2f", $var{snow}{$p}));
-    sendToLox($toMS, $doLog, "calc_plus{$p}_sr", sprintf("%.0f", $var{sr}{$p}));
-    sendToLox($toMS, $doLog, "calc_plus{$p}_ttmin", !$metric ? sprintf("%.1f", $var{ttmin}{$p}*1.8+32) : sprintf("%.1f", $var{ttmin}{$p}));
-    sendToLox($toMS, $doLog, "calc_plus{$p}_ttmax", !$metric ? sprintf("%.1f", $var{ttmax}{$p}*1.8+32) : sprintf("%.1f", $var{ttmax}{$p}));
-    sendToLox($toMS, $doLog, "calc_plus{$p}_ttmean", !$metric ? sprintf("%.1f", mean(@{ $var{ttmean}{$p} })*1.8+32) : sprintf("%.1f", mean(@{ $var{ttmean}{$p} })));
-    sendToLox($toMS, $doLog, "calc_plus{$p}_popmin", sprintf("%.0f", $var{popmin}{$p}));
-    sendToLox($toMS, $doLog, "calc_plus{$p}_popmax", sprintf("%.0f", $var{popmax}{$p}));
+    sendToLox($toMS, $doLog, "calc_plus${p}_prec", !$metric ? sprintf("%.2f", $var{prec}{$p}*0.0393700787) : sprintf("%.2f", $var{prec}{$p}));
+    sendToLox($toMS, $doLog, "calc_plus${p}_snow", !$metric ? sprintf("%.2f", $var{snow}{$p}*0.393700787) : sprintf("%.2f", $var{snow}{$p}));
+    sendToLox($toMS, $doLog, "calc_plus${p}_sr", sprintf("%.0f", $var{sr}{$p}));
+    sendToLox($toMS, $doLog, "calc_plus${p}_ttmin", !$metric ? sprintf("%.1f", $var{ttmin}{$p}*1.8+32) : sprintf("%.1f", $var{ttmin}{$p}));
+    sendToLox($toMS, $doLog, "calc_plus${p}_ttmax", !$metric ? sprintf("%.1f", $var{ttmax}{$p}*1.8+32) : sprintf("%.1f", $var{ttmax}{$p}));
+    sendToLox($toMS, $doLog, "calc_plus${p}_ttmean", !$metric ? sprintf("%.1f", mean(@{ $var{ttmean}{$p} })*1.8+32) : sprintf("%.1f", mean(@{ $var{ttmean}{$p} })));
+    sendToLox($toMS, $doLog, "calc_plus${p}_popmin", sprintf("%.0f", $var{popmin}{$p}));
+    sendToLox($toMS, $doLog, "calc_plus${p}_popmax", sprintf("%.0f", $var{popmax}{$p}));
     $doLog = 0;
 }
 
@@ -503,8 +504,9 @@ close(F);
 
 LOGINF "Creating Webpages ...";
 
-our $theme = $stdtheme;
-our $iconset = $stdiconset;
+our $theme = $stdTheme;
+our $iconset = $stdIconSet;
+our $mode = $stdMode;
 our $themeurlmain = "./webpage.html";
 our $themeurldfc = "./webpage.dfc.html";
 our $themeurlhfc = "./webpage.hfc.html";
@@ -649,6 +651,7 @@ if (!$interimStyleTheme && !$newStyleTheme) {
 #############################################
 
 my $sourceFile;
+my $destFile;
 
 if (!$newStyleTheme) {
     # get main template for current conditions with classic style or all conditions with intermediate style themes
@@ -657,11 +660,13 @@ if (!$newStyleTheme) {
     # new style themes only have a single 'template' that contains a redirect to to the specific theme file in the webfrontend/html/<pluginname> directory
     $sourceFile  = "$lbptemplatedir/themes/new-style.theme.html";
     # Create variable for searching and replacing in templates for themes (in case of old-style themes)
-    { no strict 'refs'; ${'themeurl'} = "./$theme.theme.html?iconset=$iconset&lang=$lang" }
+    { no strict 'refs'; ${'themeurl'} = "./$theme.theme.html?iconset=$iconset&lang=$lang&mode=$mode" }
 }
 
+$destFile = "$lbplogdir/webpage.html";
+
 # Write cached webpage
-open(F1,">$lbplogdir/webpage.html");
+open(F1,">$destFile.tmp");
 flock(F1,2);
 open(F,"<$sourceFile");
 {
@@ -682,8 +687,11 @@ close(F);
 #flock(F1,8);
 close(F1);
 
-if (-e "$lbplogdir/webpage.html") {
-    LOGDEB "$lbplogdir/webpage.html created.";
+# Move temp file to final destination
+move($destFile . ".tmp", $destFile) or warn "Move of file $destFile.tmp to $destFile failed: $!";
+
+if (-e $destFile) {
+    LOGDEB "$destFile created.";
 }
 
 LOGOK "Webpages created successfully.";

@@ -848,10 +848,9 @@ if ($R::form eq "1" || !$R::form) {
 
     # Check for installed DNSMASQ-Plugin
     my $checkdnsmasq = LoxBerry::System::plugindata('DNSmasq');
-    if ( $checkdnsmasq->{PLUGINDB_TITLE} ) {
-        $template->param( EMUWARNING => $L{'SETTINGS.ERR_DNSMASQ_PLUGIN'} );
+    if (ref($checkdnsmasq) eq 'HASH' && $checkdnsmasq->{PLUGINDB_TITLE}) {
+        $template->param(EMUWARNING => $L{'SETTINGS.ERR_DNSMASQ_PLUGIN'}) if $template;
     }
-
     # Cloudweather Emu
     my @values = ('0', '1' );
     my %labels = (
@@ -869,7 +868,7 @@ if ($R::form eq "1" || !$R::form) {
     $template->param( MYIP => LoxBerry::System::get_localip() );
 
     # Theme
-    my @values = ('dark', 'light', 'fresh', 'sea', 'cold', 'custom' );
+    my @values = ('dark', 'light', 'custom' );
     my %labels = (
         'dark' => "Dark Theme (Classic)",
         'light' => "Light Theme (Classic)",

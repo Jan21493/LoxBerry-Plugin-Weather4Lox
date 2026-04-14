@@ -30,6 +30,7 @@ use LoxBerry::Log;
 use LWP::UserAgent;
 use JSON::PP;
 use File::Copy;
+use File::Basename qw(basename);
 use Getopt::Long;
 use DateTime;
 use POSIX qw(floor);

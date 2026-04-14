@@ -89,8 +89,23 @@ LOGDEB "This is $0 Version $version";
 requireOrLogdie('DateTime::Format::ISO8601');
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
-my $timezone         = qx(cat /etc/timezone);
-chomp ($timezone);
+
+# Determine system timezone (Debian / DietPi)
+my $timezone = $ENV{TZ} // '';
+
+if (!$timezone) {
+    if (open my $tzfh, '<:encoding(UTF-8)', '/etc/timezone') {
+        $timezone = <$tzfh>;
+        chomp $timezone if defined $timezone;
+        close $tzfh;
+    }
+}
+
+# Validate that zoneinfo exists (avoid invalid names)
+if (!$timezone || !-f "/usr/share/zoneinfo/$timezone") {
+    # Fallback to UTC if not found
+    $timezone = 'UTC';
+}
 
 my $apikey = apiCall(
     url => "$urlGetKeyRaw",
@@ -166,7 +181,7 @@ my $dtCurrent = DateTime->now( time_zone => $timezone );
 
 $envelope->{$grabberKey} = {
     filename        => "$lbplogdir/$weatherKey.json",
-    generatedAt     => _epochToIso($dtCurrent->epoch, $tzLong),
+    generatedAt     => _epochToIso($dtCurrent->epoch, $timezone),
     observedAt      => $obsTimeLocal,
     grabberLabel    => $grabberLabel,
     grabberScript   => $grabberFile,
@@ -179,7 +194,7 @@ if ($refresh < $envelope->{refresh}) {
     LOGINF "Reducing refresh interval for $weatherKey weather data from $envelope->{refresh} to $refresh minutes.";
     $envelope->{refresh} = $refresh;
 }
-$envelope->{generatedAt} = _epochToIso($dtCurrent->epoch, $tzLong);
+$envelope->{generatedAt} = _epochToIso($dtCurrent->epoch, $timezone);
 
 # Write JSON back to file
 writeJsonFile($lbplogdir, $weatherKey, $envelope);
