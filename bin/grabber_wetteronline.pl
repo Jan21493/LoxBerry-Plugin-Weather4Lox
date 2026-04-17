@@ -302,9 +302,9 @@ my %wetteronlineToLox = (
   # "md____" => ["5", "overcast", "Bedeckt"],                                    # Bedeckt (Nacht)
 
     # fog/haze
-    "ns____" => ["6", "cloudy_fog", "Teils neblig"],                             # teils neblig (Tag)
-  # "nm____" => ["6", "cloudy_fog", "Teils neblig"],                             # teils neblig (Nacht)
-    "nb____" => ["6", "overcast_fog", "Nebelig"],                                # neblig / Nebel
+    "ns____" => ["6", "mist", "Teils neblig"],                                   # teils neblig (Tag)
+  # "nm____" => ["6", "mist", "Teils neblig"],                                   # teils neblig (Nacht)
+    "nb____" => ["6", "fog", "Nebelig"],                                         # neblig / Nebel
 
 	# Schauer
 

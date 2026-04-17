@@ -224,23 +224,23 @@
       "moonPhases": 0
     },
     "mist": {
-      "iconDay": "cloudy_mist_day",
+      "iconDay": "mist_day",
       "iconNight": "cloudy_mist_night",
       "moonPhases": 5
     },
     "smoke": {
-      "iconDay": "fog_day",
-      "iconNight": "fog_night",
+      "iconDay": "smoke_day",
+      "iconNight": "smoke_night",
       "moonPhases": 0
     },
     "haze": {
-      "iconDay": "fog_day",
-      "iconNight": "fog_night",
+      "iconDay": "haze_day",
+      "iconNight": "haze_night",
       "moonPhases": 0
     },
     "dust_whirls": {
-      "iconDay": "fog_day",
-      "iconNight": "fog_night",
+      "iconDay": "sand_day",
+      "iconNight": "sand_night",
       "moonPhases": 0
     },
     "fog": {
@@ -249,18 +249,18 @@
       "moonPhases": 0
     },
     "sand": {
-      "iconDay": "fog_day",
-      "iconNight": "fog_night",
+      "iconDay": "sand_day",
+      "iconNight": "sand_night",
       "moonPhases": 0
     },
     "dust": {
-      "iconDay": "fog_day",
-      "iconNight": "fog_night",
+      "iconDay": "dust_day",
+      "iconNight": "dust_night",
       "moonPhases": 0
     },
     "volcanic_ash": {
-      "iconDay": "fog_day",
-      "iconNight": "fog_night",
+      "iconDay": "smoke_day",
+      "iconNight": "smoke_night",
       "moonPhases": 0
     },
     "squalls": {
@@ -269,8 +269,8 @@
       "moonPhases": 0
     },
     "tornado": {
-      "iconDay": "overcast_thunderstorm_3_day",
-      "iconNight": "overcast_thunderstorm_3_night",
+      "iconDay": "tornado_day",
+      "iconNight": "tornado_night",
       "moonPhases": 0
     },
     "no_data": {

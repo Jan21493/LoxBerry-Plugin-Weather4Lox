@@ -872,7 +872,7 @@ if ($R::form eq "1" || !$R::form) {
     my %labels = (
         'dark' => "Dark Theme (Classic)",
         'light' => "Light Theme (Classic)",
-        'custom' => "Custom Theme (your own)",
+        'custom' => "Custom Theme (Your Own Classic)",
     );
 
     # Find all 'new style' theme files in $lbphtmldir and add them to the list

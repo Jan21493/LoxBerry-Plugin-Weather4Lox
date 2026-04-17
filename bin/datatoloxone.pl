@@ -159,7 +159,8 @@ LOGOK "JSON data files loaded successfully.";
 # but send only some values to MS via MQTT and UDP - $toMS is used for values that should be sent to MS
 my $toMS = 1;
 
-LOGINF "---------------------------------------------- Sending current weather data to Loxone ...";
+LOGINF "--------------------------------------------------------------------------------";
+LOGINF "Sending current weather data to Loxone ...";
 
 # Queue for UDP sending - filled by send() function and sent by sendUDP() function
 our $sendUDPqueue;
@@ -174,7 +175,7 @@ my $curDateLoxEpoch = toLoxEpoch($curDateMidnight->epoch);
 
 my $doLog = 1; # log the first data set in detail, but not all subsequent ones to avoid log flooding
 
-# TODO: To be verified if + $tzseconds is correct 
+# sending to Loxone Miniserver via MQTT, HTML webpage and UDP with logging of each value
 sendToLox($toMS, $doLog, "cur_date", toLoxEpoch($cur->{time}{epoch}));                             # Loxone epoch (1.1.2009, MEZ), e.g. 542934004
 sendToLox($toMS, $doLog, "cur_date_des", $cur->{time}{datetime});                                  # was RFC822, now ISO 8601, e.g. Mon, 16 Mar 2026 23:00:04 +0100
 sendToLox($toMS, $doLog, "cur_date_tz_des_sh", $location->{timezone});                             # IANA timezone name, e.g. Europe/Berlin
@@ -254,7 +255,8 @@ if ($curSec < $sunriseSec || $curSec > $sunsetSec) {
 # Send daily forecast to Loxone via HTML webpage, MQTT and UDP
 #
 
-LOGINF "-------------------------------------- Sending daily weather forecast to Loxone ...";
+LOGINF "--------------------------------------------------------------------------------";
+LOGINF "Sending daily weather forecast to Loxone ...";
 
 foreach my $dfcEntry (@$dfc) {
 
@@ -272,6 +274,8 @@ foreach my $dfcEntry (@$dfc) {
     my $dfcDate_midnight = $dfcDate->clone->set(hour => 0, minute => 0, second => 0);
     my $dfcDate_LoxoneEpoch = toLoxEpoch($dfcDate_midnight->epoch);
 
+    # sending to Loxone Miniserver via MQTT, HTML webpage and UDP with logging of first day (today) in detail
+    sendToLox($toMS, $doLog, "dfc${per}_date", toLoxEpoch($dfcEntry->{time}{epoch})); # Loxone epoch (1.1.2009, MEZ), e.g. 542934004
     sendToLox($toMS, $doLog, "dfc${per}_per", $per); # period starting with 0 for today, 1 for tomorrow, ...
     sendToLox($toMS, $doLog, "dfc${per}_date", toLoxEpoch($dfcEntry->{time}{epoch}));
     sendToLox($toMS, $doLog, "dfc${per}_day", encode_utf8(sprintf("%02d", $dfcDate->day)));
@@ -330,7 +334,8 @@ foreach my $dfcEntry (@$dfc) {
 # Send hourly forecast to Loxone via HTML webpage, MQTT and UDP
 #
 
-LOGINF "-------------------------------------- Sending hourly weather forecast to Loxone ...";
+LOGINF "--------------------------------------------------------------------------------";
+LOGINF "Sending hourly weather forecast to Loxone ...";
 
 $doLog = 1; # log the first data set in detail, but not all subsequent ones to avoid log flooding
 foreach my $hfcEntry (@$hfc) {
@@ -349,6 +354,7 @@ foreach my $hfcEntry (@$hfc) {
     # Times are send in local time 
     my $hfc_date = DateTime->from_epoch(epoch => $hfcEntry->{time}{epoch}, time_zone => $location->{timezone});
 
+    # sending to Loxone Miniserver via MQTT, HTML webpage and UDP with logging of first hour in detail
     sendToLox($toMS, $doLog, "hfc${per}_per", $per);
     sendToLox($toMS, $doLog, "hfc${per}_date", toLoxEpoch($hfcEntry->{time}{epoch}));
     sendToLox($toMS, $doLog, "hfc${per}_day", encode_utf8(sprintf("%02d", $hfc_date->day)));
@@ -414,7 +420,8 @@ foreach my $hfcEntry (@$hfc) {
 # Calcualate aggregated values for each 4 hour period and send to Loxone via HTML webpage, MQTT and UDP
 #
 
-LOGINF "-------------------------------------- Sending aggregated 4-hourly weather forecast to Loxone as configured (rain and temperature only) ...";
+LOGINF "--------------------------------------------------------------------------------";
+LOGINF "Aggregating hourly forecasts (sum, min, max, or mean - depending on the parameter) for next X hours (rain and temperature only) ...";
 
 $toMS = 1;
 
@@ -470,7 +477,7 @@ foreach my $hfcEntry (@$hfc) {
 }
 $doLog = 1;
 for my $p (@periods) {
-    LOGINF "Processing 4-hourly aggregated forecast entries for period $p (calc_plus${p}) and sending data to MS.";
+    LOGINF "Aggregating hourly forecasts (sum, min or max - depending on the parameter) for next $p hours (calc_plus${p}) and sending data to MS.";
 
     sendToLox($toMS, $doLog, "calc_plus${p}_prec", !$metric ? sprintf("%.2f", $var{prec}{$p}*0.0393700787) : sprintf("%.2f", $var{prec}{$p}));
     sendToLox($toMS, $doLog, "calc_plus${p}_snow", !$metric ? sprintf("%.2f", $var{snow}{$p}*0.393700787) : sprintf("%.2f", $var{snow}{$p}));
