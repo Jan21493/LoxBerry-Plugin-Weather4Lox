@@ -39,6 +39,9 @@ my $version = LoxBerry::System::pluginversion();
 
 my $pcfg = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $cron = $pcfg->param("SERVER.CRON");
+if (!$cron || $cron eq "0") {
+	$cron = 60; # Set to 60 if not defined or 0
+}
 my $cron_alternate = $pcfg->param("SERVER.CRON_ALTERNATE");
 if (!$cron_alternate || $cron_alternate eq "0") {
 	$cron_alternate = $cron; # Set to default weather service if not defined or 0
@@ -46,17 +49,15 @@ if (!$cron_alternate || $cron_alternate eq "0") {
 my $usealternatedfc = $pcfg->param("SERVER.USEALTERNATEDFC");
 my $usealternatehfc = $pcfg->param("SERVER.USEALTERNATEHFC");
 
-my $cron_alternate = $pcfg->param("SERVER.CRON_ALTERNATE");
-if (!$cron_alternate || $cron_alternate eq "0") {
-	$cron_alternate = $cron; # Set to default weather service if not defined or 0
-}
 # Local / own weather station
-my $cron_local = $pcfg->param("SERVER.CRON_LOCAL");
 my $use_local = $pcfg->param('SERVER.WUGRABBER') || 
 				$pcfg->param('SERVER.FOSHKGRABBER') || 
 				$pcfg->param('SERVER.PWSCATCHUPLOADGRABBER') ||
 				$pcfg->param('SERVER.LOXGRABBER');
-
+my $cron_local = $pcfg->param("SERVER.CRON_LOCAL");
+if (!$cron_local || $cron_local eq "0") {
+	$cron_local = $cron; # Set to default weather service if not defined or 0
+}
 # Commandline options
 my $verbose = '';
 
@@ -118,11 +119,15 @@ if ($use_local) {
 	} else {
 		LOGINF "Fetch interval ($cron_local) for own weather station / local service NOT reached";
 	}
+} else {
+	LOGDEB "Own weather station / local service is disabled. Skipping.";
 }
 
 if ( $command_opt ne "" ){
 	LOGDEB "Fetch data with following command: $lbpbindir/fetch.pl --cronjob $command_opt";
 	system ("$lbpbindir/fetch.pl --cronjob $command_opt");
+} else {
+	LOGINF "No fetch interval reached. Skipping fetch.";
 }
 
 exit;

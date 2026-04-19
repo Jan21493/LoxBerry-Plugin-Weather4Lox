@@ -633,7 +633,7 @@ if ( $current ) {
     $moon{age} = sprintf("%.1f",$moonage) + 0;                                                                                 # cur_moon_a, moon age in days
     $moon{percent} = sprintf("%.1f",$moonillum * 100) + 0;                                                                     # cur_moon_p, moon illumination in percent
     $moon{phase} = sprintf("%.1f",$moonphase * 100) + 0;                                                                       # cur_moon_ph, moon phase in percent (0% = new moon, 50% = half moon, 100% = full moon)
-    $moon{direction} = getMoonDirection($moonphase);                                                                           #                - moon direction (waxing, waning)
+    $moon{direction} = getMoonDirection($moonage);                                                                             #                - moon direction (waxing, waning)
 
     $currentData{moon} = \%moon;
     
@@ -748,7 +748,7 @@ if ( $daily ) {
                 set        => getTimeFromEpochFormatted('%H:%M', $timezone, $resDay, 'moonset'),                               #                  - moon set in HH:MM in local time (API provides in Unix epoch time)
                 percent    => sprintf("%.1f", $moonillum * 100) + 0,                                                           # dfc<X>_moon_p    - moon percent
                 phase      => sprintf("%.1f", $moonphase * 100) + 0,                                                           # dfc<X>_moon_ph   - moon phase
-                direction  => getMoonDirection($moonphase),                                                                    #                  - moon direction (waxing, waning)
+                direction  => getMoonDirection($moonage),                                                                      #                  - moon direction (waxing, waning)
             },
             humidity       => {
                 avg        =>  getFormatted('%.1f', $resDay, 'humidity'),                                                      # dfc<X>_hu_a      - average humidity
@@ -860,7 +860,7 @@ if ( $hourly ) {
                 age          => sprintf("%.1f", $moonage) + 0,                                      # hfc<X>_moon_a    - moon age in days
                 percent      => sprintf("%.1f", $moonillum * 100) + 0,                              # hfc<X>_moon_p    - moon percentage
                 phase        => sprintf("%.1f", $moonphase * 100) + 0,                              # hfc<X>_moon_ph   - moon phase
-                direction    => getMoonDirection($moonphase),                                       #                  - moon direction (waxing, waning)
+                direction    => getMoonDirection($moonage),                                         #                  - moon direction (waxing, waning)
             },
             humidity         => getFormatted('%.1f', $resHour, 'humidity'),                         # hfc<X>_hu        - humidity
             pressure         => getFormatted('%.0f', $resHour, 'pressure'),                         # hfc<X>_pr        - air pressure (hPa)
@@ -1002,7 +1002,7 @@ if ( $hourly ) {
                         age          => sprintf("%.1f", $moonage) + 0,                                      # hfc<X>_moon_a    - moon age in days
                         percent      => sprintf("%.1f", $moonillum * 100) + 0,                              # hfc<X>_moon_p    - moon percentage
                         phase        => sprintf("%.1f", $moonphase * 100) + 0,                              # hfc<X>_moon_ph   - moon phase
-                        direction    => getMoonDirection($moonphase),                                       #                  - moon direction (waxing, waning)
+                        direction    => getMoonDirection($moonage),                                         #                  - moon direction (waxing, waning)
                     },
                     humidity         => interpolate($lastHourlyData->{humidity},
                                             getFormatted('%.1f', $res3Hour, 'humidity'),

@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta id="meta-theme" name="theme-color" content="#0f172a">
   <meta name="title" content="Deep Ocean Theme">
-  <title>Weather4Lox -- Ocean Live</title>
+  <meta name="color-scheme" content="dark light">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Weather4Lox -- Deep Ocean Theme</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
@@ -41,6 +44,7 @@
       --glow: 0 0 40px rgba(56,189,248,0.35);
       --temp-bar-bg: rgba(51,65,85,0.5);
       --grain-opacity: 0.025;
+      background: var(--bg-primary);
     }
 
     html.light {
@@ -63,6 +67,11 @@
       --tab-border: rgba(56,189,248,0.3);
       --temp-bar-bg: rgba(100,116,139,0.18);
       --grain-opacity: 0.012;
+      background: var(--bg-primary);
+    }
+
+    :root {
+      color-scheme: dark light;
     }
 
     body {
@@ -154,15 +163,24 @@
       margin-top: 4px;
       white-space: nowrap;
     }
-    .hero-icon-box {
-      flex: 0 0 150px;
-      width: 150px; height: 150px; 
-      min-width: 100px; min-height: 100px; 
+     .hero-icon-box {
+      width: clamp(88px, 22vw, 150px);
+      aspect-ratio: 1 / 1;
+      flex: 0 0 auto;
       border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       animation: bobble 6s ease-in-out infinite;
     }
-    .hero-icon { width: 120px; height: 120px; flex: 0 0 auto; filter: drop-shadow(0 6px 24px rgba(56,189,248,0.2)); }
+
+    .hero-icon {
+      width: 72%;
+      height: 72%;
+      object-fit: contain;
+      display: block;
+      filter: drop-shadow(0 6px 24px rgba(56,189,248,0.2));
+    }
     @keyframes bobble { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
 
     /* Side stats */
@@ -265,8 +283,8 @@
       .hero-temp { font-size: 3.2rem; }
       .hero-temp sup { font-size: 1.4rem; }
       .hero-desc { font-size: 0.95rem; }
-      .hero-icon-box { width: 90px; height: 90px; }
-      .hero-icon { width: 68px; height: 68px; }
+      .hero-icon-box { width: 120px; height: 120px; }
+      .hero-icon { width: 84px; height: 84px; }
       .side-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
       .stat { padding: 12px; gap: 8px; }
       .stat-label { font-size: 0.6rem; }
@@ -296,6 +314,14 @@
       .drow-detail-label { font-size: 0.6rem; }
       .drow-detail-val { font-size: 0.82rem; }
       .footer { margin-top: 16px; padding: 8px; font-size: 0.68rem; }
+    }
+    @media (max-width: 500px) {
+      .stat-icon svg { width: 20px; height: 20px; }
+      .extra .stat-icon svg { width: 18px; height: 18px; }
+      .extra-row { grid-template-columns: repeat(2,1fr); }
+      .drow { grid-template-columns: 44px 30px 1fr; gap: 6px; padding: 8px 10px; }
+      .drow-icon { width: 28px; height: 28px; }
+      .hcard { min-width: 56px; padding: 4px 4px; }
     }
     @media (max-width: 380px) {
       .hero-row { flex-direction: column; align-items: flex-start; }
@@ -619,6 +645,7 @@ function transformHourly(hourlyArray, sunriseStr, sunsetStr) {
       rainProb: h.precipitation ? h.precipitation.probability : undefined,
       rainAmount: h.precipitation ? h.precipitation.rainHigh : undefined,
       wind: h.wind ? h.wind.speed : undefined,
+      gust: h.wind ? h.wind.gust : undefined,
       windDir: h.wind ? h.wind.direction : undefined,
       humidity: h.humidity,
       pressure: h.pressure,
@@ -630,7 +657,6 @@ function transformHourly(hourlyArray, sunriseStr, sunsetStr) {
       isNight: h.isNight,
       desc: h.weatherCode ? h.weatherCode.description : undefined,
       dewpoint: h.dewpoint,
-      gust: h.wind ? h.wind.gust : undefined,
       visibility: h.visibility,
       time: h.time,
       isNow: false
@@ -721,6 +747,7 @@ function buildNowEntry(currentData, nowLabel) {
     rainProb: cPrecip.probability,
     rainAmount: cPrecip.rainToday,
     wind: cWind.speed,
+    gust: cWind.gust,
     windDir: cWind.direction,
     humidity: currentData.humidity,
     pressure: currentData.pressure,
@@ -732,7 +759,6 @@ function buildNowEntry(currentData, nowLabel) {
     isNight: currentData.isNight,
     desc: cWx.description,
     dewpoint: currentData.dewpoint,
-    gust: cWind.gust,
     visibility: currentData.visibility,
     isNow: true
   };
@@ -822,7 +848,7 @@ function renderAll() {
   // Side stats (precipitation, pressure); visibility is now in extra-stats row
   document.getElementById('statPrecip').textContent = (cPrecip.rainToday != null ? cPrecip.rainToday : 0) + ' mm';
   document.getElementById('statPressure').innerHTML = (c.pressure != null ? c.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
-  document.getElementById('statVisibility').innerHTML = (c.visibility != null ? c.visibility : '--') + ' <small style="color:var(--text-muted)">km</small>';
+  document.getElementById('statVisibility').innerHTML = (c.visibility != null ? (c.visibility / 1000).toFixed(1) : '--') + ' <small style="color:var(--text-muted)">km</small>';
 
   // Extra stats (sunrise/sunset + weather details + visibility)
   document.getElementById('statSunrise').textContent = sunrise;
@@ -952,8 +978,10 @@ function scheduleRefresh() {
                   <path style="fill:var(--bg-primary);fill-opacity:1;stroke-width:0" d="m 22.273079,22.490288 c 0.252723,-1.159118 0.794844,-2.256653 1.432642,-2.900414 0.50291,-0.507612 1.449291,-1.117715 1.627626,-1.049281 0.262049,0.100558 -0.496718,2.05476 -1.056426,2.720819 -0.399026,0.474847 -0.925438,0.890193 -1.532627,1.209261 l -0.527359,0.27712 z" />
                 </svg>
               </div>
-              <span class="hero-wind" id="heroWind" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">-- km/h</span>
-              <span class="hero-gust" id="heroGust" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">-- km/h</span>
+              <div class=""hero-wind-message" id="heroWindMessage" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">
+                <span class="hero-wind" id="heroWind" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">-- km/h</span>
+                <span class="hero-gust" id="heroGust" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px">-- km/h</span>
+              </div>
             </div>
           </div>
           <div class="hero-icon-box accent-bg">
@@ -1096,6 +1124,7 @@ function applyTheme(theme) {
   var html = document.documentElement;
   if (theme === 'light') {
     html.classList.add('light');
+
     document.getElementById('meta-theme').content = '#f0f4f8';
     document.getElementById('ic-sun').style.display = 'none';
     document.getElementById('ic-moon').style.display = 'block';
@@ -1104,6 +1133,11 @@ function applyTheme(theme) {
     document.getElementById('meta-theme').content = '#0f172a';
     document.getElementById('ic-sun').style.display = 'block';
     document.getElementById('ic-moon').style.display = 'none';
+  }
+  
+  var statusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if (statusMeta) {
+    statusMeta.content = (theme === 'light') ? 'default' : 'black-translucent';
   }
 }
 
@@ -1272,7 +1306,7 @@ function selectHour(el, dataArray) {
   // Update stat boxes with hourly data
   document.getElementById('statHumidity').textContent = (d.humidity != null ? d.humidity : '--') + '%';
   document.getElementById('statPressure').innerHTML = (d.pressure != null ? d.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
-  document.getElementById('statVisibility').innerHTML = (d.visibility != null ? d.visibility : '--') + ' <small style="color:var(--text-muted)">km</small>';
+  document.getElementById('statVisibility').innerHTML = (d.visibility != null ? (d.visibility / 1000).toFixed(1) : '--') + ' <small style="color:var(--text-muted)">km</small>';
   document.getElementById('statDewpoint').textContent = (d.dewpoint != null ? d.dewpoint.toFixed(1) : '--') + '\u00b0';
   document.getElementById('statPrecip').textContent = (d.rainAmount != null ? d.rainAmount : 0) + ' mm';
   document.getElementById('statUVI').textContent = d.uvi != null ? d.uvi : '--';

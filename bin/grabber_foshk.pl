@@ -54,7 +54,7 @@ my $port        = $pcfg->param("FOSHK.PORT");
 my $grabberFile     = basename(__FILE__);
 my $grabberLabel    = "FOSHK";
 my $grabberKey      = "foshk";              # name in JSONs
-my $refresh         = $60;
+my $refresh         = 60;
 
 # Read language phrases
 my %L = LoxBerry::System::readlanguage("language.ini");

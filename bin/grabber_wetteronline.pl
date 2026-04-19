@@ -700,7 +700,7 @@ if ( $current ) {
     $moon{age} = sprintf("%.2f",$moonage) + 0;                                                                                 # cur_moon_a, moon age in days
     $moon{percent} = sprintf("%.2f",$moonillum * 100) + 0;                                                                     # cur_moon_p, moon illumination in percent
     $moon{phase} = sprintf("%.2f",$moonphase * 100) + 0;                                                                       # cur_moon_ph, moon phase in percent (0% = new moon, 50% = half moon, 100% = full moon)
-    $moon{direction} = getMoonDirection($moonphase);                                                                           #                - moon direction (waxing, waning)
+    $moon{direction} = getMoonDirection($moonage);                                                                             #                - moon direction (waxing, waning)
 
     $currentData{moon} = \%moon;
     
@@ -878,15 +878,15 @@ if ( $daily ) {
                 weather4lox   => $w4lCode,                                                      # dfc<X>_we_icon   - Weather4Lox icon code
                 description   => $description,                                                  # dfc<X>_we_des    - description
                 image         => getValue($results, 'weather_condition_image'),                 #                  - future use., e.g. as background image
-                metar         => getMetarCode($w4lCode),                                        #                  - METAR cod
+                metar         => getMetarCode($w4lCode),                                        #                  - METAR code
             },
             moon => {
                 age        => getFormatted('%.2f', $results, 'moon', 'age'),                    # dfc<X>_moon_a    - moon age in days
                 rise       => getTimeFormatted('%H:%M', $timezone, $results, 'moon', 'rise'),   #                  - moon rise in ISO time
                 set        => getTimeFormatted('%H:%M', $timezone, $results, 'moon', 'set'),    #                  - moon set in ISO time
-                percent    => sprintf("%.2f", $moonillum * 100) + 0,                              # dfc<X>_moon_p.   - moon percent
-                phase      => sprintf("%.2f", $moonphase * 100) + 0,                              # dfc<X>_moon_ph.  - moon phase
-                direction  => getMoonDirection($moonphase),                                     #                  - moon direction (waxing, waning)
+                percent    => sprintf("%.2f", $moonillum * 100) + 0,                            # dfc<X>_moon_p.   - moon percent
+                phase      => sprintf("%.2f", $moonphase * 100) + 0,                            # dfc<X>_moon_ph.  - moon phase
+                direction  => getMoonDirection($moonage),                                       #                  - moon direction (waxing, waning)
             },
             humidity       => {
                 avg        =>  getPercentage('%.2f', $results, 'humidity'),                     # dfc<X>_hu_a      - average humidity
@@ -1017,7 +1017,7 @@ if ( $hourly ) {
                 age          => sprintf("%.2f", $moonage) + 0,                            # hfc<X>_moon_a    - moon age in days
                 percent      => sprintf("%.2f", $moonillum * 100) + 0,                    # hfc<X>_moon_p    - moon percentage
                 phase        => sprintf("%.2f", $moonphase * 100) + 0,                    # hfc<X>_moon_ph   - moon phase
-                direction    => getMoonDirection($moonphase),                             #                  - moon direction (waxing, waning)
+                direction    => getMoonDirection($moonage),                               #                  - moon direction (waxing, waning)
 
             },
             humidity         => getPercentage('%.2f', $results, 'humidity'),              # hfc<X>_hu        - humidity
@@ -1255,7 +1255,7 @@ if ( $hourly ) {
                 age        => sprintf("%.2f", $moonage) + 0,                        # hfc<X>_moon_a    - moon age in days
                 percent    => sprintf("%.2f", $moonillum * 100) + 0,                # hfc<X>_moon_p    - moon percentage
                 phase      => sprintf("%.2f", $moonphase * 100) + 0,                # hfc<X>_moon_ph   - moon phase
-                direction  => getMoonDirection($moonphase),                         #                  - moon direction (waxing, waning)
+                direction  => getMoonDirection($moonage),                           #                  - moon direction (waxing, waning)
             },
             humidity         => sprintf("%.0f", $hum_i->linear($epochTime)) + 0,    # hfc<X>_hu        - humidity
             pressure         => sprintf("%.0f", $pr_i->linear($epochTime)) + 0,     # hfc<X>_pr        - air pressure (hPa)

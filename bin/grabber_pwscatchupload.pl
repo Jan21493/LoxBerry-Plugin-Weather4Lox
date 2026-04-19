@@ -52,7 +52,7 @@ my $file = "/dev/shm/pwscatchupload_w4l.json";
 my $grabberFile     = basename(__FILE__);
 my $grabberLabel    = "PWS WU Upload Catcher";
 my $grabberKey      = "pwscatchupload";
-my $refresh         = $60;
+my $refresh         = 60;
 
 # Read language phrases
 my %L = LoxBerry::System::readlanguage("language.ini");

@@ -20,12 +20,21 @@ echo "<INFO> Backing up existing log files"
 cp -p -v -r $ARGV5/log/plugins/$ARGV3/ /tmp/$ARGV1\_upgrade/log
 
 echo "<INFO> Backing up existing custom theme files"
-cd $ARGV5/templates/plugins/$ARGV3/themes
-for i in *
-do
-	mkdir -p /tmp/$ARGV1\_upgrade/themes/$i
-	cp -p -v $i/custom*.html /tmp/$ARGV1\_upgrade/themes/$i
-done
-
+THEMES_DIR="${ARGV5}/templates/plugins/${ARGV3}/themes"
+if [ -d "${THEMES_DIR}" ]; then
+    cd "${THEMES_DIR}"
+    for i in */; do                              # trailing / matches dirs only
+        i="${i%/}"                               # strip trailing slash
+        [ -d "$i" ] || continue
+        CUSTOM=$(ls "${i}"/custom*.html 2>/dev/null) || true
+        if [ -n "$CUSTOM" ]; then
+            mkdir -p "/tmp/${ARGV1}_upgrade/themes/${i}"
+            cp -p -v "${i}"/custom*.html "/tmp/${ARGV1}_upgrade/themes/${i}/"
+        fi
+    done
+else
+    echo "<WARN> Themes directory ${THEMES_DIR} not found; skipping theme backup"
+fi
+echo "<INFO> PREUPGRADE script completed!"
 # Exit with Status 0
 exit 0

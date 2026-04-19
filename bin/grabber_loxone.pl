@@ -49,7 +49,7 @@ my $pcfg         = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $grabberFile     = basename(__FILE__);
 my $grabberLabel    = "Loxone";
 my $grabberKey      = "loxone";              # name in JSONs
-my $refresh         = $60;
+my $refresh         = 60;
 
 # Read language phrases
 my %L = LoxBerry::System::readlanguage("language.ini");

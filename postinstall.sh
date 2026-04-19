@@ -108,6 +108,7 @@ if [ -e $ARGV5/system/cron/cron.hourly/$ARGV3 ]; then
         echo "<INFO> Old cronjob for every hour was removed"
         rm $ARGV5/system/cron/cron.hourly/$ARGV3 > /dev/null 2>&1
 fi
+echo "<INFO> POSTINSTALL script completed!"
 
 # Exit with Status 0
 exit 0

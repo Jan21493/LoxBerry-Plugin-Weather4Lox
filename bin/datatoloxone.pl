@@ -840,21 +840,21 @@ if ($emu) {
     print F $curDate->day_abbr() . ";\t";                                # Weekday (abbreviated)
     printf F "%02d;\t",$curDate->hour();                                 # Local time (hour)
     printf F "%1.2f;\t", $cur->{temperature}{air};                       # Temperature in Celsius
-    printf F "%1.1f;\t", $cur->{temperature}{feelsLike};                 # Feels like temperature in Celsius
-    printf F "%1d;\t", $cur->{wind}{speed};                              # Wind speed in km/h
-    printf F "%1d;\t", $cur->{wind}{direction};                          # Wind direction in degrees
-    printf F "%1d;\t", $cur->{wind}{gust};                               # Wind gust in km/h
+    printf F "%1.1f;\t", $cur->{temperature}{feelsLike} // $cur->{temperature}{air} // 0 ;       # Feels like temperature in Celsius
+    printf F "%1d;\t", $cur->{wind}{speed} // 0;                         # Wind speed in km/h
+    printf F "%1d;\t", $cur->{wind}{direction} // 0;                     # Wind direction in degrees
+    printf F "%1d;\t", $cur->{wind}{gust} // $cur->{wind}{speed} // 0;   # Wind gust in km/h
     printf F "%1d;\t", 0;                                                # Low clouds in %
     printf F "%1d;\t", 0;                                                # Medium clouds in %
     printf F "%1d;\t", 0;                                                # High clouds in %
-    printf F "%1.1f;\t", $precip_1hr;                                    # Precipitation in mm
-    printf F "%1d;\t", $precip_prob;                                     # Probability of precipitation in % 
+    printf F "%1.1f;\t", $precip_1hr // 0;                               # Precipitation in mm
+    printf F "%1d;\t", $precip_prob // 0;                                # Probability of precipitation in % 
     printf F "%1.1f;\t", $snow_fraction * 100;                           # Snow fraction in precipitation in %   
-    printf F "%1d;\t", $cur->{pressure};                                 # Sea level pressure in hPa
-    printf F "%1d;\t", $cur->{humidity};                                 # Relative humidity in %
+    printf F "%1d;\t", $cur->{pressure} // 0;                            # Sea level pressure in hPa
+    printf F "%1d;\t", $cur->{humidity} // 0;                            # Relative humidity in %
     printf F "%1d;\t", 0;                                                # CAPE, Convective Available Potential Energy in J/kg, indicator for thunderstorm potential and strength (not available in Weather4Lox, so set to 0)
-    printf F "%1d;\t", $loxToEmu{int($cur->{weatherCode}{loxone})};      # Picto code (mapped from Loxone code to Weather Emulator code)
-    printf F "%1.2f;\n", $cur->{solarRadiation};                         # Solar radiation in W/m2
+    printf F "%1d;\t", $loxToEmu{int($cur->{weatherCode}{loxone})} // 1; # Picto code (mapped from Loxone code to Weather Emulator code)
+    printf F "%1.2f;\n", $cur->{solarRadiation} // 0;                    # Solar radiation in W/m2
     #flock(F,8);
     close(F);
 
@@ -892,22 +892,22 @@ if ($emu) {
         print F $hfc_date->strftime('%d.%m.%Y') . ";\t";                           # Local date in format "dd.mm.yyyy"
         print F $hfc_date->day_abbr() . ";\t";                                     # Weekday abbreviation
         printf F "%02d;\t",$hfc_date->hour();                                      # Local hour
-        printf F "%1.2f;\t", $hfcEntry->{temperature}{air} // 0;                  # Temperature in Celsius
-        printf F "%1.2f;\t", $hfcEntry->{temperature}{feelsLike} // 0;            # Feels like temperature in Celsius
-        printf F "%1d;\t", $hfcEntry->{wind}{speed} // 0;                         # Wind speed in km/h
-        printf F "%1d;\t", $hfcEntry->{wind}{direction} // 0;                     # Wind direction in degrees
-        printf F "%1d;\t", $hfcEntry->{wind}{gust} // 0;                          # Wind gust in km/h
-        printf F "%1d;\t", $hfcEntry->{clouds}{low} // 0;                         # Low clouds in %
-        printf F "%1d;\t", $hfcEntry->{clouds}{medium} // 0;                      # Medium clouds in %
-        printf F "%1d;\t", $hfcEntry->{clouds}{high} // 0;                        # High clouds in %
+        printf F "%1.2f;\t", $hfcEntry->{temperature}{air} // 0;                   # Temperature in Celsius
+        printf F "%1.2f;\t", $hfcEntry->{temperature}{feelsLike} // 0;             # Feels like temperature in Celsius
+        printf F "%1d;\t", $hfcEntry->{wind}{speed} // 0;                          # Wind speed in km/h
+        printf F "%1d;\t", $hfcEntry->{wind}{direction} // 0;                      # Wind direction in degrees
+        printf F "%1d;\t", $hfcEntry->{wind}{gust} // 0;                           # Wind gust in km/h
+        printf F "%1d;\t", $hfcEntry->{clouds}{low} // 0;                          # Low clouds in %
+        printf F "%1d;\t", $hfcEntry->{clouds}{medium} // 0;                       # Medium clouds in %
+        printf F "%1d;\t", $hfcEntry->{clouds}{high} // 0;                         # High clouds in %
         printf F "%1.1f;\t", $precip_1hr // 0;                                     # Precipitation in mm
         printf F "%1d;\t", $precip_prob // 0;                                      # Probability of precipitation in %
         printf F "%1.1f;\t", $snow_fraction * 100 // 0;                            # Snow fraction in %
-        printf F "%1d;\t", $hfcEntry->{pressure} // 0;                            # Sea level pressure in hPa
-        printf F "%1d;\t", $hfcEntry->{humidity} // 0;                            # Relative humidity in %
+        printf F "%1d;\t", $hfcEntry->{pressure} // 0;                             # Sea level pressure in hPa
+        printf F "%1d;\t", $hfcEntry->{humidity} // 0;                             # Relative humidity in %
         printf F "%1d;\t", 0;                                                      # CAPE, Convective Available Potential Energy in J/kg
-        printf F "%1d;\t", $loxToEmu{int($hfcEntry->{weatherCode}{loxone})};   # Picto code 
-        printf F "%1.2f;\n", $hfcEntry->{solarRadiation} // 0;                    # Solar radiation in W/m2 
+        printf F "%1d;\t", $loxToEmu{int($hfcEntry->{weatherCode}{loxone})} // 1;  # Picto code 
+        printf F "%1.2f;\n", $hfcEntry->{solarRadiation} // 0;                     # Solar radiation in W/m2 
 
         $i++;
     }
