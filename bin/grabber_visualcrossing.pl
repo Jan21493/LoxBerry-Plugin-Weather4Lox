@@ -67,6 +67,25 @@ my $log = LoxBerry::Log->new (
 	logdir => "$lbplogdir",
 );
 
+# All formatted dates and times from current, daily, and hourly data are returned in the local time of the requested location.
+
+# Determine system timezone (Debian / DietPi)
+my $timezone = $ENV{TZ} // '';
+
+if (!$timezone) {
+    if (open my $tzfh, '<:encoding(UTF-8)', '/etc/timezone') {
+        $timezone = <$tzfh>;
+        chomp $timezone if defined $timezone;
+        close $tzfh;
+    }
+}
+
+# Validate that zoneinfo exists (avoid invalid names)
+if (!$timezone || !-f "/usr/share/zoneinfo/$timezone") {
+    # Fallback to UTC if not found
+    $timezone = 'UTC';
+}
+
 # Commandline options
 my $verbose = '';
 my $current = '';
@@ -106,17 +125,17 @@ my $i;
 # Weather4lox mapping: https://wiki.loxberry.de/plugins/weather4loxone/start#wetter-codes
 # Mapping: Visual Crossing Weather Icon Name => [Loxone Code, Normalized Icon Name]
 my %vc_to_lox = (
-    "clear"          => ["1",  "clear"],    # 1 = Clear / Wolkenlos
-    "snow"           => ["21", "snow"],     # 21 = Snow / Schneefall
-    "snowshowers"    => ["24", "sleet"],    # 24 = Strong Snow Showers / Starker Schneeschauer
-    "thunderrain"    => ["18", "tstorms"],  # 18 = Thunderstorms / Gewitter
-    "thundershowers" => ["18", "tstorms"],  # 18 = Thunderstorms / Gewitter
-    "rain"           => ["11", "rain"],     # 11 = Rain / Regen
-    "showers"        => ["17", "rain"],     # 17 = Heavy Rain Showers / Kräftiger Regenschauer
-    "fog"            => ["6",  "fog"],      # 6 = Fog / Nebel
-    "wind"           => ["5",  "wind"],     # 5 = Overcast / Bedeckt in Loxone, but there is no better match for "wind"
-    "cloudy"         => ["4",  "cloudy"],   # 4 = Very Cloudy / Stark Bewölkt
-    "partlycloudy"   => ["3",  "partlycloudy"], # 3 = Cloudy / Wolkig
+    "clear"          => [ 1,  "clear"],        # 1 = Clear / Wolkenlos
+    "snow"           => [21, "snow"],          # 21 = Snow / Schneefall
+    "snowshowers"    => [24, "sleet"],         # 24 = Strong Snow Showers / Starker Schneeschauer
+    "thunderrain"    => [18, "tstorms"],       # 18 = Thunderstorms / Gewitter
+    "thundershowers" => [18, "tstorms"],       # 18 = Thunderstorms / Gewitter
+    "rain"           => [11, "rain"],          # 11 = Rain / Regen
+    "showers"        => [17, "rain"],          # 17 = Heavy Rain Showers / Kräftiger Regenschauer
+    "fog"            => [ 6,  "fog"],          # 6 = Fog / Nebel
+    "wind"           => [ 5,  "wind"],         # 5 = Overcast / Bedeckt in Loxone, but there is no better match for "wind"
+    "cloudy"         => [ 4,  "cloudy"],       # 4 = Very Cloudy / Stark Bewölkt
+    "partlycloudy"   => [ 3,  "partlycloudy"], # 3 = Cloudy / Wolkig
 );
 
 sub vc_to_lox {
@@ -135,7 +154,7 @@ sub vc_to_lox {
     } else {
         # Fallback
         LOGDEB "Unknown weather icon name from Visual Crossing: '$weather_raw' (normalized: '$weather'). Using fallback 'clear'.";
-        return ("1", "clear");
+        return (1, "clear");
     }
 }
 
@@ -150,18 +169,21 @@ sub vcIsNight {
 # Common data
 ##########################################################################
 
-my $timezone = $decoded_json->{timezone};
-my $lat      = $decoded_json->{latitude};
-my $lon      = $decoded_json->{longitude};
+my $lat             = $decoded_json->{latitude};
+my $lon             = $decoded_json->{longitude};
+my $timezoneFromApi = $decoded_json->{timezone};
+if ($timezone ne $timezoneFromApi) {
+    LOGWARN "Timezone for location '$city' ($timezoneFromApi) does not match the system timezone of your LoxBerry ($timezone). Time differences may occur!";
+}
 
 # Derive timezone short name and offset from current epoch
 my $currentEpoch = $decoded_json->{currentConditions}->{datetimeEpoch};
-my $generatedAt  = _epochToIso($currentEpoch, $timezone);
+my $generatedAt  = _epochToIso($currentEpoch, $timezoneFromApi);
 
 # Timezone short and offset via POSIX
 my ($tzShort, $tzOffset);
 {
-    local $ENV{TZ} = $timezone;
+    local $ENV{TZ} = $timezoneFromApi;
     POSIX::tzset();
     $tzShort  = POSIX::strftime('%Z', localtime($currentEpoch));
     $tzOffset = POSIX::strftime('%z', localtime($currentEpoch));
@@ -178,7 +200,7 @@ my $location = {
     elevation   => undef,                 # not available from VC API
     latitude    => defined $lat ? $lat + 0 : undef,
     longitude   => defined $lon ? $lon + 0 : undef,
-    timezone    => $timezone,
+    timezone    => $timezoneFromApi,
     tzOffset    => $tzOffset,
     tzShort     => $tzShort,
 };
@@ -195,7 +217,7 @@ if ( $current ) {
 
     # time
     my %time;
-    $time{datetime} = _epochToIso($cur->{datetimeEpoch}, $timezone);
+    $time{datetime} = _epochToIso($cur->{datetimeEpoch}, $timezoneFromApi);
     $time{epoch}    = $cur->{datetimeEpoch};
 
     # cur_date_tz_des (e.g. Europe/Berlin), cur_date_tz_des_sh (e.g. "CET"), cur_date_tz (e.g. "+0100") are send in location section 
@@ -222,7 +244,7 @@ if ( $current ) {
     my %wind;
     my $wdeg = $cur->{winddir};
     $wind{direction} = defined $wdeg ? $wdeg + 0 : undef;
-    $wind{dirLabel}  = getWindDirectionLabel($wdeg, \%L);
+    $wind{cardinal}  = getWindDirCardinal($wdeg);
     $wind{speed}     = defined $cur->{windspeed} ? sprintf("%.1f", $cur->{windspeed}) + 0 : undef;
     $wind{gust}      = defined $cur->{windgust}  ? sprintf("%.1f", $cur->{windgust}) + 0  : undef;
 
@@ -233,7 +255,7 @@ if ( $current ) {
     $precipitation{probability}  = defined $cur->{precipprob} ? sprintf("%.0f", $cur->{precipprob}) + 0 : undef;
     $precipitation{type}         = $cur->{preciptype} ? $cur->{preciptype}[0] : "none";
     $precipitation{snowToday}    = undef;  # not available from VC current data
-    $precipitation{snow1h}       = defined $cur->{snow} ? sprintf("%.2f", $cur->{snow}) + 0 : undef;
+    $precipitation{snow1hr}       = defined $cur->{snow} ? sprintf("%.2f", $cur->{snow}) + 0 : undef;
 
     # weather codes
     my %weatherCode;
@@ -307,7 +329,7 @@ if ( $daily ) {
 
         # time
         my %time;
-        $time{datetime} = _epochToIso($results->{datetimeEpoch}, $timezone);
+        $time{datetime} = _epochToIso($results->{datetimeEpoch}, $timezoneFromApi);
         $time{epoch}    = $results->{datetimeEpoch};
 
         # sunrise / sunset
@@ -336,7 +358,7 @@ if ( $daily ) {
         my $wdeg = $results->{winddir};
         my %windAvg;
         $windAvg{direction} = defined $wdeg ? $wdeg + 0 : undef;
-        $windAvg{dirLabel}  = getWindDirectionLabel($wdeg, \%L);
+        $windAvg{cardinal}  = defined $wdeg ? getWindDirCardinal($wdeg) : undef;
         $windAvg{speed}     = defined $results->{windspeed} ? sprintf("%.1f", $results->{windspeed}) + 0 : undef;
         $windAvg{gust}      = defined $results->{windgust}  ? sprintf("%.1f", $results->{windgust}) + 0  : undef;
 
@@ -441,7 +463,7 @@ if ( $hourly ) {
 
             # time
             my %time;
-            $time{datetime} = _epochToIso($h->{datetimeEpoch}, $timezone);
+            $time{datetime} = _epochToIso($h->{datetimeEpoch}, $timezoneFromApi);
             $time{epoch}    = $h->{datetimeEpoch};
 
             # temperature
@@ -455,7 +477,7 @@ if ( $hourly ) {
             my %wind;
             my $wdeg = $h->{winddir};
             $wind{direction} = defined $wdeg ? $wdeg + 0 : undef;
-            $wind{dirLabel}  = getWindDirectionLabel($wdeg, \%L);
+            $wind{cardinal}  = defined $wdeg ? getWindDirCardinal($wdeg) : undef;
             $wind{speed}     = defined $h->{windspeed} ? sprintf("%.1f", $h->{windspeed}) + 0 : undef;
             $wind{gust}      = defined $h->{windgust}  ? sprintf("%.1f", $h->{windgust}) + 0  : undef;
 

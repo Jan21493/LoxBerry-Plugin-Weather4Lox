@@ -292,171 +292,171 @@ my %wetteronlineToLox = (
     # aktuelles Wetter in Farbe: https://st.wetteronline.de/dr/1.1.617/aktuell/prozess/graphiken/symbole/standard/farbe/gif/so____.gif
 
     # clouds in steps from clear to overcast, each with code for day and night (kept in mapping for clarity)
-    "so____" => ["1", "clear", "Sonnig"],                                        # sonnig bzw. klar / wolkenlos (Tag)
-    "mo____" => ["1", "clear", "Klar"],                                          # sonnig bzw. klar / wolkenlos (Nacht)
-    "wb____" => ["2", "partly_cloudy", "Teilweise bewölkt"],                     # leicht bewölkt (Tag)
-  # "mb____" => ["2", "partly_cloudy", "Teilweise bewölkt"],                     # leicht bewölkt (Nacht)
-    "bw____" => ["3", "cloudy", "Bewölkt"],                                      # Bewölkt (Tag)
-  # "mw____" => ["3", "cloudy", "Bewölkt"],                                      # Bewölkt (Nacht)
-    "bd____" => ["5", "overcast", "Bedeckt"],                                    # bedeckt (Tag)
-  # "md____" => ["5", "overcast", "Bedeckt"],                                    # Bedeckt (Nacht)
+    "so____" => [ 1, "clear", "Sonnig"],                                        # sonnig bzw. klar / wolkenlos (Tag)
+    "mo____" => [ 1, "clear", "Klar"],                                          # sonnig bzw. klar / wolkenlos (Nacht)
+    "wb____" => [ 2, "partly_cloudy", "Teilweise bewölkt"],                     # leicht bewölkt (Tag)
+  # "mb____" => [ 2, "partly_cloudy", "Teilweise bewölkt"],                     # leicht bewölkt (Nacht)
+    "bw____" => [ 3, "cloudy", "Bewölkt"],                                      # Bewölkt (Tag)
+  # "mw____" => [ 3, "cloudy", "Bewölkt"],                                      # Bewölkt (Nacht)
+    "bd____" => [ 5, "overcast", "Bedeckt"],                                    # bedeckt (Tag)
+  # "md____" => [ 5, "overcast", "Bedeckt"],                                    # Bedeckt (Nacht)
 
     # fog/haze
-    "ns____" => ["6", "mist", "Teils neblig"],                                   # teils neblig (Tag)
-  # "nm____" => ["6", "mist", "Teils neblig"],                                   # teils neblig (Nacht)
-    "nb____" => ["6", "fog", "Nebelig"],                                         # neblig / Nebel
+    "ns____" => [ 6, "mist", "Teils neblig"],                                   # teils neblig (Tag)
+  # "nm____" => [ 6, "mist", "Teils neblig"],                                   # teils neblig (Nacht)
+    "nb____" => [ 6, "fog", "Nebelig"],                                         # neblig / Nebel
 
 	# Schauer
 
     # Schauer (mit Tag und Nacht) bei leicht bewölkt
-    "wbs1__" => ["16", "cloudy_shower_1", "Leicht bewölkt mit vereinzelten Regenschauern"],  # leicht bewölkt und vereinzelt Schauer
-    "wbs2__" => ["16", "cloudy_shower_1", "Leicht bewölkt mit Regenschauern"],               # leicht bewölkt und Schauer
-    "wbs3__" => ["12", "cloudy_shower_2", "Leicht bewölkt mit starken Regenschauern"],       # leicht bewölkt und Starke Regenschauer 
+    "wbs1__" => [16, "cloudy_shower_1", "Leicht bewölkt mit vereinzelten Regenschauern"],  # leicht bewölkt und vereinzelt Schauer
+    "wbs2__" => [16, "cloudy_shower_1", "Leicht bewölkt mit Regenschauern"],               # leicht bewölkt und Schauer
+    "wbs3__" => [12, "cloudy_shower_2", "Leicht bewölkt mit starken Regenschauern"],       # leicht bewölkt und Starke Regenschauer 
 
     # Schauer (mit Tag und Nacht) bei bewölkt
-    "bws1__" => ["16", "cloudy_shower_1", "Bewölkt mit vereinzelten Regenschauern"],         # bewölkt und vereinzelt Schauer
-    "bws2__" => ["16", "cloudy_shower_2", "Bewölkt mit Regenschauern"],                      # bewölkt und Schauer
-    "bws3__" => ["12", "cloudy_shower_3", "Bewölkt mit starken Regenschauern"],              # bewölkt und Starke Regenschauer
+    "bws1__" => [16, "cloudy_shower_1", "Bewölkt mit vereinzelten Regenschauern"],         # bewölkt und vereinzelt Schauer
+    "bws2__" => [16, "cloudy_shower_2", "Bewölkt mit Regenschauern"],                      # bewölkt und Schauer
+    "bws3__" => [12, "cloudy_shower_3", "Bewölkt mit starken Regenschauern"],              # bewölkt und Starke Regenschauer
 
     # Schauer (mit Tag und Nacht) bei bedeckt
-    "bds1__" => ["10", "overcast_shower_1", "Bedeckt mit vereinzelten Regenschauern"],       # Leichter Regenschauer
-    "bds2__" => ["11", "overcast_shower_2", "Bedeckt mit Regenschauern"],                    # Regenschauer
-    "bds3__" => ["12", "overcast_shower_3", "Bedeckt mit starken Regenschauern"],            # Starker Regenschauer
+    "bds1__" => [10, "overcast_shower_1", "Bedeckt mit vereinzelten Regenschauern"],       # Leichter Regenschauer
+    "bds2__" => [11, "overcast_shower_2", "Bedeckt mit Regenschauern"],                    # Regenschauer
+    "bds3__" => [12, "overcast_shower_3", "Bedeckt mit starken Regenschauern"],            # Starker Regenschauer
 
 	# Regen
 
     # Regen (Tag und Nacht) bei leicht bewölkt
-    "wbr1__" => ["16", "cloudy_rain_1", "Leicht bewölkt mit leichtem Regen"],                # leicht bewölkt und leichter Regen
-    "wbr2__" => ["11", "cloudy_rain_1", "Leicht bewölkt mit Regen"],                         # leicht bewölkt und Regen
-    "wbr3__" => ["12", "cloudy_rain_2", "Leicht bewölkt mit starker Regen"],                 # leicht bewölkt und Starker Regen
+    "wbr1__" => [16, "cloudy_rain_1", "Leicht bewölkt mit leichtem Regen"],                # leicht bewölkt und leichter Regen
+    "wbr2__" => [11, "cloudy_rain_1", "Leicht bewölkt mit Regen"],                         # leicht bewölkt und Regen
+    "wbr3__" => [12, "cloudy_rain_2", "Leicht bewölkt mit starker Regen"],                 # leicht bewölkt und Starker Regen
 
     # Regen (Tag und Nacht) bei bewölkt
-    "bwr1__" => ["16", "cloudy_rain_1", "Bewölkt mit leichtem Regen"],                       # bewölkt und leichter Regen
-    "bwr2__" => ["11", "cloudy_rain_2", "Bewölkt mit Regen"],                                # bewölkt und Regen
-    "bwr3__" => ["12", "cloudy_rain_2", "Bewölkt mit starker Regen"],                        # bewölkt und Starker Regen
+    "bwr1__" => [16, "cloudy_rain_1", "Bewölkt mit leichtem Regen"],                       # bewölkt und leichter Regen
+    "bwr2__" => [11, "cloudy_rain_2", "Bewölkt mit Regen"],                                # bewölkt und Regen
+    "bwr3__" => [12, "cloudy_rain_2", "Bewölkt mit starker Regen"],                        # bewölkt und Starker Regen
 
     # Regen (Tag und Nacht) bei bedeckt
-    "bdr1__" => ["16", "overcast_rain_1", "Bedeckt mit Regenschauern"],                      # bedeckt, etwas Regen oder vereinzelt Schauer
-    "bdr2__" => ["11", "overcast_rain_2", "Bedeckt mit Regen"],                              # bedeckt, Regen oder Schauer
-    "bdr3__" => ["12", "overcast_rain_3", "Bedeckt mit ergiebigem Regen"],                   # bedeckt und ergiebiger Regen
+    "bdr1__" => [16, "overcast_rain_1", "Bedeckt mit Regenschauern"],                      # bedeckt, etwas Regen oder vereinzelt Schauer
+    "bdr2__" => [11, "overcast_rain_2", "Bedeckt mit Regen"],                              # bedeckt, Regen oder Schauer
+    "bdr3__" => [12, "overcast_rain_3", "Bedeckt mit ergiebigem Regen"],                   # bedeckt und ergiebiger Regen
 
 	# Schneeregenschauer
 
     # Schneeregenschauer (Tag und Nacht) bei leicht bewölkt
-    "wbsrs1" => ["28", "cloudy_sleet_1", "Leicht bewölkt mit vereinzelten Schneeregenschauern"],                  # leicht bewölkt und vereinzelt Schneeregenschauer
-    "wbsrs2" => ["28", "cloudy_sleet_1", "Leicht bewölkt mit Schneeregenschauern"],                              # leicht bewölkt und Schneeregenschauer
-    "wbsrs3" => ["29", "cloudy_sleet_2", "Leicht bewölkt mit starken Schneeregenschauern"],                       # leicht bewölkt und Schneeregenschauer
+    "wbsrs1" => [28, "cloudy_sleet_1", "Leicht bewölkt mit vereinzelten Schneeregenschauern"],                  # leicht bewölkt und vereinzelt Schneeregenschauer
+    "wbsrs2" => [28, "cloudy_sleet_1", "Leicht bewölkt mit Schneeregenschauern"],                              # leicht bewölkt und Schneeregenschauer
+    "wbsrs3" => [29, "cloudy_sleet_2", "Leicht bewölkt mit starken Schneeregenschauern"],                       # leicht bewölkt und Schneeregenschauer
 
     # Schneeregenschauer (Tag und Nacht) bei bewölkt
-    "bwsrs1" => ["28", "cloudy_sleet_1", "Bewölkt mit vereinzelten Schneeregenschauern"],                  # bewölkt und vereinzelt Schneeregenschauer
-    "bwsrs2" => ["28", "cloudy_sleet_2", "Bewölkt mit Schneeregenschauern"],                              # bewölkt und Schneeregenschauer
-    "bwsrs3" => ["29", "cloudy_sleet_2", "Bewölkt mit starken Schneeregenschauern"],                       # bewölkt und Schneeregenschauer
+    "bwsrs1" => [28, "cloudy_sleet_1", "Bewölkt mit vereinzelten Schneeregenschauern"],                  # bewölkt und vereinzelt Schneeregenschauer
+    "bwsrs2" => [28, "cloudy_sleet_2", "Bewölkt mit Schneeregenschauern"],                              # bewölkt und Schneeregenschauer
+    "bwsrs3" => [29, "cloudy_sleet_2", "Bewölkt mit starken Schneeregenschauern"],                       # bewölkt und Schneeregenschauer
 
     # Schneeregenschauer (Tag und Nacht) bei bedeckt
-    "bdsrs1" => ["25", "overcast_sleet_1", "Bedeckt mit Leichten Schneeregenschauern"],                    # bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer
-    "bdsrs2" => ["26", "overcast_sleet_2", "Bedeckt mit Schneeregenschauern"],                            # bedeckt, Schneeregen oder Schneeregenschauer
-    "bdsrs3" => ["27", "overcast_sleet_3", "Bedeckt mit ergiebigen Schneeregenschauern"],                  # bedeckt und ergiebiger Schneeregen
+    "bdsrs1" => [25, "overcast_sleet_1", "Bedeckt mit Leichten Schneeregenschauern"],                    # bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer
+    "bdsrs2" => [26, "overcast_sleet_2", "Bedeckt mit Schneeregenschauern"],                            # bedeckt, Schneeregen oder Schneeregenschauer
+    "bdsrs3" => [27, "overcast_sleet_3", "Bedeckt mit ergiebigen Schneeregenschauern"],                  # bedeckt und ergiebiger Schneeregen
 
     # Schneeregen
 
     # leicht bewölkt und Schneeregen (Tag und Nacht)
-    "wbsr1_" => ["25", "cloudy_sleet_1", "Leicht bewölkt mit leichtem Schneeregen"],                            # leicht bewölkt und vereinzelt Schneeregen (Tag)
-    "wbsr2_" => ["26", "cloudy_sleet_2", "Leicht bewölkt mit Schneeregen"],                                     # leicht bewölkt und Schneeregen (Tag)
-    "wbsr3_" => ["27", "cloudy_sleet_2", "Leicht bewölkt mit starkem Schneeregen"],                             # leicht bewölkt und ergiebiger Schneeregen (Tag)
+    "wbsr1_" => [25, "cloudy_sleet_1", "Leicht bewölkt mit leichtem Schneeregen"],                            # leicht bewölkt und vereinzelt Schneeregen (Tag)
+    "wbsr2_" => [26, "cloudy_sleet_2", "Leicht bewölkt mit Schneeregen"],                                     # leicht bewölkt und Schneeregen (Tag)
+    "wbsr3_" => [27, "cloudy_sleet_2", "Leicht bewölkt mit starkem Schneeregen"],                             # leicht bewölkt und ergiebiger Schneeregen (Tag)
 
     # bewölkt und Schneeregen (Tag und Nacht)
-    "bwsr1_" => ["25", "cloudy_sleet_1", "Bewölkt mit leichtem Schneeregen"],                            # bewölkt und vereinzelt Schneeregen (Tag)
-    "bwsr2_" => ["26", "cloudy_sleet_2", "Bewölkt mit Schneeregen"],                                     # bewölkt und Schneeregen (Tag)
-    "bwsr3_" => ["27", "cloudy_sleet_2", "Bewölkt mit starkem Schneeregen"],                             # bewölkt und ergiebiger Schneeregen (Tag)
+    "bwsr1_" => [25, "cloudy_sleet_1", "Bewölkt mit leichtem Schneeregen"],                            # bewölkt und vereinzelt Schneeregen (Tag)
+    "bwsr2_" => [26, "cloudy_sleet_2", "Bewölkt mit Schneeregen"],                                     # bewölkt und Schneeregen (Tag)
+    "bwsr3_" => [27, "cloudy_sleet_2", "Bewölkt mit starkem Schneeregen"],                             # bewölkt und ergiebiger Schneeregen (Tag)
 
     # bedeckt und Schneeregen (Tag und Nacht)
-    "bdsr1_" => ["25", "overcast_sleet_1", "Bedeckt mit leichtem Schneeregen"],                          # bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer
-    "bdsr2_" => ["26", "overcast_sleet_2", "Bedeckt mit Schneeregen"],                                   # bedeckt, Schneeregen oder Schneeregenschauer
-    "bdsr3_" => ["27", "overcast_sleet_3", "Bedeckt mit ergiebigem Schneeregen"],                        # bedeckt und ergiebiger Schneeregen
+    "bdsr1_" => [25, "overcast_sleet_1", "Bedeckt mit leichtem Schneeregen"],                          # bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer
+    "bdsr2_" => [26, "overcast_sleet_2", "Bedeckt mit Schneeregen"],                                   # bedeckt, Schneeregen oder Schneeregenschauer
+    "bdsr3_" => [27, "overcast_sleet_3", "Bedeckt mit ergiebigem Schneeregen"],                        # bedeckt und ergiebiger Schneeregen
 
     # Schneeschauer
 
     # leicht bewölkt und Schneeschauer
-    "wbsns1" => ["23", "cloudy_snow_1", "Leicht bewölkt mit leichten Schneeschauern"],                        # leicht bewölkt und vereinzelt Schneeschauer (Tag)
-    "wbsns2" => ["24", "cloudy_snow_1", "Leicht bewölkt mit Schneeschauern"],                                 # leicht bewölkt und Schneeschauer (Tag)
-    "wbsns3" => ["24", "cloudy_snow_2", "Leicht bewölkt mit starken Schneeschauern"],                         # leicht bewölkt und starke Schneeschauer (Tag)
+    "wbsns1" => [23, "cloudy_snow_1", "Leicht bewölkt mit leichten Schneeschauern"],                        # leicht bewölkt und vereinzelt Schneeschauer (Tag)
+    "wbsns2" => [24, "cloudy_snow_1", "Leicht bewölkt mit Schneeschauern"],                                 # leicht bewölkt und Schneeschauer (Tag)
+    "wbsns3" => [24, "cloudy_snow_2", "Leicht bewölkt mit starken Schneeschauern"],                         # leicht bewölkt und starke Schneeschauer (Tag)
 
     # bewölkt und Schneeschauer
-    "bwsns1" => ["23", "cloudy_snow_1", "Bewölkt mit leichten Schneeschauern"],                        # bewölkt und vereinzelt Schneeschauer (Tag)
-    "bwsns2" => ["24", "cloudy_snow_2", "Bewölkt mit Schneeschauern"],                                 # bewölkt und Schneeschauer (Tag)
-    "bwsns3" => ["24", "cloudy_snow_2", "Bewölkt mit starken Schneeschauern"],                         # bewölkt und starke Schneeschauer (Tag)
+    "bwsns1" => [23, "cloudy_snow_1", "Bewölkt mit leichten Schneeschauern"],                        # bewölkt und vereinzelt Schneeschauer (Tag)
+    "bwsns2" => [24, "cloudy_snow_2", "Bewölkt mit Schneeschauern"],                                 # bewölkt und Schneeschauer (Tag)
+    "bwsns3" => [24, "cloudy_snow_2", "Bewölkt mit starken Schneeschauern"],                         # bewölkt und starke Schneeschauer (Tag)
 
     # bedeckt und Schneeschauer
-    "bdsns1" => ["23", "overcast_snow_1", "Bedeckt mit leichten Schneeschauern"],                        # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer
-    "bdsns2" => ["24", "overcast_snow_2", "Bedeckt mit Schneeschauern"],                                 # bedeckt, Schneefall oder Schneeschauer
-    "bdsns3" => ["24", "overcast_snow_3", "Bedeckt mit starken Schneeschauern"],                         # bedeckt und ergiebiger Schneefall
+    "bdsns1" => [23, "overcast_snow_1", "Bedeckt mit leichten Schneeschauern"],                        # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer
+    "bdsns2" => [24, "overcast_snow_2", "Bedeckt mit Schneeschauern"],                                 # bedeckt, Schneefall oder Schneeschauer
+    "bdsns3" => [24, "overcast_snow_3", "Bedeckt mit starken Schneeschauern"],                         # bedeckt und ergiebiger Schneefall
 
     # Schneefall
 
     # leicht bewölkt und Schneefall
-    "wbsn1_" => ["20", "cloudy_snow_1", "Leicht bewölkt mit leichtem Schneefall"],                           # leicht bewölkt und vereinzelt Schneefall (Tag)
-    "wbsn2_" => ["21", "cloudy_snow_2", "Leicht bewölkt mit Schneefall"],                                    # leicht bewölkt und Schneefall (Tag)
-    "wbsn3_" => ["22", "cloudy_snow_2", "Leicht bewölkt mit starkem Schneefall"],                            # leicht bewölkt und starker Schneefall (Tag)
+    "wbsn1_" => [20, "cloudy_snow_1", "Leicht bewölkt mit leichtem Schneefall"],                           # leicht bewölkt und vereinzelt Schneefall (Tag)
+    "wbsn2_" => [21, "cloudy_snow_2", "Leicht bewölkt mit Schneefall"],                                    # leicht bewölkt und Schneefall (Tag)
+    "wbsn3_" => [22, "cloudy_snow_2", "Leicht bewölkt mit starkem Schneefall"],                            # leicht bewölkt und starker Schneefall (Tag)
 
     # bewölkt und Schneefall
-    "bwsn1_" => ["20", "cloudy_snow_1", "Bewölkt mit leichtem Schneefall"],                           # bewölkt und vereinzelt Schneefall (Tag)
-    "bwsn2_" => ["21", "cloudy_snow_2", "Bewölkt mit Schneefall"],                                    # bewölkt und Schneefall (Tag)
-    "bwsn3_" => ["22", "cloudy_snow_2", "Bewölkt mit starkem Schneefall"],                            # bewölkt und starker Schneefall (Tag)
+    "bwsn1_" => [20, "cloudy_snow_1", "Bewölkt mit leichtem Schneefall"],                           # bewölkt und vereinzelt Schneefall (Tag)
+    "bwsn2_" => [21, "cloudy_snow_2", "Bewölkt mit Schneefall"],                                    # bewölkt und Schneefall (Tag)
+    "bwsn3_" => [22, "cloudy_snow_2", "Bewölkt mit starkem Schneefall"],                            # bewölkt und starker Schneefall (Tag)
 
     # bedeckt und Schneefall
-    "bdsn1_" => ["20", "overcast_snow_1", "Bedeckt mit leichtem Schneefall"],                           # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer (Tag)
-    "bdsn2_" => ["21", "overcast_snow_2", "Bedeckt mit Schneefall"],                                    # bedeckt, Schneefall oder Schneeschauer (Tag)
-    "bdsn3_" => ["22", "overcast_snow_3", "Bedeckt mit ergiebigem Schneefall"],                         # bedeckt und ergiebiger Schneefall (Tag)
+    "bdsn1_" => [20, "overcast_snow_1", "Bedeckt mit leichtem Schneefall"],                           # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer (Tag)
+    "bdsn2_" => [21, "overcast_snow_2", "Bedeckt mit Schneefall"],                                    # bedeckt, Schneefall oder Schneeschauer (Tag)
+    "bdsn3_" => [22, "overcast_snow_3", "Bedeckt mit ergiebigem Schneefall"],                         # bedeckt und ergiebiger Schneefall (Tag)
 
     # Schnegewitter
 
     # leicht bewölkt und Schneegewitter
-    "wbsg__" => ["24", "cloudy_snowthunderstorm_1", "Leicht bewölkt mit vereinzelten Wintergewittern"],                     # leicht bewölkt und Schneegewitter (Tag)
+    "wbsg__" => [24, "cloudy_snowthunderstorm_1", "Leicht bewölkt mit vereinzelten Wintergewittern"],                     # leicht bewölkt und Schneegewitter (Tag)
 
     # bewölkt und Schneegewitter
-    "bwsg__" => ["24", "cloudy_snowthunderstorm_2", "Bewölkt mit Wintergewittern"],                                # bewölkt und Schneegewitter (Tag)
+    "bwsg__" => [24, "cloudy_snowthunderstorm_2", "Bewölkt mit Wintergewittern"],                                # bewölkt und Schneegewitter (Tag)
 
     # bedeckt und Schneegewitter
-    "bdsg__" => ["24", "cloudy_snowthunderstorm_2", "Bedeckt mit Wintergewittern"],                                # bedeckt und Schneegewitter (Tag)
+    "bdsg__" => [24, "cloudy_snowthunderstorm_2", "Bedeckt mit Wintergewittern"],                                # bedeckt und Schneegewitter (Tag)
 
     # Gewitter
 
     # leicht bewölkt mit Gewitter (Tag und Nacht)
-    "wbg1__" => ["18", "cloudy_thunderstorm_1", "Leicht bewölkt mit vereinzelten Gewittern"],                        # leicht bewölkt, vereinzelt Schauer und Gewitter (Tag)
-    "wbg2__" => ["18", "cloudy_thunderstorm_2", "Leicht bewölkt mit Gewittern"],                                   # leicht bewölkt, Schauer und Gewitter (Tag)
-    "wbg3__" => ["19", "cloudy_thunderstorm_3", "Leicht bewölkt mit kräftigen Gewittern"],                         # leicht bewölkt, Schauer und Gewitter (Tag)
+    "wbg1__" => [18, "cloudy_thunderstorm_1", "Leicht bewölkt mit vereinzelten Gewittern"],                        # leicht bewölkt, vereinzelt Schauer und Gewitter (Tag)
+    "wbg2__" => [18, "cloudy_thunderstorm_2", "Leicht bewölkt mit Gewittern"],                                   # leicht bewölkt, Schauer und Gewitter (Tag)
+    "wbg3__" => [19, "cloudy_thunderstorm_3", "Leicht bewölkt mit kräftigen Gewittern"],                         # leicht bewölkt, Schauer und Gewitter (Tag)
 
     # Bewölkt mit Gewitter (Tag und Nacht)
-    "bwg1__" => ["18", "cloudy_thunderstorm_1", "Bewölkt mit vereinzelten Gewittern"],                        # bewölkt, vereinzelt Schauer und Gewitter (Tag)
-    "bwg2__" => ["18", "cloudy_thunderstorm_2", "Bewölkt mit Gewittern"],                                   # Gewitter (Tag)
-    "bwg3__" => ["19", "cloudy_thunderstorm_3", "Bewölkt mit kräftigen Gewittern"],                         # starke Gewitter (Tag)
+    "bwg1__" => [18, "cloudy_thunderstorm_1", "Bewölkt mit vereinzelten Gewittern"],                        # bewölkt, vereinzelt Schauer und Gewitter (Tag)
+    "bwg2__" => [18, "cloudy_thunderstorm_2", "Bewölkt mit Gewittern"],                                   # Gewitter (Tag)
+    "bwg3__" => [19, "cloudy_thunderstorm_3", "Bewölkt mit kräftigen Gewittern"],                         # starke Gewitter (Tag)
 
     # Bedeckt mit Gewitter (Tag und Nacht)
-    "bdg1__" => ["18", "overcast_thunderstorm_1", "Bedeckt mit vereinzelten Gewittern"],                                   # bedeckt, vereinzelt Schauer und Gewitter
-    "bdg2__" => ["18", "overcast_thunderstorm_2", "Bedeckt mit Gewittern"],                                   # bedeckt, Schauer und Gewitter (Tag)
+    "bdg1__" => [18, "overcast_thunderstorm_1", "Bedeckt mit vereinzelten Gewittern"],                                   # bedeckt, vereinzelt Schauer und Gewitter
+    "bdg2__" => [18, "overcast_thunderstorm_2", "Bedeckt mit Gewittern"],                                   # bedeckt, Schauer und Gewitter (Tag)
 
     # gefrierender Regen
 
     # leicht Bewölkt mit gefrierendem Regen (Tag und Nacht)
-    "wbgr1_" => ["14", "cloudy_freezingrain_1", "Leicht bewölkt mit gefrierendem Sprühregen"],            # bewölkt und gefrierender Sprühregen (Tag)
-    "wbgr2_" => ["14", "cloudy_freezingrain_2", "Leicht bewölkt mit gefrierendem Regen"],                 # bewölkt und gefrierender Regen (Tag)
+    "wbgr1_" => [14, "cloudy_freezingrain_1", "Leicht bewölkt mit gefrierendem Sprühregen"],            # bewölkt und gefrierender Sprühregen (Tag)
+    "wbgr2_" => [14, "cloudy_freezingrain_2", "Leicht bewölkt mit gefrierendem Regen"],                 # bewölkt und gefrierender Regen (Tag)
 
     # Bewölkt mit gefrierendem Regen (Tag und Nacht)
-    "bwgr1_" => ["14", "cloudy_freezingrain_1", "Bewölkt mit gefrierendem Sprühregen"],                   # bewölkt und gefrierender Sprühregen (Tag)
-    "bwgr2_" => ["14", "cloudy_freezingrain_2", "Bewölkt mit gefrierendem Regen"],                        # bewölkt und gefrierender Regen (Tag)
+    "bwgr1_" => [14, "cloudy_freezingrain_1", "Bewölkt mit gefrierendem Sprühregen"],                   # bewölkt und gefrierender Sprühregen (Tag)
+    "bwgr2_" => [14, "cloudy_freezingrain_2", "Bewölkt mit gefrierendem Regen"],                        # bewölkt und gefrierender Regen (Tag)
 
     # Bedeckt mit gefrierendem Regen (Tag und Nacht)
-    "bdgr1_" => ["14", "overcast_freezingrain_1", "Bedeckt mit gefrierendem Sprühregen"],                 # bedeckt und gefrierender Sprühregen (Tag)
-    "bdgr2_" => ["14", "overcast_freezingrain_2", "Bedeckt mit gefrierendem Regen"],                      # bedeckt und gefrierender Regen (Tag)
+    "bdgr1_" => [14, "overcast_freezingrain_1", "Bedeckt mit gefrierendem Sprühregen"],                 # bedeckt und gefrierender Sprühregen (Tag)
+    "bdgr2_" => [14, "overcast_freezingrain_2", "Bedeckt mit gefrierendem Regen"],                      # bedeckt und gefrierender Regen (Tag)
 
     # Graupel, Hagel und Eiskörner (Tag und Nacht)
-    "bwgs1_" => ["28", "overcast_graupel", "Leichte Graupelschauer"],                                     # leichte Graupelschauer
-    "bwgs2_" => ["26", "overcast_graupel", "Graupelschauer"],                                             # Graupelschauer
+    "bwgs1_" => [28, "overcast_graupel", "Leichte Graupelschauer"],                                     # leichte Graupelschauer
+    "bwgs2_" => [26, "overcast_graupel", "Graupelschauer"],                                             # Graupelschauer
 
-    "bwhs1_" => ["28", "overcast_hail_1", "Leichte Hagelschauer"],                                        # leichte Hagelschauer
-    "bwhs2_" => ["26", "overcast_hail_2", "Hagelschauer"],                                                # Hagelschauer
+    "bwhs1_" => [28, "overcast_hail_1", "Leichte Hagelschauer"],                                        # leichte Hagelschauer
+    "bwhs2_" => [26, "overcast_hail_2", "Hagelschauer"],                                                # Hagelschauer
 
-    "bwek__" => ["26", "overcast_icepellets", "Eiskörner"],                                               # Eiskörner
+    "bwek__" => [26, "overcast_icepellets", "Eiskörner"],                                               # Eiskörner
 );
 
 # Convert night symbols with clouds to day symbols to reduce the lookup table
@@ -515,7 +515,7 @@ sub wetteronlineToLox {
     # Check for empty/undefined values
     if (!defined $woCode || $woCode eq "") {
         LOGWARN "Wetteronline symbol is empty or was not found in data set!";
-        return ("1", "clear", "No data");  # Default fallback
+        return (1, "clear", "No data");  # Default fallback
     }
 
     if (defined $woCode && length($woCode) >= 2) {
@@ -533,7 +533,7 @@ sub wetteronlineToLox {
         return @$result;  # Returns (code, icon, description)
     } else {
         LOGWARN "Unknown weather symbol from Wetteronline: '$woCode', using 'clear' as fallback.";
-        return ("1", "clear", "No data");  # Default fallback
+        return (1, "clear", "No data");  # Default fallback
     }
 }
 
@@ -659,7 +659,7 @@ if ( $current ) {
     $precipitation{type} = getValue($resCurrent, 'current', 'precipitation', 'type');                                          # type of precipitation (rain, snow), undef, if it is currently not raining/snowing
     $precipitation{snowToday} = getFormatted('%.2f', $resCurrent, 
         'trend', 'items', 0, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end');                         # cur_snow_today, today snow in cm
-    $precipitation{snow1h} = getFormatted('%.2f', $resCurrent, 
+    $precipitation{snow1hr} = getFormatted('%.2f', $resCurrent, 
         'hours', 'items', 0, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end');                         # cur_snow_1h, 1-hour snow in cm
 
     $currentData{precipitation} = \%precipitation;
@@ -787,7 +787,7 @@ if ( $daily ) {
             $windDirMax = undef;
         } else {
             foreach my $dayPart (@dayParts) {
-                my $humidity = getPercentage('%.2f', $dayPart, 'humidity');
+                my $humidity = getPercentage('%.1f', $dayPart, 'humidity');
 
                 if (defined $humidity){
                     if ($humidity < $humidityMin) {
@@ -798,8 +798,8 @@ if ( $daily ) {
                     }
                 }
 
-                my $windSpeed = getFormatted('%.0f', $dayPart, 'wind', 'speed', 'kilometer_per_hour', 'value') // 0;
-                my $windGust = getFormatted('%.0f', $dayPart, 'wind', 'speed', 'kilometer_per_hour', 'max_gust') // 0;
+                my $windSpeed = getFormatted('%.1f', $dayPart, 'wind', 'speed', 'kilometer_per_hour', 'value') // 0;
+                my $windGust = getFormatted('%.1f', $dayPart, 'wind', 'speed', 'kilometer_per_hour', 'max_gust') // 0;
                 my $windDir = getFormatted('%.0f', $dayPart, 'wind', 'direction') // 0;
 
                 if ($windSpeed > $windSpeedMax) {
@@ -889,7 +889,7 @@ if ( $daily ) {
                 direction  => getMoonDirection($moonage),                                       #                  - moon direction (waxing, waning)
             },
             humidity       => {
-                avg        =>  getPercentage('%.2f', $results, 'humidity'),                     # dfc<X>_hu_a      - average humidity
+                avg        =>  getPercentage('%.1f', $results, 'humidity'),                     # dfc<X>_hu_a      - average humidity
                 min        =>  $humidityMin,	                                                # dfc0_hu_l        - minimum humidity
                 max        =>  $humidityMax,                                                    # dfc<X>_hu_h.     - maximum humidity
             },
@@ -1020,7 +1020,7 @@ if ( $hourly ) {
                 direction    => getMoonDirection($moonage),                               #                  - moon direction (waxing, waning)
 
             },
-            humidity         => getPercentage('%.2f', $results, 'humidity'),              # hfc<X>_hu        - humidity
+            humidity         => getPercentage('%.1f', $results, 'humidity'),              # hfc<X>_hu        - humidity
             pressure         => getFormatted('%.0f', $results, 'air_pressure', 'hpa'),    # hfc<X>_pr        - air pressure (hPa)
             dewpoint         => getFormatted('%.1f', $results, 'dew_point', 'celsius'),   # hfc<X>_dp        - dew point (°C)
             uvIndex          => getFormatted('%.1f', $results, 'uv_index', 'value'),      # hfc<X>_uvi       - UV index
@@ -1049,8 +1049,10 @@ if ( $hourly ) {
        %dp_c,               # dew point
        %uvidx,              # uv index
        %prec_dur,           # precipitation duration
-       %prec_mm,            # precipitation (rain in mm)
-       %snow_cm,            # precipitation (snow in cm)
+       %prec_mm_low,        # precipitation (rain in mm)
+       %prec_mm_high,       # precipitation (rain in mm)
+       %snow_cm_low,        # precipitation (snow in cm)
+       %snow_cm_high,       # precipitation (snow in cm)
        %pop_pct,            # precipitation (propability, percentage)
     );
     my (%symbol,            # symbol - do not interpolate
@@ -1087,19 +1089,20 @@ if ( $hourly ) {
 
 			# Rain amount: mean of interval begin/end (if present)
 			if ($dayPart->{precipitation}{details}{rainfall_amount}{millimeter}) {
-				my $rf = (getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_begin') // 0 +
-						  getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_end') // 0) / 2;
-				$prec_mm{$ep} = $rf;
+				$prec_mm_low{$ep} = getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_begin') // 0;
+                $prec_mm_high{$ep} = getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_end') // 0;
 			} else {
-				$prec_mm{$ep} = 0;                
+				$prec_mm_low{$ep} = 0;  
+                $prec_mm_high{$ep} = 0;              
             }
 
 			# Snow height (cm)
 			if ($dayPart->{precipitation}{details}{snow_height}{centimeter}) {
-				$snow_cm{$ep} = (getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_begin') // 0 +
-						         getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end') // 0) / 2;
+				$snow_cm_low{$ep} = getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_begin') // 0;
+                $snow_cm_high{$ep} = getFormatted('%.2f', $dayPart, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end') // 0;
 			}  else {
-                $snow_cm{$ep} = 0;
+                $snow_cm_low{$ep} = 0;
+                $snow_cm_high{$ep} = 0;
             }
 
 			# precipitation duration in minutes.  TODO: verify if daypart include duration and units
@@ -1135,7 +1138,7 @@ if ( $hourly ) {
         $skipInterpolation = 1;
     }
 
-    for my $hashref (\%t_air, \%t_app, \%hum, \%w_dir, \%w_sp_kmh, \%pr_hpa, \%dp_c, \%prec_mm, \%snow_cm, \%pop_pct, \%uvidx, \%prec_dur) {
+    for my $hashref (\%t_air, \%t_app, \%hum, \%w_dir, \%w_sp_kmh, \%pr_hpa, \%dp_c, \%prec_mm_low, \%prec_mm_high, \%snow_cm_low, \%snow_cm_high, \%pop_pct, \%uvidx, \%prec_dur) {
         my @defined_vals = grep { defined $_ } values %$hashref;
         if (scalar(@defined_vals) < 2) {
             LOGWARN("Not enough defined values for interpolator (" . $hashref . ")");
@@ -1146,19 +1149,21 @@ if ( $hourly ) {
 	# 3. Step: Create interpolators for all parameters
 
 	# Create interpolators (once)
-	my $t_air_i    = Math::Function::Interpolator::Linear->new(points => \%t_air);
-	my $t_app_i    = Math::Function::Interpolator::Linear->new(points => \%t_app);
-	my $hum_i      = Math::Function::Interpolator::Linear->new(points => \%hum);
-	my $w_dir_i    = Math::Function::Interpolator::Linear->new(points => \%w_dir);
-	my $w_sp_i     = Math::Function::Interpolator::Linear->new(points => \%w_sp_kmh);
-	my $w_gu_i     = Math::Function::Interpolator::Linear->new(points => \%w_gu_kmh);
-	my $pr_i       = Math::Function::Interpolator::Linear->new(points => \%pr_hpa);
-	my $dp_i       = Math::Function::Interpolator::Linear->new(points => \%dp_c);
-	my $uvidx_i    = Math::Function::Interpolator::Linear->new(points => \%uvidx);
-	my $prec_i     = Math::Function::Interpolator::Linear->new(points => \%prec_mm);
-	my $prec_dur_i = Math::Function::Interpolator::Linear->new(points => \%prec_dur);
-	my $snow_i     = Math::Function::Interpolator::Linear->new(points => \%snow_cm);
-	my $pop_i      = Math::Function::Interpolator::Linear->new(points => \%pop_pct);
+	my $t_air_i     = Math::Function::Interpolator::Linear->new(points => \%t_air);
+	my $t_app_i     = Math::Function::Interpolator::Linear->new(points => \%t_app);
+	my $hum_i       = Math::Function::Interpolator::Linear->new(points => \%hum);
+	my $w_dir_i     = Math::Function::Interpolator::Linear->new(points => \%w_dir);
+	my $w_sp_i      = Math::Function::Interpolator::Linear->new(points => \%w_sp_kmh);
+	my $w_gu_i      = Math::Function::Interpolator::Linear->new(points => \%w_gu_kmh);
+	my $pr_i        = Math::Function::Interpolator::Linear->new(points => \%pr_hpa);
+	my $dp_i        = Math::Function::Interpolator::Linear->new(points => \%dp_c);
+	my $uvidx_i     = Math::Function::Interpolator::Linear->new(points => \%uvidx);
+	my $prec_low_i  = Math::Function::Interpolator::Linear->new(points => \%prec_mm_low);
+    my $prec_high_i = Math::Function::Interpolator::Linear->new(points => \%prec_mm_high);
+	my $prec_dur_i  = Math::Function::Interpolator::Linear->new(points => \%prec_dur);
+	my $snow_low_i  = Math::Function::Interpolator::Linear->new(points => \%snow_cm_low);
+    my $snow_high_i = Math::Function::Interpolator::Linear->new(points => \%snow_cm_high);
+	my $pop_i       = Math::Function::Interpolator::Linear->new(points => \%pop_pct);
 
 	# 4. Step: Create hourly data for all hours starting from '$dtResult' (time stamp from the last hourly entry) + 1h
     #          up to last available entry in dpEpochs, '$hour' still counts the entry
@@ -1218,54 +1223,54 @@ if ( $hourly ) {
 
         push @hourlyData, {
 
-            hour              => $hour,                                             # hfc<X>_per, counter of day
+            hour              => $hour,                                                 # hfc<X>_per, counter of day
             time => {
-                datetime      => _epochToIso($epochTime, $timezone),                # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
-                epoch         => $epochTime,                                        # hfc<X>_date       - UNIX timestamp
+                datetime      => _epochToIso($epochTime, $timezone),                    # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
+                epoch         => $epochTime,                                            # hfc<X>_date       - UNIX timestamp
             },
             temperature => {
                 air           => sprintf("%.1f", $t_air_i->linear($epochTime)) + 0,     # hfc<X>_tt        - hourly temperature (°C)
                 feelsLike     => sprintf("%.1f", $t_app_i->linear($epochTime)) + 0,     # hfc<X>_tt_fl     - min feels-like temperature
-                heatIndex     => undef,                                             # hfc<X>_hi        - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
-                windChill     => undef,                                             # hfc<X>_w_ch      - wind chill (not present), feel-like temperature considering wind, only relevant for low temperatures
+                heatIndex     => undef,                                                 # hfc<X>_hi        - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
+                windChill     => undef,                                                 # hfc<X>_w_ch      - wind chill (not present), feel-like temperature considering wind, only relevant for low temperatures
             },
             wind => {
-                direction     => $w_dir{$stepEp},                                   # hfc<X>_w_dir     - wind direction (degree)
-                cardinal      => getWindDirCardinal($w_dir{$stepEp}),               # hfc<X>_w_dirdes  - wind direction description
-                speed         => sprintf("%.2f", $w_sp_i->linear($epochTime)) + 0,  # hfc<X>_w_sp      - wind speed (km/h)
-                gust          => sprintf("%.2f", $w_gu_i->linear($epochTime)) + 0,  # hfc<X>_w_gu      - wind gust (km/h)
+                direction     => $w_dir{$stepEp},                                       # hfc<X>_w_dir     - wind direction (degree)
+                cardinal      => getWindDirCardinal($w_dir{$stepEp}),                   # hfc<X>_w_dirdes  - wind direction description
+                speed         => sprintf("%.2f", $w_sp_i->linear($epochTime)) + 0,      # hfc<X>_w_sp      - wind speed (km/h)
+                gust          => sprintf("%.2f", $w_gu_i->linear($epochTime)) + 0,      # hfc<X>_w_gu      - wind gust (km/h)
             },
             precipitation => {
-                probability   => sprintf("%.0f", $pop_i->linear($epochTime)) + 0,   # hfc<X>_pop         - probability of precipitation (%)
+                probability   => sprintf("%.0f", $pop_i->linear($epochTime)) + 0,       # hfc<X>_pop         - probability of precipitation (%)
                 duration      => sprintf("%.0f", $prec_dur_i->linear($epochTime)) + 0,  #                    - duration of precipitation
-                rainLow       => sprintf("%.0f", $prec_i->linear($epochTime)) + 0,  #                    - precipitation (mm) from
-                rainHigh      => sprintf("%.0f", $prec_i->linear($epochTime)) + 0,  # hfc<X>_prec        - precipitation (mm) up to
-                type          => $prec_type{$stepEp},                               #                    - precipitation type
-                snowLow       => sprintf("%.0f", $snow_i->linear($epochTime)) + 0,  #                    - snow height (cm) from
-                snowHigh      => sprintf("%.0f", $snow_i->linear($epochTime)) + 0,  # hfc<X>_snow        - snow height (cm) up to
+                rainLow       => sprintf("%.2f", $prec_low_i->linear($epochTime)) + 0,  #                    - precipitation (mm) from
+                rainHigh      => sprintf("%.2f", $prec_high_i->linear($epochTime)) + 0, # hfc<X>_prec        - precipitation (mm) up to
+                type          => $prec_type{$stepEp},                                   #                    - precipitation type
+                snowLow       => sprintf("%.2f", $snow_low_i->linear($epochTime)) + 0,  #                    - snow height (cm) from
+                snowHigh      => sprintf("%.2f", $snow_high_i->linear($epochTime)) + 0, # hfc<X>_snow        - snow height (cm) up to
             },
             weatherCode => {
-                loxone        => $loxoneCode,                                       # hfc<X>_we_code   - Loxone code
-                weather4lox   => $w4lCode,                                          # hfc<X>_we_icon   - Weather4Lox icon code
-                description   => $description,                                      # hfc<X>_we_des    - description
-                image         => $c_img{$stepEp},                                   #                  - future use, e.g. as background image
-                metar         => getMetarCode($w4lCode),                            #                  - METAR code
+                loxone        => $loxoneCode,                                           # hfc<X>_we_code   - Loxone code
+                weather4lox   => $w4lCode,                                              # hfc<X>_we_icon   - Weather4Lox icon code
+                description   => $description,                                          # hfc<X>_we_des    - description
+                image         => $c_img{$stepEp},                                       #                  - future use, e.g. as background image
+                metar         => getMetarCode($w4lCode),                                #                  - METAR code
             },
             moon => {
-                age        => sprintf("%.2f", $moonage) + 0,                        # hfc<X>_moon_a    - moon age in days
-                percent    => sprintf("%.2f", $moonillum * 100) + 0,                # hfc<X>_moon_p    - moon percentage
-                phase      => sprintf("%.2f", $moonphase * 100) + 0,                # hfc<X>_moon_ph   - moon phase
-                direction  => getMoonDirection($moonage),                           #                  - moon direction (waxing, waning)
+                age        => sprintf("%.2f", $moonage) + 0,                            # hfc<X>_moon_a    - moon age in days
+                percent    => sprintf("%.2f", $moonillum * 100) + 0,                    # hfc<X>_moon_p    - moon percentage
+                phase      => sprintf("%.2f", $moonphase * 100) + 0,                    # hfc<X>_moon_ph   - moon phase
+                direction  => getMoonDirection($moonage),                               #                  - moon direction (waxing, waning)
             },
-            humidity         => sprintf("%.0f", $hum_i->linear($epochTime)) + 0,    # hfc<X>_hu        - humidity
-            pressure         => sprintf("%.0f", $pr_i->linear($epochTime)) + 0,     # hfc<X>_pr        - air pressure (hPa)
-            dewpoint         => sprintf("%.1f", $dp_i->linear($epochTime)) + 0,     # hfc<X>_dp        - dew point (°C)
-            uvIndex          => sprintf("%.1f", $uvidx_i->linear($epochTime)) + 0,  # hfc<X>_uvi       - UV index
-            visibility       => undef,                                              # hfc<X>_vis       - visibility (m/km), not available in dayparts!
-            solarRadiation   => undef,                                              # hfc<X>_sr        - solar radiation (not present)
-            ozone            => undef,                                              # hfc<X>_ozone     - ozone (not present)
-            cloudCover       => skyConditionFromWoCode($sym),                       # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
-            isNight          => $isNighttime,                                       # get nighttime information from sunrise / sunset
+            humidity         => sprintf("%.1f", $hum_i->linear($epochTime)) + 0,        # hfc<X>_hu        - humidity
+            pressure         => sprintf("%.0f", $pr_i->linear($epochTime)) + 0,         # hfc<X>_pr        - air pressure (hPa)
+            dewpoint         => sprintf("%.1f", $dp_i->linear($epochTime)) + 0,         # hfc<X>_dp        - dew point (°C)
+            uvIndex          => sprintf("%.1f", $uvidx_i->linear($epochTime)) + 0,      # hfc<X>_uvi       - UV index
+            visibility       => undef,                                                  # hfc<X>_vis       - visibility (m/km), not available in dayparts!
+            solarRadiation   => undef,                                                  # hfc<X>_sr        - solar radiation (not present)
+            ozone            => undef,                                                  # hfc<X>_ozone     - ozone (not present)
+            cloudCover       => skyConditionFromWoCode($sym),                           # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
+            isNight          => $isNighttime,                                           # get nighttime information from sunrise / sunset
         };
         $dtResult->add(hours => 1);
         $hour++;

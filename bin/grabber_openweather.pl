@@ -582,17 +582,17 @@ if ( $current ) {
     my %precipitation;
 
     ##### TO be verified: all rain parameters ?
-    $precipitation{rain1hr} = getFormatted('%.1f', $results, 'rain', '1h');                                                    # cur_prec_1h, 1-hour precipitation in mm
-    $precipitation{snow1h} = getFormatted('%.1f', $results, 'snow', '1h');                                                     # cur_snow_1h, 1-hour snow in cm (conversion from mm, API provides mm)
+    $precipitation{rain1hr} = getFormatted('%.1f', $results, 'current', 'rain', '1h');                                         # cur_prec_1h, 1-hour precipitation in mm
+    $precipitation{snow1hr} = getFormattedMultiplied('%.1f', 0.1, $results, 'current', 'snow', '1h');                          # cur_snow_1h, 1-hour snow in cm (conversion from mm, API provides mm)
     $precipitation{type} = getValue($results, 'current', 'weather', 0, 'main');                                                # type of precipitation (rain, snow), undef, if it is currently not raining/snowing
 
-    $precipitation{probability} = getPercentage('%.1f', $results, 'hourly', 0, 'pop');                                         # cur_pop, probability in percent
+    $precipitation{probability} = getPercentage('%.1f', $results, 'hourly', 0, 'pop');                                         # cur_pop, probability in percent, API provides as decimal (e.g. 0.25 for 25%)
 
     # $precipitation{rainToday} = getFormatted('%.1f', $results, 
-    #    'daily', 0, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_end');                              # cur_prec_today, today precipitation in mm
+    #    'daily', 0, 'precipitation', 'details', 'rainfall_amount', 'millimeter', 'interval_end');                             # cur_prec_today, today precipitation in mm
 
      # $precipitation{snowToday} = getFormatted('%.1f', $results, 
-    #     'trend', 'items', 0, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end');                         # cur_snow_today, today snow in cm
+    #     'trend', 'items', 0, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end');                       # cur_snow_today, today snow in cm
 
     $currentData{precipitation} = \%precipitation;
 
@@ -846,9 +846,9 @@ if ( $hourly ) {
             },
             precipitation => {
                 probability   => getPercentage('%.1f', $resHour, 'pop'),                            # hfc<X>_pop         - probability of precipitation (%)
-                rainHigh      => getFormatted('%.1f', $resHour, 'rain', '1h'),                      # hfc<X>_prec        - precipitation (mm) up to
+                rainHigh      => getFormatted('%.1f', $resHour, 'rain', '1h'),                      # hfc<X>_prec        - precipitation (mm)
                 type          => getValue($resHour, 'weather', 0, 'main'),                          #                    - precipitation type
-                snowHigh      => getFormattedMultiplied('%.1f', 0.1, $resHour, 'snow'),             # hfc<X>_snow        - snow height (cm) up to
+                snowHigh      => getFormattedMultiplied('%.1f', 0.1, $resHour, 'snow'),             # hfc<X>_snow        - snow height (cm)
             },
             weatherCode => {
                 loxone       => $loxoneCode,                                                        # hfc<X>_we_code   - Loxone code

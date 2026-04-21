@@ -165,7 +165,7 @@ my $timezone = _systemTimezone();
 my $lat      = $decoded_json->{nearest_area}[0]->{latitude};
 my $lon      = $decoded_json->{nearest_area}[0]->{longitude};
 
-# Derive generatedAt from current observation time
+# Derive generatedAt from current observation time, looks that wttr.in is always using am/pm time format
 my $obs_t = Time::Piece->strptime($decoded_json->{current_condition}[0]->{localObsDateTime}, "%Y-%m-%d %R %p");
 my $currentEpoch = $obs_t->epoch;
 my $generatedAt  = _epochToIso($currentEpoch, $timezone);
@@ -245,7 +245,7 @@ if ( $current ) {
     $precipitation{probability}  = undef;  # not available from current
     $precipitation{type}         = "none";
     $precipitation{snowToday}    = undef;
-    $precipitation{snow1h}       = undef;
+    $precipitation{snow1hr}      = undef;
 
     # weather codes
     my %weatherCode;
@@ -350,7 +350,7 @@ if ( $daily ) {
         my @d_viss;
         for my $hr ( @{$results->{hourly}} ) {
             push @d_pops, $hr->{chanceofrain} if $hr->{chanceofrain};
-            $d_prec += $hr->{precipMM} * 3 if $hr->{precipMM};  # 3-hourly FC
+            $d_prec += $hr->{precipMM} if $hr->{precipMM};  # 3-hourly FC, but value is in (mm/3 hours)
             push @d_gusts, $hr->{WindGustKmph} if $hr->{WindGustKmph};
             push @d_winds, $hr->{windspeedKmph} if $hr->{windspeedKmph};
             push @d_winddirs, $hr->{winddirDegree} if $hr->{winddirDegree};

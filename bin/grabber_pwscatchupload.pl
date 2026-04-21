@@ -89,7 +89,7 @@ if (!$json) {
 }
 
 # Decode JSON response
-my $decoded_json = JSON::PP->new->utf8->decode($json);
+my $resCurrent = JSON::PP->new->utf8->decode($json);
 
 # Read existing current.json envelope
 my $weatherKey = "current";
@@ -98,35 +98,35 @@ my $cur = $envelope->{$weatherKey} // {};
 
 LOGDEB "Adding $grabberLabel data to $weatherKey weather data (existing values for same keys will be overwritten).";
 
-my $t = localtime($decoded_json->{cur_date});
+my $t = localtime($resCurrent->{cur_date});
 LOGINF "Saving new Data for Timestamp $t to database.";
 
 # Temperature
-my $temp = defined $decoded_json->{cur_tt} ? sprintf("%.1f", $decoded_json->{cur_tt}) : undef;
+my $temp = getFormatted('%.1f', $resCurrent, 'cur_tt');
 $cur->{temperature}{air} = $temp if defined $temp;                           # cur_tt - air temperature (C)
 
 # Wind chill
-my $windChill = defined $decoded_json->{cur_w_ch} ? sprintf("%.1f", $decoded_json->{cur_w_ch}) : undef;
+my $windChill = getFormatted('%.1f', $resCurrent, 'cur_w_ch');
 if (defined $windChill && defined $temp && abs($windChill - $temp) > 0.1 || !defined $cur->{temperature}{windChill}) {
     $cur->{temperature}{windChill} = $windChill;                             # cur_w_ch - wind chill (C)
 }
 
 # Wind data
-my $windDir = $decoded_json->{cur_w_dir};
+my $windDir = getFormatted('%.0f', $resCurrent, 'cur_w_dir');
 if (defined $windDir) {
     $cur->{wind} = {
-        direction  => sprintf("%.0f", $windDir),                             # cur_w_dir    - wind direction (degree)
-        cardinal   => getWindDirectionLabel($windDir, \%L),                  # to calculate cur_w_dirdes - wind direction description
-        speed      => defined $decoded_json->{cur_w_sp} ? sprintf("%.2f", $decoded_json->{cur_w_sp}) : undef,  # cur_w_sp - wind speed (km/h)
-        gust       => defined $decoded_json->{cur_w_gu} ? sprintf("%.2f", $decoded_json->{cur_w_gu}) : undef,  # cur_w_gu - wind gust (km/h)
+        direction  => $windDir,                                                     # cur_w_dir    - wind direction (degree)
+        cardinal   => getWindDirCardinal($windDir),                                 # to calculate cur_w_dirdes - wind direction description
+        speed      => getFormatted('%.2f', $resCurrent, 'cur_w_sp'),                # cur_w_sp - wind speed (km/h)
+        gust       => getFormatted('%.2f', $resCurrent, 'cur_w_gu'),                # cur_w_gu - wind gust (km/h)
     };
 }
 
 # Other weather data
-$cur->{humidity}        = sprintf("%.1f", $decoded_json->{cur_hu})  if defined $decoded_json->{cur_hu};   # cur_hu - humidity (%)
-$cur->{pressure}        = sprintf("%.0f", $decoded_json->{cur_pr})  if defined $decoded_json->{cur_pr};   # cur_pr - air pressure (hPa)
-$cur->{dewpoint}        = sprintf("%.1f", $decoded_json->{cur_dp})  if defined $decoded_json->{cur_dp};   # cur_dp - dew point (C)
-$cur->{solarRadiation}  = sprintf("%.0f", $decoded_json->{cur_sr})  if defined $decoded_json->{cur_sr};   # cur_sr - solar radiation (W/m2)
+$cur->{humidity}        = getFormatted('%.1f', $resCurrent, 'cur_hu');              # cur_hu - humidity (%)
+$cur->{pressure}        = getFormatted('%.0f', $resCurrent, 'cur_pr');              # cur_pr - air pressure (hPa)
+$cur->{dewpoint}        = getFormatted('%.1f', $resCurrent, 'cur_dp');              # cur_dp - dew point (C)
+$cur->{solarRadiation}  = getFormatted('%.0f', $resCurrent, 'cur_sr');              # cur_sr - solar radiation (W/m2)
 
 # Add grabber metadata
 my $dtCurrent = localtime;

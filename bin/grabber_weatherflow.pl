@@ -261,7 +261,7 @@ if ( $current ) {
     $precipitation{probability}  = defined $forecast_json->{forecast}->{daily}->[0]->{precip_probability} ? sprintf("%.0f", $forecast_json->{forecast}->{daily}->[0]->{precip_probability} * 100) + 0 : undef;
     $precipitation{type}         = "none";  # not available from WeatherFlow observation
     $precipitation{snowToday}    = undef;   # not available from WeatherFlow API
-    $precipitation{snow1h}       = undef;   # not available from WeatherFlow API
+    $precipitation{snow1hr}      = undef;   # not available from WeatherFlow API
 
     # weather codes
     my %weatherCode;
@@ -481,7 +481,7 @@ if ( $hourly ) {
 
         # precipitation
         my %precipitation;
-        $precipitation{probability} = defined $h->{precip_probability} ? sprintf("%.0f", $h->{precip_probability}) + 0 : undef;
+        $precipitation{probability} = defined $h->{precip_probability} ? sprintf("%.0f", $h->{precip_probability} * 100) + 0 : undef;
         $precipitation{rainHigh}    = defined $h->{precip} && $h->{precip} > 0 ? sprintf("%.2f", $h->{precip}) + 0 : undef;
         $precipitation{rainLow}     = undef;
         $precipitation{snowHigh}    = undef;  # not available from WeatherFlow hourly

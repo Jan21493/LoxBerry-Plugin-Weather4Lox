@@ -52,6 +52,13 @@ sub json_out {
     exit;
 }
 
+sub atomic_save_config {
+    my ($cfg, $path) = @_;
+    my $tmp = "$path.$$".time.".tmp";
+    $cfg->write($tmp) or die "Could not write temp config: $!";
+    rename($tmp, $path) or die "Could not rename temp config: $!";
+}
+
 # ---------- Only accept POST with form=1 ----------
 my $form = $cgi->param('form') // '';
 if ($form ne '1') {
@@ -76,7 +83,6 @@ eval {
     $cfg->param("WETTERONLINE.URL-DAILY", "https://api-app.wetteronline.de/app/weather/forecast?");
     $cfg->param("WETTERONLINE.URL-CURRENT", "https://www.wetteronline.de/wetter/");
     $cfg->param("OPENMETEOAIRQUALITY.URL", "https://air-quality-api.open-meteo.com/v1/air-quality");
-    $cfg->save();
 
     push @checks, $L{'SETTINGS.SAVING_SETTINGS'};
 
@@ -268,8 +274,6 @@ eval {
     $cfg->param("WEATHERFLOW.CITY", $R->{city} // "");
     $cfg->param("WEATHERFLOW.COUNTRY", $R->{country} // "");
 
-    $cfg->save();
-
     push @checks, $L{'SETTINGS.SAVING_POLLEN'};
 
     $cfg->param("POLLEN.ALDER",   ( $R->{pollen_alder}   // 0 ) + 0);
@@ -278,14 +282,20 @@ eval {
     $cfg->param("POLLEN.MUGWORT", ( $R->{pollen_mugwort} // 0 ) + 0);
     $cfg->param("POLLEN.OLIVE",   ( $R->{pollen_olive}   // 0 ) + 0);
     $cfg->param("POLLEN.RAGWEED", ( $R->{pollen_ragweed} // 0 ) + 0);
-    $cfg->save();
+    
+    atomic_save_config($cfg, "$lbpconfigdir/weather4lox.cfg");
 
     push @checks, $L{'SETTINGS.SAVING_CRONJOB'};
 
+    my $cronlink = "$lbhomedir/system/cron/cron.01min/$lbpplugindir";
+    my $cronjob  = "$lbpbindir/cronjob.pl";
+
     if (($R->{getdata} // "") eq "1") {
-        system("ln -sf $lbpbindir/cronjob.pl $lbhomedir/system/cron/cron.01min/$lbpplugindir");
+        unlink $cronlink if -e $cronlink || -l $cronlink;
+        symlink($cronjob, $cronlink)
+            or die "Could not create symlink $cronlink -> $cronjob: $!";
     } else {
-        unlink("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
+        unlink $cronlink if -e $cronlink || -l $cronlink;
     }
 
     push @checks, $L{'SETTINGS.SAVING_DONE'};

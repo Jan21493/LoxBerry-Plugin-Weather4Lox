@@ -181,6 +181,9 @@
       display: block;
       filter: drop-shadow(0 6px 24px rgba(56,189,248,0.2));
     }
+    .hero-icon.flipped {
+      transform: scaleX(-1);
+    }
     @keyframes bobble { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
 
     /* Side stats */
@@ -217,6 +220,9 @@
     .hcard.selected { background: linear-gradient(135deg, var(--tab-from), var(--tab-to)); border-color: var(--tab-border); }
     .hcard-time { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; }
     .hcard-icon { width: 32px; height: 32px; margin: 0 auto 6px; display: block; }
+    .hcard-icon.flipped {
+      transform: scaleX(-1);
+    }
     .hcard-temp { font-size: 1.1rem; font-weight: 600; }
     .hcard-rainProb { font-size: 0.68rem; color: var(--sky); margin-top: 2px; }
 
@@ -799,6 +805,23 @@ function restoreSelectionAfterRender() {
   }
 }
 
+// Flip icon at night if moon is waxing and icon supports moon phases
+function shouldFlipIcon(e) {
+  if (!e || !e.isNight || e.moonDirection !== 'waxing') return false;
+
+  var iconEntry = liveData.icons && liveData.icons[e.weatherCode];
+  if (!iconEntry) return false;
+
+  return (iconEntry.moonPhases || 0) > 0;
+}
+
+// Hero icon with moon phase handling
+function updateHeroIcon(e, src) {
+  var heroIcon = document.getElementById('heroIcon');
+  heroIcon.src = src;
+  heroIcon.classList.toggle('flipped', shouldFlipIcon(e));
+}
+
 // ===== RENDER ALL =====
 function renderAll() {
   var c = liveData.current;
@@ -843,8 +866,8 @@ function renderAll() {
   document.getElementById('heroDesc').textContent = cWx.description || '--';
   document.getElementById('heroWind').textContent = (cWind.speed != null ? cWind.speed : '--') + ' km/h ' + getWindDirLabel(cWind.direction) + ', ';
   document.getElementById('heroGust').textContent = (cWind.gust != null ? cWind.gust : '--') + ' km/h';
-  document.getElementById('heroIcon').src = resolveIcon(cWx.weather4lox, c.isNight, c.moon ? c.moon.age : 0);
-
+  // Hero icon with moon phase handling
+  updateHeroIcon(c, resolveIcon(cWx.weather4lox, c.isNight, c.moon ? c.moon.age : 0));
   // Side stats (precipitation, pressure); visibility is now in extra-stats row
   document.getElementById('statPrecip').textContent = (cPrecip.rainToday != null ? cPrecip.rainToday : 0) + ' mm';
   document.getElementById('statPressure').innerHTML = (c.pressure != null ? c.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
@@ -912,8 +935,9 @@ function scheduleDataRefresh(type) {
   var delay = calculateRefreshDelay(state.generatedAt, state.refresh);
   state.timer = setTimeout(function() {
     refreshDataType(type)
-      .then(function() { scheduleDataRefresh(type); })
-      .catch(function() { scheduleDataRefresh(type); });
+      .finally(function() {
+        scheduleDataRefresh(type);
+      });
   }, delay);
 }
 
@@ -1187,7 +1211,7 @@ function renderHourStrip(containerId, dataArray) {
     var timeLabel = d.isNow ? d.hour : d.hour + ':00';
     card.innerHTML =
       '<div class="hcard-time mono">' + (d.isNow ? d.hour : d.hour + ':00') + '</div>' +
-      '<img class="hcard-icon" src="' + resolveIcon(d.weatherCode, d.isNight, d.moonAge) + '" alt="">' +
+      '<img class="hcard-icon' + (shouldFlipIcon(d) ? ' flipped' : '') + '" src="' + resolveIcon(d.weatherCode, d.isNight, d.moonAge) + '" alt="">' +
       '<div class="hcard-temp">' + Math.round(d.temp) + '&deg;</div>' +
       (d.rainProb != null ? '<div class="hcard-rainProb">' + d.rainProb + '%</div>' : '');
 
@@ -1295,14 +1319,14 @@ function selectHour(el, dataArray) {
         '<path style="fill:var(--bg-primary);fill-opacity:1;stroke-width:0" d="m 22.273079,22.490288 c 0.252723,-1.159118 0.794844,-2.256653 1.432642,-2.900414 0.50291,-0.507612 1.449291,-1.117715 1.627626,-1.049281 0.262049,0.100558 -0.496718,2.05476 -1.056426,2.720819 -0.399026,0.474847 -0.925438,0.890193 -1.532627,1.209261 l -0.527359,0.27712 z" />' +
       '</svg>';
   }
-  document.getElementById('heroWind').textContent = textContent =
+  document.getElementById('heroWind').textContent =
     (liveData.lang && liveData.lang.theme.wind_from ? liveData.lang.theme.wind_from + ' ' : ' ') +
     getWindDirLabel(d.windDir) + ' ' + (liveData.lang && liveData.lang.theme.with ? ' ' + liveData.lang.theme.with + ' ' : ' ') + ' ' + (d.wind != null ? d.wind : '--') + ' km/h' + ', ';
-  document.getElementById('heroGust').textContent = textContent =
+  document.getElementById('heroGust').textContent =
     (liveData.lang && liveData.lang.theme.gusts ? liveData.lang.theme.gusts + ' ' + liveData.lang.theme.up_to + ' ' : '') + (d.gust != null ? d.gust : '--') + ' km/h';
   document.getElementById('heroFeelsLike').textContent = (liveData.lang && liveData.lang.theme.feelsLike ? liveData.lang.theme.feelsLike + ' ' : ' ') + (d.feelsLike != null ? d.feelsLike.toFixed(1) : '--') + '\u00b0C';
-  document.getElementById('heroIcon').src = resolveIcon(d.weatherCode, d.isNight, d.moonAge);
-
+  // Hero icon with moon phase handling
+  updateHeroIcon(d, resolveIcon(d.weatherCode, d.isNight, d.moonAge));
   // Update stat boxes with hourly data
   document.getElementById('statHumidity').textContent = (d.humidity != null ? d.humidity : '--') + '%';
   document.getElementById('statPressure').innerHTML = (d.pressure != null ? d.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
@@ -1345,8 +1369,9 @@ function refreshActiveTabView(tabName) {
   } else if (tabName === 'morgen') {
     // Reset selection to 12:00 for morgen
     var targetIdx = 0;
-    for (var i = 0; i < hourlyTomorrowRendered.length; i++) {
-      if (hourlyTomorrowRendered[i].hour === '12') { targetIdx = i; break; }
+    for (var i = hourlyTomorrowRendered.length - 1; i >= 0; i--) {
+      targetIdx = i;
+      if (Number(hourlyTomorrowRendered[i].hour) <= 12) { break; }
     }
     selectedHourValue = '12';
     selectedHourIdx = targetIdx;

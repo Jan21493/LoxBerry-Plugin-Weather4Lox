@@ -818,7 +818,7 @@ if ($emu) {
 
     # Calculate precipitation in the last hour and snow fraction for current conditions
     my $rain_1hr_mm = $cur->{precipitation}{rain1hr} // 0;
-    my $snow_1hr_cm = $cur->{precipitation}{snow1h} // 0;
+    my $snow_1hr_cm = $cur->{precipitation}{snow1hr} // 0;
     my $precip_1hr = $rain_1hr_mm + $snow_1hr_cm ;                                                    # 1cm snow counts as 1mm
     my $snow_fraction = $rain_1hr_mm > 0 ? $snow_1hr_cm / $precip_1hr : ($snow_1hr_cm > 0 ? 1 : 0);   # Snow fraction in precipitation in %
     my $precip_prob = $cur->{precipitation}{probability} // 0;
