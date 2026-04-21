@@ -34,8 +34,8 @@ echo "<INFO> Remove temporary folders"
 rm -r /tmp/$ARGV1\_upgrade
 
 echo "<INFO> Recreate cronjob for fetching data from Weather Services"
-# Remove existing cronjob symlink - may return an error, because it is automatically done by installation script.
-rm $ARGV5/system/cron/cron.01min/$ARGV3
+# Remove existing cronjob symlink - just in case. This is automatically done by installation script. To be verified with Loxberry core developers if this is really needed.
+rm -f $ARGV5/system/cron/cron.01min/$ARGV3
 ln -s $ARGV5/bin/plugins/$ARGV3/cronjob.pl $ARGV5/system/cron/cron.01min/$ARGV3
 
 # Read config, explicitly export/set LBHOMEDIR from ARGV5 as a fallback:
