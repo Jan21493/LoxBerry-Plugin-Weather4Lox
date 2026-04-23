@@ -461,6 +461,8 @@ sub getWindDirectionShort {
     my ($windDescr) = @_;
     
     # calculate short name from description
+    return undef unless defined $windDescr;
+    
     my $short = join('', $windDescr =~ /([A-Z]+)/g);
 
     return $short;
@@ -631,6 +633,7 @@ sub getMoonPhasePart {
 sub timeToSec {
     my ($time) = @_;
 
+    return undef unless defined $time;
     my ($hour, $minute, $second) = split /:/, $time;
     $second //= 0;  # Setze $second auf 0, falls nicht vorhanden
     $hour   = 0 + ($hour   // 0);

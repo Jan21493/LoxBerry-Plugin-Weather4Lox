@@ -153,7 +153,7 @@ if( !$cronjob || ( $cronjob && $alternate ) ){
 		if (-e "$lbpbindir/grabber_$servicehfc.pl") {
 			LOGINF "Starting Grabber grabber_$servicehfc.pl --hourly $verbose_opt $maskkeys_opt --interval $interval";
 			$log->close;
-			system ("$lbpbindir/grabber_$servicehfc.pl --hourly $verbose_opt $maskkeys_opt");
+			system ("$lbpbindir/grabber_$servicehfc.pl --hourly $verbose_opt $maskkeys_opt --interval $interval");
 		} else {
 			LOGCRIT "Cannot find grabber script for service $servicehfc.";
 			exit (1);

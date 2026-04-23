@@ -275,9 +275,8 @@ foreach my $dfcEntry (@$dfc) {
     my $dfcDate_LoxoneEpoch = toLoxEpoch($dfcDate_midnight->epoch);
 
     # sending to Loxone Miniserver via MQTT, HTML webpage and UDP with logging of first day (today) in detail
-    sendToLox($toMS, $doLog, "dfc${per}_date", toLoxEpoch($dfcEntry->{time}{epoch})); # Loxone epoch (1.1.2009, MEZ), e.g. 542934004
     sendToLox($toMS, $doLog, "dfc${per}_per", $per); # period starting with 0 for today, 1 for tomorrow, ...
-    sendToLox($toMS, $doLog, "dfc${per}_date", toLoxEpoch($dfcEntry->{time}{epoch}));
+    sendToLox($toMS, $doLog, "dfc${per}_date", toLoxEpoch($dfcEntry->{time}{epoch}));    # Loxone epoch (1.1.2009, MEZ), e.g. 542934004
     sendToLox($toMS, $doLog, "dfc${per}_day", encode_utf8(sprintf("%02d", $dfcDate->day)));
     sendToLox($toMS, $doLog, "dfc${per}_month", encode_utf8(sprintf("%02d", $dfcDate->month)));
     sendToLox($toMS, $doLog, "dfc${per}_monthn", encode_utf8($dfcDate->month_name));
@@ -324,7 +323,7 @@ foreach my $dfcEntry (@$dfc) {
         no strict 'refs';
         ${"dfc${per}_sun_r"} = $dfcEntry->{sunrise};
         ${"dfc${per}_sun_s"} = $dfcEntry->{sunset};
-        ${"dfc${per}_we_icon"} = $iconName . "." . ($iconMapping->{format} // 'no-format');
+        ${"dfc${per}_we_icon"} = $iconName . "." . ($iconMapping->{format} // 'no_format');
     }
         
     $doLog = 0;
@@ -853,7 +852,7 @@ if ($emu) {
     printf F "%1d;\t", $cur->{pressure} // 0;                            # Sea level pressure in hPa
     printf F "%1d;\t", $cur->{humidity} // 0;                            # Relative humidity in %
     printf F "%1d;\t", 0;                                                # CAPE, Convective Available Potential Energy in J/kg, indicator for thunderstorm potential and strength (not available in Weather4Lox, so set to 0)
-    printf F "%1d;\t", $loxToEmu{int($cur->{weatherCode}{loxone})} // 1; # Picto code (mapped from Loxone code to Weather Emulator code)
+    printf F "%1d;\t", $loxToEmu{int($cur->{weatherCode}{loxone} // 1)}; # Picto code (mapped from Loxone code to Weather Emulator code)
     printf F "%1.2f;\n", $cur->{solarRadiation} // 0;                    # Solar radiation in W/m2
     #flock(F,8);
     close(F);
@@ -906,7 +905,7 @@ if ($emu) {
         printf F "%1d;\t", $hfcEntry->{pressure} // 0;                             # Sea level pressure in hPa
         printf F "%1d;\t", $hfcEntry->{humidity} // 0;                             # Relative humidity in %
         printf F "%1d;\t", 0;                                                      # CAPE, Convective Available Potential Energy in J/kg
-        printf F "%1d;\t", $loxToEmu{int($hfcEntry->{weatherCode}{loxone})} // 1;  # Picto code 
+        printf F "%1d;\t", $loxToEmu{int($hfcEntry->{weatherCode}{loxone} // 1)};  # Picto code 
         printf F "%1.2f;\n", $hfcEntry->{solarRadiation} // 0;                     # Solar radiation in W/m2 
 
         $i++;

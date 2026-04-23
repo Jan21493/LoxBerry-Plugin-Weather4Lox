@@ -92,7 +92,7 @@ my $timestamp_minute_round_down = int($timestamp / 60);
 my $command_opt = '';
 
 LOGDEB "Calculate interval for default weather service: $timestamp_minute_round_down / $cron = " . ($timestamp_minute_round_down / $cron);
-if ( $timestamp_minute_round_down % $cron eq 0 ){
+if ( $timestamp_minute_round_down % $cron == 0 ){
 	LOGINF "Fetch interval ($cron) for default weather service reached";
 	$command_opt .= ' --default'
 } else {
@@ -101,7 +101,7 @@ if ( $timestamp_minute_round_down % $cron eq 0 ){
 
 if ($usealternatedfc || $usealternatehfc) {
 	LOGDEB "Calculate interval for alternate weather service: $timestamp_minute_round_down / $cron_alternate = " . ($timestamp_minute_round_down / $cron_alternate);
-	if ( $timestamp_minute_round_down % $cron_alternate eq 0 ){
+	if ( $timestamp_minute_round_down % $cron_alternate == 0 ){
 		LOGINF "Fetch interval ($cron_alternate) for alternate weather service reached";
 		$command_opt .= ' --alternate'
 	} else {
@@ -113,7 +113,7 @@ if ($usealternatedfc || $usealternatehfc) {
 
 if ($use_local) {
 	LOGDEB "Calculate interval for own weather station / local service: $timestamp_minute_round_down / $cron_local = " . ($timestamp_minute_round_down / $cron_local);
-	if ( $timestamp_minute_round_down % $cron_local eq 0 ){
+	if ( $timestamp_minute_round_down % $cron_local == 0 ){
 		LOGINF "Fetch interval ($cron_local) for own weather station / local service reached";
 		$command_opt .= ' --local'
 	} else {

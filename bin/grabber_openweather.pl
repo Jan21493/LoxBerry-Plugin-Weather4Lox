@@ -430,7 +430,7 @@ sub isNighttime {
     my ($time, $timezone, $sunrise, $sunset) = @_;
     my $isNighttime = undef; # default to day (undef)
 
-    if ($time lt $sunrise || $time gt $sunset) {
+    if ($time < $sunrise || $time > $sunset) {
         $isNighttime = 1;
     }
     return ($isNighttime);
@@ -526,7 +526,7 @@ if ( $current ) {
     LOGINF "Reading current weather data from API response into W4L structure at $dtCurrent.";
 
     my %time;
-    $time{datetime}  = _epochToIso($currentEpoch, $timezoneFromApi);;                                                         # cur_date_des
+    $time{datetime}  = _epochToIso($currentEpoch, $timezoneFromApi);                                                          # cur_date_des
     $time{epoch}     = $currentEpoch;                                                                                         # cur_date
 
     # cur_date_tz_des (e.g. Europe/Berlin), cur_date_tz_des_sh (e.g. "CET"), cur_date_tz (e.g. "+0100") are send in location section 

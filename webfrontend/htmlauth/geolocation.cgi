@@ -53,7 +53,6 @@ our $urlstatus;
 our $urlstatuscode;
 our $i;
 our $results;
-our $decoded_json;
 our $lat;
 our $long;
 our $numrestotal;
@@ -161,11 +160,16 @@ if ($search) {
 	$long = sprintf "%.6f", $results->{lon};
 	# Build field ID prefix: for "server" service, coord fields have no prefix
 	my $coord_prefix = ($service eq "server") ? "" : $service;
+
+  # Escape city/country for safe embedding inside a JS single-quoted string:
+	# backslash must be escaped first, then single-quote.
+	(my $city_js    = $city)    =~ s/\\/\\\\/g; $city_js    =~ s/'/\\'/g;
+	(my $country_js = $country) =~ s/\\/\\\\/g; $country_js =~ s/'/\\'/g;
 	# Add City and Country update
 	  $addon = "";
 	  if ($service eq "server") {
-	    $addon = ";window.opener.document.getElementById('city').value = '$city'";
-	    $addon = $addon . ";window.opener.document.getElementById('country').value = '$country'";
+	    $addon = ";window.opener.document.getElementById('city').value = '$city_js'";
+	    $addon = $addon . ";window.opener.document.getElementById('country').value = '$country_js'";
 	  } else {
 	    $addon = ";window.opener.document.getElementById('" . $service . "city').value = '$city'";
 	    $addon = $addon . ";window.opener.document.getElementById('" . $service . "country').value = '$country'";
