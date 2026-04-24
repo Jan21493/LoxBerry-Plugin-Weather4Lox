@@ -38,8 +38,6 @@ use Astro::MoonPhase;
 use utf8;
 use Encode qw(encode_utf8);
 use HTML::Entities;
-use Data::Dumper;
-
 require "$lbpbindir/grabber_utils.pl";
 
 ##########################################################################
