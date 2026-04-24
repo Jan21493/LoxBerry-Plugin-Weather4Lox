@@ -35,6 +35,7 @@ use File::HomeDir;
 use JSON::PP ();
 use utf8;
 use Encode qw(encode_utf8);
+use POSIX qw(setlocale LC_NUMERIC);
 
 ##########################################################################
 # Read settings
@@ -58,6 +59,12 @@ our $topic            = $pcfg->param("SERVER.TOPIC") // "w4lx";
 our $sendMQTT         = 0;
 our $mqtt;
 our $data;
+
+# Hash that tracks every template variable set via sendToLox().
+# Template rendering only substitutes variables present in this hash,
+# which prevents theme files from accidentally exposing internal scalars
+# like $lbpconfigdir, $pcfg, etc. via the <!--$varname--> syntax.
+our %tmpl_vars;
 
 my $scriptLabel    = "Data to Loxone";
 my $scriptKey      = "datatoloxone";          # name in JSONs
@@ -101,6 +108,12 @@ requireOrLogdie('DateTime::Format::ISO8601');
 # Main program
 ##########################################################################
 
+# Force C locale for numeric formatting so that printf always uses '.' as
+# the decimal separator regardless of the system LC_NUMERIC setting.
+# Without this, a German locale produces "4,25" instead of "4.25" in
+# index.txt, which causes the Loxone Miniserver to report "Liefert keine Werte".
+setlocale(LC_NUMERIC, "C");
+
 my $i;
 
 # theme language has priority over system language
@@ -115,7 +128,7 @@ my %L = LoxBerry::System::readlanguage("language.ini");
 my $langData = readJsonFile("$lbhomedir/webfrontend/html/plugins/$lbpplugindir", "lang-$lang") // {};
 
 # Create new HTML page with all weather data
-open(F,">$lbplogdir/weatherdata.html");
+open(F,">$lbplogdir/weatherdata.html") or LOGERR "Cannot open $lbplogdir/weatherdata.html for writing: $!";
 flock(F,2);
 binmode F, ':encoding(UTF-8)';
 print F "<!DOCTYPE HTML>\n<html>\n<head>\n";
@@ -436,17 +449,23 @@ my %var = (
     popmax => {},
 );
 
+# Guard: if the hourly forecast is empty (e.g. after an API error) skip
+# the aggregation rather than crashing on $hfc->[0] dereference.
+if (!@$hfc) {
+    LOGWARN "Hourly forecast is empty - skipping aggregation, sending zero defaults.";
+}
+
 # Initialize variables for each period with default values (0 for precipitation and solar radiation
-# for temperatures and precipitation probability: we use the first record as default value
+# for temperatures and precipitation probability: we use the first record as default value (0 if empty)
 for my $p (@periods) {
     $var{prec}{$p}   = 0;
     $var{snow}{$p}   = 0;
     $var{sr}{$p}     = 0;
-    $var{ttmin}{$p}  = $hfc->[0]{temperature}{air};
-    $var{ttmax}{$p}  = $hfc->[0]{temperature}{air};
+    $var{ttmin}{$p}  = @$hfc ? ($hfc->[0]{temperature}{air}          // 0) : 0;
+    $var{ttmax}{$p}  = @$hfc ? ($hfc->[0]{temperature}{air}          // 0) : 0;
     $var{ttmean}{$p} = [];
-    $var{popmin}{$p} = $hfc->[0]{precipitation}{probability};
-    $var{popmax}{$p} = $hfc->[0]{precipitation}{probability};
+    $var{popmin}{$p} = @$hfc ? ($hfc->[0]{precipitation}{probability} // 0) : 0;
+    $var{popmax}{$p} = @$hfc ? ($hfc->[0]{precipitation}{probability} // 0) : 0;
 }
 
 foreach my $hfcEntry (@$hfc) {
@@ -497,7 +516,7 @@ if ($sendUDP) {
 }
 
 # Close HTML database
-open(F,">>$lbplogdir/weatherdata.html");
+open(F,">>$lbplogdir/weatherdata.html") or LOGERR "Cannot open $lbplogdir/weatherdata.html for appending: $!";
 flock(F,2);
 binmode F, ':encoding(UTF-8)';
 print F "</body>\n</html>";
@@ -518,6 +537,9 @@ our $themeurldfc = "./webpage.dfc.html";
 our $themeurlhfc = "./webpage.hfc.html";
 our $themeurlmap = "./webpage.map.html";
 our $webpath = "/plugins/$lbpplugindir";
+
+# Register URL/path variables used by old-style themes in the allow-list
+$tmpl_vars{$_} = do { no strict 'refs'; ${$_} } for qw(theme iconset mode themeurlmain themeurldfc themeurlhfc themeurlmap webpath);
 
 # new style themes have a single file in webfrontend/html/<pluginname> for CSS, JS and HTML,
 # so we check the existance of it first to determine if it's a new style theme
@@ -546,18 +568,17 @@ if (!$newStyleTheme && !-e "$lbptemplatedir/themes/$lang/$theme.main.html") {
 
 if (!$interimStyleTheme && !$newStyleTheme) {
     # Write cached webpage
-    open(F1,">$lbplogdir/webpage.map.html");
+    open(F1,">$lbplogdir/webpage.map.html") or LOGERR "Cannot open $lbplogdir/webpage.map.html for writing: $!";
     flock(F1,2);
-    open(F,"<$lbptemplatedir/themes/$lang/$theme.map.html");
+    open(F,"<$lbptemplatedir/themes/$lang/$theme.map.html") or LOGERR "Cannot open $lbptemplatedir/themes/$lang/$theme.map.html: $!";
     {
-        no strict 'refs';
         while (<F>) {
             $_ =~ s/<!--\$(.*?)-->/
-                if (!defined ${$1}) {
+                if (!exists $tmpl_vars{$1}) {
                     LOGWARN "Template variable '\$$1' is undefined (line $. in $lbptemplatedir\/themes\/$lang\/$theme.map.html)";
                     '';
                 } else {
-                    ${$1};
+                    $tmpl_vars{$1};
                 }
             /ge;
             print F1 $_;
@@ -583,18 +604,17 @@ if (!$interimStyleTheme && !$newStyleTheme) {
 
 if (!$interimStyleTheme && !$newStyleTheme) {
     # Write cached webpage
-    open(F1,">$lbplogdir/webpage.dfc.html");
+    open(F1,">$lbplogdir/webpage.dfc.html") or LOGERR "Cannot open $lbplogdir/webpage.dfc.html for writing: $!";
     flock(F1,2);
-    open(F,"<$lbptemplatedir/themes/$lang/$theme.dfc.html");
+    open(F,"<$lbptemplatedir/themes/$lang/$theme.dfc.html") or LOGERR "Cannot open $lbptemplatedir/themes/$lang/$theme.dfc.html: $!";
     {
-        no strict 'refs';
         while (<F>) {
             $_ =~ s/<!--\$(.*?)-->/
-                if (!defined ${$1}) {
+                if (!exists $tmpl_vars{$1}) {
                     LOGWARN "Template variable '\$$1' is undefined (line $. in $lbptemplatedir\/themes\/$lang\/$theme.dfc.html)";
                     '';
                 } else {
-                    ${$1};
+                    $tmpl_vars{$1};
                 }
             /ge;
             print F1 $_;
@@ -621,18 +641,17 @@ if (!$interimStyleTheme && !$newStyleTheme) {
 if (!$interimStyleTheme && !$newStyleTheme) {
     # Write cached webpage
     # If Theme Lang is set, us it instead of system lang
-    open(F1,">$lbplogdir/webpage.hfc.html");
+    open(F1,">$lbplogdir/webpage.hfc.html") or LOGERR "Cannot open $lbplogdir/webpage.hfc.html for writing: $!";
     flock(F1,2);
-    open(F,"<$lbptemplatedir/themes/$lang/$theme.hfc.html");
+    open(F,"<$lbptemplatedir/themes/$lang/$theme.hfc.html") or LOGERR "Cannot open $lbptemplatedir/themes/$lang/$theme.hfc.html: $!";
     {
-        no strict 'refs';
         while (<F>) {
             $_ =~ s/<!--\$(.*?)-->/
-                if (!defined ${$1}) {
+                if (!exists $tmpl_vars{$1}) {
                     LOGWARN "Template variable '\$$1' is undefined (line $. in $lbptemplatedir\/themes\/$lang\/$theme.hfc.html)";
                     '';
                 } else {
-                    ${$1};
+                    $tmpl_vars{$1};
                 }
             /ge;
             print F1 $_;
@@ -666,24 +685,25 @@ if (!$newStyleTheme) {
     # new style themes only have a single 'template' that contains a redirect to to the specific theme file in the webfrontend/html/<pluginname> directory
     $sourceFile  = "$lbptemplatedir/themes/new-style.theme.html";
     # Create variable for searching and replacing in templates for themes (in case of old-style themes)
-    { no strict 'refs'; ${'themeurl'} = "./$theme.theme.html?iconset=$iconset&lang=$lang&mode=$mode" }
+    my $_themeurl = "./$theme.theme.html?iconset=$iconset&lang=$lang&mode=$mode";
+    { no strict 'refs'; ${'themeurl'} = $_themeurl }
+    $tmpl_vars{'themeurl'} = $_themeurl;
 }
 
 $destFile = "$lbplogdir/webpage.html";
 
 # Write cached webpage
-open(F1,">$destFile.tmp");
+open(F1,">$destFile.tmp") or LOGERR "Cannot open $destFile.tmp for writing: $!";
 flock(F1,2);
-open(F,"<$sourceFile");
+open(F,"<$sourceFile") or LOGERR "Cannot open $sourceFile: $!";
 {
-    no strict 'refs';
     while (<F>) {
         $_ =~ s/<!--\$(.*?)-->/
-            if (!defined ${$1}) {
+            if (!exists $tmpl_vars{$1}) {
                 LOGWARN "Template variable '\$$1' is undefined (line $. in $sourceFile)";
                 '';
             } else {
-                ${$1};
+                $tmpl_vars{$1};
             }
         /ge;
         print F1 $_;
@@ -822,7 +842,7 @@ if ($emu) {
     my $snow_fraction = $rain_1hr_mm > 0 ? $snow_1hr_cm / $precip_1hr : ($snow_1hr_cm > 0 ? 1 : 0);   # Snow fraction in precipitation in %
     my $precip_prob = $cur->{precipitation}{probability} // 0;
 
-    open(F,">$lbplogdir/index.txt");
+    open(F,">$lbplogdir/index.txt") or LOGERR "Cannot open $lbplogdir/index.txt for writing: $!";
     flock(F,2);
     # Write header with meta data and location (semicolon separated, in the order expected by Loxone)
     print F "<mb_metadata>\n";
@@ -866,7 +886,7 @@ if ($emu) {
 
     $i = 0;
 
-    open(F,">>$lbplogdir/index.txt");
+    open(F,">>$lbplogdir/index.txt") or LOGERR "Cannot open $lbplogdir/index.txt for appending: $!";
     flock(F,2);
 
     foreach my $hfcEntry (@$hfc) {
@@ -937,8 +957,11 @@ sub sendToLox {
     if (!defined($value)) {
       $value = 0;
     }
-    # Create variable for searching and replacing in templates for themes (in case of old-style themes)
+    # Create variable for searching and replacing in templates for themes (in case of old-style themes).
+    # Also record the name in %tmpl_vars so that template rendering can use an allow-list lookup
+    # instead of blindly dereferencing any package variable.
     { no strict 'refs'; ${$name} = $value }
+    $tmpl_vars{$name} = $value;
 
     # Log data if defined (reduce loggin amount)
     if (defined $doLog && $doLog) {
@@ -946,10 +969,10 @@ sub sendToLox {
     }
 
     # Add weather data to HTML webpage
-    open(F,">>$lbplogdir/weatherdata.html");
+    open(F,">>$lbplogdir/weatherdata.html") or do { LOGERR "Cannot open $lbplogdir/weatherdata.html for appending: $!"; return; };
     flock(F,2);
         binmode F, ':encoding(UTF-8)';
-        print F "$name\@" . Encode::decode("UTF-8", $value) . "<br>\n";
+        print F "$name\@$value<br>\n";
     #flock(F,8);
     close(F);
 

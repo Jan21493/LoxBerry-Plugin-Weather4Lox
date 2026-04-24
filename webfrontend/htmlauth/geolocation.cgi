@@ -171,8 +171,8 @@ if ($search) {
 	    $addon = ";window.opener.document.getElementById('city').value = '$city_js'";
 	    $addon = $addon . ";window.opener.document.getElementById('country').value = '$country_js'";
 	  } else {
-	    $addon = ";window.opener.document.getElementById('" . $service . "city').value = '$city'";
-	    $addon = $addon . ";window.opener.document.getElementById('" . $service . "country').value = '$country'";
+	    $addon = ";window.opener.document.getElementById('" . $service . "city').value = '$city_js'";
+	    $addon = $addon . ";window.opener.document.getElementById('" . $service . "country').value = '$country_js'";
 	  }
         $table = $table . "<tr><td align=\"right\">$i\.</td><td>$results->{display_name}</td>\n";
         $table = "$table" ."<td style=\"vertical-align: middle; text-align: center\"><button type=\"button\" data-role=\"button\" data-inline=\"true\" data-mini=\"true\" onClick=\"window.opener.document.getElementById('" . $coord_prefix . "coordlat').value = '$lat';window.opener.document.getElementById('" . $coord_prefix . "coordlong').value = '$long'$addon;window.close()\"> <font size=\"-1\">" . $L{'SETTINGS.BUTTON_APPLY'} .  "</font></button></td></tr>\n";

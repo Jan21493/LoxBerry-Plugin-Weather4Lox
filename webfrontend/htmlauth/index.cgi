@@ -173,16 +173,17 @@ if ($R::saveformdata3) {
     open(F1,">$lbplogdir/webpage.html");
     flock(F1,2);
     open(F,"<$lbptemplatedir/themes/new-style.theme.html");
-    { no strict 'refs'; ${'themeurl'} = "./$R::theme.theme.html?mode=$R::mode&iconset=$R::iconset&lang=$R::themelang" }
+    # Only expose the 'themeurl' variable to the template - no other package
+    # scalars should be accessible via the <!--$varname--> substitution.
+    my %_tmpl = ( themeurl => "./$R::theme.theme.html?mode=$R::mode&iconset=$R::iconset&lang=$R::themelang" );
     {
-        no strict 'refs';
         while (<F>) {
             $_ =~ s/<!--\$(.*?)-->/
-                if (!defined ${$1}) {
+                if (!exists $_tmpl{$1}) {
                     $message = "Template variable '\$$1' is undefined (line $. in $lbptemplatedir\/themes\/new-style.theme.html)";
                     '';
                 } else {
-                    ${$1};
+                    $_tmpl{$1};
                 }
             /ge;
             print F1 $_;
