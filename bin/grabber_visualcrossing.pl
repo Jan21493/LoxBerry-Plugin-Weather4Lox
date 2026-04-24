@@ -125,17 +125,17 @@ my $i;
 # Weather4lox mapping: https://wiki.loxberry.de/plugins/weather4loxone/start#wetter-codes
 # Mapping: Visual Crossing Weather Icon Name => [Loxone Code, Normalized Icon Name]
 my %vc_to_lox = (
-    "clear"          => [ 1,  "clear"],        # 1 = Clear / Wolkenlos
-    "snow"           => [21, "snow"],          # 21 = Snow / Schneefall
-    "snowshowers"    => [24, "sleet"],         # 24 = Strong Snow Showers / Starker Schneeschauer
-    "thunderrain"    => [18, "tstorms"],       # 18 = Thunderstorms / Gewitter
-    "thundershowers" => [18, "tstorms"],       # 18 = Thunderstorms / Gewitter
-    "rain"           => [11, "rain"],          # 11 = Rain / Regen
-    "showers"        => [17, "rain"],          # 17 = Heavy Rain Showers / Kräftiger Regenschauer
-    "fog"            => [ 6,  "fog"],          # 6 = Fog / Nebel
-    "wind"           => [ 5,  "wind"],         # 5 = Overcast / Bedeckt in Loxone, but there is no better match for "wind"
-    "cloudy"         => [ 4,  "cloudy"],       # 4 = Very Cloudy / Stark Bewölkt
-    "partlycloudy"   => [ 3,  "partlycloudy"], # 3 = Cloudy / Wolkig
+    "clear"          => [ 1, "clear"],                   #  1 = Clear / Wolkenlos
+    "snow"           => [21, "overcast_snow_2"],         # 21 = Snow / Schneefall
+    "snowshowers"    => [24, "cloudy_snow_2"],           # 24 = Strong Snow Showers / Starker Schneeschauer
+    "thunderrain"    => [18, "overcast_thunderstorm_2"], # 18 = Thunderstorms / Gewitter
+    "thundershowers" => [18, "cloudy_thunderstorm_2"],   # 18 = Thunderstorms / Gewitter
+    "rain"           => [11, "overcast_rain_2"],         # 11 = Rain / Regen
+    "showers"        => [17, "cloudy_shower_2"],         # 17 = Heavy Rain Showers / Kräftiger Regenschauer
+    "fog"            => [ 6, "fog"],                     #  6 = Fog / Nebel
+    "wind"           => [ 5, "wind"],                    #  5 = Overcast / Bedeckt in Loxone, but there is no better match for "wind"
+    "cloudy"         => [ 5, "overcast"],                #  5 = Overcast / Bedeckt
+    "partlycloudy"   => [ 3, "partly_cloudy"],           #  3 = Cloudy / Wolkig
 );
 
 sub vc_to_lox {

@@ -224,7 +224,7 @@
       "moonPhases": 0
     },
     "mist": {
-      "iconDay": "mist_day",
+      "iconDay": "cloudy_mist_day",
       "iconNight": "cloudy_mist_night",
       "moonPhases": 5
     },
@@ -256,6 +256,11 @@
     "dust": {
       "iconDay": "dust_day",
       "iconNight": "dust_night",
+      "moonPhases": 0
+    },
+    "wind": {
+      "iconDay": "wind_day",
+      "iconNight": "wind_night",
       "moonPhases": 0
     },
     "volcanic_ash": {

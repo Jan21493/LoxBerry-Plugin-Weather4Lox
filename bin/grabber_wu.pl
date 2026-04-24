@@ -137,7 +137,10 @@ my $temp = getFormatted('%.1f', $resCurrent, 'observations', 0, 'metric', 'temp'
 my $windChill = getFormatted('%.1f', $resCurrent, 'observations', 0, 'metric', 'windChill');
 my $heatIndex = getFormatted('%.1f', $resCurrent, 'observations', 0, 'metric', 'heatIndex');
 
-$cur->{temperature}{air} = $temp;                                                                    # cur_tt        - hourly max temperature (°C)
+# Only set temperature if it is defined, otherwise we might overwrite existing valid data with undefined values
+if (defined $temp) {
+    $cur->{temperature}{air} = $temp;                                                                    # cur_tt        - hourly max temperature (°C)
+}
 # Windchill is only relevant if it differs significantly from the actual temperature
 if (defined $windChill && defined $temp && abs($windChill - $temp) > 0.1 || !defined $cur->{temperature}{windChill}) {
     $cur->{temperature}{windChill} = $windChill;                                                   # cur_w_ch      - min feels-like temperature, same as cur_w_ch  - wind chill (feel)
@@ -148,27 +151,56 @@ if (defined $heatIndex && defined $temp && abs($heatIndex - $temp) > 0.1 || !def
 }
 
 # wind data
-my $windDir = getFormatted('%.0f', $resCurrent, 'observations', 0, 'winddir'); 
+my $windDir = getFormatted('%.0f', $resCurrent, 'observations', 0, 'winddir');
+my $windSpeed = getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'windSpeed');
+my $windGust = getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'windGust');
+
+# Only set wind data if all values are defined, otherwise we might overwrite existing valid data with undefined values
+if ( (defined $windDir && defined $windSpeed && defined $windGust) || !defined $cur->{wind} ) {
 $cur->{wind} = {
-    direction       => $windDir,                                                                    # cur_w_dir     - wind direction (degree)
-    cardinal        => getWindDirCardinal($windDir),                                                # to calculate cur_w_dirdes  - wind direction description
-    speed           => getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'windSpeed'), # cur_w_sp      - wind speed (km/h)
-    gust            => getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'windGust'),  # cur_w_gu      - wind gust (km/h)
+    direction       => $windDir,                                                                  # cur_w_dir     - wind direction (degree)
+    cardinal        => getWindDirCardinal($windDir),                                              # to calculate cur_w_dirdes  - wind direction description
+    speed           => $windSpeed,                                                                # cur_w_sp      - wind speed (km/h)
+    gust            => $windGust,                                                                 # cur_w_gu      - wind gust (km/h)
 };
 
-# other weather data
-$cur->{humidity} = getFormatted('%.1f', $resCurrent, 'observations', 0, 'humidity');              # cur_hu        - humidity
-$cur->{pressure} = getFormatted('%.0f', $resCurrent, 'observations', 0, 'metric', 'pressure');    # cur_pr        - air pressure (hPa)
-$cur->{dewpoint} = getFormatted('%.1f', $resCurrent, 'observations', 0, 'metric', 'dewpt');       # cur_dp        - dew point (°C)
-$cur->{uvIndex} = getFormatted('%.1f', $resCurrent, 'observations', 0, 'uv');                     # cur_uvi       - UV index
-$cur->{visibility} = getPercentage('%.0f', $resCurrent, 'observations', 0, 'visibility');         # cur_vis       - visibility (m/km as needed)
-$cur->{solarRadiation} = getFormatted('%.1f', $resCurrent, 'observations', 0, 'solarRadiation');  # cur_sr        - solar radiation (W/m²)
+# other weather data - only set if defined, otherwise we might overwrite existing valid data with undefined values
+my $humidity = getFormatted('%.1f', $resCurrent, 'observations', 0, 'humidity');
+if (defined $humidity) {
+    $cur->{humidity} = $humidity;                                                                 # cur_hu        - humidity
+}
+my $pressure = getFormatted('%.0f', $resCurrent, 'observations', 0, 'metric', 'pressure');
+if (defined $pressure) {
+    $cur->{pressure} = $pressure;                                                                 # cur_pr        - air pressure (hPa)
+}
+my $dewpoint = getFormatted('%.1f', $resCurrent, 'observations', 0, 'metric', 'dewpt');
+if (defined $dewpoint) {
+    $cur->{dewpoint} = $dewpoint;                                                                 # cur_dp        - dew point (°C)
+}
+my $uvIndex = getFormatted('%.1f', $resCurrent, 'observations', 0, 'uv');
+if (defined $uvIndex) {
+    $cur->{uvIndex} = $uvIndex;                                                                   # cur_uvi       - UV index
+}
+my $visibility = getPercentage('%.0f', $resCurrent, 'observations', 0, 'visibility');
+if (defined $visibility) {
+    $cur->{visibility} = $visibility;                                                             # cur_vis       - visibility (m/km as needed)
+}
+my $solarRadiation = getFormatted('%.1f', $resCurrent, 'observations', 0, 'solarRadiation');
+if (defined $solarRadiation) {
+    $cur->{solarRadiation} = $solarRadiation;                                                     # cur_sr        - solar radiation (W/m²)
+}
 
-# precipitation
+# precipitation - only set if defined, otherwise we might overwrite existing valid data with undefined values
 my %precipitation = %{ $cur->{precipitation} // {} };
 
-$precipitation{rainToday} = getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'precipTotal' );      # cur_prec_today, today precipitation in mm
-$precipitation{rain1hr} = getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'precipRate' );         # cur_prec_1hr, 1h precipitation in mm
+my $rainToday = getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'precipTotal');
+if (defined $rainToday) {
+    $precipitation{rainToday} = $rainToday;                                                    # cur_prec_today, today precipitation in mm
+}
+my $rain1hr = getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'precipRate');
+if (defined $rain1hr) {
+    $precipitation{rain1hr} = $rain1hr;                                                        # cur_prec_1hr, 1h precipitation in mm
+}
 
 $cur->{precipitation} = \%precipitation;
 

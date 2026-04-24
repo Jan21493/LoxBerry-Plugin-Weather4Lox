@@ -207,6 +207,10 @@
       "iconDay": "fog_day",
       "iconNight": "fog_night"
     },
+    "wind": {
+      "iconDay": "wind_day",
+      "iconNight": "wind_night"
+    },
     "volcanic_ash": {
       "iconDay": "fog_day",
       "iconNight": "fog_night"
