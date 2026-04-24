@@ -38,6 +38,29 @@ use LoxBerry::Log;
 
 require "$lbpbindir/grabber_utils.pl";
 
+# Hash populated by build_tmpl_vars() before each template rendering pass.
+# Only variables whose names match the expected template naming patterns are
+# exposed – this prevents theme files from leaking internal scalars like
+# $home, $pcfg, $lbpconfigdir, etc. via <!--$varname--> substitution.
+our %tmpl_vars;
+
+# Collect all package scalars whose names match known template-variable
+# patterns into %tmpl_vars.  Must be called just before each template
+# rendering pass so that the hash is current.
+sub build_tmpl_vars {
+    %tmpl_vars = ();
+    for my $n (keys %main::) {
+        next unless $n =~ /\A(?:cur_|dfc\d+_|hfc\d+_|themeurl|mapurl|webpath)\w*\z/;
+        no strict 'refs';
+        $tmpl_vars{$n} = ${$n} if defined ${$n};
+    }
+    # Always expose the helper URL vars even if they happen to be undef
+    for my $n (qw(themeurl themeurlmain themeurldfc themeurlhfc themeurlmap)) {
+        no strict 'refs';
+        $tmpl_vars{$n} = ${$n} // '' unless exists $tmpl_vars{$n};
+    }
+}
+
 ##########################################################################
 # Settings
 ##########################################################################
@@ -248,8 +271,9 @@ if ($map) {
         die "Missing template: neither $map_file nor $main_file could be opened";
     }
     # Process template with data and output to browser
+    build_tmpl_vars();
     while (<F>) {
-        $_ =~ s/<!--\$(.*?)-->/${$1}/g;
+        $_ =~ s/<!--\$(.*?)-->/exists $tmpl_vars{$1} ? $tmpl_vars{$1} : ''/ge;
         print $_;
     }
     close(F);
@@ -415,8 +439,9 @@ if ($hfc) {
         # Output Theme to Browser
         print "Content-type: text/html\n\n";
         open(F,"<$home/templates/plugins/$psubfolder/themes/$lang/$theme.hfc.html") || die "Missing template <$home/templates/plugins/$psubfolder/themes/$lang/$theme.hfc.html";
+        build_tmpl_vars();
         while (<F>) {
-            $_ =~ s/<!--\$(.*?)-->/${$1}/g;
+            $_ =~ s/<!--\$(.*?)-->/exists $tmpl_vars{$1} ? $tmpl_vars{$1} : ''/ge;
             print $_;
         }
         close(F);
@@ -432,8 +457,9 @@ if ($hfc) {
 # Output Theme to Browser
 print "Content-type: text/html\n\n";
 open(F,"<$home/templates/plugins/$psubfolder/themes/$lang/$theme.main.html") || die "Missing template <$home/templates/plugins/$psubfolder/themes/$lang/$theme.main.html";
+build_tmpl_vars();
 while (<F>) {
-    $_ =~ s/<!--\$(.*?)-->/${$1}/g;
+    $_ =~ s/<!--\$(.*?)-->/exists $tmpl_vars{$1} ? $tmpl_vars{$1} : ''/ge;
     print $_;
 }
 close(F);
