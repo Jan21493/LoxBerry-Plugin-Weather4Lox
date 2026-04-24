@@ -196,7 +196,7 @@ writeJsonFile($lbplogdir, $weatherKey, $envelope);
 - `flock(LOCK_SH)` Shared Read Lock auf JSON-Dateien
 - HTML-Template-Variablennamen unveraendert -- nur Datenquelle gewechselt
 - `weatherdata.html` Debug-Output beibehalten
-- calc+N Aggregation: `defined()` statt `-9999`-Vergleiche
+- nxhN Aggregation (vormals `calc+N` / `calc_plus<N>`): `defined()` statt `-9999`-Vergleiche
 
 ### Sunrise/Sunset
 - JSON liefert "HH:MM" String -> `split(':')`
