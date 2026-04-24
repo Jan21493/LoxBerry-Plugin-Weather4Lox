@@ -30,16 +30,6 @@ use POSIX qw(strftime);
 my $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
 
 ##########################################################################
-# Helper: convert snake_case to camelCase
-sub snakeToCamel {
-    my ($s) = @_;
-    return $s unless defined $s;
-    # convert snake_case -> camelCase: example my_key_name -> myKeyName
-    $s =~ s/_([a-z])/\U$1\E/g;
-    return $s;
-}
-
-##########################################################################
 # Special Modules (with error handling in case of missing modules)
 # 
 # These modules should have been installed during installation of plugin

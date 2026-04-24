@@ -31,10 +31,17 @@ use Time::HiRes;
 use Net::MQTT::Simple;
 #use Data::Dumper;
 use Config::Simple;
-use File::HomeDir;
 use JSON::PP ();
 use utf8;
 use Encode qw(encode_utf8);
+use POSIX qw(setlocale LC_NUMERIC);
+
+use constant MM_TO_INCH    => 0.0393700787;  # millimetres to inches
+use constant CM_TO_INCH    => 0.393700787;   # centimetres to inches
+use constant KMH_TO_MPH    => 0.621371192;   # km/h to mph
+use constant C_TO_F_FACTOR => 1.8;           # Celsius to Fahrenheit (multiply)
+use constant C_TO_F_OFFSET => 32;            # Celsius to Fahrenheit (add)
+use constant HPA_TO_INHG   => 0.0295301;     # conversion from hPa (hectopascal) to inHg (Inches of mercury)
 
 ##########################################################################
 # Read settings
@@ -58,6 +65,12 @@ our $topic            = $pcfg->param("SERVER.TOPIC") // "w4lx";
 our $sendMQTT         = 0;
 our $mqtt;
 our $data;
+
+# Hash that tracks every template variable set via sendToLox().
+# Template rendering only substitutes variables present in this hash,
+# which prevents theme files from accidentally exposing internal scalars
+# like $lbpconfigdir, $pcfg, etc. via the <!--$varname--> syntax.
+our %tmpl_vars;
 
 my $scriptLabel    = "Data to Loxone";
 my $scriptKey      = "datatoloxone";          # name in JSONs
@@ -101,6 +114,12 @@ requireOrLogdie('DateTime::Format::ISO8601');
 # Main program
 ##########################################################################
 
+# Force C locale for numeric formatting so that printf always uses '.' as
+# the decimal separator regardless of the system LC_NUMERIC setting.
+# Without this, a German locale produces "4,25" instead of "4.25" in
+# index.txt, which causes the Loxone Miniserver to report "Liefert keine Werte".
+setlocale(LC_NUMERIC, "C");
+
 my $i;
 
 # theme language has priority over system language
@@ -115,7 +134,7 @@ my %L = LoxBerry::System::readlanguage("language.ini");
 my $langData = readJsonFile("$lbhomedir/webfrontend/html/plugins/$lbpplugindir", "lang-$lang") // {};
 
 # Create new HTML page with all weather data
-open(F,">$lbplogdir/weatherdata.html");
+open(F,">$lbplogdir/weatherdata.html") or LOGERR "Cannot open $lbplogdir/weatherdata.html for writing: $!";
 flock(F,2);
 binmode F, ':encoding(UTF-8)';
 print F "<!DOCTYPE HTML>\n<html>\n<head>\n";
@@ -192,24 +211,24 @@ sendToLox($toMS, $doLog, "cur_loc_ccode", encode_utf8($location->{countryCode}))
 sendToLox($toMS, $doLog, "cur_loc_lat", $location->{latitude});
 sendToLox($toMS, $doLog, "cur_loc_long", $location->{longitude});
 sendToLox($toMS, $doLog, "cur_loc_el", $location->{elevation});
-sendToLox($toMS, $doLog, "cur_tt", !$metric ? $cur->{temperature}{air}*1.8+32 : $cur->{temperature}{air});
-sendToLox($toMS, $doLog, "cur_tt_fl", !$metric ? $cur->{temperature}{feelsLike}*1.8+32 : $cur->{temperature}{feelsLike});
+sendToLox($toMS, $doLog, "cur_tt", !$metric ? $cur->{temperature}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{temperature}{air});
+sendToLox($toMS, $doLog, "cur_tt_fl", !$metric ? $cur->{temperature}{feelsLike}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{temperature}{feelsLike});
 sendToLox($toMS, $doLog, "cur_hu", $cur->{humidity});
 sendToLox($toMS, $doLog, "cur_w_dirdes", encode_utf8($langData->{wind_directions}{getWindDirCardinal($cur->{wind}{direction})} // '-'));
 sendToLox($toMS, $doLog, "cur_w_dir", $cur->{wind}{direction});
-sendToLox($toMS, $doLog, "cur_w_sp", !$metric ? $cur->{wind}{speed}*0.621371192 : $cur->{wind}{speed});
-sendToLox($toMS, $doLog, "cur_w_gu", !$metric ? $cur->{wind}{gust}*0.621371192 : $cur->{wind}{gust});
-sendToLox($toMS, $doLog, "cur_w_ch", !$metric ? $cur->{temperature}{windChill}*1.8+32 : $cur->{temperature}{windChill});
-sendToLox($toMS, $doLog, "cur_pr", !$metric ? $cur->{pressure}*0.0295301 : $cur->{pressure});
-sendToLox($toMS, $doLog, "cur_dp", !$metric ? $cur->{dewpoint}*1.8+32 : $cur->{dewpoint});
-sendToLox($toMS, $doLog, "cur_vis", !$metric ? $cur->{visibility}*0.621371192 : $cur->{visibility});
+sendToLox($toMS, $doLog, "cur_w_sp", !$metric ? $cur->{wind}{speed}*KMH_TO_MPH : $cur->{wind}{speed});
+sendToLox($toMS, $doLog, "cur_w_gu", !$metric ? $cur->{wind}{gust}*KMH_TO_MPH : $cur->{wind}{gust});
+sendToLox($toMS, $doLog, "cur_w_ch", !$metric ? $cur->{temperature}{windChill}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{temperature}{windChill});
+sendToLox($toMS, $doLog, "cur_pr", !$metric ? $cur->{pressure}*HPA_TO_INHG : $cur->{pressure});
+sendToLox($toMS, $doLog, "cur_dp", !$metric ? $cur->{dewpoint}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{dewpoint});
+sendToLox($toMS, $doLog, "cur_vis", !$metric ? $cur->{visibility}*KMH_TO_MPH : $cur->{visibility});
 sendToLox($toMS, $doLog, "cur_sr", $cur->{solarRadiation});
-sendToLox($toMS, $doLog, "cur_hi", !$metric ? $cur->{temperature}{heatIndex}*1.8+32 : $cur->{temperature}{heatIndex});
+sendToLox($toMS, $doLog, "cur_hi", !$metric ? $cur->{temperature}{heatIndex}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{temperature}{heatIndex});
 sendToLox($toMS, $doLog, "cur_uvi", $cur->{uvIndex});
 sendToLox($toMS, $doLog, "cur_pop", $cur->{precipitation}{probability});
-sendToLox($toMS, $doLog, "cur_prec_today", !$metric ? $cur->{precipitation}{rainToday}*0.0393700787 : $cur->{precipitation}{rainToday});
-sendToLox($toMS, $doLog, "cur_prec_1hr", !$metric ? $cur->{precipitation}{rain1hr}*0.0393700787 : $cur->{precipitation}{rain1hr});
-sendToLox($toMS, $doLog, "cur_snow", !$metric ? $cur->{precipitation}{snowToday}*0.393700787 : $cur->{precipitation}{snowToday});
+sendToLox($toMS, $doLog, "cur_prec_today", !$metric ? $cur->{precipitation}{rainToday}*MM_TO_INCH : $cur->{precipitation}{rainToday});
+sendToLox($toMS, $doLog, "cur_prec_1hr", !$metric ? $cur->{precipitation}{rain1hr}*MM_TO_INCH : $cur->{precipitation}{rain1hr});
+sendToLox($toMS, $doLog, "cur_snow", !$metric ? $cur->{precipitation}{snowToday}*CM_TO_INCH : $cur->{precipitation}{snowToday});
 sendToLox($toMS, $doLog, "cur_we_icon", $cur->{weatherCode}{weather4lox});
 sendToLox($toMS, $doLog, "cur_we_code", $cur->{weatherCode}{loxone});
 sendToLox($toMS, $doLog, "cur_we_des", encode_utf8($langData->{weather_descriptions}{$cur->{weatherCode}{weather4lox}} // '-'));
@@ -286,17 +305,17 @@ foreach my $dfcEntry (@$dfc) {
     sendToLox($toMS, $doLog, "dfc${per}_min", encode_utf8(sprintf("%02d", $dfcDate->minute)));
     sendToLox($toMS, $doLog, "dfc${per}_wday", encode_utf8($dfcDate->day_name));
     sendToLox($toMS, $doLog, "dfc${per}_wday_sh", encode_utf8($dfcDate->day_abbr));
-    sendToLox($toMS, $doLog, "dfc${per}_tt_h", !$metric ? $dfcEntry->{temperature}{max}{air}*1.8+32 : $dfcEntry->{temperature}{max}{air});
-    sendToLox($toMS, $doLog, "dfc${per}_tt_l", !$metric ? $dfcEntry->{temperature}{min}{air}*1.8+32 : $dfcEntry->{temperature}{min}{air});
+    sendToLox($toMS, $doLog, "dfc${per}_tt_h", !$metric ? $dfcEntry->{temperature}{max}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{temperature}{max}{air});
+    sendToLox($toMS, $doLog, "dfc${per}_tt_l", !$metric ? $dfcEntry->{temperature}{min}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{temperature}{min}{air});
     sendToLox($toMS, $doLog, "dfc${per}_pop", $dfcEntry->{precipitation}{probability});
-    sendToLox($toMS, $doLog, "dfc${per}_prec", !$metric ? $dfcEntry->{precipitation}{rainHigh}*0.0393700787 : $dfcEntry->{precipitation}{rainHigh});
-    sendToLox($toMS, $doLog, "dfc${per}_snow", !$metric ? $dfcEntry->{precipitation}{snowHigh}*0.393700787 : $dfcEntry->{precipitation}{snowHigh});
-    sendToLox($toMS, $doLog, "dfc${per}_w_sp_h", !$metric ? $dfcEntry->{wind}{max}{speed}*0.621371192 : $dfcEntry->{wind}{max}{speed});
-    sendToLox($toMS, $doLog, "dfc${per}_w_gu_h", !$metric ? $dfcEntry->{wind}{max}{gust}*0.621371192 : $dfcEntry->{wind}{max}{gust});
+    sendToLox($toMS, $doLog, "dfc${per}_prec", !$metric ? $dfcEntry->{precipitation}{rainHigh}*MM_TO_INCH : $dfcEntry->{precipitation}{rainHigh});
+    sendToLox($toMS, $doLog, "dfc${per}_snow", !$metric ? $dfcEntry->{precipitation}{snowHigh}*CM_TO_INCH : $dfcEntry->{precipitation}{snowHigh});
+    sendToLox($toMS, $doLog, "dfc${per}_w_sp_h", !$metric ? $dfcEntry->{wind}{max}{speed}*KMH_TO_MPH : $dfcEntry->{wind}{max}{speed});
+    sendToLox($toMS, $doLog, "dfc${per}_w_gu_h", !$metric ? $dfcEntry->{wind}{max}{gust}*KMH_TO_MPH : $dfcEntry->{wind}{max}{gust});
     sendToLox($toMS, $doLog, "dfc${per}_w_dirdes_h", encode_utf8($langData->{wind_directions}{getWindDirCardinal($dfcEntry->{wind}{max}{direction}) // ''} // '-')); 
     sendToLox($toMS, $doLog, "dfc${per}_w_dir_h", $dfcEntry->{wind}{max}{direction});
-    sendToLox($toMS, $doLog, "dfc${per}_w_sp_a", !$metric ? $dfcEntry->{wind}{avg}{speed}*0.621371192 : $dfcEntry->{wind}{avg}{speed});
-    sendToLox($toMS, $doLog, "dfc${per}_w_gu_a", !$metric ? $dfcEntry->{wind}{avg}{gust}*0.621371192 : $dfcEntry->{wind}{avg}{gust});
+    sendToLox($toMS, $doLog, "dfc${per}_w_sp_a", !$metric ? $dfcEntry->{wind}{avg}{speed}*KMH_TO_MPH : $dfcEntry->{wind}{avg}{speed});
+    sendToLox($toMS, $doLog, "dfc${per}_w_gu_a", !$metric ? $dfcEntry->{wind}{avg}{gust}*KMH_TO_MPH : $dfcEntry->{wind}{avg}{gust});
     sendToLox($toMS, $doLog, "dfc${per}_w_dirdes_a", encode_utf8($langData->{wind_directions}{getWindDirCardinal($dfcEntry->{wind}{avg}{direction}) // ''} // '-')); 
     sendToLox($toMS, $doLog, "dfc${per}_w_dir_a", $dfcEntry->{wind}{avg}{direction});
     sendToLox($toMS, $doLog, "dfc${per}_hu_a", $dfcEntry->{humidity}{avg});
@@ -306,10 +325,10 @@ foreach my $dfcEntry (@$dfc) {
     sendToLox($toMS, $doLog, "dfc${per}_we_des", encode_utf8($langData->{weather_descriptions}{$dfcEntry->{weatherCode}{weather4lox}} // '-'));
     sendToLox($toMS, $doLog, "dfc${per}_ozone", _jval($dfcEntry->{ozone}));
     sendToLox($toMS, $doLog, "dfc${per}_moon_p", $dfcEntry->{moon}{percent});
-    sendToLox($toMS, $doLog, "dfc${per}_dp", !$metric ? $dfcEntry->{dewpoint}*1.8+32 : $dfcEntry->{dewpoint});
-    sendToLox($toMS, $doLog, "dfc${per}_pr", !$metric ? $dfcEntry->{pressure}*0.0295301 : $dfcEntry->{pressure});
+    sendToLox($toMS, $doLog, "dfc${per}_dp", !$metric ? $dfcEntry->{dewpoint}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{dewpoint});
+    sendToLox($toMS, $doLog, "dfc${per}_pr", !$metric ? $dfcEntry->{pressure}*HPA_TO_INHG : $dfcEntry->{pressure});
     sendToLox($toMS, $doLog, "dfc${per}_uvi", $dfcEntry->{uvIndex});
-    sendToLox($toMS, $doLog, "dfc${per}_vis", !$metric ? $dfcEntry->{visibility}*0.621371192 : $dfcEntry->{visibility});
+    sendToLox($toMS, $doLog, "dfc${per}_vis", !$metric ? $dfcEntry->{visibility}*KMH_TO_MPH : $dfcEntry->{visibility});
     sendToLox($toMS, $doLog, "dfc${per}_moon_a", $dfcEntry->{moon}{age});
     sendToLox($toMS, $doLog, "dfc${per}_moon_ph", $dfcEntry->{moon}{phase});
     sendToLox($toMS, $doLog, "dfc${per}_sun_r", $dfcDate_LoxoneEpoch + timeToSec($dfcEntry->{sunrise}));
@@ -365,14 +384,14 @@ foreach my $hfcEntry (@$hfc) {
     sendToLox($toMS, $doLog, "hfc${per}_min", encode_utf8(sprintf("%02d", $hfc_date->minute)));
     sendToLox($toMS, $doLog, "hfc${per}_wday", encode_utf8($hfc_date->day_name));
     sendToLox($toMS, $doLog, "hfc${per}_wday_sh", encode_utf8($hfc_date->day_abbr));
-    sendToLox($toMS, $doLog, "hfc${per}_tt", !$metric ? $hfcEntry->{temperature}{air}*1.8+32 : $hfcEntry->{temperature}{air});
-    sendToLox($toMS, $doLog, "hfc${per}_tt_fl", !$metric ? $hfcEntry->{temperature}{feelsLike}*1.8+32 : $hfcEntry->{temperature}{feelsLike});
+    sendToLox($toMS, $doLog, "hfc${per}_tt", !$metric ? $hfcEntry->{temperature}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{air});
+    sendToLox($toMS, $doLog, "hfc${per}_tt_fl", !$metric ? $hfcEntry->{temperature}{feelsLike}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{feelsLike});
     sendToLox($toMS, $doLog, "hfc${per}_pop", $hfcEntry->{precipitation}{probability});
-    sendToLox($toMS, $doLog, "hfc${per}_prec", !$metric ? $hfcEntry->{precipitation}{rainHigh}*0.0393700787 : $hfcEntry->{precipitation}{rainHigh});
-    sendToLox($toMS, $doLog, "hfc${per}_snow", !$metric ? $hfcEntry->{precipitation}{snowHigh}*0.393700787 : $hfcEntry->{precipitation}{snowHigh});
-    sendToLox($toMS, $doLog, "hfc${per}_w_sp", !$metric ? $hfcEntry->{wind}{speed}*0.621371192 : $hfcEntry->{wind}{speed});
-    sendToLox($toMS, $doLog, "hfc${per}_w_gu", !$metric ? $hfcEntry->{wind}{gust}*0.621371192 : $hfcEntry->{wind}{gust});
-    sendToLox($toMS, $doLog, "hfc${per}_w_ch", !$metric ? $hfcEntry->{temperature}{feelsLike}*1.8+32 : $hfcEntry->{temperature}{feelsLike});
+    sendToLox($toMS, $doLog, "hfc${per}_prec", !$metric ? $hfcEntry->{precipitation}{rainHigh}*MM_TO_INCH : $hfcEntry->{precipitation}{rainHigh});
+    sendToLox($toMS, $doLog, "hfc${per}_snow", !$metric ? $hfcEntry->{precipitation}{snowHigh}*CM_TO_INCH : $hfcEntry->{precipitation}{snowHigh});
+    sendToLox($toMS, $doLog, "hfc${per}_w_sp", !$metric ? $hfcEntry->{wind}{speed}*KMH_TO_MPH : $hfcEntry->{wind}{speed});
+    sendToLox($toMS, $doLog, "hfc${per}_w_gu", !$metric ? $hfcEntry->{wind}{gust}*KMH_TO_MPH : $hfcEntry->{wind}{gust});
+    sendToLox($toMS, $doLog, "hfc${per}_w_ch", !$metric ? $hfcEntry->{temperature}{feelsLike}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{feelsLike});
     sendToLox($toMS, $doLog, "hfc${per}_w_dirdes", encode_utf8($langData->{wind_directions}{getWindDirCardinal($hfcEntry->{wind}{direction})} // '-'));
     sendToLox($toMS, $doLog, "hfc${per}_w_dir", $hfcEntry->{wind}{direction});
     sendToLox($toMS, $doLog, "hfc${per}_hu", $hfcEntry->{humidity});
@@ -380,14 +399,14 @@ foreach my $hfcEntry (@$hfc) {
     sendToLox($toMS, $doLog, "hfc${per}_we_des", encode_utf8($langData->{weather_descriptions}{$hfcEntry->{weatherCode}{weather4lox}} // '-'));
     sendToLox($toMS, $doLog, "hfc${per}_ozone", _jval($hfcEntry->{ozone}));
     sendToLox($toMS, $doLog, "hfc${per}_moon_p", $hfcEntry->{moon}{percent});
-    sendToLox($toMS, $doLog, "hfc${per}_dp", !$metric ? $hfcEntry->{dewpoint}*1.8+32 : $hfcEntry->{dewpoint});
-    sendToLox($toMS, $doLog, "hfc${per}_pr", !$metric ? $hfcEntry->{pressure}*0.0295301 : $hfcEntry->{pressure});
+    sendToLox($toMS, $doLog, "hfc${per}_dp", !$metric ? $hfcEntry->{dewpoint}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{dewpoint});
+    sendToLox($toMS, $doLog, "hfc${per}_pr", !$metric ? $hfcEntry->{pressure}*HPA_TO_INHG : $hfcEntry->{pressure});
     sendToLox($toMS, $doLog, "hfc${per}_uvi", $hfcEntry->{uvIndex});
-    sendToLox($toMS, $doLog, "hfc${per}_vis", !$metric ? $hfcEntry->{visibility}*0.621371192 : $hfcEntry->{visibility});
+    sendToLox($toMS, $doLog, "hfc${per}_vis", !$metric ? $hfcEntry->{visibility}*KMH_TO_MPH : $hfcEntry->{visibility});
     sendToLox($toMS, $doLog, "hfc${per}_moon_a", $hfcEntry->{moon}{age});
     sendToLox($toMS, $doLog, "hfc${per}_moon_ph", $hfcEntry->{moon}{phase});
     sendToLox($toMS, $doLog, "hfc${per}_sr", $hfcEntry->{solarRadiation});
-    sendToLox($toMS, $doLog, "hfc${per}_hi", !$metric ? $hfcEntry->{temperature}{heatIndex}*1.8+32 : $hfcEntry->{temperature}{heatIndex});
+    sendToLox($toMS, $doLog, "hfc${per}_hi", !$metric ? $hfcEntry->{temperature}{heatIndex}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{heatIndex});
     sendToLox($toMS, $doLog, "hfc${per}_sky", $hfcEntry->{cloudCover});
     sendToLox($toMS, $doLog, "hfc${per}_sky_des",encode_utf8($langData->{weather_descriptions}{$hfcEntry->{weatherCode}{weather4lox}} // '-'));
 
@@ -436,17 +455,23 @@ my %var = (
     popmax => {},
 );
 
+# Guard: if the hourly forecast is empty (e.g. after an API error) skip
+# the aggregation rather than crashing on $hfc->[0] dereference.
+if (!@$hfc) {
+    LOGWARN "Hourly forecast is empty - skipping aggregation, sending zero defaults.";
+}
+
 # Initialize variables for each period with default values (0 for precipitation and solar radiation
-# for temperatures and precipitation probability: we use the first record as default value
+# for temperatures and precipitation probability: we use the first record as default value (0 if empty)
 for my $p (@periods) {
     $var{prec}{$p}   = 0;
     $var{snow}{$p}   = 0;
     $var{sr}{$p}     = 0;
-    $var{ttmin}{$p}  = $hfc->[0]{temperature}{air};
-    $var{ttmax}{$p}  = $hfc->[0]{temperature}{air};
+    $var{ttmin}{$p}  = @$hfc ? ($hfc->[0]{temperature}{air}          // 0) : 0;
+    $var{ttmax}{$p}  = @$hfc ? ($hfc->[0]{temperature}{air}          // 0) : 0;
     $var{ttmean}{$p} = [];
-    $var{popmin}{$p} = $hfc->[0]{precipitation}{probability};
-    $var{popmax}{$p} = $hfc->[0]{precipitation}{probability};
+    $var{popmin}{$p} = @$hfc ? ($hfc->[0]{precipitation}{probability} // 0) : 0;
+    $var{popmax}{$p} = @$hfc ? ($hfc->[0]{precipitation}{probability} // 0) : 0;
 }
 
 foreach my $hfcEntry (@$hfc) {
@@ -478,12 +503,12 @@ $doLog = 1;
 for my $p (@periods) {
     LOGINF "Aggregating hourly forecasts (sum, min or max - depending on the parameter) for next $p hours (nxh${p}) and sending data to MS.";
 
-    sendToLox($toMS, $doLog, "nxh${p}_prec", !$metric ? sprintf("%.2f", $var{prec}{$p}*0.0393700787) : sprintf("%.2f", $var{prec}{$p}));
-    sendToLox($toMS, $doLog, "nxh${p}_snow", !$metric ? sprintf("%.2f", $var{snow}{$p}*0.393700787) : sprintf("%.2f", $var{snow}{$p}));
+    sendToLox($toMS, $doLog, "nxh${p}_prec", !$metric ? sprintf("%.2f", $var{prec}{$p}*MM_TO_INCH) : sprintf("%.2f", $var{prec}{$p}));
+    sendToLox($toMS, $doLog, "nxh${p}_snow", !$metric ? sprintf("%.2f", $var{snow}{$p}*CM_TO_INCH) : sprintf("%.2f", $var{snow}{$p}));
     sendToLox($toMS, $doLog, "nxh${p}_sr", sprintf("%.0f", $var{sr}{$p}));
-    sendToLox($toMS, $doLog, "nxh${p}_ttmin", !$metric ? sprintf("%.1f", $var{ttmin}{$p}*1.8+32) : sprintf("%.1f", $var{ttmin}{$p}));
-    sendToLox($toMS, $doLog, "nxh${p}_ttmax", !$metric ? sprintf("%.1f", $var{ttmax}{$p}*1.8+32) : sprintf("%.1f", $var{ttmax}{$p}));
-    sendToLox($toMS, $doLog, "nxh${p}_ttmean", !$metric ? sprintf("%.1f", mean(@{ $var{ttmean}{$p} })*1.8+32) : sprintf("%.1f", mean(@{ $var{ttmean}{$p} })));
+    sendToLox($toMS, $doLog, "nxh${p}_ttmin", !$metric ? sprintf("%.1f", $var{ttmin}{$p}*C_TO_F_FACTOR+C_TO_F_OFFSET) : sprintf("%.1f", $var{ttmin}{$p}));
+    sendToLox($toMS, $doLog, "nxh${p}_ttmax", !$metric ? sprintf("%.1f", $var{ttmax}{$p}*C_TO_F_FACTOR+C_TO_F_OFFSET) : sprintf("%.1f", $var{ttmax}{$p}));
+    sendToLox($toMS, $doLog, "nxh${p}_ttmean", !$metric ? sprintf("%.1f", mean(@{ $var{ttmean}{$p} })*C_TO_F_FACTOR+C_TO_F_OFFSET) : sprintf("%.1f", mean(@{ $var{ttmean}{$p} })));
     sendToLox($toMS, $doLog, "nxh${p}_popmin", sprintf("%.0f", $var{popmin}{$p}));
     sendToLox($toMS, $doLog, "nxh${p}_popmax", sprintf("%.0f", $var{popmax}{$p}));
     $doLog = 0;
@@ -497,7 +522,7 @@ if ($sendUDP) {
 }
 
 # Close HTML database
-open(F,">>$lbplogdir/weatherdata.html");
+open(F,">>$lbplogdir/weatherdata.html") or LOGERR "Cannot open $lbplogdir/weatherdata.html for appending: $!";
 flock(F,2);
 binmode F, ':encoding(UTF-8)';
 print F "</body>\n</html>";
@@ -518,6 +543,9 @@ our $themeurldfc = "./webpage.dfc.html";
 our $themeurlhfc = "./webpage.hfc.html";
 our $themeurlmap = "./webpage.map.html";
 our $webpath = "/plugins/$lbpplugindir";
+
+# Register URL/path variables used by old-style themes in the allow-list
+$tmpl_vars{$_} = do { no strict 'refs'; ${$_} } for qw(theme iconset mode themeurlmain themeurldfc themeurlhfc themeurlmap webpath);
 
 # new style themes have a single file in webfrontend/html/<pluginname> for CSS, JS and HTML,
 # so we check the existance of it first to determine if it's a new style theme
@@ -546,18 +574,17 @@ if (!$newStyleTheme && !-e "$lbptemplatedir/themes/$lang/$theme.main.html") {
 
 if (!$interimStyleTheme && !$newStyleTheme) {
     # Write cached webpage
-    open(F1,">$lbplogdir/webpage.map.html");
+    open(F1,">$lbplogdir/webpage.map.html") or LOGERR "Cannot open $lbplogdir/webpage.map.html for writing: $!";
     flock(F1,2);
-    open(F,"<$lbptemplatedir/themes/$lang/$theme.map.html");
+    open(F,"<$lbptemplatedir/themes/$lang/$theme.map.html") or LOGERR "Cannot open $lbptemplatedir/themes/$lang/$theme.map.html: $!";
     {
-        no strict 'refs';
         while (<F>) {
             $_ =~ s/<!--\$(.*?)-->/
-                if (!defined ${$1}) {
+                if (!exists $tmpl_vars{$1}) {
                     LOGWARN "Template variable '\$$1' is undefined (line $. in $lbptemplatedir\/themes\/$lang\/$theme.map.html)";
                     '';
                 } else {
-                    ${$1};
+                    $tmpl_vars{$1};
                 }
             /ge;
             print F1 $_;
@@ -583,18 +610,17 @@ if (!$interimStyleTheme && !$newStyleTheme) {
 
 if (!$interimStyleTheme && !$newStyleTheme) {
     # Write cached webpage
-    open(F1,">$lbplogdir/webpage.dfc.html");
+    open(F1,">$lbplogdir/webpage.dfc.html") or LOGERR "Cannot open $lbplogdir/webpage.dfc.html for writing: $!";
     flock(F1,2);
-    open(F,"<$lbptemplatedir/themes/$lang/$theme.dfc.html");
+    open(F,"<$lbptemplatedir/themes/$lang/$theme.dfc.html") or LOGERR "Cannot open $lbptemplatedir/themes/$lang/$theme.dfc.html: $!";
     {
-        no strict 'refs';
         while (<F>) {
             $_ =~ s/<!--\$(.*?)-->/
-                if (!defined ${$1}) {
+                if (!exists $tmpl_vars{$1}) {
                     LOGWARN "Template variable '\$$1' is undefined (line $. in $lbptemplatedir\/themes\/$lang\/$theme.dfc.html)";
                     '';
                 } else {
-                    ${$1};
+                    $tmpl_vars{$1};
                 }
             /ge;
             print F1 $_;
@@ -621,18 +647,17 @@ if (!$interimStyleTheme && !$newStyleTheme) {
 if (!$interimStyleTheme && !$newStyleTheme) {
     # Write cached webpage
     # If Theme Lang is set, us it instead of system lang
-    open(F1,">$lbplogdir/webpage.hfc.html");
+    open(F1,">$lbplogdir/webpage.hfc.html") or LOGERR "Cannot open $lbplogdir/webpage.hfc.html for writing: $!";
     flock(F1,2);
-    open(F,"<$lbptemplatedir/themes/$lang/$theme.hfc.html");
+    open(F,"<$lbptemplatedir/themes/$lang/$theme.hfc.html") or LOGERR "Cannot open $lbptemplatedir/themes/$lang/$theme.hfc.html: $!";
     {
-        no strict 'refs';
         while (<F>) {
             $_ =~ s/<!--\$(.*?)-->/
-                if (!defined ${$1}) {
+                if (!exists $tmpl_vars{$1}) {
                     LOGWARN "Template variable '\$$1' is undefined (line $. in $lbptemplatedir\/themes\/$lang\/$theme.hfc.html)";
                     '';
                 } else {
-                    ${$1};
+                    $tmpl_vars{$1};
                 }
             /ge;
             print F1 $_;
@@ -666,24 +691,25 @@ if (!$newStyleTheme) {
     # new style themes only have a single 'template' that contains a redirect to to the specific theme file in the webfrontend/html/<pluginname> directory
     $sourceFile  = "$lbptemplatedir/themes/new-style.theme.html";
     # Create variable for searching and replacing in templates for themes (in case of old-style themes)
-    { no strict 'refs'; ${'themeurl'} = "./$theme.theme.html?iconset=$iconset&lang=$lang&mode=$mode" }
+    my $_themeurl = "./$theme.theme.html?iconset=$iconset&lang=$lang&mode=$mode";
+    { no strict 'refs'; ${'themeurl'} = $_themeurl }
+    $tmpl_vars{'themeurl'} = $_themeurl;
 }
 
 $destFile = "$lbplogdir/webpage.html";
 
 # Write cached webpage
-open(F1,">$destFile.tmp");
+open(F1,">$destFile.tmp") or LOGERR "Cannot open $destFile.tmp for writing: $!";
 flock(F1,2);
-open(F,"<$sourceFile");
+open(F,"<$sourceFile") or LOGERR "Cannot open $sourceFile: $!";
 {
-    no strict 'refs';
     while (<F>) {
         $_ =~ s/<!--\$(.*?)-->/
-            if (!defined ${$1}) {
+            if (!exists $tmpl_vars{$1}) {
                 LOGWARN "Template variable '\$$1' is undefined (line $. in $sourceFile)";
                 '';
             } else {
-                ${$1};
+                $tmpl_vars{$1};
             }
         /ge;
         print F1 $_;
@@ -822,7 +848,7 @@ if ($emu) {
     my $snow_fraction = $rain_1hr_mm > 0 ? $snow_1hr_cm / $precip_1hr : ($snow_1hr_cm > 0 ? 1 : 0);   # Snow fraction in precipitation in %
     my $precip_prob = $cur->{precipitation}{probability} // 0;
 
-    open(F,">$lbplogdir/index.txt");
+    open(F,">$lbplogdir/index.txt") or LOGERR "Cannot open $lbplogdir/index.txt for writing: $!";
     flock(F,2);
     # Write header with meta data and location (semicolon separated, in the order expected by Loxone)
     print F "<mb_metadata>\n";
@@ -866,7 +892,7 @@ if ($emu) {
 
     $i = 0;
 
-    open(F,">>$lbplogdir/index.txt");
+    open(F,">>$lbplogdir/index.txt") or LOGERR "Cannot open $lbplogdir/index.txt for appending: $!";
     flock(F,2);
 
     foreach my $hfcEntry (@$hfc) {
@@ -937,8 +963,11 @@ sub sendToLox {
     if (!defined($value)) {
       $value = 0;
     }
-    # Create variable for searching and replacing in templates for themes (in case of old-style themes)
+    # Create variable for searching and replacing in templates for themes (in case of old-style themes).
+    # Also record the name in %tmpl_vars so that template rendering can use an allow-list lookup
+    # instead of blindly dereferencing any package variable.
     { no strict 'refs'; ${$name} = $value }
+    $tmpl_vars{$name} = $value;
 
     # Log data if defined (reduce loggin amount)
     if (defined $doLog && $doLog) {
@@ -946,10 +975,10 @@ sub sendToLox {
     }
 
     # Add weather data to HTML webpage
-    open(F,">>$lbplogdir/weatherdata.html");
+    open(F,">>$lbplogdir/weatherdata.html") or do { LOGERR "Cannot open $lbplogdir/weatherdata.html for appending: $!"; return; };
     flock(F,2);
         binmode F, ':encoding(UTF-8)';
-        print F "$name\@" . Encode::decode("UTF-8", $value) . "<br>\n";
+        print F "$name\@$value<br>\n";
     #flock(F,8);
     close(F);
 
