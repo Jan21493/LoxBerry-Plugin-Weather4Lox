@@ -31,11 +31,13 @@ use Time::HiRes;
 use Net::MQTT::Simple;
 #use Data::Dumper;
 use Config::Simple;
-use File::HomeDir;
 use JSON::PP ();
 use utf8;
 use Encode qw(encode_utf8);
 use POSIX qw(setlocale LC_NUMERIC);
+
+use constant MM_TO_INCH => 0.0393700787;
+use constant KMH_TO_MPH => 0.621371192;
 
 ##########################################################################
 # Read settings
@@ -210,18 +212,18 @@ sendToLox($toMS, $doLog, "cur_tt_fl", !$metric ? $cur->{temperature}{feelsLike}*
 sendToLox($toMS, $doLog, "cur_hu", $cur->{humidity});
 sendToLox($toMS, $doLog, "cur_w_dirdes", encode_utf8($langData->{wind_directions}{getWindDirCardinal($cur->{wind}{direction})} // '-'));
 sendToLox($toMS, $doLog, "cur_w_dir", $cur->{wind}{direction});
-sendToLox($toMS, $doLog, "cur_w_sp", !$metric ? $cur->{wind}{speed}*0.621371192 : $cur->{wind}{speed});
-sendToLox($toMS, $doLog, "cur_w_gu", !$metric ? $cur->{wind}{gust}*0.621371192 : $cur->{wind}{gust});
+sendToLox($toMS, $doLog, "cur_w_sp", !$metric ? $cur->{wind}{speed}*KMH_TO_MPH : $cur->{wind}{speed});
+sendToLox($toMS, $doLog, "cur_w_gu", !$metric ? $cur->{wind}{gust}*KMH_TO_MPH : $cur->{wind}{gust});
 sendToLox($toMS, $doLog, "cur_w_ch", !$metric ? $cur->{temperature}{windChill}*1.8+32 : $cur->{temperature}{windChill});
 sendToLox($toMS, $doLog, "cur_pr", !$metric ? $cur->{pressure}*0.0295301 : $cur->{pressure});
 sendToLox($toMS, $doLog, "cur_dp", !$metric ? $cur->{dewpoint}*1.8+32 : $cur->{dewpoint});
-sendToLox($toMS, $doLog, "cur_vis", !$metric ? $cur->{visibility}*0.621371192 : $cur->{visibility});
+sendToLox($toMS, $doLog, "cur_vis", !$metric ? $cur->{visibility}*KMH_TO_MPH : $cur->{visibility});
 sendToLox($toMS, $doLog, "cur_sr", $cur->{solarRadiation});
 sendToLox($toMS, $doLog, "cur_hi", !$metric ? $cur->{temperature}{heatIndex}*1.8+32 : $cur->{temperature}{heatIndex});
 sendToLox($toMS, $doLog, "cur_uvi", $cur->{uvIndex});
 sendToLox($toMS, $doLog, "cur_pop", $cur->{precipitation}{probability});
-sendToLox($toMS, $doLog, "cur_prec_today", !$metric ? $cur->{precipitation}{rainToday}*0.0393700787 : $cur->{precipitation}{rainToday});
-sendToLox($toMS, $doLog, "cur_prec_1hr", !$metric ? $cur->{precipitation}{rain1hr}*0.0393700787 : $cur->{precipitation}{rain1hr});
+sendToLox($toMS, $doLog, "cur_prec_today", !$metric ? $cur->{precipitation}{rainToday}*MM_TO_INCH : $cur->{precipitation}{rainToday});
+sendToLox($toMS, $doLog, "cur_prec_1hr", !$metric ? $cur->{precipitation}{rain1hr}*MM_TO_INCH : $cur->{precipitation}{rain1hr});
 sendToLox($toMS, $doLog, "cur_snow", !$metric ? $cur->{precipitation}{snowToday}*0.393700787 : $cur->{precipitation}{snowToday});
 sendToLox($toMS, $doLog, "cur_we_icon", $cur->{weatherCode}{weather4lox});
 sendToLox($toMS, $doLog, "cur_we_code", $cur->{weatherCode}{loxone});
@@ -302,14 +304,14 @@ foreach my $dfcEntry (@$dfc) {
     sendToLox($toMS, $doLog, "dfc${per}_tt_h", !$metric ? $dfcEntry->{temperature}{max}{air}*1.8+32 : $dfcEntry->{temperature}{max}{air});
     sendToLox($toMS, $doLog, "dfc${per}_tt_l", !$metric ? $dfcEntry->{temperature}{min}{air}*1.8+32 : $dfcEntry->{temperature}{min}{air});
     sendToLox($toMS, $doLog, "dfc${per}_pop", $dfcEntry->{precipitation}{probability});
-    sendToLox($toMS, $doLog, "dfc${per}_prec", !$metric ? $dfcEntry->{precipitation}{rainHigh}*0.0393700787 : $dfcEntry->{precipitation}{rainHigh});
+    sendToLox($toMS, $doLog, "dfc${per}_prec", !$metric ? $dfcEntry->{precipitation}{rainHigh}*MM_TO_INCH : $dfcEntry->{precipitation}{rainHigh});
     sendToLox($toMS, $doLog, "dfc${per}_snow", !$metric ? $dfcEntry->{precipitation}{snowHigh}*0.393700787 : $dfcEntry->{precipitation}{snowHigh});
-    sendToLox($toMS, $doLog, "dfc${per}_w_sp_h", !$metric ? $dfcEntry->{wind}{max}{speed}*0.621371192 : $dfcEntry->{wind}{max}{speed});
-    sendToLox($toMS, $doLog, "dfc${per}_w_gu_h", !$metric ? $dfcEntry->{wind}{max}{gust}*0.621371192 : $dfcEntry->{wind}{max}{gust});
+    sendToLox($toMS, $doLog, "dfc${per}_w_sp_h", !$metric ? $dfcEntry->{wind}{max}{speed}*KMH_TO_MPH : $dfcEntry->{wind}{max}{speed});
+    sendToLox($toMS, $doLog, "dfc${per}_w_gu_h", !$metric ? $dfcEntry->{wind}{max}{gust}*KMH_TO_MPH : $dfcEntry->{wind}{max}{gust});
     sendToLox($toMS, $doLog, "dfc${per}_w_dirdes_h", encode_utf8($langData->{wind_directions}{getWindDirCardinal($dfcEntry->{wind}{max}{direction}) // ''} // '-')); 
     sendToLox($toMS, $doLog, "dfc${per}_w_dir_h", $dfcEntry->{wind}{max}{direction});
-    sendToLox($toMS, $doLog, "dfc${per}_w_sp_a", !$metric ? $dfcEntry->{wind}{avg}{speed}*0.621371192 : $dfcEntry->{wind}{avg}{speed});
-    sendToLox($toMS, $doLog, "dfc${per}_w_gu_a", !$metric ? $dfcEntry->{wind}{avg}{gust}*0.621371192 : $dfcEntry->{wind}{avg}{gust});
+    sendToLox($toMS, $doLog, "dfc${per}_w_sp_a", !$metric ? $dfcEntry->{wind}{avg}{speed}*KMH_TO_MPH : $dfcEntry->{wind}{avg}{speed});
+    sendToLox($toMS, $doLog, "dfc${per}_w_gu_a", !$metric ? $dfcEntry->{wind}{avg}{gust}*KMH_TO_MPH : $dfcEntry->{wind}{avg}{gust});
     sendToLox($toMS, $doLog, "dfc${per}_w_dirdes_a", encode_utf8($langData->{wind_directions}{getWindDirCardinal($dfcEntry->{wind}{avg}{direction}) // ''} // '-')); 
     sendToLox($toMS, $doLog, "dfc${per}_w_dir_a", $dfcEntry->{wind}{avg}{direction});
     sendToLox($toMS, $doLog, "dfc${per}_hu_a", $dfcEntry->{humidity}{avg});
@@ -322,7 +324,7 @@ foreach my $dfcEntry (@$dfc) {
     sendToLox($toMS, $doLog, "dfc${per}_dp", !$metric ? $dfcEntry->{dewpoint}*1.8+32 : $dfcEntry->{dewpoint});
     sendToLox($toMS, $doLog, "dfc${per}_pr", !$metric ? $dfcEntry->{pressure}*0.0295301 : $dfcEntry->{pressure});
     sendToLox($toMS, $doLog, "dfc${per}_uvi", $dfcEntry->{uvIndex});
-    sendToLox($toMS, $doLog, "dfc${per}_vis", !$metric ? $dfcEntry->{visibility}*0.621371192 : $dfcEntry->{visibility});
+    sendToLox($toMS, $doLog, "dfc${per}_vis", !$metric ? $dfcEntry->{visibility}*KMH_TO_MPH : $dfcEntry->{visibility});
     sendToLox($toMS, $doLog, "dfc${per}_moon_a", $dfcEntry->{moon}{age});
     sendToLox($toMS, $doLog, "dfc${per}_moon_ph", $dfcEntry->{moon}{phase});
     sendToLox($toMS, $doLog, "dfc${per}_sun_r", $dfcDate_LoxoneEpoch + timeToSec($dfcEntry->{sunrise}));
@@ -381,10 +383,10 @@ foreach my $hfcEntry (@$hfc) {
     sendToLox($toMS, $doLog, "hfc${per}_tt", !$metric ? $hfcEntry->{temperature}{air}*1.8+32 : $hfcEntry->{temperature}{air});
     sendToLox($toMS, $doLog, "hfc${per}_tt_fl", !$metric ? $hfcEntry->{temperature}{feelsLike}*1.8+32 : $hfcEntry->{temperature}{feelsLike});
     sendToLox($toMS, $doLog, "hfc${per}_pop", $hfcEntry->{precipitation}{probability});
-    sendToLox($toMS, $doLog, "hfc${per}_prec", !$metric ? $hfcEntry->{precipitation}{rainHigh}*0.0393700787 : $hfcEntry->{precipitation}{rainHigh});
+    sendToLox($toMS, $doLog, "hfc${per}_prec", !$metric ? $hfcEntry->{precipitation}{rainHigh}*MM_TO_INCH : $hfcEntry->{precipitation}{rainHigh});
     sendToLox($toMS, $doLog, "hfc${per}_snow", !$metric ? $hfcEntry->{precipitation}{snowHigh}*0.393700787 : $hfcEntry->{precipitation}{snowHigh});
-    sendToLox($toMS, $doLog, "hfc${per}_w_sp", !$metric ? $hfcEntry->{wind}{speed}*0.621371192 : $hfcEntry->{wind}{speed});
-    sendToLox($toMS, $doLog, "hfc${per}_w_gu", !$metric ? $hfcEntry->{wind}{gust}*0.621371192 : $hfcEntry->{wind}{gust});
+    sendToLox($toMS, $doLog, "hfc${per}_w_sp", !$metric ? $hfcEntry->{wind}{speed}*KMH_TO_MPH : $hfcEntry->{wind}{speed});
+    sendToLox($toMS, $doLog, "hfc${per}_w_gu", !$metric ? $hfcEntry->{wind}{gust}*KMH_TO_MPH : $hfcEntry->{wind}{gust});
     sendToLox($toMS, $doLog, "hfc${per}_w_ch", !$metric ? $hfcEntry->{temperature}{feelsLike}*1.8+32 : $hfcEntry->{temperature}{feelsLike});
     sendToLox($toMS, $doLog, "hfc${per}_w_dirdes", encode_utf8($langData->{wind_directions}{getWindDirCardinal($hfcEntry->{wind}{direction})} // '-'));
     sendToLox($toMS, $doLog, "hfc${per}_w_dir", $hfcEntry->{wind}{direction});
@@ -396,7 +398,7 @@ foreach my $hfcEntry (@$hfc) {
     sendToLox($toMS, $doLog, "hfc${per}_dp", !$metric ? $hfcEntry->{dewpoint}*1.8+32 : $hfcEntry->{dewpoint});
     sendToLox($toMS, $doLog, "hfc${per}_pr", !$metric ? $hfcEntry->{pressure}*0.0295301 : $hfcEntry->{pressure});
     sendToLox($toMS, $doLog, "hfc${per}_uvi", $hfcEntry->{uvIndex});
-    sendToLox($toMS, $doLog, "hfc${per}_vis", !$metric ? $hfcEntry->{visibility}*0.621371192 : $hfcEntry->{visibility});
+    sendToLox($toMS, $doLog, "hfc${per}_vis", !$metric ? $hfcEntry->{visibility}*KMH_TO_MPH : $hfcEntry->{visibility});
     sendToLox($toMS, $doLog, "hfc${per}_moon_a", $hfcEntry->{moon}{age});
     sendToLox($toMS, $doLog, "hfc${per}_moon_ph", $hfcEntry->{moon}{phase});
     sendToLox($toMS, $doLog, "hfc${per}_sr", $hfcEntry->{solarRadiation});
@@ -497,7 +499,7 @@ $doLog = 1;
 for my $p (@periods) {
     LOGINF "Aggregating hourly forecasts (sum, min or max - depending on the parameter) for next $p hours (nxh${p}) and sending data to MS.";
 
-    sendToLox($toMS, $doLog, "nxh${p}_prec", !$metric ? sprintf("%.2f", $var{prec}{$p}*0.0393700787) : sprintf("%.2f", $var{prec}{$p}));
+    sendToLox($toMS, $doLog, "nxh${p}_prec", !$metric ? sprintf("%.2f", $var{prec}{$p}*MM_TO_INCH) : sprintf("%.2f", $var{prec}{$p}));
     sendToLox($toMS, $doLog, "nxh${p}_snow", !$metric ? sprintf("%.2f", $var{snow}{$p}*0.393700787) : sprintf("%.2f", $var{snow}{$p}));
     sendToLox($toMS, $doLog, "nxh${p}_sr", sprintf("%.0f", $var{sr}{$p}));
     sendToLox($toMS, $doLog, "nxh${p}_ttmin", !$metric ? sprintf("%.1f", $var{ttmin}{$p}*1.8+32) : sprintf("%.1f", $var{ttmin}{$p}));

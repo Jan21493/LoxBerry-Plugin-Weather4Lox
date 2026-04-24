@@ -38,8 +38,6 @@ use Astro::MoonPhase;
 use utf8;
 use Encode qw(encode_utf8);
 use HTML::Entities;
-use Data::Dumper;
-
 require "$lbpbindir/grabber_utils.pl";
 
 ##########################################################################
@@ -239,103 +237,6 @@ sub owmToLox {
     }
     return @$data; # Returns (Loxone-Picto code, Weather4Lox symbol)
 }
-
-# Mapping of Weather4Lox codes to sky coverage (in percentages)
-
-# TODO: table is not used yet
-my %skyConditionByW4lCode = (
-    # Klarer Himmel oder wolkenlos
-    'clear'                      => [   0 ],   # klar/sonnig
-
-    # Leicht bewölkt/heiter
-    'fair'                       => [  15 ],   # heiter, wenige Wolken
-
-    # Teilweise bewölkt
-    'partly_cloudy'              => [  40 ],   # wechselnd bewölkt, ca. 25-50%
-
-    # Mäßig bis stark bewölkt
-    'cloudy'                     => [  65 ],   # meist bewölkt, 50-80% 
-
-    # Bedeckt
-    'overcast'                   => [  95 ],   # bedeckt, >85%
-
-    # Verschiedene Schauer/Starkregencodes – meist stark bewölkt bis bedeckt
-    'cloudy_shower_1'            => [  75 ],   # Regenschauer, eher stark bewölkt
-    'cloudy_shower_2'            => [  80 ],   # kräftiger Regenschauer, stark bewölkt
-    'overcast_shower_1'          => [  95 ],   # Schauer bei bedecktem Himmel
-    'overcast_shower_2'          => [  98 ],   # starker Schauer bei bedecktem Himmel
-    'overcast_shower_3'          => [ 100 ],   # extremer Schauer, vollständig bedeckt
-
-    # Regen
-    'cloudy_rain_1'              => [  70 ],   # leichter Regen, stark bewölkt
-    'cloudy_rain_2'              => [  80 ],   # kräftiger Regen, stark bewölkt
-    'overcast_rain_1'            => [  95 ],   # Regen bei bedeckt
-    'overcast_rain_2'            => [  98 ],   # starker Regen, bedeckt
-    'overcast_rain_3'            => [ 100 ],   # sehr starker/extremer Regen
-
-    # Schneeregen/Sleet
-    'cloudy_sleet_1'             => [  70 ],
-    'cloudy_sleet_2'             => [  80 ],
-    'overcast_sleet_1'           => [  95 ],
-    'overcast_sleet_2'           => [  98 ],
-    'overcast_sleet_3'           => [ 100 ],
-
-    # Schnee
-    'cloudy_snow_1'              => [  75 ],
-    'cloudy_snow_2'              => [  85 ],
-    'overcast_snow_1'            => [  95 ],
-    'overcast_snow_2'            => [  98 ],
-    'overcast_snow_3'            => [ 100 ],
-
-    # Gefrierender Regen (Freezing Rain)
-    'cloudy_freezingrain_1'      => [  70 ],
-    'cloudy_freezingrain_2'      => [  80 ],
-    'overcast_freezingrain_1'    => [  95 ],
-    'overcast_freezingrain_2'    => [  98 ],
-    'overcast_freezingrain_3'    => [ 100 ],
-
-    # Gewitter (Thunderstorm)
-    'cloudy_thunderstorm_1'      => [  80 ],
-    'cloudy_thunderstorm_2'      => [  90 ],
-    'overcast_thunderstorm_1'    => [  98 ],
-    'overcast_thunderstorm_2'    => [ 100 ],
-    'overcast_thunderstorm_3'    => [ 100 ],
-
-    # Schneegewitter (Snow-Thunderstorm)
-    'cloudy_snowthunderstorm_1'  => [  90 ],
-    'cloudy_snowthunderstorm_2'  => [  95 ],
-    'overcast_snowthunderstorm_1'=> [  98 ],
-    'overcast_snowthunderstorm_2'=> [ 100 ],
-    'overcast_snowthunderstorm_3'=> [ 100 ],
-
-    # Hagel/Graupel
-    'overcast_graupel'           => [ 100 ],
-    'overcast_hail_1'            => [  98 ],
-    'overcast_hail_2'            => [ 100 ],
-
-    # Eisregen (Ice) – keine eigene Wolkenbelegung, aber immer bedeckt
-    'overcast_ice'               => [ 100 ],
-
-    # Nebel, Dunst, andere Sichtminimierungen – meist sehr hohe Luftfeuchtigkeit, oft mit dichter Decke
-    'cloudy_fog'                 => [  80 ],  # Dunst/Nebel, meist viele Wolken aber manchmal auch Lücken
-    'overcast_fog'               => [  98 ],  # dichter/bodennaher Nebel, fast immer bedeckt
-
-    'mist'                       => [  80 ],  # leichter Nebel (Synonym)
-    'smoke'                      => [  80 ],  # Rauch, wie Dunst
-    'haze'                       => [  75 ],  # Dunst
-    'dust_whirls'                => [  70 ],  # Staub – meist trüb, aber nicht immer voll bedeckt
-    'fog'                        => [  98 ],  # starker Nebel
-    'sand'                       => [  98 ],  # Sand
-    'dust'                       => [  98 ],  # Staub
-    'volcanic_ash'               => [ 100 ],  # Vulkanasche
-
-    # Squalls, tornado – Extremwetter, immer voll bedeckt
-    'squalls'                    => [ 100 ],  
-    'tornado'                    => [ 100 ],  
-
-    # Wenn keine Daten verfügbar, sicherheitshalber voll bedeckt („error fallback“)
-    'no_data'                    => [ 100 ],
-);
 
 # Mapping of OpenWeatherMap weather codes to sky coverage (in percentages)
 
