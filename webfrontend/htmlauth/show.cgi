@@ -50,7 +50,11 @@ our %tmpl_vars;
 sub build_tmpl_vars {
     %tmpl_vars = ();
     for my $n (keys %main::) {
-        next unless $n =~ /\A(?:cur_|dfc\d+_|hfc\d+_|themeurl|mapurl|webpath)\w*\z/;
+        # Allow only names that follow the known template-variable naming
+        # patterns: lowercase letters, digits and underscores only.
+        # \w* expands to [a-zA-Z0-9_]* – dots, slashes and other characters
+        # that could be used for path traversal or injection are rejected.
+        next unless $n =~ /\A(?:cur_|dfc\d+_|hfc\d+_|themeurl|mapurl|webpath)[a-zA-Z0-9_]*\z/;
         no strict 'refs';
         $tmpl_vars{$n} = ${$n} if defined ${$n};
     }
