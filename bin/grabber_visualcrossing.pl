@@ -124,8 +124,14 @@ my $i;
 # Loxone weather codes: https://www.loxone.com/enen/kb/weather-service/
 # Weather4lox mapping: https://wiki.loxberry.de/plugins/weather4loxone/start#wetter-codes
 # Mapping: Visual Crossing Weather Icon Name => [Loxone Code, Normalized Icon Name]
+
+# NOTE: pre-mapping, see below
 my %vc_to_lox = (
     "clear"          => [ 1, "clear"],                   #  1 = Clear / Wolkenlos
+    "fair"           => [ 2, "fair"],                    #  2 = Fair / Heiter
+    "partlycloudy"   => [ 3, "partly_cloudy"],           #  3 = Partly Cloudy / Teilweise bewölkt
+    "cloudy"         => [ 4, "cloudy"],                  #  4 = Cloudy / Bewölkt
+    "overcast"       => [ 5, "overcast"],                #  5 = Overcast / Bedeckt
     "snow"           => [21, "overcast_snow_2"],         # 21 = Snow / Schneefall
     "snowshowers"    => [24, "cloudy_snow_2"],           # 24 = Strong Snow Showers / Starker Schneeschauer
     "thunderrain"    => [18, "overcast_thunderstorm_2"], # 18 = Thunderstorms / Gewitter
@@ -134,17 +140,30 @@ my %vc_to_lox = (
     "showers"        => [17, "cloudy_shower_2"],         # 17 = Heavy Rain Showers / Kräftiger Regenschauer
     "fog"            => [ 6, "fog"],                     #  6 = Fog / Nebel
     "wind"           => [ 5, "wind"],                    #  5 = Overcast / Bedeckt in Loxone, but there is no better match for "wind"
-    "cloudy"         => [ 5, "overcast"],                #  5 = Overcast / Bedeckt
-    "partlycloudy"   => [ 3, "partly_cloudy"],           #  3 = Cloudy / Wolkig
 );
 
 sub vc_to_lox {
-    my ($weather_raw) = @_;
+    my ($weather_raw, $cloudCover) = @_;
 
     # Normalize the name of the weather icon from Visual Crossing
     my $weather = lc($weather_raw);        # Lowercase
     $weather =~ s/-(?:night|day)//;        # Remove -night and -day
     $weather =~ s/-//g;                    # Remove all hyphens
+
+    # pre-mapping from three grades for cloudiness (clear 0-19%, partly-cloudy 20-89%, cloudy 90-100%) to five grades 
+    if (defined $cloudCover && ($weather eq "clear" || $weather eq "partlycloudy" || $weather eq "cloudy")) {
+        if ($cloudCover <= 10) {
+            $weather = "clear";
+        } elsif ($cloudCover <= 25) {
+            $weather = "fair";
+        } elsif ($cloudCover <= 50) {
+            $weather = "partlycloudy";
+        } elsif ($cloudCover <= 86) {
+            $weather = "cloudy";
+        } else {
+            $weather = "overcast";
+        }
+    }
 
     # Lookup in the hash
     my $result = $vc_to_lox{$weather};
@@ -158,11 +177,15 @@ sub vc_to_lox {
     }
 }
 
-# Detect nighttime from VC icon string (contains "-night" suffix)
-sub vcIsNight {
-    my ($icon_raw) = @_;
-    return undef unless defined $icon_raw;
-    return ($icon_raw =~ /-night/) ? 1 : undef;
+# Determine if it's currently nighttime based on current time, sunrise/sunset times (all epoch times on the same day)
+sub isNighttime {
+    my ($time, $sunrise, $sunset) = @_;
+    my $isNighttime = undef; # default to day (undef)
+
+    if ($time < $sunrise || $time > $sunset) {
+        $isNighttime = 1;
+    }
+    return ($isNighttime);
 }
 
 ##########################################################################
@@ -258,8 +281,10 @@ if ( $current ) {
     $precipitation{snow1hr}       = defined $cur->{snow} ? sprintf("%.2f", $cur->{snow}) + 0 : undef;
 
     # weather codes
+    my $iconRaw = $cur->{icon};
+    my $cloudCover = defined $cur->{cloudcover} ? $cur->{cloudcover} + 0 : undef;
     my %weatherCode;
-    my ($loxoneCode, $w4lCode) = vc_to_lox($cur->{icon});
+    my ($loxoneCode, $w4lCode) = vc_to_lox($iconRaw, $cloudCover);
     $weatherCode{loxone}      = $loxoneCode;
     $weatherCode{weather4lox} = $w4lCode;
     $weatherCode{description} = $cur->{conditions};
@@ -290,9 +315,9 @@ if ( $current ) {
         precipitation  => \%precipitation,
         weatherCode    => \%weatherCode,
         ozone          => undef,
-        cloudCover     => defined $cur->{cloudcover} ? $cur->{cloudcover} + 0 : undef,
+        cloudCover     => $cloudCover,
         moon           => \%moon,
-        isNight        => vcIsNight($cur->{icon}),
+        isNight        => isNighttime($cur->{datetimeEpoch}, $cur->{sunriseEpoch}, $cur->{sunsetEpoch}),
     );
 
     # Build envelope and write JSON to file
@@ -382,8 +407,10 @@ if ( $daily ) {
         $precipitation{type}        = $results->{preciptype} ? $results->{preciptype}[0] : "none";
 
         # weather codes
+        my $iconRaw = $results->{icon};
+        my $cloudCover = defined $results->{cloudcover} ? $results->{cloudcover} + 0 : undef;
         my %weatherCode;
-        my ($loxoneCode, $w4lCode) = vc_to_lox($results->{icon});
+        my ($loxoneCode, $w4lCode) = vc_to_lox($iconRaw, $cloudCover);
         $weatherCode{loxone}      = $loxoneCode;
         $weatherCode{weather4lox} = $w4lCode;
         $weatherCode{description} = $results->{description};
@@ -418,7 +445,7 @@ if ( $daily ) {
             solarRadiation => undef,
             heatIndex      => undef,
             ozone          => undef,
-            cloudCover     => defined $results->{cloudcover} ? $results->{cloudcover} + 0 : undef,
+            cloudCover     => $cloudCover,
         };
         $day++;
     }
@@ -453,8 +480,8 @@ if ( $hourly ) {
 
     LOGINF "Reading hourly weather data from API response into W4L structure.";
 
-    for my $resultsdays ( @{$decoded_json->{days}} ) {
-        for my $h ( @{$resultsdays->{hours}} ) {
+    for my $resDay ( @{$decoded_json->{days}} ) {
+        for my $h ( @{$resDay->{hours}} ) {
 
             # Skip past hours (hourly forecast contains also data for current day, subtract one hour margin)
             my $now = localtime - ONE_HOUR;
@@ -492,8 +519,10 @@ if ( $hourly ) {
             $precipitation{type}        = $h->{preciptype} ? $h->{preciptype}[0] : "none";
 
             # weather codes
+            my $iconRaw = $h->{icon};
+            my $cloudCover = defined $h->{cloudcover} ? $h->{cloudcover} + 0 : undef;
             my %weatherCode;
-            my ($loxoneCode, $w4lCode) = vc_to_lox($h->{icon});
+            my ($loxoneCode, $w4lCode) = vc_to_lox($iconRaw, $cloudCover);
             $weatherCode{loxone}      = $loxoneCode;
             $weatherCode{weather4lox} = $w4lCode;
             $weatherCode{description} = $h->{conditions};
@@ -521,9 +550,9 @@ if ( $hourly ) {
                 precipitation  => \%precipitation,
                 weatherCode    => \%weatherCode,
                 ozone          => undef,
-                cloudCover     => defined $h->{cloudcover} ? $h->{cloudcover} + 0 : undef,
+                cloudCover     => $cloudCover,
                 moon           => \%moon,
-                isNight        => vcIsNight($h->{icon}),
+                isNight        => isNighttime($h->{datetimeEpoch}, $resDay->{sunriseEpoch}, $resDay->{sunsetEpoch}),
             };
             $hour++;
         }
