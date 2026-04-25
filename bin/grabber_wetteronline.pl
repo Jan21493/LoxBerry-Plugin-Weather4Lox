@@ -291,19 +291,19 @@ my %wetteronlineToLox = (
     # aktuelles Wetter in Farbe: https://st.wetteronline.de/dr/1.1.617/aktuell/prozess/graphiken/symbole/standard/farbe/gif/so____.gif
 
     # clouds in steps from clear to overcast, each with code for day and night (kept in mapping for clarity)
-    "so____" => [ 1, "clear", "Sonnig"],                                        # sonnig bzw. klar / wolkenlos (Tag)
-    "mo____" => [ 1, "clear", "Klar"],                                          # sonnig bzw. klar / wolkenlos (Nacht)
-    "wb____" => [ 2, "partly_cloudy", "Teilweise bewölkt"],                     # leicht bewölkt (Tag)
-  # "mb____" => [ 2, "partly_cloudy", "Teilweise bewölkt"],                     # leicht bewölkt (Nacht)
-    "bw____" => [ 3, "cloudy", "Bewölkt"],                                      # Bewölkt (Tag)
-  # "mw____" => [ 3, "cloudy", "Bewölkt"],                                      # Bewölkt (Nacht)
-    "bd____" => [ 5, "overcast", "Bedeckt"],                                    # bedeckt (Tag)
-  # "md____" => [ 5, "overcast", "Bedeckt"],                                    # Bedeckt (Nacht)
+    "so____" => [ 1, "clear", "Sonnig"],                                                   # sonnig bzw. klar / wolkenlos (Tag)
+    "mo____" => [ 1, "clear", "Klar"],                                                     # sonnig bzw. klar / wolkenlos (Nacht)
+    "wb____" => [ 2, "partly_cloudy", "Teilweise bewölkt"],                                # leicht bewölkt (Tag)
+  # "mb____" => [ 2, "partly_cloudy", "Teilweise bewölkt"],                                # leicht bewölkt (Nacht)
+    "bw____" => [ 3, "cloudy", "Bewölkt"],                                                 # Bewölkt (Tag)
+  # "mw____" => [ 3, "cloudy", "Bewölkt"],                                                 # Bewölkt (Nacht)
+    "bd____" => [ 5, "overcast", "Bedeckt"],                                               # bedeckt (Tag)
+  # "md____" => [ 5, "overcast", "Bedeckt"],                                               # Bedeckt (Nacht)
 
     # fog/haze
-    "ns____" => [ 6, "mist", "Teils neblig"],                                   # teils neblig (Tag)
-  # "nm____" => [ 6, "mist", "Teils neblig"],                                   # teils neblig (Nacht)
-    "nb____" => [ 6, "fog", "Nebelig"],                                         # neblig / Nebel
+    "ns____" => [ 6, "mist", "Teils neblig"],                                              # teils neblig (Tag)
+  # "nm____" => [ 6, "mist", "Teils neblig"],                                              # teils neblig (Nacht)
+    "nb____" => [ 6, "fog", "Nebelig"],                                                    # neblig / Nebel
 
 	# Schauer
 
@@ -342,26 +342,26 @@ my %wetteronlineToLox = (
 	# Schneeregenschauer
 
     # Schneeregenschauer (Tag und Nacht) bei leicht bewölkt
-    "wbsrs1" => [28, "cloudy_sleet_1", "Leicht bewölkt mit vereinzelten Schneeregenschauern"],                  # leicht bewölkt und vereinzelt Schneeregenschauer
-    "wbsrs2" => [28, "cloudy_sleet_1", "Leicht bewölkt mit Schneeregenschauern"],                              # leicht bewölkt und Schneeregenschauer
-    "wbsrs3" => [29, "cloudy_sleet_2", "Leicht bewölkt mit starken Schneeregenschauern"],                       # leicht bewölkt und Schneeregenschauer
+    "wbsrs1" => [28, "cloudy_sleet_1", "Leicht bewölkt mit vereinzelten Schneeregenschauern"],         # leicht bewölkt und vereinzelt Schneeregenschauer
+    "wbsrs2" => [28, "cloudy_sleet_1", "Leicht bewölkt mit Schneeregenschauern"],                      # leicht bewölkt und Schneeregenschauer
+    "wbsrs3" => [29, "cloudy_sleet_2", "Leicht bewölkt mit starken Schneeregenschauern"],              # leicht bewölkt und Schneeregenschauer
 
     # Schneeregenschauer (Tag und Nacht) bei bewölkt
-    "bwsrs1" => [28, "cloudy_sleet_1", "Bewölkt mit vereinzelten Schneeregenschauern"],                  # bewölkt und vereinzelt Schneeregenschauer
-    "bwsrs2" => [28, "cloudy_sleet_2", "Bewölkt mit Schneeregenschauern"],                              # bewölkt und Schneeregenschauer
-    "bwsrs3" => [29, "cloudy_sleet_2", "Bewölkt mit starken Schneeregenschauern"],                       # bewölkt und Schneeregenschauer
+    "bwsrs1" => [28, "cloudy_sleet_1", "Bewölkt mit vereinzelten Schneeregenschauern"],                # bewölkt und vereinzelt Schneeregenschauer
+    "bwsrs2" => [28, "cloudy_sleet_2", "Bewölkt mit Schneeregenschauern"],                             # bewölkt und Schneeregenschauer
+    "bwsrs3" => [29, "cloudy_sleet_2", "Bewölkt mit starken Schneeregenschauern"],                     # bewölkt und Schneeregenschauer
 
     # Schneeregenschauer (Tag und Nacht) bei bedeckt
-    "bdsrs1" => [25, "overcast_sleet_1", "Bedeckt mit Leichten Schneeregenschauern"],                    # bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer
-    "bdsrs2" => [26, "overcast_sleet_2", "Bedeckt mit Schneeregenschauern"],                            # bedeckt, Schneeregen oder Schneeregenschauer
-    "bdsrs3" => [27, "overcast_sleet_3", "Bedeckt mit ergiebigen Schneeregenschauern"],                  # bedeckt und ergiebiger Schneeregen
+    "bdsrs1" => [25, "overcast_sleet_1", "Bedeckt mit Leichten Schneeregenschauern"],                  # bedeckt, leichter Schneeregen oder vereinzelt Schneeregenschauer
+    "bdsrs2" => [26, "overcast_sleet_2", "Bedeckt mit Schneeregenschauern"],                           # bedeckt, Schneeregen oder Schneeregenschauer
+    "bdsrs3" => [27, "overcast_sleet_3", "Bedeckt mit ergiebigen Schneeregenschauern"],                # bedeckt und ergiebiger Schneeregen
 
     # Schneeregen
 
     # leicht bewölkt und Schneeregen (Tag und Nacht)
-    "wbsr1_" => [25, "cloudy_sleet_1", "Leicht bewölkt mit leichtem Schneeregen"],                            # leicht bewölkt und vereinzelt Schneeregen (Tag)
-    "wbsr2_" => [26, "cloudy_sleet_2", "Leicht bewölkt mit Schneeregen"],                                     # leicht bewölkt und Schneeregen (Tag)
-    "wbsr3_" => [27, "cloudy_sleet_2", "Leicht bewölkt mit starkem Schneeregen"],                             # leicht bewölkt und ergiebiger Schneeregen (Tag)
+    "wbsr1_" => [25, "cloudy_sleet_1", "Leicht bewölkt mit leichtem Schneeregen"],                     # leicht bewölkt und vereinzelt Schneeregen (Tag)
+    "wbsr2_" => [26, "cloudy_sleet_2", "Leicht bewölkt mit Schneeregen"],                              # leicht bewölkt und Schneeregen (Tag)
+    "wbsr3_" => [27, "cloudy_sleet_2", "Leicht bewölkt mit starkem Schneeregen"],                      # leicht bewölkt und ergiebiger Schneeregen (Tag)
 
     # bewölkt und Schneeregen (Tag und Nacht)
     "bwsr1_" => [25, "cloudy_sleet_1", "Bewölkt mit leichtem Schneeregen"],                            # bewölkt und vereinzelt Schneeregen (Tag)
@@ -376,14 +376,14 @@ my %wetteronlineToLox = (
     # Schneeschauer
 
     # leicht bewölkt und Schneeschauer
-    "wbsns1" => [23, "cloudy_snow_1", "Leicht bewölkt mit leichten Schneeschauern"],                        # leicht bewölkt und vereinzelt Schneeschauer (Tag)
-    "wbsns2" => [24, "cloudy_snow_1", "Leicht bewölkt mit Schneeschauern"],                                 # leicht bewölkt und Schneeschauer (Tag)
-    "wbsns3" => [24, "cloudy_snow_2", "Leicht bewölkt mit starken Schneeschauern"],                         # leicht bewölkt und starke Schneeschauer (Tag)
+    "wbsns1" => [23, "cloudy_snow_1", "Leicht bewölkt mit leichten Schneeschauern"],                   # leicht bewölkt und vereinzelt Schneeschauer (Tag)
+    "wbsns2" => [24, "cloudy_snow_1", "Leicht bewölkt mit Schneeschauern"],                            # leicht bewölkt und Schneeschauer (Tag)
+    "wbsns3" => [24, "cloudy_snow_2", "Leicht bewölkt mit starken Schneeschauern"],                    # leicht bewölkt und starke Schneeschauer (Tag)
 
     # bewölkt und Schneeschauer
-    "bwsns1" => [23, "cloudy_snow_1", "Bewölkt mit leichten Schneeschauern"],                        # bewölkt und vereinzelt Schneeschauer (Tag)
-    "bwsns2" => [24, "cloudy_snow_2", "Bewölkt mit Schneeschauern"],                                 # bewölkt und Schneeschauer (Tag)
-    "bwsns3" => [24, "cloudy_snow_2", "Bewölkt mit starken Schneeschauern"],                         # bewölkt und starke Schneeschauer (Tag)
+    "bwsns1" => [23, "cloudy_snow_1", "Bewölkt mit leichten Schneeschauern"],                          # bewölkt und vereinzelt Schneeschauer (Tag)
+    "bwsns2" => [24, "cloudy_snow_2", "Bewölkt mit Schneeschauern"],                                   # bewölkt und Schneeschauer (Tag)
+    "bwsns3" => [24, "cloudy_snow_2", "Bewölkt mit starken Schneeschauern"],                           # bewölkt und starke Schneeschauer (Tag)
 
     # bedeckt und Schneeschauer
     "bdsns1" => [23, "overcast_snow_1", "Bedeckt mit leichten Schneeschauern"],                        # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer
@@ -393,46 +393,46 @@ my %wetteronlineToLox = (
     # Schneefall
 
     # leicht bewölkt und Schneefall
-    "wbsn1_" => [20, "cloudy_snow_1", "Leicht bewölkt mit leichtem Schneefall"],                           # leicht bewölkt und vereinzelt Schneefall (Tag)
-    "wbsn2_" => [21, "cloudy_snow_2", "Leicht bewölkt mit Schneefall"],                                    # leicht bewölkt und Schneefall (Tag)
-    "wbsn3_" => [22, "cloudy_snow_2", "Leicht bewölkt mit starkem Schneefall"],                            # leicht bewölkt und starker Schneefall (Tag)
+    "wbsn1_" => [20, "cloudy_snow_1", "Leicht bewölkt mit leichtem Schneefall"],                        # leicht bewölkt und vereinzelt Schneefall (Tag)
+    "wbsn2_" => [21, "cloudy_snow_2", "Leicht bewölkt mit Schneefall"],                                 # leicht bewölkt und Schneefall (Tag)
+    "wbsn3_" => [22, "cloudy_snow_2", "Leicht bewölkt mit starkem Schneefall"],                         # leicht bewölkt und starker Schneefall (Tag)
 
     # bewölkt und Schneefall
-    "bwsn1_" => [20, "cloudy_snow_1", "Bewölkt mit leichtem Schneefall"],                           # bewölkt und vereinzelt Schneefall (Tag)
-    "bwsn2_" => [21, "cloudy_snow_2", "Bewölkt mit Schneefall"],                                    # bewölkt und Schneefall (Tag)
-    "bwsn3_" => [22, "cloudy_snow_2", "Bewölkt mit starkem Schneefall"],                            # bewölkt und starker Schneefall (Tag)
+    "bwsn1_" => [20, "cloudy_snow_1", "Bewölkt mit leichtem Schneefall"],                               # bewölkt und vereinzelt Schneefall (Tag)
+    "bwsn2_" => [21, "cloudy_snow_2", "Bewölkt mit Schneefall"],                                        # bewölkt und Schneefall (Tag)
+    "bwsn3_" => [22, "cloudy_snow_2", "Bewölkt mit starkem Schneefall"],                                # bewölkt und starker Schneefall (Tag)
 
     # bedeckt und Schneefall
-    "bdsn1_" => [20, "overcast_snow_1", "Bedeckt mit leichtem Schneefall"],                           # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer (Tag)
-    "bdsn2_" => [21, "overcast_snow_2", "Bedeckt mit Schneefall"],                                    # bedeckt, Schneefall oder Schneeschauer (Tag)
-    "bdsn3_" => [22, "overcast_snow_3", "Bedeckt mit ergiebigem Schneefall"],                         # bedeckt und ergiebiger Schneefall (Tag)
+    "bdsn1_" => [20, "overcast_snow_1", "Bedeckt mit leichtem Schneefall"],                             # bedeckt, leichter Schneefall oder vereinzelt Schneeschauer (Tag)
+    "bdsn2_" => [21, "overcast_snow_2", "Bedeckt mit Schneefall"],                                      # bedeckt, Schneefall oder Schneeschauer (Tag)
+    "bdsn3_" => [22, "overcast_snow_3", "Bedeckt mit ergiebigem Schneefall"],                           # bedeckt und ergiebiger Schneefall (Tag)
 
     # Schnegewitter
 
     # leicht bewölkt und Schneegewitter
-    "wbsg__" => [24, "cloudy_snowthunderstorm_1", "Leicht bewölkt mit vereinzelten Wintergewittern"],                     # leicht bewölkt und Schneegewitter (Tag)
+    "wbsg__" => [24, "cloudy_snowthunderstorm_1", "Leicht bewölkt mit vereinzelten Wintergewittern"],   # leicht bewölkt und Schneegewitter (Tag)
 
     # bewölkt und Schneegewitter
-    "bwsg__" => [24, "cloudy_snowthunderstorm_2", "Bewölkt mit Wintergewittern"],                                # bewölkt und Schneegewitter (Tag)
+    "bwsg__" => [24, "cloudy_snowthunderstorm_2", "Bewölkt mit Wintergewittern"],                       # bewölkt und Schneegewitter (Tag)
 
     # bedeckt und Schneegewitter
-    "bdsg__" => [24, "cloudy_snowthunderstorm_2", "Bedeckt mit Wintergewittern"],                                # bedeckt und Schneegewitter (Tag)
+    "bdsg__" => [24, "cloudy_snowthunderstorm_2", "Bedeckt mit Wintergewittern"],                       # bedeckt und Schneegewitter (Tag)
 
     # Gewitter
 
     # leicht bewölkt mit Gewitter (Tag und Nacht)
-    "wbg1__" => [18, "cloudy_thunderstorm_1", "Leicht bewölkt mit vereinzelten Gewittern"],                        # leicht bewölkt, vereinzelt Schauer und Gewitter (Tag)
-    "wbg2__" => [18, "cloudy_thunderstorm_2", "Leicht bewölkt mit Gewittern"],                                   # leicht bewölkt, Schauer und Gewitter (Tag)
-    "wbg3__" => [19, "cloudy_thunderstorm_3", "Leicht bewölkt mit kräftigen Gewittern"],                         # leicht bewölkt, Schauer und Gewitter (Tag)
+    "wbg1__" => [18, "cloudy_thunderstorm_1", "Leicht bewölkt mit vereinzelten Gewittern"],             # leicht bewölkt, vereinzelt Schauer und Gewitter (Tag)
+    "wbg2__" => [18, "cloudy_thunderstorm_2", "Leicht bewölkt mit Gewittern"],                          # leicht bewölkt, Schauer und Gewitter (Tag)
+    "wbg3__" => [19, "cloudy_thunderstorm_3", "Leicht bewölkt mit kräftigen Gewittern"],                # leicht bewölkt, Schauer und Gewitter (Tag)
 
     # Bewölkt mit Gewitter (Tag und Nacht)
-    "bwg1__" => [18, "cloudy_thunderstorm_1", "Bewölkt mit vereinzelten Gewittern"],                        # bewölkt, vereinzelt Schauer und Gewitter (Tag)
-    "bwg2__" => [18, "cloudy_thunderstorm_2", "Bewölkt mit Gewittern"],                                   # Gewitter (Tag)
-    "bwg3__" => [19, "cloudy_thunderstorm_3", "Bewölkt mit kräftigen Gewittern"],                         # starke Gewitter (Tag)
+    "bwg1__" => [18, "cloudy_thunderstorm_1", "Bewölkt mit vereinzelten Gewittern"],                    # bewölkt, vereinzelt Schauer und Gewitter (Tag)
+    "bwg2__" => [18, "cloudy_thunderstorm_2", "Bewölkt mit Gewittern"],                                 # Gewitter (Tag)
+    "bwg3__" => [19, "cloudy_thunderstorm_3", "Bewölkt mit kräftigen Gewittern"],                       # starke Gewitter (Tag)
 
     # Bedeckt mit Gewitter (Tag und Nacht)
     "bdg1__" => [18, "overcast_thunderstorm_1", "Bedeckt mit vereinzelten Gewittern"],                                   # bedeckt, vereinzelt Schauer und Gewitter
-    "bdg2__" => [18, "overcast_thunderstorm_2", "Bedeckt mit Gewittern"],                                   # bedeckt, Schauer und Gewitter (Tag)
+    "bdg2__" => [18, "overcast_thunderstorm_2", "Bedeckt mit Gewittern"],                               # bedeckt, Schauer und Gewitter (Tag)
 
     # gefrierender Regen
 
@@ -633,10 +633,10 @@ if ( $current ) {
     $currentData{dewpoint} = getFormatted('%.1f', $resCurrent, 'current', 'dew_point', 'celsius');                             # cur_dp, dew point in °C
 
     # visibility - not provided by API
-    $currentData{visibility} = getFormatted('%.0f', $resCurrent, 'hours', 0, 'visibility');                                    # cur_vis, visibility in meters
+    $currentData{visibility} = getFormattedMultiplied('%.2f', 0.001, $resCurrent, 'hours', 0, 'visibility');                   # cur_vis, visibility in km (API provides meters)
 
     # solar radiation
-    $currentData{solarRadiation} = undef;                                                                                      # cur_sr 
+    $currentData{solarRadiation} = undef;                                                                                      # cur_sr, solar radiation in W/m²
 
     # there is no UV index in the API response for current weather data, nor on the web page itself or 
     # hourly forecast data, but there is one for daily forecast
@@ -644,7 +644,7 @@ if ( $current ) {
     $currentData{uvIndex} = do {
         my $v = eval { $resDaily->[0]{uv_index}{value} };
         defined $v ? ( sprintf("%.0f", $v ) + 0 ) : undef;
-    };                                                                                                                         # cur_uvi
+    };                                                                                                                         # cur_uvi, UV index
 
     # precipitation
     my %precipitation;

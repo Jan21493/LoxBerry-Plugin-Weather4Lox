@@ -871,7 +871,7 @@ function renderAll() {
   // Side stats (precipitation, pressure); visibility is now in extra-stats row
   document.getElementById('statPrecip').textContent = (cPrecip.rainToday != null ? cPrecip.rainToday : 0) + ' mm';
   document.getElementById('statPressure').innerHTML = (c.pressure != null ? c.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
-  document.getElementById('statVisibility').innerHTML = (c.visibility != null ? (c.visibility / 1000).toFixed(1) : '--') + ' <small style="color:var(--text-muted)">km</small>';
+  document.getElementById('statVisibility').innerHTML = (c.visibility != null ? c.visibility.toFixed(1) : '--') + ' <small style="color:var(--text-muted)">km</small>';
 
   // Extra stats (sunrise/sunset + weather details + visibility)
   document.getElementById('statSunrise').textContent = sunrise;
@@ -1330,7 +1330,7 @@ function selectHour(el, dataArray) {
   // Update stat boxes with hourly data
   document.getElementById('statHumidity').textContent = (d.humidity != null ? d.humidity : '--') + '%';
   document.getElementById('statPressure').innerHTML = (d.pressure != null ? d.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
-  document.getElementById('statVisibility').innerHTML = (d.visibility != null ? (d.visibility / 1000).toFixed(1) : '--') + ' <small style="color:var(--text-muted)">km</small>';
+  document.getElementById('statVisibility').innerHTML = (d.visibility != null ? d.visibility.toFixed(1) : '--') + ' <small style="color:var(--text-muted)">km</small>';
   document.getElementById('statDewpoint').textContent = (d.dewpoint != null ? d.dewpoint.toFixed(1) : '--') + '\u00b0';
   document.getElementById('statPrecip').textContent = (d.rainAmount != null ? d.rainAmount : 0) + ' mm';
   document.getElementById('statUVI').textContent = d.uvi != null ? d.uvi : '--';
