@@ -156,13 +156,17 @@ my $windSpeed = getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', '
 my $windGust = getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'windGust');
 
 # Only set wind data if all values are defined, otherwise we might overwrite existing valid data with undefined values
-if ( (defined $windDir && defined $windSpeed && defined $windGust) || !defined $cur->{wind} ) {
-$cur->{wind} = {
-    direction       => $windDir,                                                                  # cur_w_dir     - wind direction (degree)
-    cardinal        => getWindDirCardinal($windDir),                                              # to calculate cur_w_dirdes  - wind direction description
-    speed           => $windSpeed,                                                                # cur_w_sp      - wind speed (km/h)
-    gust            => $windGust,                                                                 # cur_w_gu      - wind gust (km/h)
-};
+if ( (defined $windDir && defined $windSpeed)) {
+    $cur->{wind} = {
+        direction       => $windDir,                                                                  # cur_w_dir     - wind direction (degree)
+        cardinal        => getWindDirCardinal($windDir),                                              #               - cardinal and intercardinal directions, "N", "NE", "E", "SE", "S", "SW", "W", "NW" in english
+        speed           => $windSpeed,                                                                # cur_w_sp      - wind speed (km/h)
+    };
+}
+# wind gust may not be provided at all times
+if (defined $windGust) {
+    $cur->{wind}{gust} = $windGust;                                                                # cur_w_gu      - wind gust (km/h)
+}
 
 # other weather data - only set if defined, otherwise we might overwrite existing valid data with undefined values
 my $humidity = getFormatted('%.1f', $resCurrent, 'observations', 0, 'humidity');
@@ -206,8 +210,8 @@ $cur->{precipitation} = \%precipitation;
 
 # Add station information and metadata
 
-my $stationID = getFormatted('', $resCurrent, 'observations', 0, 'stationID'); # station ID from WU data, e.g. ISCHLESW69
-my $obsTimeLocal = getFormatted('', $resCurrent, 'observations', 0, 'obsTimeLocal'); # observation time in local time, e.g. 2026-03-16 00:44:29
+my $stationID = getValue($resCurrent, 'observations', 0, 'stationID'); # station ID from WU data, e.g. ISCHLESW69
+my $obsTimeLocal = getValue($resCurrent, 'observations', 0, 'obsTimeLocal'); # observation time in local time, e.g. 2026-03-16 00:44:29
 
 my $dtCurrent = DateTime->now( time_zone => $timezone );
 

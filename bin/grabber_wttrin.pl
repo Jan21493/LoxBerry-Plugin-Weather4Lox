@@ -27,7 +27,7 @@ use warnings;
 use LoxBerry::System;
 use LoxBerry::Log;
 use LWP::UserAgent;
-use JSON qw( decode_json );
+use JSON::PP;
 use File::Copy;
 use Getopt::Long;
 use Time::Piece;
@@ -152,7 +152,7 @@ sub wttr_to_lox {
 }
 
 # Get weather data from WTTR.in (API request)
-my $decoded_json = apiCall(
+my $results = apiCall(
 	url => "$url/$stationid?lang=$lang&M&3&format=j1",
 	info => "for Location $stationid (Current, Daily, and Hourly Weather Data)",
 );
@@ -162,11 +162,11 @@ my $decoded_json = apiCall(
 ##########################################################################
 
 my $timezone = _systemTimezone();
-my $lat      = $decoded_json->{nearest_area}[0]->{latitude};
-my $lon      = $decoded_json->{nearest_area}[0]->{longitude};
+my $lat      = $results->{nearest_area}[0]->{latitude};
+my $lon      = $results->{nearest_area}[0]->{longitude};
 
 # Derive generatedAt from current observation time, looks that wttr.in is always using am/pm time format
-my $obs_t = Time::Piece->strptime($decoded_json->{current_condition}[0]->{localObsDateTime}, "%Y-%m-%d %R %p");
+my $obs_t = Time::Piece->strptime($results->{current_condition}[0]->{localObsDateTime}, "%Y-%m-%d %R %p");
 my $currentEpoch = $obs_t->epoch;
 my $generatedAt  = _epochToIso($currentEpoch, $timezone);
 
@@ -180,8 +180,8 @@ my ($tzShort, $tzOffset);
     POSIX::tzset();
 }
 
-my $city    = Encode::decode("UTF-8", $decoded_json->{nearest_area}[0]->{areaName}[0]->{value});
-my $country = Encode::decode("UTF-8", $decoded_json->{nearest_area}[0]->{country}[0]->{value});
+my $city    = Encode::decode("UTF-8", $results->{nearest_area}[0]->{areaName}[0]->{value});
+my $country = Encode::decode("UTF-8", $results->{nearest_area}[0]->{country}[0]->{value});
 
 my $location = {
     city        => $city,
@@ -201,7 +201,7 @@ my $location = {
 
 if ( $current ) {
 
-    my $cur = $decoded_json->{current_condition}[0];
+    my $cur = $results->{current_condition}[0];
 
     LOGINF "Reading current weather data from API response into W4L structure.";
 
@@ -215,11 +215,11 @@ if ( $current ) {
     # sunrise / sunset from astronomy data
     my ($sunrise, $sunset);
     eval {
-        my $sr_t = Time::Piece->strptime($decoded_json->{weather}[0]->{astronomy}[0]{sunrise}, "%R %p");
+        my $sr_t = Time::Piece->strptime($results->{weather}[0]->{astronomy}[0]{sunrise}, "%R %p");
         $sunrise = sprintf("%02d:%02d", $sr_t->hour, $sr_t->min);
     };
     eval {
-        my $ss_t = Time::Piece->strptime($decoded_json->{weather}[0]->{astronomy}[0]{sunset}, "%R %p");
+        my $ss_t = Time::Piece->strptime($results->{weather}[0]->{astronomy}[0]{sunset}, "%R %p");
         $sunset = sprintf("%02d:%02d", $ss_t->hour, $ss_t->min);
     };
 
@@ -318,9 +318,9 @@ if ( $daily ) {
 
     LOGINF "Reading daily weather data from API response into W4L structure.";
 
-    for my $results ( @{$decoded_json->{weather}} ) {
+    for my $resDay ( @{$results->{weather}} ) {
 
-        my $dt = Time::Piece->strptime($results->{date}, "%Y-%m-%d");
+        my $dt = Time::Piece->strptime($resDay->{date}, "%Y-%m-%d");
 
         # time
         my %time;
@@ -330,11 +330,11 @@ if ( $daily ) {
         # sunrise / sunset from astronomy data
         my ($sunrise, $sunset);
         eval {
-            my $sr_t = Time::Piece->strptime($results->{astronomy}[0]{sunrise}, "%R %p");
+            my $sr_t = Time::Piece->strptime($resDay->{astronomy}[0]{sunrise}, "%R %p");
             $sunrise = sprintf("%02d:%02d", $sr_t->hour, $sr_t->min);
         };
         eval {
-            my $ss_t = Time::Piece->strptime($results->{astronomy}[0]{sunset}, "%R %p");
+            my $ss_t = Time::Piece->strptime($resDay->{astronomy}[0]{sunset}, "%R %p");
             $sunset = sprintf("%02d:%02d", $ss_t->hour, $ss_t->min);
         };
 
@@ -348,7 +348,7 @@ if ( $daily ) {
         my @d_pressures;
         my @d_dewps;
         my @d_viss;
-        for my $hr ( @{$results->{hourly}} ) {
+        for my $hr ( @{$resDay->{hourly}} ) {
             push @d_pops, $hr->{chanceofrain} if $hr->{chanceofrain};
             $d_prec += $hr->{precipMM} if $hr->{precipMM};  # 3-hourly FC, but value is in (mm/3 hours)
             push @d_gusts, $hr->{WindGustKmph} if $hr->{WindGustKmph};
@@ -377,12 +377,12 @@ if ( $daily ) {
 
         # temperature
         my %tempMax;
-        $tempMax{air}       = defined $results->{maxtempC} ? sprintf("%.1f", $results->{maxtempC}) + 0 : undef;
+        $tempMax{air}       = defined $resDay->{maxtempC} ? sprintf("%.1f", $resDay->{maxtempC}) + 0 : undef;
         $tempMax{feelsLike} = undef;  # not available per-day from wttr.in
         $tempMax{heatIndex} = undef;
 
         my %tempMin;
-        $tempMin{air}       = defined $results->{mintempC} ? sprintf("%.1f", $results->{mintempC}) + 0 : undef;
+        $tempMin{air}       = defined $resDay->{mintempC} ? sprintf("%.1f", $resDay->{mintempC}) + 0 : undef;
         $tempMin{feelsLike} = undef;
         $tempMin{windChill} = undef;
 
@@ -411,20 +411,20 @@ if ( $daily ) {
         $precipitation{probability} = $d_pops[-1] ? sprintf("%.0f", $d_pops[-1]) + 0 : undef;
         $precipitation{rainHigh}    = $d_prec > 0 ? sprintf("%.2f", $d_prec) + 0 : undef;
         $precipitation{rainLow}     = undef;
-        $precipitation{snowHigh}    = defined $results->{totalSnow_cm} && $results->{totalSnow_cm} > 0
-                                        ? sprintf("%.1f", $results->{totalSnow_cm}) + 0 : undef;
+        $precipitation{snowHigh}    = defined $resDay->{totalSnow_cm} && $resDay->{totalSnow_cm} > 0
+                                        ? sprintf("%.1f", $resDay->{totalSnow_cm}) + 0 : undef;
         $precipitation{snowLow}     = undef;
         $precipitation{duration}    = undef;
         $precipitation{type}        = "none";
 
         # weather codes - use noon (index 4) hourly data
         my %weatherCode;
-        my $d_wwo_id = $results->{hourly}[4]->{weatherCode};
+        my $d_wwo_id = $resDay->{hourly}[4]->{weatherCode};
         my ($loxoneCode, $w4lCode) = wttr_to_lox($d_wwo_id);
         $weatherCode{loxone}      = "$loxoneCode";
         $weatherCode{weather4lox} = $w4lCode;
-        my $wdes = $results->{hourly}[4]->{'lang_' . $lang}[0]{value};
-        $wdes = $results->{hourly}[4]->{weatherDesc}[0]{value} if !$wdes;
+        my $wdes = $resDay->{hourly}[4]->{'lang_' . $lang}[0]{value};
+        $wdes = $resDay->{hourly}[4]->{weatherDesc}[0]{value} if !$wdes;
         $weatherCode{description} = $wdes;
         $weatherCode{image}       = undef;
         $weatherCode{metar}       = getMetarCode($w4lCode);
@@ -440,11 +440,11 @@ if ( $daily ) {
         # moonrise / moonset
         my ($moonrise, $moonset);
         eval {
-            my $mr_t = Time::Piece->strptime($results->{astronomy}[0]{moonrise}, "%R %p");
+            my $mr_t = Time::Piece->strptime($resDay->{astronomy}[0]{moonrise}, "%R %p");
             $moonrise = sprintf("%02d:%02d", $mr_t->hour, $mr_t->min);
         };
         eval {
-            my $ms_t = Time::Piece->strptime($results->{astronomy}[0]{moonset}, "%R %p");
+            my $ms_t = Time::Piece->strptime($resDay->{astronomy}[0]{moonset}, "%R %p");
             $moonset = sprintf("%02d:%02d", $ms_t->hour, $ms_t->min);
         };
         $moon{rise}      = $moonrise // undef;
@@ -463,7 +463,7 @@ if ( $daily ) {
             precipitation  => \%precipitation,
             weatherCode    => \%weatherCode,
             moon           => \%moon,
-            uvIndex        => defined $results->{uvIndex} ? sprintf("%.1f", $results->{uvIndex}) + 0 : undef,
+            uvIndex        => defined $resDay->{uvIndex} ? sprintf("%.1f", $resDay->{uvIndex}) + 0 : undef,
             visibility     => defined $d_visavg ? sprintf("%.1f", $d_visavg) + 0 : undef,
             solarRadiation => undef,
             heatIndex      => undef,
@@ -522,7 +522,7 @@ if ( $hourly ) {
     my %viss;   my $viss;
     my @epoches;
 
-    for my $daily_entry ( @{$decoded_json->{weather}} ) {
+    for my $daily_entry ( @{$results->{weather}} ) {
         for my $hr ( @{$daily_entry->{hourly}} ) {
             my $datetime = $daily_entry->{date} . " " . $hr->{time}/100 . ":00";
             my $t = Time::Piece->strptime($datetime, "%Y-%m-%d %H:%M");
