@@ -864,8 +864,8 @@ function renderAll() {
   document.getElementById('heroTemp').innerHTML = (cTemp.air != null ? cTemp.air.toFixed(1) : '--') + '<sup>\u00b0C</sup>';
   document.getElementById('heroFeelsLike').textContent = (cTemp.feelsLike != null ? cTemp.feelsLike.toFixed(1) : '--') + '\u00b0C';
   document.getElementById('heroDesc').textContent = cWx.description || '--';
-  document.getElementById('heroWind').textContent = (cWind.speed != null ? cWind.speed : '--') + ' km/h ' + getWindDirLabel(cWind.direction) + ', ';
-  document.getElementById('heroGust').textContent = (cWind.gust != null ? cWind.gust : '--') + ' km/h';
+  document.getElementById('heroWind').textContent = (cWind.speed != null ? cWind.speed : '--') + ' km/h ' + getWindDirLabel(cWind.direction);
+  document.getElementById('heroGust').textContent = (cWind.gust != null ? ', ' + cWind.gust + ' km/h': '');
   // Hero icon with moon phase handling
   updateHeroIcon(c, resolveIcon(cWx.weather4lox, c.isNight, c.moon ? c.moon.age : 0));
   // Side stats (precipitation, pressure); visibility is now in extra-stats row
@@ -1303,7 +1303,7 @@ function selectHour(el, dataArray) {
 
   document.getElementById('heroTemp').innerHTML = (d.temp != null ? d.temp.toFixed(1) : '--') + '<sup>\u00b0C</sup>';
   document.getElementById('heroDesc').textContent = d.desc || '--';
-  if ((d.wind != null && d.wind > 30) || (d.gust != null && d.gust > 40)) {
+  if ((d.wind != null && d.wind >= 30) || (d.gust != null && d.gust >= 40)) {
     document.getElementById('heroWindIcon').innerHTML = '<svg width="32" height="32" viewBox="0 0 30 32" style="flex-shrink:0;opacity:0.6">' +
         '<path style="fill:var(--text-primary);fill-opacity:1;stroke-width:0" d="M 0,4 H 1.95 V 32 H 0 Z"/>' +
         '<path style="fill:#ff0000;fill-opacity:1;stroke-width:0" d="m 6.3416632,12.673849 22.2106438,1.620092 c 0.199942,-0.002 0.321607,0.08323 0.558941,-0.02258 1.922065,-1.981135 2.141711,-3.78535 1.231269,-6.5102568 C 28.188485,6.9085825 8.4566882,0 8.4566882,0 L 1.4,4.9440788 M 5.8140514,10.852224 2.2043567,5.1579359 7.7340222,1.2198101 C 5.704458,3.6712477 4.7266529,6.0341129 5.8140514,10.852224 Z M 16.15081,12.641127 11.866242,12.302646 C 10.222169,8.8145817 10.618786,4.8907252 13.315264,2.7146403 l 4.239745,1.4391758 C 15.237783,6.4175417 14.67682,9.0125781 16.15081,12.641127 Z m 8.75512,0.681203 -3.927562,-0.288468 C 19.816789,9.306354 20.138702,7.9699791 22.232537,5.7115793 l 3.796472,1.2707433 C 24.268014,8.9152315 24.054953,10.393666 24.90593,13.32233 Z m 4.065179,0.296842 -0.117172,-5.5e-5 C 28.222855,11.204754 28.44063,9.8651674 29.667422,8.2363771 l 0.157064,0.051995 0.02243,-0.062291 c 0.691531,2.4748409 0.335029,3.8411389 -0.875812,5.3930949 z"/>' +
@@ -1321,9 +1321,9 @@ function selectHour(el, dataArray) {
   }
   document.getElementById('heroWind').textContent =
     (liveData.lang && liveData.lang.theme.wind_from ? liveData.lang.theme.wind_from + ' ' : ' ') +
-    getWindDirLabel(d.windDir) + ' ' + (liveData.lang && liveData.lang.theme.with ? ' ' + liveData.lang.theme.with + ' ' : ' ') + ' ' + (d.wind != null ? d.wind : '--') + ' km/h' + ', ';
+    getWindDirLabel(d.windDir) + ' ' + (liveData.lang && liveData.lang.theme.with ? ' ' + liveData.lang.theme.with + ' ' : ' ') + ' ' + (d.wind != null ? d.wind : '--') + ' km/h';
   document.getElementById('heroGust').textContent =
-    (liveData.lang && liveData.lang.theme.gusts ? liveData.lang.theme.gusts + ' ' + liveData.lang.theme.up_to + ' ' : '') + (d.gust != null ? d.gust : '--') + ' km/h';
+    (liveData.lang && liveData.lang.theme.gusts && d.gust != null && d.gust > 0) ? ', ' + liveData.lang.theme.gusts + ' ' + liveData.lang.theme.up_to + ' ' + d.gust + ' km/h' : '';
   document.getElementById('heroFeelsLike').textContent = (liveData.lang && liveData.lang.theme.feelsLike ? liveData.lang.theme.feelsLike + ' ' : ' ') + (d.feelsLike != null ? d.feelsLike.toFixed(1) : '--') + '\u00b0C';
   // Hero icon with moon phase handling
   updateHeroIcon(d, resolveIcon(d.weatherCode, d.isNight, d.moonAge));
@@ -1860,7 +1860,7 @@ function highlightChartPoint(svgId, hourValue) {
 // ===== HIDE EMPTY DATA =====
 function hideEmptyStats() {
   var statIds = ['statHumidity', 'statPressure', 'statVisibility',
-                 'statDewpoint', 'statPrecip', 'statUVI', 'statClouds', 'statGusts', 'statFeelslike',
+                 'statDewpoint', 'statPrecip', 'statUVI', 'statClouds', 'statFeelslike',
                  'statSunrise', 'statSunset'];
   for (var i = 0; i < statIds.length; i++) {
     var el = document.getElementById(statIds[i]);
