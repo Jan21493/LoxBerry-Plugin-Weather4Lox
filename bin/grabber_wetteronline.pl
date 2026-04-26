@@ -632,7 +632,7 @@ if ( $current ) {
     # dew point
     $currentData{dewpoint} = getFormatted('%.1f', $resCurrent, 'current', 'dew_point', 'celsius');                             # cur_dp, dew point in °C
 
-    # visibility - not provided by API
+    # visibility
     $currentData{visibility} = getFormattedMultiplied('%.2f', 0.001, $resCurrent, 'hours', 0, 'visibility');                   # cur_vis, visibility in km (API provides meters)
 
     # solar radiation
@@ -1007,27 +1007,27 @@ if ( $hourly ) {
                 snowHigh      => getFormatted('%.2f', $results, 'precipitation', 'details', 'snow_height', 'centimeter', 'interval_end'),        # hfc<X>_snow        - snow height (cm) up to
             },
             weatherCode => {
-                loxone       => $loxoneCode,                                              # hfc<X>_we_code   - Loxone code
-                weather4lox  => $w4lCode,                                                 # hfc<X>_we_icon   - Weather4Lox icon code
-                description  => $description,                                             # hfc<X>_we_des    - description
-                metar        => getMetarCode($w4lCode),                                   #                  - METAR code
+                loxone       => $loxoneCode,                                                       # hfc<X>_we_code   - Loxone code
+                weather4lox  => $w4lCode,                                                          # hfc<X>_we_icon   - Weather4Lox icon code
+                description  => $description,                                                      # hfc<X>_we_des    - description
+                metar        => getMetarCode($w4lCode),                                            #                  - METAR code
             },
             moon => {
-                age          => sprintf("%.2f", $moonage) + 0,                            # hfc<X>_moon_a    - moon age in days
-                percent      => sprintf("%.2f", $moonillum * 100) + 0,                    # hfc<X>_moon_p    - moon percentage
-                phase        => sprintf("%.2f", $moonphase * 100) + 0,                    # hfc<X>_moon_ph   - moon phase
-                direction    => getMoonDirection($moonage),                               #                  - moon direction (waxing, waning)
+                age          => sprintf("%.2f", $moonage) + 0,                                     # hfc<X>_moon_a    - moon age in days
+                percent      => sprintf("%.2f", $moonillum * 100) + 0,                             # hfc<X>_moon_p    - moon percentage
+                phase        => sprintf("%.2f", $moonphase * 100) + 0,                             # hfc<X>_moon_ph   - moon phase
+                direction    => getMoonDirection($moonage),                                        #                  - moon direction (waxing, waning)
 
             },
-            humidity         => getPercentage('%.1f', $results, 'humidity'),              # hfc<X>_hu        - humidity
-            pressure         => getFormatted('%.0f', $results, 'air_pressure', 'hpa'),    # hfc<X>_pr        - air pressure (hPa)
-            dewpoint         => getFormatted('%.1f', $results, 'dew_point', 'celsius'),   # hfc<X>_dp        - dew point (°C)
-            uvIndex          => getFormatted('%.1f', $results, 'uv_index', 'value'),      # hfc<X>_uvi       - UV index
-            visibility       => getFormatted('%.0f', $results, 'visibility'),             # hfc<X>_vis       - visibility (m/km as needed)
-            solarRadiation   => undef,                                                    # hfc<X>_sr        - solar radiation (not present)
-            ozone            => undef,                                                    # hfc<X>_ozone     - ozone (not present)
-            cloudCover       => skyConditionFromWoCode($symbol),                          # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
-            isNight          => $isNighttime,                                             # get nighttime information from sunrise / sunset, alternate solution woudl be from symbol code
+            humidity         => getPercentage('%.1f', $results, 'humidity'),                       # hfc<X>_hu        - humidity
+            pressure         => getFormatted('%.0f', $results, 'air_pressure', 'hpa'),             # hfc<X>_pr        - air pressure (hPa)
+            dewpoint         => getFormatted('%.1f', $results, 'dew_point', 'celsius'),            # hfc<X>_dp        - dew point (°C)
+            uvIndex          => getFormatted('%.1f', $results, 'uv_index', 'value'),               # hfc<X>_uvi       - UV index
+            visibility       => getFormattedMultiplied('%.0f', 0.001, $results, 'visibility'),     # hfc<X>_vis       - visibility (m/km as needed), API provides meters
+            solarRadiation   => undef,                                                             # hfc<X>_sr        - solar radiation (not present)
+            ozone            => undef,                                                             # hfc<X>_ozone     - ozone (not present)
+            cloudCover       => skyConditionFromWoCode($symbol),                                   # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
+            isNight          => $isNighttime,                                                      # get nighttime information from sunrise / sunset, alternate solution woudl be from symbol code
         };
         $hour++;
     }

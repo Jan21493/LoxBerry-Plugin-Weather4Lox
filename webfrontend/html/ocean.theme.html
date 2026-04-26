@@ -871,7 +871,6 @@ function renderAll() {
   // Side stats (precipitation, pressure); visibility is now in extra-stats row
   document.getElementById('statPrecip').textContent = (cPrecip.rainToday != null ? cPrecip.rainToday : 0) + ' mm';
   document.getElementById('statPressure').innerHTML = (c.pressure != null ? c.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
-  document.getElementById('statVisibility').innerHTML = (c.visibility != null ? c.visibility.toFixed(1) : '--') + ' <small style="color:var(--text-muted)">km</small>';
 
   // Extra stats (sunrise/sunset + weather details + visibility)
   document.getElementById('statSunrise').textContent = sunrise;
@@ -880,6 +879,7 @@ function renderAll() {
   document.getElementById('statHumidity').textContent = (c.humidity != null ? c.humidity : '--') + '%';
   document.getElementById('statUVI').textContent = c.uvIndex != null ? c.uvIndex : '--';
   document.getElementById('statClouds').textContent = (c.cloudCover != null ? c.cloudCover : '--') + '%';
+  document.getElementById('statVisibility').innerHTML = (c.visibility != null ? c.visibility.toFixed(1) : '--') + ' <small style="color:var(--text-muted)">km</small>';
 
   // Render temperature charts
   renderTempChart('tempChartHeute', hourlyTodayRendered);
