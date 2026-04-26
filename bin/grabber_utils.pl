@@ -27,6 +27,21 @@ use File::Copy;
 use JSON::PP;
 use Encode qw(encode_utf8);
 use POSIX qw(strftime);
+
+##########################################################################
+# Unit conversion constants (metric <-> imperial)
+# Defined here for grabbers. datatoloxone.pl also defines the same set
+# for compile-time inlining; the redefinition warnings are suppressed there
+# via { no warnings 'redefine'; require grabber_utils.pl }.
+
+use constant MM_TO_INCH    => 0.0393700787;  # millimetres to inches
+use constant CM_TO_INCH    => 0.393700787;   # centimetres to inches
+use constant KMH_TO_MPH    => 0.621371192;   # km/h to mph
+use constant C_TO_F_FACTOR => 1.8;           # Celsius to Fahrenheit (multiply)
+use constant C_TO_F_OFFSET => 32;            # Celsius to Fahrenheit (add)
+use constant HPA_TO_INHG   => 0.0295301;     # hPa to inHg
+# M_TO_FT is only in grabber_utils.pl (not in datatoloxone.pl)
+use constant M_TO_FT       => 3.28084;       # metres to feet
 my $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
 
 ##########################################################################
@@ -912,6 +927,43 @@ sub readJsonFile {
     LOGOK "Read $filename weather data as JSON from $filename";
 
     return $data;
+}
+
+
+##########################################################################
+# Unit conversion helper
+# Converts a metric value to the target system (metric or imperial).
+# Parameters:
+#   $value   - numeric value to convert (undef-safe; returns undef if undef)
+#   $unit    - source unit as string: 'C', 'mm', 'cm', 'km/h', 'hPa', 'm'
+#   $metric  - true  => keep metric value unchanged
+#              false => convert to imperial equivalent
+# Returns:
+#   Converted value (number) or undef if $value was undef.
+# Supported conversions (metric -> imperial):
+#   C     -> Fahrenheit  ($v * C_TO_F_FACTOR + C_TO_F_OFFSET)
+#   mm    -> inch        ($v * MM_TO_INCH)
+#   cm    -> inch        ($v * CM_TO_INCH)
+#   km/h  -> mph         ($v * KMH_TO_MPH)
+#   hPa   -> inHg        ($v * HPA_TO_INHG)
+#   m     -> ft          ($v * M_TO_FT, where M_TO_FT = 3.28084)
+
+sub convert_unit {
+    my ($value, $unit, $metric) = @_;
+
+    return undef unless defined $value;
+    return $value if $metric;   # already in the target system
+
+    if    ($unit eq 'C')    { return $value * C_TO_F_FACTOR() + C_TO_F_OFFSET() }
+    elsif ($unit eq 'mm')   { return $value * MM_TO_INCH() }
+    elsif ($unit eq 'cm')   { return $value * CM_TO_INCH() }
+    elsif ($unit eq 'km/h') { return $value * KMH_TO_MPH() }
+    elsif ($unit eq 'hPa')  { return $value * HPA_TO_INHG() }
+    elsif ($unit eq 'm')    { return $value * M_TO_FT() }
+
+    # Unknown unit – return unchanged and log a warning if possible
+    eval { LOGWARN "convert_unit: unknown unit '$unit' – value returned unchanged" };
+    return $value;
 }
 
 

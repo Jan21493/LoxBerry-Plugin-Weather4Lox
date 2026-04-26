@@ -130,7 +130,7 @@ Added by `grabber_openmeteo_airquality.pl`. Values are levels 0-7 (converted fro
 | `probability` | number       | %    | Probability of precipitation             |
 | `rain1hr`     | number       | mm   | Precipitation in the last hour           |
 | `rainToday`   | number       | mm   | Total precipitation today                |
-| `snow1h`      | number\|null | cm   | Snow in the last hour                    |
+| `snow1hr`     | number\|null | cm   | Snow in the last hour                    |
 | `snowToday`   | number\|null | cm   | Total snow today                         |
 | `type`        | string       | --   | Precipitation type: `"none"`, `"rain"`, `"snow"`, `"mixed"` |
 
