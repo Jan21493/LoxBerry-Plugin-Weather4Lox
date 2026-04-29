@@ -33,5 +33,6 @@ a2enmod headers
 # apt-get update
 # apt-get install -y libdatetime-format-iso8601-perl
 
+echo "<INFO> POSTROOT script completed!"
 # Exit with Status 0
 exit 0
