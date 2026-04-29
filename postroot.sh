@@ -25,9 +25,8 @@ echo "<INFO> Reconfigure Timezone - just to make sure..."
 dpkg-reconfigure -f noninteractive tzdata
 
 # Add Apache Config for WU4Lox with that requires the 'Headers' module to be enabled
-echo "<INFO> Adding Apache2 headers module for WU4Lox and restarting Apache2"
+echo "<INFO> Adding Apache2 headers module"
 a2enmod headers
-systemctl restart apache2
 
 # moved to dpkg/apt
 # echo "<INFO> Installing Perl Module DateTime::Format::ISO8601"
