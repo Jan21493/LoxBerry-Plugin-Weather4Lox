@@ -1319,11 +1319,12 @@ function selectHour(el, dataArray) {
         '<path style="fill:var(--bg-primary);fill-opacity:1;stroke-width:0" d="m 22.273079,22.490288 c 0.252723,-1.159118 0.794844,-2.256653 1.432642,-2.900414 0.50291,-0.507612 1.449291,-1.117715 1.627626,-1.049281 0.262049,0.100558 -0.496718,2.05476 -1.056426,2.720819 -0.399026,0.474847 -0.925438,0.890193 -1.532627,1.209261 l -0.527359,0.27712 z" />' +
       '</svg>';
   }
+  var windGust = (d.gust != null && d.gust > 0) ? d.gust : null;
+  var windGustText = (windGust != null) ? ((liveData.lang && liveData.lang.theme.gusts ? ' ' + liveData.lang.theme.gusts + ' ' : ' ') + (liveData.lang && liveData.lang.theme.up_to ? liveData.lang.theme.up_to + ' ' : '') + windGust + ' km/h') : '';
   document.getElementById('heroWind').textContent =
     (liveData.lang && liveData.lang.theme.wind_from ? liveData.lang.theme.wind_from + ' ' : ' ') +
-    getWindDirLabel(d.windDir) + ' ' + (liveData.lang && liveData.lang.theme.with ? ' ' + liveData.lang.theme.with + ' ' : ' ') + ' ' + (d.wind != null ? d.wind : '--') + ' km/h';
-  document.getElementById('heroGust').textContent =
-    (liveData.lang && liveData.lang.theme.gusts && d.gust != null && d.gust > 0) ? ', ' + liveData.lang.theme.gusts + ' ' + liveData.lang.theme.up_to + ' ' + d.gust + ' km/h' : '';
+    getWindDirLabel(d.windDir) + ' ' + (liveData.lang && liveData.lang.theme.with ? ' ' + liveData.lang.theme.with + ' ' : ' ') + (d.wind != null ? d.wind : '--') + ' km/h' + (windGust ? ',' : '');
+  document.getElementById('heroGust').textContent = windGustText;
   document.getElementById('heroFeelsLike').textContent = (liveData.lang && liveData.lang.theme.feelsLike ? liveData.lang.theme.feelsLike + ' ' : ' ') + (d.feelsLike != null ? d.feelsLike.toFixed(1) : '--') + '\u00b0C';
   // Hero icon with moon phase handling
   updateHeroIcon(d, resolveIcon(d.weatherCode, d.isNight, d.moonAge));

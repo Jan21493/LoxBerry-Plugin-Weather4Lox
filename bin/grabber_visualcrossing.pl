@@ -255,7 +255,7 @@ if ( $current ) {
     # temperature
     my %temperature;
     $temperature{air}       = getFormatted('%.1f', $cur, 'temp');                                  # cur_tt     - air temperature in °C
-    $temperature{feelsLike} = getFormatted('%.1f', $results, 'feelslike');                         # cur_tt_fl  - feels like temperature in °C
+    $temperature{feelsLike} = getFormatted('%.1f', $cur, 'feelslike');                             # cur_tt_fl  - feels like temperature in °C
     # Wind chill is not provided separately by VC, but if feels like is lower than actual temp, it can be used as wind chill
     $temperature{windChill} =  $temperature{feelsLike} && $temperature{feelsLike} < $temperature{air} ? $temperature{feelsLike} : undef;      # cur_w_ch - wind chill in °C
     # Heat index is not provided separately by VC, but if feels like is higher than actual temp, it can be used as heat index
