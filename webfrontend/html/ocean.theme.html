@@ -311,7 +311,9 @@
       .daily-wrap { padding: 14px; }
       .daily-wrap h2 { font-size: 0.95rem; margin-bottom: 10px; }
       .drow { grid-template-columns: 52px 36px 1fr; gap: 8px; padding: 10px 12px; border-radius: 12px; margin-bottom: 4px; }
-      .drow-desc, .drow-rainProb { display: none; }
+      .drow-desc { display: none; }
+      .drow-rainProb { display: flex; grid-column: 1; grid-row: 2; justify-content: center; align-items: center; }
+      .drow-temps { grid-column: 2 / -1; grid-row: 2; }
       .drow-day { font-size: 0.82rem; }
       .drow-date { font-size: 0.68rem; }
       .drow-icon { width: 32px; height: 32px; }
