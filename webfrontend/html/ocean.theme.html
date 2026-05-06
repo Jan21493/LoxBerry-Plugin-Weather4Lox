@@ -416,6 +416,7 @@ var chartPrecipMode = {};
 var selectedTab = 'heute';
 var selectedHourIdx = 0;
 var selectedHourValue = 'now';
+var selectedDayIdx = -1; // Index of the currently expanded daily row (-1 = none)
 
 // ===== FETCH HELPERS =====
 function checkOk(response) {
@@ -1252,15 +1253,27 @@ function renderDaily(containerId, dataArray) {
                             '</div>' : '<div class="drow-rainProb"></div>') +
       '<div class="drow-temps"><span class="drow-lo mono">' + Math.round(d.low) + '&deg;C</span><div class="drow-bar"><div class="drow-fill" id="bar' + i + '"></div></div><span class="drow-hi mono">' + Math.round(d.high) + '&deg;C</span></div>' +
       detailHtml;
-    (function(r) {
+    (function(r, idx) {
       r.onclick = function() {
         var wasExpanded = r.classList.contains('expanded');
         // Collapse all other rows (accordion)
         container.querySelectorAll('.drow.expanded').forEach(function(c) { c.classList.remove('expanded'); });
-        if (!wasExpanded) r.classList.add('expanded');
+        if (!wasExpanded) {
+          r.classList.add('expanded');
+          // Persist which row is expanded so refreshes can restore it
+          selectedDayIdx = idx;
+        } else {
+          // User collapsed the expanded row — clear persisted state
+          selectedDayIdx = -1;
+        }
       };
-    })(row);
+    })(row, i);
     container.appendChild(row);
+  }
+  // Restore the previously expanded row after the DOM has been rebuilt
+  if (selectedDayIdx >= 0) {
+    var rows = container.querySelectorAll('.drow');
+    if (selectedDayIdx < rows.length) rows[selectedDayIdx].classList.add('expanded');
   }
   lucide.createIcons();
   // Calculate temp bar positions
