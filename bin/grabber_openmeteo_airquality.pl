@@ -47,8 +47,8 @@ require "$lbpbindir/grabber_utils.pl";
 my $version = LoxBerry::System::pluginversion();
 
 my $pcfg   = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
-my $lat    = $pcfg->param("OPENMETEOAIRQUALITY.COORDLAT");
-my $lon    = $pcfg->param("OPENMETEOAIRQUALITY.COORDLONG");
+my $lat    = $pcfg->param("SERVER.COORDLAT");
+my $lon    = $pcfg->param("SERVER.COORDLONG");
 
 # names for JSON
 my $grabberFile     = basename(__FILE__);
@@ -97,7 +97,7 @@ LOGDEB "This is $0 Version $version";
 
 # Validate coordinates
 if ( !defined $lat || $lat eq '' || !defined $lon || $lon eq '' ) {
-	LOGCRIT "No coordinates configured. Please set COORDLAT and COORDLONG in [OPENMETEOAIRQUALITY] section.";
+	LOGCRIT "No coordinates configured. Please set COORDLAT and COORDLONG in [SERVER] section.";
 	exit 1;
 }
 
@@ -108,22 +108,31 @@ LOGINF "Using coordinates: lat=$lat, lon=$lon";
 ##########################################################################
 
 my %pollenSensitivity = (
-    ALDER   => $pcfg->param("POLLEN.ALDER")   // 0,
-    BIRCH   => $pcfg->param("POLLEN.BIRCH")    // 0,
-    GRASS   => $pcfg->param("POLLEN.GRASS")    // 0,
-    MUGWORT => $pcfg->param("POLLEN.MUGWORT")  // 0,
-    OLIVE   => $pcfg->param("POLLEN.OLIVE")    // 0,
-    RAGWEED => $pcfg->param("POLLEN.RAGWEED")  // 0,
+    alder   => $pcfg->param("POLLEN.ALDER")   // 0,
+    birch   => $pcfg->param("POLLEN.BIRCH")    // 0,
+    grass   => $pcfg->param("POLLEN.GRASS")    // 0,
+    mugwort => $pcfg->param("POLLEN.MUGWORT")  // 0,
+    olive   => $pcfg->param("POLLEN.OLIVE")    // 0,
+    ragweed => $pcfg->param("POLLEN.RAGWEED")  // 0,
 );
 
 ##########################################################################
 # Fetch data from Open-Meteo Air Quality API
 ##########################################################################
 
+my @pollenTypes = qw(alder birch grass mugwort olive ragweed);
+my $pollens = 'alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen';
+
+my @airQualityTypes = qw(pm25 pm10 dust uvIndex uvIndexClearSky carbonMonoxide carbonDioxide ozone ammonia methane aerosolOpticalDepth sulphurDioxide nitrogenDioxide);
+my $airQualityParams = 'pm2_5,pm10,dust,uv_index,uv_index_clear_sky,carbon_monoxide,carbon_dioxide,ozone,ammonia,methane,aerosol_optical_depth,sulphur_dioxide,nitrogen_dioxide';
+
+my @europeanAqiTypes = qw(maximum pm25 pm10 ozone nitrogenDioxide sulphurDioxide);
+my $europeanAqiParams = 'european_aqi,european_aqi_pm2_5,european_aqi_pm10,european_aqi_ozone,european_aqi_nitrogen_dioxide,european_aqi_sulphur_dioxide';
+
 my $url = "https://air-quality-api.open-meteo.com/v1/air-quality"
         . "?latitude=$lat&longitude=$lon"
-        . "&current=european_aqi,us_aqi,pm10,pm2_5"
-        . "&hourly=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen"
+#        . "&current=$airQualityParams,$europeanAqiParams,$pollens"
+        . "&hourly=$airQualityParams,$europeanAqiParams,$pollens"
         . "&forecast_days=5&timezone=$timezone";
 
 my $resOM = apiCall(
@@ -166,16 +175,23 @@ sub pollenLevel {
 sub calculatePersonalMix {
     my ($pollenLevels, $sensitivities) = @_;
     my $weightedSum = 0;
+    my $weightedMax = 0;
     my $totalWeight = 0;
+    my $weightedValue = 0;
+
     for my $type (keys %$pollenLevels) {
-        my $configKey = uc($type);
+        my $configKey = lc($type);
         my $weight = $sensitivities->{$configKey} // 0;
-        next unless $weight > 0;
-        $weightedSum += $pollenLevels->{$type} * $weight;
+
+        # square to give more weight to higher sensitivity values and higher pollen levels, and divide by max to normalize back to 0-7 range
+        $weightedValue = ($pollenLevels->{$type} ** 2) * $weight / 49;
+
+        $weightedSum += $weightedValue;
         $totalWeight += $weight;
+        $weightedMax = $weightedSum if $weightedSum > $weightedMax;
     }
     return 0 unless $totalWeight > 0;
-    return int($weightedSum / $totalWeight + 0.5);
+    return int($weightedMax / $totalWeight + 0.5);
 }
 
 ##########################################################################
@@ -183,7 +199,6 @@ sub calculatePersonalMix {
 ##########################################################################
 
 my $times = $resOM->{hourly}{time}          // [];
-my @pollenTypes = qw(alder birch grass mugwort olive ragweed);
 
 my %hourlyPollen = (
     alder   => $resOM->{hourly}{alder_pollen}   // [],
@@ -192,6 +207,31 @@ my %hourlyPollen = (
     mugwort => $resOM->{hourly}{mugwort_pollen}  // [],
     olive   => $resOM->{hourly}{olive_pollen}    // [],
     ragweed => $resOM->{hourly}{ragweed_pollen}  // [],
+);
+
+my %hourlyAirQuality = (
+    pm25                => $resOM->{hourly}{pm2_5}  // [],
+    pm10                => $resOM->{hourly}{pm10}   // [],
+    dust                => $resOM->{hourly}{dust}   // [],
+    uvIndex             => $resOM->{hourly}{uv_index} // [],
+    uvIndexClearSky     => $resOM->{hourly}{uv_index_clear_sky} // [],
+    carbonMonoxide      => $resOM->{hourly}{carbon_monoxide} // [],
+    carbonDioxide       => $resOM->{hourly}{carbon_dioxide} // [],
+    ozone               => $resOM->{hourly}{ozone} // [],
+    ammonia             => $resOM->{hourly}{ammonia} // [],
+    methane             => $resOM->{hourly}{methane} // [],
+    aerosolOpticalDepth => $resOM->{hourly}{aerosol_optical_depth} // [],
+    sulphurDioxide      => $resOM->{hourly}{sulphur_dioxide} // [],
+    nitrogenDioxide     => $resOM->{hourly}{nitrogen_dioxide} // [],
+);
+
+my %hourlyEuropeanAqi = (
+    maximum             => $resOM->{hourly}{european_aqi} // [],
+    pm25                => $resOM->{hourly}{european_aqi_pm2_5}  // [],
+    pm10                => $resOM->{hourly}{european_aqi_pm10}   // [],
+    ozone               => $resOM->{hourly}{european_aqi_ozone} // [],
+    nitrogenDioxide     => $resOM->{hourly}{european_aqi_nitrogen_dioxide} // [],
+    sulphurDioxide      => $resOM->{hourly}{european_aqi_sulphur_dioxide} // [],
 );
 
 # Find the index matching the current hour in the hourly time array
@@ -210,11 +250,6 @@ my @lt = localtime(time);
 my $generatedAt = sprintf("%04d-%02d-%02dT%02d:%02d:%02d",
     $lt[5]+1900, $lt[4]+1, $lt[3], $lt[2], $lt[1], $lt[0]);
 
-LOGINF "Current AQI: european=" . ($resOM->{current}{european_aqi} // 0)
-     . " us=" . ($resOM->{current}{us_aqi} // 0)
-     . " pm10=" . ($resOM->{current}{pm10} // 0)
-     . " pm2_5=" . ($resOM->{current}{pm2_5} // 0);
-
 LOGDEB "Adding $grabberLabel data to current, daily and hourly weather data (existing values for same keys will be overwritten).";
 
 ##########################################################################
@@ -225,15 +260,7 @@ my $curEnvelope = readJsonFile($lbplogdir, "current");
 if ($curEnvelope && $curEnvelope->{current}) {
     my $cur = $curEnvelope->{current};
 
-    # AirQuality (from API current values)
-    $cur->{airQuality} = {
-        aqiEu => ($resOM->{current}{european_aqi} // 0) + 0,
-        aqiUs => ($resOM->{current}{us_aqi} // 0) + 0,
-        pm10  => ($resOM->{current}{pm10} // 0) + 0,
-        pm25  => ($resOM->{current}{pm2_5} // 0) + 0,
-    };
-
-    # Pollen (current hour level)
+    # Pollen for current hour
     my $nowIdx = findCurrentHourIndex($times);
     my %curPollen;
     for my $type (@pollenTypes) {
@@ -241,6 +268,30 @@ if ($curEnvelope && $curEnvelope->{current}) {
     }
     $curPollen{personalMix} = calculatePersonalMix(\%curPollen, \%pollenSensitivity);
     $cur->{pollen} = \%curPollen;
+
+    # Air quality details for current hour
+    $cur->{airQuality} = {};
+    for my $type (@airQualityTypes) {
+        if ($type eq 'uvIndex' || $type eq 'uvIndexClearSky') {
+            next; # handled separately below
+        }
+        $cur->{airQuality}{$type} = ($hourlyAirQuality{$type}[$nowIdx] // 0) + 0;
+    }
+
+    my $uvIndex = ($hourlyAirQuality{uvIndex}[$nowIdx] // 0) + 0;
+    if (defined $uvIndex) {
+        $cur->{uvIndex} = $uvIndex;
+    }
+    my $uvIndexClearSky = ($hourlyAirQuality{uvIndexClearSky}[$nowIdx] // 0) + 0;
+    if (defined $uvIndexClearSky) {
+        $cur->{uvIndexClearSky} = $uvIndexClearSky;
+    }
+
+    # European AQI details for current hour
+    $cur->{europeanAqi} = {};
+    for my $type (@europeanAqiTypes) {
+        $cur->{europeanAqi}{$type} = ($hourlyEuropeanAqi{$type}[$nowIdx] // 0) + 0;
+    }
 
     # Grabber metadata
     $curEnvelope->{openmeteoAq} = {
@@ -258,7 +309,7 @@ if ($curEnvelope && $curEnvelope->{current}) {
     $curEnvelope->{generatedAt} = $generatedAt;
 
     writeJsonFile($lbplogdir, "current", $curEnvelope);
-    LOGOK "Merged airQuality + pollen into current.json";
+    LOGOK "Merged air quality + pollen into current.json";
 } else {
     LOGWARN "Could not read current.json or missing 'current' key - skipping AQ merge";
 }
@@ -280,17 +331,43 @@ if ($hfcEnvelope && $hfcEnvelope->{hourlyforecast}) {
                 last;
             }
         }
+        # hourly data is not guaranteed to be present for all hours in hourlyforecast, so we check if we have a match before adding pollen and AQ data
         if (defined $matchIdx) {
+            # Add pollen data for this hour
             my %hPollen;
             for my $type (@pollenTypes) {
                 $hPollen{$type} = pollenLevel($type, $hourlyPollen{$type}[$matchIdx]);
             }
             $hPollen{personalMix} = calculatePersonalMix(\%hPollen, \%pollenSensitivity);
             $h->{pollen} = \%hPollen;
+
+             # Air quality details for current hour
+            $h->{airQuality} = {};
+            for my $type (@airQualityTypes) {
+                if ($type eq 'uvIndex' || $type eq 'uvIndexClearSky') {
+                    next; # handled separately below
+                }
+                $h->{airQuality}{$type} = ($hourlyAirQuality{$type}[$matchIdx] // 0) + 0;
+            }
+            my $uvIndex = ($hourlyAirQuality{uvIndex}[$matchIdx] // 0) + 0;
+            if (defined $uvIndex) {
+                $h->{uvIndex} = $uvIndex;
+            }
+            my $uvIndexClearSky = ($hourlyAirQuality{uvIndexClearSky}[$matchIdx] // 0) + 0;
+            if (defined $uvIndexClearSky) {
+                $h->{uvIndexClearSky} = $uvIndexClearSky;
+            }
+
+            # European AQI details for current hour
+            $h->{europeanAqi} = {};
+            for my $type (@europeanAqiTypes) {
+                $h->{europeanAqi}{$type} = ($hourlyEuropeanAqi{$type}[$matchIdx] // 0) + 0;
+            }
         } else {
             $h->{pollen} = undef;
+            $h->{airQuality} = undef; 
+            $h->{europeanAqi} = undef;
         }
-        $h->{airQuality} = undef;  # no hourly AQ from API
     }
 
     # Grabber metadata
@@ -309,7 +386,7 @@ if ($hfcEnvelope && $hfcEnvelope->{hourlyforecast}) {
     $hfcEnvelope->{generatedAt} = $generatedAt;
 
     writeJsonFile($lbplogdir, "hourlyforecast", $hfcEnvelope);
-    LOGOK "Merged pollen into hourlyforecast.json";
+    LOGOK "Merged air quality + pollen into hourlyforecast.json";
 } else {
     LOGWARN "Could not read hourlyforecast.json or missing 'hourlyforecast' key - skipping pollen merge";
 }
@@ -324,12 +401,14 @@ if ($dfcEnvelope && $dfcEnvelope->{dailyforecast}) {
         my $dayDate = substr($d->{time}{datetime} // '', 0, 10);
         next unless $dayDate;
 
-        # Collect hourly levels for this day
+        # Collect hourly pollen levels for this day
         my %dayLevels;
         for my $i (0 .. $#$times) {
             next unless substr($times->[$i], 0, 10) eq $dayDate;
             for my $type (@pollenTypes) {
-                push @{$dayLevels{$type}}, pollenLevel($type, $hourlyPollen{$type}[$i]);
+                if (defined $hourlyPollen{$type}[$i]) {
+                    push @{$dayLevels{$type}}, pollenLevel($type, $hourlyPollen{$type}[$i]);
+                }
             }
         }
 
@@ -338,22 +417,79 @@ if ($dfcEnvelope && $dfcEnvelope->{dailyforecast}) {
             for my $type (@pollenTypes) {
                 my @levels = @{$dayLevels{$type} // []};
                 next unless @levels;
+                LOGDEB "Day $dayDate - Pollen Type $type - Levels: @levels";
                 my ($sum, $max) = (0, 0);
                 for my $l (@levels) { $sum += $l; $max = $l if $l > $max; }
-                $dPollen{$type} = { avg => int($sum / scalar(@levels) + 0.5), max => $max };
+                $dPollen{avg}{$type} = int($sum / scalar(@levels) + 0.5);
+                $dPollen{max}{$type} = $max;
             }
             # personalMix for avg and max separately
-            my %avgLevels = map { $_ => $dPollen{$_}{avg} } grep { exists $dPollen{$_} } @pollenTypes;
-            my %maxLevels = map { $_ => $dPollen{$_}{max} } grep { exists $dPollen{$_} } @pollenTypes;
-            $dPollen{personalMix} = {
-                avg => calculatePersonalMix(\%avgLevels, \%pollenSensitivity),
-                max => calculatePersonalMix(\%maxLevels, \%pollenSensitivity),
-            };
+            my %avgLevels = map { $_ => $dPollen{avg}{$_} } grep { exists $dPollen{avg}{$_} } @pollenTypes;
+            my %maxLevels = map { $_ => $dPollen{max}{$_} } grep { exists $dPollen{max}{$_} } @pollenTypes;
+            $dPollen{avg}{personalMix} = calculatePersonalMix(\%avgLevels, \%pollenSensitivity);
+            $dPollen{max}{personalMix} = calculatePersonalMix(\%maxLevels, \%pollenSensitivity);
             $d->{pollen} = \%dPollen;
         } else {
             $d->{pollen} = undef;
         }
-        $d->{airQuality} = undef;
+
+        # Collect hourly air quality values for this day
+        my %dayValues;
+        for my $i (0 .. $#$times) {
+            next unless substr($times->[$i], 0, 10) eq $dayDate;
+            for my $type (@airQualityTypes) {
+                if (defined $hourlyAirQuality{$type}[$i]) {
+                    push @{$dayValues{$type}}, $hourlyAirQuality{$type}[$i];
+                }
+            }
+        }
+
+        if (%dayValues) {
+            my %dAirQuality;
+            for my $type (@airQualityTypes) {
+                my @levels = @{$dayValues{$type} // []};
+                next unless @levels;
+                LOGDEB "Day $dayDate - Air Quality Type $type - Values: @levels";
+                my ($sum, $max) = (0, 0);
+                for my $l (@levels) { $sum += $l; $max = $l if $l > $max; }
+                if ($type eq 'uvIndex' || $type eq 'uvIndexClearSky') {
+                    # For UV index only the maximum is relevant
+                    $d->{$type} = $max;
+                } else {
+                    $dAirQuality{avg}{$type} = int($sum / scalar(@levels) + 0.5);
+                    $dAirQuality{max}{$type} = $max;
+                }
+            }
+            $d->{airQuality} = \%dAirQuality;
+        } else {
+            $d->{airQuality} = undef;
+        }
+
+        # Collect hourly european air quality index (AQI) levels for this day
+        for my $i (0 .. $#$times) {
+            next unless substr($times->[$i], 0, 10) eq $dayDate;
+            for my $type (@europeanAqiTypes) {
+                if (defined $hourlyEuropeanAqi{$type}[$i]) {
+                    push @{$dayLevels{$type}}, $hourlyEuropeanAqi{$type}[$i];
+                }
+            }
+        }
+
+        if (%dayLevels) {
+            my %dEuropeanAqi;
+            for my $type (@europeanAqiTypes) {
+                my @levels = @{$dayLevels{$type} // []};
+                next unless @levels;
+                LOGDEB "Day $dayDate - European Air Quality Index Type $type - Levels: @levels";
+                my ($sum, $max) = (0, 0);
+                for my $l (@levels) { $sum += $l; $max = $l if $l > $max; }
+                $dEuropeanAqi{avg}{$type} = int($sum / scalar(@levels) + 0.5);
+                $dEuropeanAqi{max}{$type} = $max;
+            }
+            $d->{europeanAqi} = \%dEuropeanAqi;
+        } else {
+            $d->{europeanAqi} = undef;
+        }
     }
 
     # Grabber metadata

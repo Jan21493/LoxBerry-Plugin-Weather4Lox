@@ -47,10 +47,10 @@ my $version = LoxBerry::System::pluginversion();
 my $pcfg         = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $url          = $pcfg->param("VISUALCROSSING.URL");
 my $apikey       = $pcfg->param("VISUALCROSSING.APIKEY");
-my $lang         = $pcfg->param("VISUALCROSSING.LANG");
-my $stationid    = $pcfg->param("VISUALCROSSING.COORDLAT") . "," . $pcfg->param("VISUALCROSSING.COORDLONG");
-my $city         = $pcfg->param("VISUALCROSSING.STATION");
-my $country      = $pcfg->param("VISUALCROSSING.COUNTRY");
+my $lang         = $pcfg->param("SERVER.LANG");
+my $stationid    = $pcfg->param("SERVER.COORDLAT") . "," . $pcfg->param("SERVER.COORDLONG");
+my $city         = $pcfg->param("SERVER.CITY");
+my $country      = $pcfg->param("SERVER.COUNTRY");
 
 # Grabber metadata for JSON envelope
 my $grabberKey   = "visualcrossing";
@@ -264,10 +264,10 @@ if ( $current ) {
     # wind
     my %wind;
     my $wdeg = getFormatted('%.0f', $cur, 'winddir');
-    $wind{direction} = $wdeg;                                                                      # cur_w_dir   -  wind direction in degrees
+    $wind{direction} = $wdeg;                                                                      # cur_w_dir   - wind direction in degrees
     $wind{cardinal}  = getWindDirCardinal($wdeg);                                                  #             - cardinal and intercardinal directions, "N", "NE", "E", "SE", "S", "SW", "W", "NW" in english
-    $wind{speed}     = getFormatted('%.1f', $cur, 'windspeed');                                    # cur_w_sp.   -  wind speed in km/h
-    $wind{gust}      = getFormatted('%.1f', $cur, 'windgust');                                     # cur_w_gu.   -  gust speed in km/h
+    $wind{speed}     = getFormatted('%.1f', $cur, 'windspeed');                                    # cur_w_sp.   - wind speed in km/h
+    $wind{gust}      = getFormatted('%.1f', $cur, 'windgust');                                     # cur_w_gu.   - gust speed in km/h
 
     # precipitation
     my %precipitation;
@@ -313,7 +313,7 @@ if ( $current ) {
         uvIndex        => getFormatted('%.0f', $cur, 'uvindex'),                                   # cur_uvi, UV index
         precipitation  => \%precipitation,
         weatherCode    => \%weatherCode,
-        ozone          => undef,                                                                   # cur_oz, ozone in DU, not available from VC API
+                                                                                                   # cur_oz, ozone in DU, not available from VC API
         cloudCover     => $cloudCover,                                                             # cloud cover in percentage     
         moon           => \%moon,
         isNight        => isNighttime($time{epoch}, $sunriseEpoch, $sunsetEpoch),                  # to use day or night icon for icon sets that have this feature
@@ -432,9 +432,6 @@ if ( $daily ) {
             moon           => \%moon,
             uvIndex        => getFormatted('%.1f', $resDay, 'uvindex'),                            # dfc<X>_uvi       - UV index, maximum value for the day
             visibility     => getFormatted('%.2f', $resDay, 'visibility'),                         # cur_vis, visibility in km
-            solarRadiation => undef,
-            heatIndex      => undef,
-            ozone          => undef,
             cloudCover     => $cloudCover,                                                         # cloud cover in percentage     
         };
         $day++;
@@ -543,7 +540,7 @@ if ( $hourly ) {
                 uvIndex        => getFormatted('%.1f', $resHour, 'uvindex'),                       # hfc<X>_uvi       - UV index
                 precipitation  => \%precipitation,
                 weatherCode    => \%weatherCode,
-                ozone          => undef,
+                                                                                                   # hfc<X>_oz        - ozone in DU, not available from VC API
                 cloudCover     => $cloudCover,                                                     # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
                 moon           => \%moon,
                 isNight        => isNighttime($hourEpoch, $sunriseEpoch, $sunsetEpoch),  # to use day or night icon for icon sets that have this feature

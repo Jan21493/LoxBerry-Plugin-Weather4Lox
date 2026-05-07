@@ -46,9 +46,9 @@ my $version = LoxBerry::System::pluginversion();
 my $pcfg         = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $url          = $pcfg->param("WEATHERFLOW.URL");
 my $apikey       = $pcfg->param("WEATHERFLOW.APIKEY");
-my $lang         = $pcfg->param("WEATHERFLOW.LANG");
-my $city         = $pcfg->param("WEATHERFLOW.CITY");
-my $country      = $pcfg->param("WEATHERFLOW.COUNTRY");
+my $lang         = $pcfg->param("SERVER.LANG");
+my $city         = $pcfg->param("SERVER.CITY");
+my $country      = $pcfg->param("SERVER.COUNTRY");
 my $stationid    = $pcfg->param("WEATHERFLOW.STATIONID");
 
 # Grabber metadata for JSON envelope
@@ -108,19 +108,19 @@ my $current_observation_json;
 # https://weatherflow.github.io/Tempest/api/swagger/#/forecast/getBetterForecast
 # https://www.loxone.com/enen/kb/weather-service/
 my %weatherflow_to_lox = (
-    "clear"                => ["1",  "clear"],
-    "partlycloudy"         => ["3",  "partlycloudy"],
-    "cloudy"               => ["4",  "cloudy"],
-    "sleet"                => ["26", "sleet"],
-    "chancesleet"          => ["26", "chancesleet"],
-    "snow"                 => ["21", "snow"],
-    "chancesnow"           => ["23", "chancesnow"],
-    "rainy"                => ["11", "rain"],
-    "chancerainy"          => ["16", "chancerain"],
-    "chancethunderstorm"   => ["18", "chancetstorms"],
-    "thunderstorm"         => ["18", "tstorms"],
-    "foggy"                => ["6",  "fog"],
-    "windy"                => ["5", "wind"],
+    "clear"                => [ "1", "clear"],
+    "partlycloudy"         => [ "3", "partly_cloudy"],
+    "cloudy"               => [ "4", "cloudy"],
+    "sleet"                => ["26", "overcast_sleet_2"],
+    "chancesleet"          => ["26", "cloudy_sleet_1"],
+    "snow"                 => ["21", "overcast_snow_2"],
+    "chancesnow"           => ["23", "cloudy_snow_1"],
+    "rainy"                => ["11", "overcast_rain_2"],
+    "chancerainy"          => ["16", "cloudy_rain_1"],
+    "chancethunderstorm"   => ["18", "cloudy_thunderstorm_1"],
+    "thunderstorm"         => ["18", "overcast_thunderstorm_2"],
+    "foggy"                => [ "6", "fog"],
+    "windy"                => [ "5", "wind"],
 );
 
 sub weatherflow_to_lox {
@@ -295,7 +295,6 @@ if ( $current ) {
         uvIndex        => defined $cur->{uv}                 ? sprintf("%.0f", $cur->{uv}) + 0                 : undef,
         precipitation  => \%precipitation,
         weatherCode    => \%weatherCode,
-        ozone          => undef,  # not available from WeatherFlow API
         cloudCover     => undef,  # not available from WeatherFlow API
         moon           => \%moon,
         isNight        => wfIsNight($cc->{icon}),
@@ -420,8 +419,6 @@ if ( $daily ) {
             uvIndex        => undef,  # not available from WeatherFlow daily
             visibility     => undef,  # not available from WeatherFlow daily
             solarRadiation => undef,  # not available from WeatherFlow daily
-            heatIndex      => undef,  # not available from WeatherFlow daily
-            ozone          => undef,  # not available from WeatherFlow daily
             cloudCover     => undef,  # not available from WeatherFlow daily
         };
         $day++;
@@ -518,7 +515,6 @@ if ( $hourly ) {
             uvIndex        => defined $h->{uv} ? sprintf("%.1f", $h->{uv}) + 0 : undef,
             precipitation  => \%precipitation,
             weatherCode    => \%weatherCode,
-            ozone          => undef,       # not available from WeatherFlow hourly
             cloudCover     => undef,       # not available from WeatherFlow hourly
             moon           => \%moon,
             isNight        => wfIsNight($h->{icon}),

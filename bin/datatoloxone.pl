@@ -230,7 +230,8 @@ sendToLox($toMS, $doLog, "cur_prec_today", !$metric ? $cur->{precipitation}{rain
 sendToLox($toMS, $doLog, "cur_prec_1hr", !$metric ? $cur->{precipitation}{rain1hr}*MM_TO_INCH : $cur->{precipitation}{rain1hr});
 sendToLox($toMS, $doLog, "cur_snow", !$metric ? $cur->{precipitation}{snowToday}*CM_TO_INCH : $cur->{precipitation}{snowToday});
 sendToLox($toMS, $doLog, "cur_we_icon", $cur->{weatherCode}{weather4lox});
-sendToLox($toMS, $doLog, "cur_we_code", $cur->{weatherCode}{loxone});
+sendToLox($toMS, $doLog, "cur_we_code", w4l_to_oldW4lCode($cur->{weatherCode}{weather4lox}));
+sendToLox($toMS, $doLog, "cur_we_code_lox", $cur->{weatherCode}{loxone});
 sendToLox($toMS, $doLog, "cur_we_des", encode_utf8($langData->{weather_descriptions}{$cur->{weatherCode}{weather4lox}} // '-'));
 sendToLox($toMS, $doLog, "cur_moon_p", $cur->{moon}{percent});
 sendToLox($toMS, $doLog, "cur_moon_a", $cur->{moon}{age});
@@ -238,7 +239,7 @@ sendToLox($toMS, $doLog, "cur_moon_ph", $cur->{moon}{phase});
 sendToLox($toMS, $doLog, "cur_moon_h", $cur->{moon}{direction});
 sendToLox($toMS, $doLog, "cur_sun_r", $curDateLoxEpoch + timeToSec($cur->{sunrise}));
 sendToLox($toMS, $doLog, "cur_sun_s", $curDateLoxEpoch + timeToSec($cur->{sunset}));
-sendToLox($toMS, $doLog, "cur_ozone", $cur->{ozone});
+sendToLox($toMS, $doLog, "cur_ozone", $cur->{airQuality}{ozone});
 sendToLox($toMS, $doLog, "cur_sky", $cur->{cloudCover});
 
 # Use night icons between sunset and sunrise
@@ -321,9 +322,10 @@ foreach my $dfcEntry (@$dfc) {
     sendToLox($toMS, $doLog, "dfc${per}_hu_a", $dfcEntry->{humidity}{avg});
     sendToLox($toMS, $doLog, "dfc${per}_hu_h", $dfcEntry->{humidity}{max});
     sendToLox($toMS, $doLog, "dfc${per}_hu_l", $dfcEntry->{humidity}{min});
-    sendToLox($toMS, $doLog, "dfc${per}_we_code", $dfcEntry->{weatherCode}{loxone});
+    sendToLox($toMS, $doLog, "dfc${per}_we_code", w4l_to_oldW4lCode($dfcEntry->{weatherCode}{weather4lox}));
+    sendToLox($toMS, $doLog, "dfc${per}_we_code_lox", $dfcEntry->{weatherCode}{loxone});
     sendToLox($toMS, $doLog, "dfc${per}_we_des", encode_utf8($langData->{weather_descriptions}{$dfcEntry->{weatherCode}{weather4lox}} // '-'));
-    sendToLox($toMS, $doLog, "dfc${per}_ozone", _jval($dfcEntry->{ozone}));
+    sendToLox($toMS, $doLog, "dfc${per}_ozone", _jval($dfcEntry->{airQuality}{ozone}));
     sendToLox($toMS, $doLog, "dfc${per}_moon_p", $dfcEntry->{moon}{percent});
     sendToLox($toMS, $doLog, "dfc${per}_dp", !$metric ? $dfcEntry->{dewpoint}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{dewpoint});
     sendToLox($toMS, $doLog, "dfc${per}_pr", !$metric ? $dfcEntry->{pressure}*HPA_TO_INHG : $dfcEntry->{pressure});
@@ -395,9 +397,10 @@ foreach my $hfcEntry (@$hfc) {
     sendToLox($toMS, $doLog, "hfc${per}_w_dirdes", encode_utf8($langData->{wind_directions}{getWindDirCardinal($hfcEntry->{wind}{direction})} // '-'));
     sendToLox($toMS, $doLog, "hfc${per}_w_dir", $hfcEntry->{wind}{direction});
     sendToLox($toMS, $doLog, "hfc${per}_hu", $hfcEntry->{humidity});
-    sendToLox($toMS, $doLog, "hfc${per}_we_code", $hfcEntry->{weatherCode}{loxone});
+    sendToLox($toMS, $doLog, "hfc${per}_we_code", w4l_to_oldW4lCode($hfcEntry->{weatherCode}{weather4lox}));
+    sendToLox($toMS, $doLog, "hfc${per}_we_code_lox", $hfcEntry->{weatherCode}{loxone});
     sendToLox($toMS, $doLog, "hfc${per}_we_des", encode_utf8($langData->{weather_descriptions}{$hfcEntry->{weatherCode}{weather4lox}} // '-'));
-    sendToLox($toMS, $doLog, "hfc${per}_ozone", _jval($hfcEntry->{ozone}));
+    sendToLox($toMS, $doLog, "hfc${per}_ozone", _jval($hfcEntry->{airQuality}{ozone}));
     sendToLox($toMS, $doLog, "hfc${per}_moon_p", $hfcEntry->{moon}{percent});
     sendToLox($toMS, $doLog, "hfc${per}_dp", !$metric ? $hfcEntry->{dewpoint}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{dewpoint});
     sendToLox($toMS, $doLog, "hfc${per}_pr", !$metric ? $hfcEntry->{pressure}*HPA_TO_INHG : $hfcEntry->{pressure});

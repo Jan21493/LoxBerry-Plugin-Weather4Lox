@@ -684,8 +684,7 @@ if ( $current ) {
 
     $currentData{weatherCode} = \%weatherCode;
 
-    # ozone
-    $currentData{ozone} = undef;                                                                                               # cur_ozone
+    # ozone (cur_ozone) - API does not provide ozone values
     
     # sky condition - calculate from symbol code
     $currentData{cloudCover} = skyConditionFromWoCode($symbol);                                                                # cur_sky
@@ -897,10 +896,10 @@ if ( $daily ) {
             uvIndex          => getFormatted('%.1f', $results, 'uv_index', 'value'),            # dfc<X>_uvi       - UV index
             sunrise          => getTimeFormatted('%H:%M', $timezone, $results, 'sun', 'rise'),  # dfc<X>_sun_r     - sunrise time (HH:MM)
             sunset           => getTimeFormatted('%H:%M', $timezone, $results, 'sun', 'set'),   # dfc<X>_sun_s     - sunset time (HH:MM)
-            visibility       => undef,                                                          # dfc<X>_vis       - visibility (m/km as needed)
-            solarRadiation   => undef,                                                          # dfc<X>_sr        - solar radiation (not present)
-            heatIndex        => undef,                                                          # dfc<X>_hi        - heat index (not present)
-            ozone            => undef,                                                          # dfc<X>_ozone     - ozone (not present)
+                                                                                                # dfc<X>_vis       - visibility (m/km as needed)
+                                                                                                # dfc<X>_sr        - solar radiation (not present)
+                                                                                                # dfc<X>_hi        - heat index (not present)
+                                                                                                # dfc<X>_ozone     - ozone (not present)
             cloudCover       => skyConditionFromWoCode($symbol),                                # dfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
         };
         $day++;
@@ -988,8 +987,8 @@ if ( $hourly ) {
             temperature => {
                 air            => getFormatted('%.1f', $results, 'temperature', 'air'),         # hfc<X>_tt        - hourly max temperature (°C)
                 feelsLike      => getFormatted('%.1f', $results, 'temperature', 'apparent'),    # hfc<X>_tt_fl     - min feels-like temperature
-                heatIndex      => undef,                                                        # hfc<X>_hi        - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
-                windChill      => undef,                                                        # hfc<X>_w_ch      - wind chill (not present), feel-like temperature considering wind, only relevant for low temperatures
+                                                                                                # hfc<X>_hi        - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
+                                                                                                # hfc<X>_w_ch      - wind chill (not present), feel-like temperature considering wind, only relevant for low temperatures
             },
             wind => {
                 direction     => $windDir,                                                                                   # hfc<X>_w_dir     - wind direction (degree)
@@ -1024,8 +1023,8 @@ if ( $hourly ) {
             dewpoint         => getFormatted('%.1f', $results, 'dew_point', 'celsius'),            # hfc<X>_dp        - dew point (°C)
             uvIndex          => getFormatted('%.1f', $results, 'uv_index', 'value'),               # hfc<X>_uvi       - UV index
             visibility       => getFormattedMultiplied('%.0f', 0.001, $results, 'visibility'),     # hfc<X>_vis       - visibility (m/km as needed), API provides meters
-            solarRadiation   => undef,                                                             # hfc<X>_sr        - solar radiation (not present)
-            ozone            => undef,                                                             # hfc<X>_ozone     - ozone (not present)
+                                                                                                   # hfc<X>_sr        - solar radiation (not present)
+                                                                                                   # hfc<X>_ozone     - ozone (not present)
             cloudCover       => skyConditionFromWoCode($symbol),                                   # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
             isNight          => $isNighttime,                                                      # get nighttime information from sunrise / sunset, alternate solution woudl be from symbol code
         };
@@ -1266,8 +1265,8 @@ if ( $hourly ) {
             dewpoint         => sprintf("%.1f", $dp_i->linear($epochTime)) + 0,         # hfc<X>_dp        - dew point (°C)
             uvIndex          => sprintf("%.1f", $uvidx_i->linear($epochTime)) + 0,      # hfc<X>_uvi       - UV index
             visibility       => undef,                                                  # hfc<X>_vis       - visibility (m/km), not available in dayparts!
-            solarRadiation   => undef,                                                  # hfc<X>_sr        - solar radiation (not present)
-            ozone            => undef,                                                  # hfc<X>_ozone     - ozone (not present)
+                                                                                        # hfc<X>_sr        - solar radiation (not present)
+                                                                                        # hfc<X>_ozone     - ozone (not present)
             cloudCover       => skyConditionFromWoCode($sym),                           # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
             isNight          => $isNighttime,                                           # get nighttime information from sunrise / sunset
         };

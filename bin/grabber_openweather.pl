@@ -51,10 +51,10 @@ my $version = LoxBerry::System::pluginversion();
 my $pcfg            = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $url             = $pcfg->param("OPENWEATHER.URL");
 my $apikey          = $pcfg->param("OPENWEATHER.APIKEY");
-my $lang            = $pcfg->param("OPENWEATHER.LANG");
-my $stationid       = "lat=" . $pcfg->param("OPENWEATHER.COORDLAT") . "&lon=" . $pcfg->param("OPENWEATHER.COORDLONG");
-my $city            = $pcfg->param("OPENWEATHER.STATION");
-my $country         = $pcfg->param("OPENWEATHER.COUNTRY");
+my $lang            = $pcfg->param("SERVER.LANG");
+my $stationid       = "lat=" . $pcfg->param("SERVER.COORDLAT") . "&lon=" . $pcfg->param("SERVER.COORDLONG");
+my $city            = $pcfg->param("SERVER.CITY");
+my $country         = $pcfg->param("SERVER.COUNTRY");
 my $refresh         = $pcfg->param("SERVER.CRON") // 60;    # default to 60 if not set in config, otherwise to default weather service refresh time, normally set by command line option --interval from fetch.pl
 
 # names for JSON
@@ -617,8 +617,7 @@ if ( $current ) {
 
     $currentData{weatherCode} = \%weatherCode;
 
-    # ozone
-    $currentData{ozone} = undef;                                                                                               # cur_ozone
+    # ozone (cur_ozone) is not provided by API
     
     # sky condition / cloud cover
     $currentData{cloudCover} = getValue($results, 'current', 'clouds');                                                        # cur_sky           - cloud cover in percentage from API response
@@ -758,10 +757,10 @@ if ( $daily ) {
             uvIndex          => getFormatted('%.1f', $resDay, 'uvi'),                                                          # dfc<X>_uvi       - UV index, maximum value for the day
             sunrise          => getTimeFromEpochFormatted('%H:%M', $timezone, $resDay, 'sunrise'),                             # dfc<X>_sun_r     - sunrise time (HH:MM) from Unix epoch time
             sunset           => getTimeFromEpochFormatted('%H:%M', $timezone, $resDay, 'sunset'),                              # dfc<X>_sun_s     - sunset time (HH:MM) from Unix epoch time
-            visibility       => undef,                                                                                         # dfc<X>_vis       - visibility (m/km as needed)
-            solarRadiation   => undef,                                                                                         # dfc<X>_sr        - solar radiation (not present)
-            heatIndex        => undef,                                                                                         # dfc<X>_hi        - heat index (not present)
-            ozone            => undef,                                                                                         # dfc<X>_ozone     - ozone (not present)
+                                                                                                                               # dfc<X>_vis       - visibility (m/km as needed)
+                                                                                                                               # dfc<X>_sr        - solar radiation (not present)
+                                                                                                                               # dfc<X>_hi        - heat index (not present)
+                                                                                                                               # dfc<X>_ozone     - ozone (not present)
             cloudCover       => getFormatted('%.0f', $resDay, 'clouds'),                                                       # dfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
         };
         $day++;
@@ -837,38 +836,38 @@ if ( $hourly ) {
                 windChill      => undef,                                                           # hfc<X>_w_ch       - wind chill (not present), feel-like temperature considering wind, only relevant for low temperatures
             },
             wind => {
-                direction     => $windDir,                                                          # hfc<X>_w_dir     - wind direction (degree)
-                cardinal      => getWindDirCardinal($windDir),                                      #                  - cardinal and intercardinal directions, "N", "NE", "E", "SE", "S", "SW", "W", "NW" in english
-                speed         => getFormattedMultiplied('%.1f', 3.6, $resHour, 'wind_speed'),       # hfc<X>_w_sp      - wind speed (km/h)
-                gust          => getFormattedMultiplied('%.1f', 3.6, $resHour, 'wind_gust'),        # hfc<X>_w_gu      - wind gust (km/h)
+                direction     => $windDir,                                                         # hfc<X>_w_dir     - wind direction (degree)
+                cardinal      => getWindDirCardinal($windDir),                                     #                  - cardinal and intercardinal directions, "N", "NE", "E", "SE", "S", "SW", "W", "NW" in english
+                speed         => getFormattedMultiplied('%.1f', 3.6, $resHour, 'wind_speed'),      # hfc<X>_w_sp      - wind speed (km/h)
+                gust          => getFormattedMultiplied('%.1f', 3.6, $resHour, 'wind_gust'),       # hfc<X>_w_gu      - wind gust (km/h)
             },
             precipitation => {
-                probability   => getPercentage('%.1f', $resHour, 'pop'),                            # hfc<X>_pop       - probability of precipitation (%)
-                rainHigh      => getFormatted('%.1f', $resHour, 'rain', '1h'),                      # hfc<X>_prec      - precipitation (mm)
-                type          => getValue($resHour, 'weather', 0, 'main'),                          #                  - precipitation type
-                snowHigh      => getFormattedMultiplied('%.1f', 0.1, $resHour, 'snow'),             # hfc<X>_snow      - snow height (cm)
+                probability   => getPercentage('%.1f', $resHour, 'pop'),                           # hfc<X>_pop       - probability of precipitation (%)
+                rainHigh      => getFormatted('%.1f', $resHour, 'rain', '1h'),                     # hfc<X>_prec      - precipitation (mm)
+                type          => getValue($resHour, 'weather', 0, 'main'),                         #                  - precipitation type
+                snowHigh      => getFormattedMultiplied('%.1f', 0.1, $resHour, 'snow'),            # hfc<X>_snow      - snow height (cm)
             },
             weatherCode => {
-                loxone       => $loxoneCode,                                                        # hfc<X>_we_code   - Loxone code
-                weather4lox  => $w4lCode,                                                           # hfc<X>_we_icon   - Weather4Lox icon code
-                description  => $description,                                                       # hfc<X>_we_des    - description
-                metar        => getMetarCode($w4lCode),                                             #                  - METAR code
+                loxone       => $loxoneCode,                                                       # hfc<X>_we_code   - Loxone code
+                weather4lox  => $w4lCode,                                                          # hfc<X>_we_icon   - Weather4Lox icon code
+                description  => $description,                                                      # hfc<X>_we_des    - description
+                metar        => getMetarCode($w4lCode),                                            #                  - METAR code
             },
             moon => {
-                age          => sprintf("%.1f", $moonage) + 0,                                      # hfc<X>_moon_a    - moon age in days
-                percent      => sprintf("%.1f", $moonillum * 100) + 0,                              # hfc<X>_moon_p    - moon percentage illumination
-                phase        => sprintf("%.1f", $moonphase * 100) + 0,                              # hfc<X>_moon_ph   - moon phase
-                direction    => getMoonDirection($moonage),                                         #                  - moon direction (waxing, waning)
+                age          => sprintf("%.1f", $moonage) + 0,                                     # hfc<X>_moon_a    - moon age in days
+                percent      => sprintf("%.1f", $moonillum * 100) + 0,                             # hfc<X>_moon_p    - moon percentage illumination
+                phase        => sprintf("%.1f", $moonphase * 100) + 0,                             # hfc<X>_moon_ph   - moon phase
+                direction    => getMoonDirection($moonage),                                        #                  - moon direction (waxing, waning)
             },
-            humidity         => getFormatted('%.1f', $resHour, 'humidity'),                         # hfc<X>_hu        - humidity
-            pressure         => getFormatted('%.0f', $resHour, 'pressure'),                         # hfc<X>_pr        - air pressure (hPa)
-            dewpoint         => getFormatted('%.1f', $resHour, 'dew_point'),                        # hfc<X>_dp        - dew point (°C)
-            uvIndex          => getFormatted('%.1f', $resHour, 'uvi'),                              # hfc<X>_uvi       - UV index
-            visibility       => getFormattedMultiplied('%.0f', 0.001, $resHour, 'visibility'),      # hfc<X>_vis       - visibility (m/km as needed)
-            solarRadiation   => undef,                                                              # hfc<X>_sr        - solar radiation (not present)
-            ozone            => undef,                                                              # hfc<X>_ozone     - ozone (not present)
-            cloudCover       => getFormatted('%.0f', $resHour, 'clouds'),                           # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
-            isNight          => isNighttimeForCurrentHour($dtEpoch, $timezone, $results),           #                  - get nighttime information from sunrise / sunset
+            humidity         => getFormatted('%.1f', $resHour, 'humidity'),                        # hfc<X>_hu        - humidity
+            pressure         => getFormatted('%.0f', $resHour, 'pressure'),                        # hfc<X>_pr        - air pressure (hPa)
+            dewpoint         => getFormatted('%.1f', $resHour, 'dew_point'),                       # hfc<X>_dp        - dew point (°C)
+            uvIndex          => getFormatted('%.1f', $resHour, 'uvi'),                             # hfc<X>_uvi       - UV index
+            visibility       => getFormattedMultiplied('%.0f', 0.001, $resHour, 'visibility'),     # hfc<X>_vis       - visibility (m/km as needed)
+                                                                                                   # hfc<X>_sr        - solar radiation (not present)
+                                                                                                   # hfc<X>_ozone     - ozone (not present)
+            cloudCover       => getFormatted('%.0f', $resHour, 'clouds'),                          # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
+            isNight          => isNighttimeForCurrentHour($dtEpoch, $timezone, $results),          #                  - get nighttime information from sunrise / sunset
         };
         push @hourlyArray, $hourlyData;
         $hour++;
@@ -1017,8 +1016,8 @@ if ( $hourly ) {
                     visibility       => interpolate($lastHourlyData->{visibility},
                                             getFormattedMultiplied('%.0f', 0.001, $res3Hour, 'visibility'),
                                             $step, $delta),                                                 # hfc<X>_vis       - visibility (m/km as needed)
-                    solarRadiation   => undef,                                                              # hfc<X>_sr        - solar radiation (not present)
-                    ozone            => undef,                                                              # hfc<X>_ozone     - ozone (not present)
+                                                                                                            # hfc<X>_sr        - solar radiation (not present)
+                                                                                                            # hfc<X>_ozone     - ozone (not present)
                     cloudCover       => interpolate($lastHourlyData->{cloudCover},
                                             getFormatted('%.0f', $res3Hour, 'clouds'),
                                             $step, $delta),                                                 # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)

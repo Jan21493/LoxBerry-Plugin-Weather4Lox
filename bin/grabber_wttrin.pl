@@ -45,7 +45,7 @@ my $version = LoxBerry::System::pluginversion();
 
 my $pcfg         = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $url          = $pcfg->param("WTTRIN.URL");
-my $lang         = $pcfg->param("WTTRIN.LANG");
+my $lang         = $pcfg->param("SERVER.LANG");
 my $stationid    = $pcfg->param("WTTRIN.STATIONID");
 
 # Grabber metadata for JSON envelope
@@ -278,11 +278,9 @@ if ( $current ) {
         pressure       => defined $cur->{pressure} ? sprintf("%.0f", $cur->{pressure}) + 0 : undef,
         dewpoint       => undef,  # not available from wttr.in current
         visibility     => defined $cur->{visibility} ? sprintf("%.0f", $cur->{visibility}) + 0 : undef,
-        solarRadiation => undef,
         uvIndex        => defined $cur->{uvIndex} ? sprintf("%.0f", $cur->{uvIndex}) + 0 : undef,
         precipitation  => \%precipitation,
         weatherCode    => \%weatherCode,
-        ozone          => undef,
         cloudCover     => defined $cur->{cloudcover} ? $cur->{cloudcover} + 0 : undef,
         moon           => \%moon,
         isNight        => undef,  # wttr.in does not provide day/night info
@@ -465,9 +463,6 @@ if ( $daily ) {
             moon           => \%moon,
             uvIndex        => defined $resDay->{uvIndex} ? sprintf("%.1f", $resDay->{uvIndex}) + 0 : undef,
             visibility     => defined $d_visavg ? sprintf("%.1f", $d_visavg) + 0 : undef,
-            solarRadiation => undef,
-            heatIndex      => undef,
-            ozone          => undef,
             cloudCover     => undef,
         };
         $day++;
@@ -649,11 +644,9 @@ if ( $hourly ) {
             pressure       => sprintf("%.0f", $pressures->linear($ep)) + 0,
             dewpoint       => sprintf("%.1f", $dewps->linear($ep)) + 0,
             visibility     => sprintf("%.1f", $viss->linear($ep)) + 0,
-            solarRadiation => undef,
             uvIndex        => sprintf("%.0f", $uvis->linear($ep)) + 0,
             precipitation  => \%precipitation,
             weatherCode    => \%weatherCode,
-            ozone          => undef,
             cloudCover     => sprintf("%.0f", $clouds->linear($ep)) + 0,
             moon           => \%moon,
             isNight        => undef,

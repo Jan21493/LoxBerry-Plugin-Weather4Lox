@@ -93,7 +93,7 @@ eval {
     }
 
     # normalize coordinates
-    for my $k (qw(wucoordlat wucoordlong coordlat coordlong)) {
+    for my $k (qw(coordlat coordlong)) {
         next unless defined $R->{$k};
         $R->{$k} =~ tr/,/./;
     }
@@ -211,33 +211,19 @@ eval {
     push @checks, "\n" . $L{'SETTINGS.SAVING_WRITE_CONFIG'};
 
     # Write configuration file(s)
-    $cfg->param("WUNDERGROUND.APIKEY", $R->{wuapikey} // "");
-    $cfg->param("WUNDERGROUND.STATIONTYP", $R->{wustationtyp} // "");
     $cfg->param("WUNDERGROUND.STATIONID", $R->{wustationid} // "");
-    $cfg->param("WUNDERGROUND.COORDLAT", $R->{wucoordlat} // "");
-    $cfg->param("WUNDERGROUND.COORDLONG", $R->{wucoordlong} // "");
-    $cfg->param("WUNDERGROUND.LANG", $R->{wulang} // "");
 
     $cfg->param("OPENWEATHER.APIKEY", $R->{openweatherapikey} // "");
-    $cfg->param("OPENWEATHER.COORDLAT", $central_lat // "");
-    $cfg->param("OPENWEATHER.COORDLONG", $central_long // "");
-    $cfg->param("OPENWEATHER.LANG", $R->{serverlang} // "");
 
     $cfg->param("WEATHERFLOW.APIKEY", $R->{weatherflowapikey} // "");
-    $cfg->param("WEATHERFLOW.LANG", $R->{serverlang} // "");
     $cfg->param("WEATHERFLOW.STATIONID", $R->{weatherflowstationid} // "");
 
     $cfg->param("VISUALCROSSING.APIKEY", $R->{visualcrossingapikey} // "");
-    $cfg->param("VISUALCROSSING.COORDLAT", $central_lat // "");
-    $cfg->param("VISUALCROSSING.COORDLONG", $central_long // "");
-    $cfg->param("VISUALCROSSING.LANG", $R->{serverlang} // "");
 
-    $cfg->param("WTTRIN.LANG", $R->{serverlang} // "");
     $cfg->param("WTTRIN.STATIONID", $R->{wttrinstationid} // "");
 
     $cfg->param("WETTERONLINE.STATIONID", $R->{wetteronlinestationid} // "");
     $cfg->param("WETTERONLINE.APIKEY", "av=2&mv=13&c=d2ViOmFxcnhwWDR3ZWJDSlRuWeb=");
-    $cfg->param("WETTERONLINE.USERAGENT", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36");
 
     $cfg->param("FOSHK.SERVER", $R->{foshkserver} // "");
     $cfg->param("FOSHK.PORT", $R->{foshkport} // "");
@@ -247,8 +233,6 @@ eval {
     $cfg->param("SERVER.LOXGRABBER", $R->{loxgrabber} // "");
     $cfg->param("SERVER.FOSHKGRABBER", $R->{foshkgrabber} // "");
     $cfg->param("SERVER.OPENMETEOAIRQUALITYGRABBER", $R->{openmeteoairqualitygrabber} // "");
-    $cfg->param("OPENMETEOAIRQUALITY.COORDLAT", $central_lat // "");
-    $cfg->param("OPENMETEOAIRQUALITY.COORDLONG", $central_long // "");
 
     $cfg->param("SERVER.USEALTERNATEDFC", $R->{usealternatedfc} // "");
     $cfg->param("SERVER.USEALTERNATEHFC", $R->{usealternatehfc} // "");
@@ -264,15 +248,8 @@ eval {
     $cfg->param("SERVER.WEATHERSERVICEDFC", $R->{weatherservicedfc} // "");
     $cfg->param("SERVER.WEATHERSERVICEHFC", $R->{weatherservicehfc} // "");
     $cfg->param("SERVER.MASKKEYS", $R->{maskkeys} // "");
-
     $cfg->param("SERVER.CITY", $R->{city} // "");
     $cfg->param("SERVER.COUNTRY", $R->{country} // "");
-    $cfg->param("VISUALCROSSING.STATION", $R->{city} // "");
-    $cfg->param("VISUALCROSSING.COUNTRY", $R->{country} // "");
-    $cfg->param("OPENWEATHER.STATION", $R->{city} // "");
-    $cfg->param("OPENWEATHER.COUNTRY", $R->{country} // "");
-    $cfg->param("WEATHERFLOW.CITY", $R->{city} // "");
-    $cfg->param("WEATHERFLOW.COUNTRY", $R->{country} // "");
 
     push @checks, $L{'SETTINGS.SAVING_POLLEN'};
 
