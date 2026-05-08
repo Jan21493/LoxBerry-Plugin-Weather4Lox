@@ -840,6 +840,8 @@ sub _enrichWeatherId {
 # compatibility with cur_we_code, dfc<X>_we_code, and hfc<X>_we_code and 
 # existing consumers that rely on the old codes.
 #
+# see https://wiki.loxberry.de/plugins/weather4loxone/start#wetter-codes
+#
 # Parameter:
 #   weather4loxCode:           Weather4Lox code, e.g. "cloudy_rain_1"
 # Returns:
@@ -847,86 +849,89 @@ sub _enrichWeatherId {
 
 my %w4L_TO_OLDW4LCODE = (
     # Clear / cloudy
-    'clear'           => 1,  # Clear
-    'fair'            => 2,  # Fair
-    'partly_cloudy'   => 3,  # Partly cloudy
-    'cloudy'          => 4,  # Mostly cloudy / more clouds
-    'overcast'        => 5,  # Overcast
+    'clear'           => 1,  # clear, sunny
+    'fair'            => 2,  # mostly sunny
+    'partly_cloudy'   => 3,  # partly sunny
+    'cloudy'          => 4,  # cloudy, overcast
+    'overcast'        => 4,  # cloudy, overcast
 
     # Showers (rain showers)
-    'cloudy_shower_1'    => 16, # Light rain showers
-    'cloudy_shower_2'    => 17, # Heavy rain showers
-    'overcast_shower_1'  => 16,
-    'overcast_shower_2'  => 17,
-    'overcast_shower_3'  => 17,
+    'cloudy_shower_1'    => 10, # chance of showers
+    'cloudy_shower_2'    => 11, # showers
+    'overcast_shower_1'  => 10, # chance of showers
+    'overcast_shower_2'  => 11, # showers
+    'overcast_shower_3'  => 11, # showers
 
     # Rain
-    'cloudy_rain_1'      => 10, # Light rain
-    'cloudy_rain_2'      => 11, # Rain
-    'overcast_rain_1'    => 10,
-    'overcast_rain_2'    => 11,
-    'overcast_rain_3'    => 12, # Heavy rain
+    'cloudy_rain_1'      => 12, # chance of rain
+    'cloudy_rain_2'      => 13, # rain
+    'overcast_rain_1'    => 12, # chance of rain
+    'overcast_rain_2'    => 13, # rain
+    'overcast_rain_3'    => 13, # rain (no dedicated "heavy rain" code in this table)
 
     # Sleet (snow-rain mix)
-    'cloudy_sleet_1'     => 25, # Light sleet
-    'cloudy_sleet_2'     => 26, # Sleet
-    'overcast_sleet_1'   => 25,
-    'overcast_sleet_2'   => 26,
-    'overcast_sleet_3'   => 27, # Heavy sleet
+    'cloudy_sleet_1'     => 19, # sleet
+    'cloudy_sleet_2'     => 19, # sleet
+    'overcast_sleet_1'   => 19, # sleet
+    'overcast_sleet_2'   => 19, # sleet
+    'overcast_sleet_3'   => 19, # sleet
 
     # Snow
-    'cloudy_snow_1'      => 20, # Light snow
-    'cloudy_snow_2'      => 21, # Snow
-    'overcast_snow_1'    => 20,
-    'overcast_snow_2'    => 21,
-    'overcast_snow_3'    => 22, # Heavy snow
+    'cloudy_snow_1'      => 18, # chance of flurries
+    'cloudy_snow_2'      => 16, # flurry
+    'overcast_snow_1'    => 20, # chance of snow
+    'overcast_snow_2'    => 21, # snow
+    'overcast_snow_3'    => 21, # snow (no "heavy snow" code in this table)
 
     # Freezing rain (Eisregen)
-    'cloudy_freezingrain_1'     => 14, # Light freezing rain
-    'cloudy_freezingrain_2'     => 15, # Heavy freezing rain
-    'overcast_freezingrain_1'   => 14,
-    'overcast_freezingrain_2'   => 15,
-    'overcast_freezingrain_3'   => 15,
+    'cloudy_freezingrain_1'     => 28, # best-fit to light rain and snow (no explicit freezing rain code)
+    'cloudy_freezingrain_2'     => 29, # best-fit to rain and snow (no explicit freezing rain code)
+    'overcast_freezingrain_1'   => 28, # best-fit to light rain and snow (no explicit freezing rain code)
+    'overcast_freezingrain_2'   => 29, # best-fit to rain and snow (no explicit freezing rain code)
+    'overcast_freezingrain_3'   => 29, # best-fit to rain and snow (no explicit heavy freezing rain code)
 
     # Thunderstorm
-    'cloudy_thunderstorm_1'     => 18, # Thunderstorm
-    'cloudy_thunderstorm_2'     => 19, # Heavy thunderstorm
-    'overcast_thunderstorm_1'   => 18,
-    'overcast_thunderstorm_2'   => 19,
-    'overcast_thunderstorm_3'   => 19,
+    'cloudy_thunderstorm_1'     => 14, # chance of thunderstorms
+    'cloudy_thunderstorm_2'     => 15, # thunderstorms
+    'overcast_thunderstorm_1'   => 14, # chance of thunderstorms
+    'overcast_thunderstorm_2'   => 15, # thunderstorms
+    'overcast_thunderstorm_3'   => 15, # thunderstorms
 
     # Thunderstorm with snow
-    # (Loxone table has no explicit "snow thunderstorm" -> map to thunderstorm severity)
-    'cloudy_snowthunderstorm_1'    => 18,
-    'cloudy_snowthunderstorm_2'    => 19,
-    'overcast_snowthunderstorm_1'  => 18,
-    'overcast_snowthunderstorm_2'  => 19,
-    'overcast_snowthunderstorm_3'  => 19,
+    # no "snow thunderstorm" code; best-fit to thunderstorms (15) / chance (14)
+    'cloudy_snowthunderstorm_1'    => 14, # chance of thunderstorms (best-fit)
+    'cloudy_snowthunderstorm_2'    => 15, # thunderstorms (best-fit)
+    'overcast_snowthunderstorm_1'  => 14, # chance of thunderstorms (best-fit)
+    'overcast_snowthunderstorm_2'  => 15, # thunderstorms (best-fit)
+    'overcast_snowthunderstorm_3'  => 15, # thunderstorms (best-fit)
 
     # Ice pellets / graupel / hail
-    # (Loxone table doesn't have dedicated hail/icepellets codes -> best-fit to sleet showers)
-    'overcast_icepellets' => 29, # Sleet showers
-    'overcast_graupel'    => 29, # Sleet showers
-    'overcast_hail_1'     => 29,
-    'overcast_hail_2'     => 30, # Heavy sleet showers
+    'overcast_icepellets' => 16, # flurry (best-fit, no explicit ice pellets code)
+    'overcast_graupel'    => 16, # flurry (best-fit, no explicit graupel code)
+    'overcast_hail_1'     => 16, # flurry (best-fit, no explicit hail code)
+    'overcast_hail_2'     => 16, # flurry (best-fit, no explicit hail code)
 
     # Atmospheric conditions
-    'mist'         => 6,  # Fog (best-fit)
-    'smoke'        => 6,  # Fog (best-fit)
-    'haze'         => 6,  # Fog (best-fit)
-    'dust_whirls'  => 6,  # Fog (best-fit)
-    'fog'          => 6,  # Fog
-    'sand'         => 6,  # Fog (best-fit)
-    'dust'         => 6,  # Fog (best-fit)
+    'mist'         => 6,  # fog (best-fit)
+    'smoke'        => 5,  # hazy (best-fit)
+    'haze'         => 5,  # hazy
+    'dust_whirls'  => 5,  # hazy (best-fit)
+    'fog'          => 6,  # fog
+    'sand'         => 5,  # hazy (best-fit)
+    'dust'         => 5,  # hazy (best-fit)
 
-    # Wind / severe conditions, use 'very hot' (7) as fallback
-    'wind'         => 7,
-    'volcanic_ash' => 7,
-    'squalls'      => 7,
-    'tornado'      => 7,
+    # Wind / severe
+    'wind'         => 22, # windy
+
+    # NOTE: no explicit codes for "severe weather" like volcanic ash / squalls / tornado.
+    # Best-fit: keep them as windy (22)
+    'volcanic_ash' => 22, # windy (best-fit, no explicit volcanic ash code)
+    'squalls'      => 22, # windy (best-fit, no explicit squalls code)
+    'tornado'      => 22, # windy (best-fit, no explicit tornado code)
 
     # Fallback
-    'no_data'      => 7,
+    # table has no explicit "no data" code; choose unused code.
+    'no_data'      => 17,  # fallback to unused code
 );
 
 sub w4l_to_oldW4lCode {
