@@ -21,7 +21,7 @@ use strict;
 use warnings;
 
 ##########################################################################
-# Modules
+# Modules  (no error handling in case of missing modules)
 ##########################################################################
 
 use LoxBerry::System;
@@ -33,7 +33,7 @@ use Getopt::Long;
 use Time::Piece;
 use Time::Seconds;
 use DateTime;
-use Astro::MoonPhase;
+#use Astro::MoonPhase;
 
 require "$lbpbindir/grabber_utils.pl";
 
@@ -109,6 +109,8 @@ if ($verbose) {
 
 LOGSTART "Weather4Lox GRABBER_VISUALCROSSING process started";
 LOGDEB "This is $0 Version $version";
+
+requireOrLogdie('Astro::MoonPhase');
 
 # Get data from www.visualcrossing.com (API request) for current conditions, daily and hourly forecasts
 my $results = apiCall(

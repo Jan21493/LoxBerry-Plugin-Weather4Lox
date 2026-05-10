@@ -34,7 +34,7 @@ use Getopt::Long;
 use Time::Piece;
 use HTTP::Request;
 use DateTime;
-use Astro::MoonPhase;
+#use Astro::MoonPhase;
 use utf8;
 use Encode qw(encode_utf8);
 use HTML::Entities;
@@ -131,6 +131,7 @@ LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
 requireOrLogdie('DateTime::Format::ISO8601');
+requireOrLogdie('Astro::MoonPhase');
 
 # Get weather data from openweathermap.org (API request) for current conditions
 my $results = apiCall(

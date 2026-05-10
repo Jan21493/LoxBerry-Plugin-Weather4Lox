@@ -21,7 +21,7 @@ use strict;
 use warnings;
 
 ##########################################################################
-# Modules
+# Modules (no error handling in case of missing modules)
 ##########################################################################
 
 use LoxBerry::System;
@@ -31,8 +31,8 @@ use JSON::PP;
 use File::Copy;
 use Getopt::Long;
 use Time::Piece;
-use Math::Function::Interpolator;
-use Astro::MoonPhase;
+#use Math::Function::Interpolator;
+#use Astro::MoonPhase;
 
 require "$lbpbindir/grabber_utils.pl";
 
@@ -83,6 +83,10 @@ if ($verbose) {
 
 LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
+
+requireOrLogdie('Astro::MoonPhase');
+requireOrLogdie('Math::Function::Interpolator');
+requireOrLogdie('Math::Function::Interpolator::Linear');
 
 # Mapping table for conversion of WTTR.in weather codes to Loxone weather Picto-Codes and short names for weather symbols
 # Weather codes are based on https://www.worldweatheronline.com/weather-api/api/docs/weather-icons.aspx

@@ -42,7 +42,7 @@ sub requireOrLogdie {
         my $err = $@ || "Unknown error while loading $module";
         chomp $err;
 
-        LOGCRIT "Missing Perl module $module - cannot continue.";
+        LOGCRIT "Missing Perl module $module - cannot continue. You may reinstall the plugin or manually try to install the missing module via 'cpanm $module' as root.";
         LOGCRIT $err;
         warn "CRIT: $err\n";   # falls fetch.pl STDERR mitsammelt
 

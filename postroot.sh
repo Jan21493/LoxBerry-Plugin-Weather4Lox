@@ -14,19 +14,34 @@ ARGV3=$3 # Third argument is Plugin installation folder
 ARGV4=$4 # Forth argument is Plugin version
 ARGV5=$5 # Fifth argument is Base folder of LoxBerry
 
-# Installing Perl MOdule for WTTR.in Grabber
-echo "<INFO> Installing Perl Module Math::Function::Interpolator"
-cpanm Math::Function::Interpolator
+# Helper to run a command, log it, and handle failures consistently.
+# NOTE: we do not exit the script if the command / module installation fails,
+#       but we log the error and continue with the next steps.
+run_cmd() {
+  desc="$1"
+  shift
 
-echo "<INFO> Installing Perl Module Astro::MoonPhase"
-cpanm Astro::MoonPhase
+  echo "<INFO> $desc"
+  "$@"
+  rc=$?
+  if [ $rc -ne 0 ]; then
+    echo "<ERROR> Failed: $desc (exit code $rc)"
+    return $rc
+  fi
+  echo "<OK> $desc"
+  return 0
+}
 
-echo "<INFO> Reconfigure Timezone - just to make sure..."
-dpkg-reconfigure -f noninteractive tzdata
+# Installing Perl Module for some grabbers that require interpolation of values. 
+run_cmd "Installing Perl Module Math::Function::Interpolator" cpanm Math::Function::Interpolator
 
-# Add Apache Config for WU4Lox with that requires the 'Headers' module to be enabled
-echo "<INFO> Adding Apache2 headers module"
-a2enmod headers
+# Installing Perl Module for almost all grabbers that require moon phase calculations.
+run_cmd "Installing Perl Module Astro::MoonPhase" cpanm Astro::MoonPhase
+
+run_cmd "Reconfigure Timezone - just to make sure..." dpkg-reconfigure -f noninteractive tzdata
+
+# Install 'headers' module to Apache2 web server. The Apache Config for W4Lox requires the 'Headers' module to be enabled
+run_cmd "Adding Apache2 headers module" a2enmod headers
 
 # moved to dpkg/apt
 # echo "<INFO> Installing Perl Module DateTime::Format::ISO8601"

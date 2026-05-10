@@ -32,7 +32,7 @@ use JSON qw( decode_json );
 use File::Copy;
 use Getopt::Long;
 use Time::Piece;
-use Astro::MoonPhase;
+# use Astro::MoonPhase;
 
 require "$lbpbindir/grabber_utils.pl";
 
@@ -89,6 +89,8 @@ if ($verbose) {
 
 LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
+
+requireOrLogdie('Astro::MoonPhase');
 
 # Get forecast data from Weatherflow Server
 # API: https://weatherflow.github.io/Tempest/api/swagger/#/forecast

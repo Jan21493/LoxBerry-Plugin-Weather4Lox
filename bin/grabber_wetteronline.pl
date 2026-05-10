@@ -38,7 +38,7 @@ use HTTP::Request;
 use DateTime;
 #use DateTime::TimeZone;
 #use DateTime::Format::ISO8601;
-use Astro::MoonPhase;
+#use Astro::MoonPhase;
 use utf8;
 use Encode qw(encode_utf8);
 use HTML::Entities;
@@ -136,6 +136,7 @@ LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
 requireOrLogdie('DateTime::Format::ISO8601');
+requireOrLogdie('Astro::MoonPhase');
 
 if ($hourly) {
     #require_or_logdie('Lexical::Sub');
