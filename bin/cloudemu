@@ -53,7 +53,7 @@ case "$1" in
         sudo sh -c "echo 'address=/weather-beta.loxone.com/$OWNIP' >> /etc/dnsmasq.d/$pluginname.conf"
         sudo service dnsmasq restart > /dev/null 2>&1
     else
-        echo "Enabling DNSMasq Configuration for WU4Lox (without installed DNSMasq Plugin)."
+        echo "Enabling DNSMasq Configuration for Weather4Lox (without installed DNSMasq Plugin)."
         echo "My own IP is $OWNIP. Redirecting weather.loxone.com to $OWNIP."
 
         sudo sh -c "touch /etc/dnsmasq.d/$pluginname.conf" > /dev/null 2>&1
@@ -62,7 +62,7 @@ case "$1" in
         sudo service dnsmasq restart > /dev/null 2>&1
     fi
     # Enable Apache Config
-    echo "Enabling Apache2 Configuration for WU4Lox"
+    echo "Enabling Apache2 Configuration for Weather4Lox"
     sudo a2ensite 001-$pluginname > /dev/null 2>&1
     sudo service apache2 reload > /dev/null 2>&1
     exit 0
@@ -76,12 +76,12 @@ case "$1" in
 
         sudo rm /etc/dnsmasq.d/$pluginname.conf > /dev/null 2>&1
     else
-        echo "Disabling DNSMasq Configuration for WU4Lox"
+        echo "Disabling DNSMasq Configuration for Weather4Lox"
         sudo rm /etc/dnsmasq.d/$pluginname.conf > /dev/null 2>&1
         sudo service dnsmasq restart > /dev/null 2>&1
     fi
     # Disable Apache Config
-    echo "Disabling Apache2 Configuration for WU4Lox"
+    echo "Disabling Apache2 Configuration for Weather4Lox"
     sudo a2dissite 001-$pluginname > /dev/null 2>&1
     sudo service apache2 reload > /dev/null 2>&1
     exit 0
