@@ -74,25 +74,6 @@ my $urlCurrentRaw    = "https://api-web.wo-cloud.com/weather/nowcast/v10?";
 my $urlDailyRaw      = "https://api-app.wetteronline.de/app/weather/forecast?";
 my $urlHourlyRaw     = "https://api-app.wetteronline.de/app/weather/hourcast?";
 
-# all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
-
-# Determine system timezone (Debian / DietPi)
-my $timezone = $ENV{TZ} // '';
-
-if (!$timezone) {
-    if (open my $tzfh, '<:encoding(UTF-8)', '/etc/timezone') {
-        $timezone = <$tzfh>;
-        chomp $timezone if defined $timezone;
-        close $tzfh;
-    }
-}
-
-# Validate that zoneinfo exists (avoid invalid names)
-if (!$timezone || !-f "/usr/share/zoneinfo/$timezone") {
-    # Fallback to UTC if not found
-    $timezone = 'UTC';
-}
-
 my $error = 0;
 
 my $json = JSON::PP->new->relaxed;
@@ -137,6 +118,10 @@ LOGDEB "This is $0 Version $version";
 
 requireOrLogdie('DateTime::Format::ISO8601');
 requireOrLogdie('Astro::MoonPhase');
+
+# all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
+my $timezone = _systemTimezone();
+LOGDEB "Using timezone: $timezone";
 
 if ($hourly) {
     #require_or_logdie('Lexical::Sub');
@@ -708,13 +693,15 @@ if ( $current ) {
 
     # Build envelope and write JSON to file
     $weatherKey = "current";
+    my $generatedAt = DateTime->now();
+    $generatedAt->set_time_zone($timezone);
     my $envelope = {
         refresh  => $refresh,
-        generatedAt     => $dtCurrent->iso8601(),
+        generatedAt     => $generatedAt->iso8601(),
         location => $location,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
-            generatedAt     => $dtCurrent->iso8601(),
+            generatedAt     => $generatedAt->iso8601(),
             grabberLabel    => $grabberLabel,
             grabberScript   => $grabberFile,
             schemaVersion   => "v1.0",
@@ -908,13 +895,15 @@ if ( $daily ) {
  
     # Build envelope and write JSON to file
     $weatherKey = "dailyforecast";
+    my $generatedAt = DateTime->now();
+    $generatedAt->set_time_zone($timezone);
     my $envelope = {
         refresh  => $refresh,
-        generatedAt     => $dtCurrent->iso8601(),
+        generatedAt     => $generatedAt->iso8601(),
         location => $location,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
-            generatedAt     => $dtCurrent->iso8601(),
+            generatedAt     => $generatedAt->iso8601(),
             grabberLabel    => $grabberLabel,
             grabberScript   => $grabberFile,
             schemaVersion   => "v1.0",
@@ -1277,13 +1266,14 @@ if ( $hourly ) {
 
     # Build envelope and write JSON to file
     $weatherKey = "hourlyforecast";
+    my $generatedAt = DateTime->now( time_zone => $timezone );
     my $envelope = {
         refresh  => $refresh,
-        generatedAt     => $dtCurrent->iso8601(),
+        generatedAt     => $generatedAt->iso8601(),
         location => $location,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
-            generatedAt     => $dtCurrent->iso8601(),
+            generatedAt     => $generatedAt->iso8601(),
             grabberLabel    => $grabberLabel,
             grabberScript   => $grabberFile,
             schemaVersion   => "v1.0",

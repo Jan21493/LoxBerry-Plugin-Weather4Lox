@@ -32,7 +32,6 @@ use utf8;
 use Encode qw(encode_utf8);
 use Getopt::Long;
 use Time::Piece;
-#use Data::Dumper;
 
 require "$lbpbindir/grabber_utils.pl";
 
@@ -129,10 +128,10 @@ $cur->{dewpoint}        = getFormatted('%.1f', $resCurrent, 'cur_dp');          
 $cur->{solarRadiation}  = getFormatted('%.0f', $resCurrent, 'cur_sr');              # cur_sr - solar radiation (W/m2)
 
 # Add grabber metadata
-my $dtCurrent = localtime;
+my $generatedAt = DateTime->now( time_zone => $timezone );
 $envelope->{$grabberKey} = {
     filename        => "$lbplogdir/$weatherKey.json",
-    generatedAt     => $dtCurrent->iso8601(),
+    generatedAt     => $generatedAt->iso8601(),
     grabberLabel    => $grabberLabel,
     grabberScript   => $grabberFile,
     schemaVersion   => "v1.0",
@@ -143,7 +142,7 @@ if ($refresh < $envelope->{refresh}) {
     LOGINF "Reducing refresh interval for $weatherKey weather data from $envelope->{refresh} to $refresh minutes.";
     $envelope->{refresh} = $refresh;
 }
-$envelope->{generatedAt} = $dtCurrent->iso8601();
+$envelope->{generatedAt} = $generatedAt->iso8601();
 
 # Write JSON back to file
 writeJsonFile($lbplogdir, $weatherKey, $envelope);

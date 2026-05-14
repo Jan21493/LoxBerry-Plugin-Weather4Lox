@@ -268,8 +268,8 @@
                                                         <td width="50%">
                                                             <table border="0" width="100%">
                                                                 <tr>
-                                                                    <td><TMPL_VAR WUGRABBER></td>
-                                                                    <td width="20%" align="right"><label id="labelwustationid"><TMPL_VAR SETTINGS.LABEL_STATIONID></label></td>
+                                                                    <td width="10%"><TMPL_VAR WUGRABBER></td>
+                                                                    <td width="10%" align="right"><label id="labelwustationid"><TMPL_VAR SETTINGS.LABEL_STATIONID></label></td>
                                                                     <td width="80%"><input id="wustationid" name="wustationid" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR WUNDERGROUND.STATIONID>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_STATIONID>">
                                                                     <font size="-1"><a id="linkwundermap" href="https://www.wunderground.com/wundermap/" target="_blank"><TMPL_VAR SETTINGS.LABEL_WUMAP></a></font></td>
                                                                 </tr>
@@ -284,16 +284,16 @@
                                                     </tr>
                                                     <tr>
                                                         <td width="25%">
-                                                            <label id="labelloxgrabber"><TMPL_VAR SETTINGS.LABEL_FOSHKGRABBER></label>
+                                                            <label id="labelfoshkgrabber"><TMPL_VAR SETTINGS.LABEL_FOSHKGRABBER></label>
                                                         </td>
                                                         <td width="50%">
                                                             <table border="0" width="100%">
                                                             <tr>
-                                                                <td><TMPL_VAR FOSHKGRABBER></td>
+                                                                <td width="10%"><TMPL_VAR FOSHKGRABBER></td>
                                                                 <td width="10%" align="right"><label id="labelfoshkserver" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_FOSHKSERVER></label></td>
-                                                                <td width="40%"><input id="foshkserver" name="foshkserver" type="text" data-validation-rule="special:hostname_or_ipaddr" class="textfield" value="<TMPL_VAR FOSHK.SERVER>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_FOSHKSERVER>"></td>
+                                                                <td width="35%"><input id="foshkserver" name="foshkserver" type="text" data-validation-rule="special:hostname_or_ipaddr" class="textfield" value="<TMPL_VAR FOSHK.SERVER>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_FOSHKSERVER>"></td>
                                                                 <td width="10%" align="right"><label id="labelfoshkport" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_FOSHKPORT></label></td>
-                                                                <td width="40%"><input id="foshkport" name="foshkport" type="text" data-validation-rule="special:port" class="textfield" value="<TMPL_VAR FOSHK.PORT>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_FOSHKPORT>">
+                                                                <td width="35%"><input id="foshkport" name="foshkport" type="text" data-validation-rule="special:port" class="textfield" value="<TMPL_VAR FOSHK.PORT>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_FOSHKPORT>">
                                                                 </td>
                                                             </tr>
                                                             </table>
@@ -325,7 +325,14 @@
                                                             <label id="labelloxgrabber"><TMPL_VAR SETTINGS.LABEL_LOXGRABBER></label>
                                                         </td>
                                                         <td width="50%">
-                                                            <TMPL_VAR LOXGRABBER>
+                                                             <table border="0" width="100%">
+                                                            <tr>
+                                                                <td width="10%"><TMPL_VAR LOXGRABBER></td>
+                                                                <td width="10%" align="right"><label id="labelloxprefix" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_LOXPREFIX></label></td>
+                                                                <td width="80%"><input id="loxprefix" name="loxprefix" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR LOX.PREFIX>" placeholder="<TMPL_VAR SETTINGS.PLACEHOLDER_LOXPREFIX>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_LOXPREFIX>"></td>
+                                                                 </td>
+                                                            </tr>
+                                                            </table>
                                                         </td>
                                                         <td width="5%">
                                                             &nbsp;
@@ -505,7 +512,7 @@
                                                         <td width="50%">
                                                             <table border=0 width="100%">
                                                             <tr>
-                                                            <td width="70%"><input id="wttrinstationid" name="wttrinstationid" type="text" class="textfield" value="<TMPL_VAR WTTRIN.STATIONID>"></td>
+                                                            <td width="70%"><input id="wttrinstationid" name="wttrinstationid" type="text" class="textfield"  placeholder="<TMPL_VAR SETTINGS.PLACEHOLDER_WTTRINSTATIONID>" value="<TMPL_VAR WTTRIN.STATIONID>" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_WTTRINSTATIONID>" data-validation-optional="true"></td>
                                                             <td width="15%"><a id="testwttrin" data-role="button" data-mini="true" href="javascript:testwttrin()"><TMPL_VAR SETTINGS.BUTTON_TESTWTTRIN></a></td>
                                                             <td width="15%"><a id="helpwttrin" data-role="button" data-mini="true" href="https://wttr.in/:help" target="_blank"><TMPL_VAR SETTINGS.BUTTON_HELPWTTRIN></a></td>
                                                             </tr>
@@ -536,7 +543,7 @@
                                                         <td width="50%">
                                                             <table border=0 width="100%">
                                                             <tr>
-                                                            <td width="70%"><input id="wetteronlinestationid" name="wetteronlinestationid" type="text" class="textfield" placeholder="z.B. dresden, frankfurt-am-main" value="<TMPL_VAR WETTERONLINE.STATIONID>"></td>
+                                                            <td width="70%"><input id="wetteronlinestationid" name="wetteronlinestationid" type="text" class="textfield" placeholder="<TMPL_VAR SETTINGS.PLACEHOLDER_WETTERONLINE_STATIONID>" value="<TMPL_VAR WETTERONLINE.STATIONID>" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_WETTERONLINE_STATIONID>" data-validation-optional="true"></td>
                                                             <td width="15%"><a id="testwetteronline" data-role="button" data-mini="true" href="javascript:testwetteronline()"><TMPL_VAR SETTINGS.BUTTON_TESTWETTERONLINE></a></td>
                                                             </tr>
                                                             </table>
@@ -545,7 +552,7 @@
                                                             &nbsp;
                                                         </td>
                                                         <td width="20%">
-                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_WETTERONLINESTATIONID></font>
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_WETTERONLINE_STATIONID></font>
                                                         </td>
                                                     </tr>
                                                 </table>
@@ -564,7 +571,7 @@
                                                             <label id="labelweatherflowapikey"><TMPL_VAR SETTINGS.LABEL_APIKEY></label>
                                                         </td>
                                                         <td width="50%">
-                                                            <input id="weatherflowapikey" name="weatherflowapikey" type="text" data-validation-rule="^([A-Za-z0-9\-]){36}$" class="textfield" value="<TMPL_VAR WEATHERFLOW.APIKEY>" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_APIKEY>" data-validation-optional="true">
+                                                            <input id="weatherflowapikey" name="weatherflowapikey" type="text" data-validation-rule="^(([A-Za-z0-9\-]){36})?$" class="textfield" value="<TMPL_VAR WEATHERFLOW.APIKEY>" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_APIKEY>" data-validation-optional="true">
                                                         </td>
                                                         <td width="5%">
                                                             &nbsp;
@@ -625,10 +632,130 @@
 
                                     <script>
 
+                                    // ── Validation rules ──────────────────────────────────────────────────
+                                    // Use + (one or more) instead of * (zero or more) to reject empty strings
+                                    var RULE_ALPHANUMERIC        = '^[a-zA-Z0-9]+$';         // letters and digits, min 1 char
+                                    var RULE_ALPHANUMERIC_OPT    = '^[a-zA-Z0-9]*$';         // letters and digits, optional (empty allowed)
+                                    var RULE_DIGITS              = '^\\d+$';                  // digits only, min 1 char
+                                    var RULE_HOSTNAME_OR_IPADDR  = 'special:hostname_or_ipaddr'; // hostname or IPv4 address
+                                    var RULE_PORT                = 'special:port';            // port number 1-65535
+                                    var RULE_WEATHERFLOW_APIKEY  = '^([A-Za-z0-9\\-]){36}$'; // WeatherFlow API key: 36 chars
+                                    var RULE_COORD_LAT           = 'special:number-min-max-value:-90:90';   // latitude -90..90
+                                    var RULE_COORD_LONG          = 'special:number-min-max-value:-180:180'; // longitude -180..180
+                                    // Station ID: letters, digits, whitespace, accented chars, and some special chars commonly used in station names (e.g. _- . ! ?)
+                                    var RULE_WTTRIN_STATIONID    = '^([@~])?([a-zA-Z0-9\\+\\!\\_\\-\\.\\,\\/\\u00C0-\\u017F])*$';
+                                    var RULE_WO_STATIONID        = '^[A-Za-z0-9]+([\\-\\/][A-Za-z0-9]+)*$';
+
+                                    // ── Helper: add a field to / remove it from the validation list ───────
+
+                                    function removeFromValidation(selector) {
+                                        if (!window.obj_to_validate) return;
+                                        var normalized = selector.replace(/(\\)/g, '').replace(/(:|\.|\[|\]|,|=|@)/g, '\\$1');
+                                        var idx = $.inArray(normalized, window.obj_to_validate);
+                                        if (idx > -1) {
+                                            window.obj_to_validate.splice(idx, 1);
+                                        }
+                                        // Save the original rule (only once) so it can be restored later
+                                        if (!$(selector).attr('data-validation-rule-original')) {
+                                            $(selector).attr('data-validation-rule-original', $(selector).attr('data-validation-rule'));
+                                        }
+                                        // Set permissive rule so blur does not trigger error tooltip when field is inactive
+                                        $(selector).attr('data-validation-rule', '.*');
+                                        // Reset visual state: remove red background and hide error tooltip
+                                        $(selector).css('background-color', $(selector).attr('original-background-color') || 'transparent');
+                                        $(selector).css('border-radius', 'inherit');
+                                        $('#error-msg-' + selector.substring(1)).fadeOut(100);
+                                    }
+
+                                    function addToValidation(selector) {
+                                        window.obj_to_validate = window.obj_to_validate || [];
+                                        var normalized = selector.replace(/(\\)/g, '').replace(/(:|\.|\[|\]|,|=|@)/g, '\\$1');
+                                        if ($.inArray(normalized, window.obj_to_validate) === -1) {
+                                            window.obj_to_validate.push(normalized);
+                                        }
+                                        // Restore original validation rule so the field is checked strictly again
+                                        var originalRule = $(selector).attr('data-validation-rule-original');
+                                        if (originalRule) {
+                                            $(selector).attr('data-validation-rule', originalRule);
+                                        }
+                                    }
+
+                                    // ── save button state based on validation ─────────────
+                                    function updateSaveButton() {
+                                        if (validate_all()) {
+                                            $('#btnsubmit').button('enable');
+                                        } else {
+                                            $('#btnsubmit').button('disable');
+                                        }
+                                    }
+
+                                    // ── Check which service fields are currently required ─────────────────
+                                    // A service API key is required when the service is selected AND
+                                    // the corresponding getdata / usealternatedfc / usealternatehfc is ON
+                                    function updateServiceFieldRequirements() {
+                                        var getdata         = $('select[name=getdata]').val()         === '1';
+                                        var usedfc          = $('select[name=usealternatedfc]').val() === '1';
+                                        var usehfc          = $('select[name=usealternatehfc]').val() === '1';
+                                        var mainService     = $('#weatherservice').val();
+                                        var dfcService      = $('#weatherservicedfc').val();
+                                        var hfcService      = $('#weatherservicehfc').val();
+
+                                        // Check if a service is active in any of the three slots
+                                        function isActive(serviceName) {
+                                            return ( getdata && mainService === serviceName ) ||
+                                                   ( usedfc  && dfcService  === serviceName ) ||
+                                                   ( usehfc  && hfcService  === serviceName );
+                                        }
+
+                                        // Visual Crossing
+                                        if ( isActive('visualcrossing') ) {
+                                            addToValidation('#visualcrossingapikey');
+                                        } else {
+                                            removeFromValidation('#visualcrossingapikey');
+                                        }
+
+                                        // OpenWeather
+                                        if ( isActive('openweather') ) {
+                                            addToValidation('#openweatherapikey');
+                                        } else {
+                                            removeFromValidation('#openweatherapikey');
+                                        }
+
+                                        // wttr.in
+                                        if ( isActive('wttrin') ) {
+                                            addToValidation('#wttrinstationid');
+                                        } else {
+                                            removeFromValidation('#wttrinstationid');
+                                        }
+
+                                        // WetterOnline
+                                        if ( isActive('wetteronline') ) {
+                                            addToValidation('#wetteronlinestationid');
+                                        } else {
+                                            removeFromValidation('#wetteronlinestationid');
+                                        }
+
+                                        // WeatherFlow
+                                        if ( isActive('weatherflow') ) {
+                                            addToValidation('#weatherflowapikey');
+                                            addToValidation('#weatherflowstationid');
+                                        } else {
+                                            removeFromValidation('#weatherflowapikey');
+                                            removeFromValidation('#weatherflowstationid');
+                                        }
+
+                                        updateSaveButton();
+                                    }
+
                                     $( document ).ready(function() {
                                         // Intercept Form 1 submit: POST to ajax-save.cgi synchronously
                                         $("#main_form").on("submit", function(e) {
                                             e.preventDefault();
+
+                                            // Run LoxBerry validation before firing AJAX — block if invalid
+                                            if (!validate_all()) {
+                                                return false;
+                                            }
                                             var $form = $(this);
 
                                             // Hide form, show save overlay
@@ -732,17 +859,58 @@
                                             $('#section-pollen').collapsible('expand');
                                         }
 
-                                        // Validates
+                                        // Apply named validation rules to input fields - the rules are defined in the variables above
+                                        // empty content is not allowed if validation is turned on, see below
+                                        $('#wustationid').attr('data-validation-rule',          RULE_ALPHANUMERIC);
+                                        $('#loxprefix').attr('data-validation-rule',            RULE_ALPHANUMERIC);
+                                        $('#visualcrossingapikey').attr('data-validation-rule', RULE_ALPHANUMERIC);
+                                        $('#openweatherapikey').attr('data-validation-rule',    RULE_ALPHANUMERIC);
+                                        $('#wttrinstationid').attr('data-validation-rule',      RULE_WTTRIN_STATIONID); 
+                                        $('#wetteronlinestationid').attr('data-validation-rule', RULE_WO_STATIONID);
+                                        $('#foshkserver').attr('data-validation-rule',          RULE_HOSTNAME_OR_IPADDR);
+                                        $('#foshkport').attr('data-validation-rule',            RULE_PORT);
+                                        $('#weatherflowapikey').attr('data-validation-rule',    RULE_WEATHERFLOW_APIKEY);
+                                        $('#weatherflowstationid').attr('data-validation-rule', RULE_DIGITS);
+                                        $('#coordlat').attr('data-validation-rule',             RULE_COORD_LAT);
+                                        $('#coordlong').attr('data-validation-rule',            RULE_COORD_LONG);
+
+                                        // Registers the field: creates error tooltip, hooks blur/input/keyup events
                                         validate_enable('#wustationid');
                                         validate_enable('#foshkserver');
                                         validate_enable('#foshkport');
+                                        validate_enable('#loxprefix');
                                         validate_enable('#visualcrossingapikey');
                                         validate_enable('#openweatherapikey');
+                                        validate_enable('#wttrinstationid');
+                                        validate_enable('#wetteronlinestationid');
                                         validate_enable('#coordlat');
                                         validate_enable('#coordlong');
                                         validate_enable('#weatherflowapikey');
                                         validate_enable('#weatherflowstationid');
-                                        validate_enable('#udpport');
+
+                                        // Initialize validation state on page load based on current switch positions
+                                        if ( $('select[name=wugrabber]').val()    !== '1' ) removeFromValidation('#wustationid');
+                                        if ( $('select[name=foshkgrabber]').val() !== '1' ) { removeFromValidation('#foshkserver'); removeFromValidation('#foshkport'); }
+                                        if ( $('select[name=loxgrabber]').val()   !== '1' ) removeFromValidation('#loxprefix');
+                                        // Service fields are all optional until the combined change handler runs once
+                                        removeFromValidation('#visualcrossingapikey');
+                                        removeFromValidation('#openweatherapikey');
+                                        removeFromValidation('#wttrinstationid');
+                                        removeFromValidation('#wetteronlinestationid');
+                                        removeFromValidation('#weatherflowapikey');
+                                        removeFromValidation('#weatherflowstationid');
+                                        
+                                        // Now set correct required state based on current selections
+                                        updateServiceFieldRequirements();    
+
+                                        // Disable save button on page load if any field is invalid
+                                        updateSaveButton();
+
+                                        // Re-check on every change in any validated field
+                                        $('#wustationid, #foshkserver, #foshkport, #loxprefix, #visualcrossingapikey, #openweatherapikey, #wttrinstationid, #wetteronlinestationid, #coordlat, #coordlong, #weatherflowapikey, #weatherflowstationid')
+                                            .on('input blur keyup', function() {
+                                                updateSaveButton();
+                                            });
                                     });
 
                                     // Auto-expand collapsible on weather service change
@@ -752,6 +920,7 @@
                                         if (selected && $("select[name=getdata]").val() === "1") {
                                             $('#section-' + selected).collapsible('expand');
                                         }
+                                        updateServiceFieldRequirements();
                                     });
 
                                     // Expand collapsible when alternate DFC service changes
@@ -760,6 +929,7 @@
                                         if (selected && $("select[name=usealternatedfc]").val() === "1") {
                                             $('#section-' + selected).collapsible('expand');
                                         }
+                                        updateServiceFieldRequirements();
                                     });
 
                                     // Expand collapsible when alternate HFC service changes
@@ -768,6 +938,7 @@
                                         if (selected && $("select[name=usealternatehfc]").val() === "1") {
                                             $('#section-' + selected).collapsible('expand');
                                         }
+                                        updateServiceFieldRequirements();
                                     });
 
                                     // Add some attributes PERL::CGI doesn't provide
@@ -817,9 +988,10 @@
                                                 $('#section-' + selected).collapsible('collapse');
                                             }
                                         }
+                                        updateServiceFieldRequirements();
                                     });
 
-                                    // Get Data Forecast
+                                    // Alternate DFC
                                     $( document ).on( 'change', '#usealternatedfc', function ( e ) {
                                         if ( ( $( "select[name=usealternatedfc]" ).val()  === "1" ) || ( $( "select[name=usealternatehfc]" ).val()  === "1" ) ) {
                                             //alert("An!");
@@ -844,7 +1016,10 @@
                                                 $('#section-' + selected).collapsible('collapse');
                                             }
                                         }
+                                        updateServiceFieldRequirements();
                                     });
+
+                                    // Alternate HFC
                                     $( document ).on( 'change', '#usealternatehfc', function ( e ) {
                                         if ( ( $( "select[name=usealternatehfc]" ).val()  === "1" ) || ( $( "select[name=usealternatedfc]" ).val()  === "1" ) ) {
                                             //alert("An!");
@@ -869,6 +1044,7 @@
                                                 $('#section-' + selected).collapsible('collapse');
                                             }
                                         }
+                                        updateServiceFieldRequirements();
                                     });
                                     // TODO: verify if this can be removed after above two handlers are working correctly
                                     $( document ).on( 'change', '#getdata_forecast', function ( e ) {
@@ -881,6 +1057,7 @@
                                             $('#cron_alternate').addClass('ui-disabled');
                                             $('#cron_alternate').selectmenu('refresh');
                                         }
+                                        updateServiceFieldRequirements();
                                     });
 
                                     // WUGrabber
@@ -889,10 +1066,12 @@
                                             //alert("An!");
                                             $('#labelwustationid').removeClass('ui-disabled');
                                             $('#wustationid').removeClass('ui-disabled');
+                                            addToValidation('#wustationid');
                                         } else {
                                             //alert("Aus!");
                                             $('#labelwustationid').addClass('ui-disabled');
                                             $('#wustationid').addClass('ui-disabled');
+                                            removeFromValidation('#wustationid');
                                         }
                                     });
 
@@ -904,12 +1083,31 @@
                                             $('#foshkserver').removeClass('ui-disabled');
                                             $('#labelfoshkport').removeClass('ui-disabled');
                                             $('#foshkport').removeClass('ui-disabled');
+                                            addToValidation('#foshkserver');
+                                            addToValidation('#foshkport');
                                         } else {
                                             //alert("Aus!");
                                             $('#labelfoshkserver').addClass('ui-disabled');
                                             $('#foshkserver').addClass('ui-disabled');
                                             $('#labelfoshkport').addClass('ui-disabled');
                                             $('#foshkport').addClass('ui-disabled');
+                                            removeFromValidation('#foshkserver');
+                                            removeFromValidation('#foshkport');
+                                        }
+                                    });
+                                    
+                                    // LoxGrabber
+                                    $( document ).on( 'change', '#loxgrabber', function ( e ) {
+                                        if ( $( "select[name=loxgrabber]" ).val()  === "1" ) {
+                                            //alert("An!");
+                                            $('#labelloxprefix').removeClass('ui-disabled');
+                                            $('#loxprefix').removeClass('ui-disabled');
+                                            addToValidation('#loxprefix');
+                                        } else {
+                                            //alert("Aus!");
+                                            $('#labelloxprefix').addClass('ui-disabled');
+                                            $('#loxprefix').addClass('ui-disabled');
+                                            removeFromValidation('#loxprefix');
                                         }
                                     });
 
@@ -935,40 +1133,16 @@
                                         '6': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_6>',
                                         '7': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_7>'
                                     };
+
                                     function updatePollenHint(name) {
                                         var val = $('select[name=' + name + ']').val();
                                         $('#hint_pollen_' + name.replace('pollen_','') ).text(pollenHints[val] || '');
                                     }
+
                                     var pollenNames = ['pollen_grasses','pollen_birch','pollen_alder','pollen_mugwort','pollen_olive','pollen_ragweed'];
                                     $.each(pollenNames, function(i, name) {
                                         updatePollenHint(name);
                                         $( document ).on( 'change', '#' + name, function() { updatePollenHint(name); });
-                                    });
-
-                                    // Alternate DFC
-                                    $( document ).on( 'change', '#usealternatedfc', function ( e ) {
-                                        if ( $( "select[name=usealternatedfc]" ).val()  === "1" ) {
-                                            //alert("An!");
-                                            $('#weatherservicedfc').removeClass('ui-disabled');
-                                            $('#weatherservicedfc').selectmenu('refresh');
-                                        } else {
-                                            //alert("Aus!");
-                                            $('#weatherservicedfc').addClass('ui-disabled');
-                                            $('#weatherservicedfc').selectmenu('refresh');
-                                        }
-                                    });
-
-                                    // Alternate HFC
-                                    $( document ).on( 'change', '#usealternatehfc', function ( e ) {
-                                        if ( $( "select[name=usealternatehfc]" ).val()  === "1" ) {
-                                            //alert("An!");
-                                            $('#weatherservicehfc').removeClass('ui-disabled');
-                                            $('#weatherservicehfc').selectmenu('refresh');
-                                        } else {
-                                            //alert("Aus!");
-                                            $('#weatherservicehfc').addClass('ui-disabled');
-                                            $('#weatherservicehfc').selectmenu('refresh');
-                                        }
                                     });
 
                                     // Disable some form elements depending on selected options
@@ -995,6 +1169,10 @@
                                         if ( $( "select[name=wugrabber]" ).val()  === "0" ) {
                                             $('#labelwustationid').addClass('ui-disabled');
                                             $('#wustationid').addClass('ui-disabled');
+                                        }
+                                        if ( $( "select[name=loxgrabber]" ).val()  === "0" ) {
+                                            $('#labelloxprefix').addClass('ui-disabled');
+                                            $('#loxprefix').addClass('ui-disabled');
                                         }
                                         if ( $( "select[name=foshkgrabber]" ).val()  === "0" ) {
                                             $('#labelfoshkserver').addClass('ui-disabled');

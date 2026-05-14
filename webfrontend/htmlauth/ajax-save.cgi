@@ -228,6 +228,8 @@ eval {
     $cfg->param("FOSHK.SERVER", $R->{foshkserver} // "");
     $cfg->param("FOSHK.PORT", $R->{foshkport} // "");
 
+    $cfg->param("LOX.PREFIX", $R->{loxprefix} // "");
+
     $cfg->param("SERVER.PWSCATCHUPLOADGRABBER", $R->{pwscatchuploadgrabber} // "");
     $cfg->param("SERVER.WUGRABBER", $R->{wugrabber} // "");
     $cfg->param("SERVER.LOXGRABBER", $R->{loxgrabber} // "");

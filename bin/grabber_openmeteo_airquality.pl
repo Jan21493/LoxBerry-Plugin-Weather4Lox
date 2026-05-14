@@ -56,23 +56,6 @@ my $grabberLabel    = "Open-Meteo Air Quality and Pollen";
 my $grabberKey      = "openmeteo_airquality";              # name in JSONs
 my $refresh         = $pcfg->param("SERVER.CRON") // 60;
 
-# Determine system timezone (Debian / DietPi)
-my $timezone = $ENV{TZ} // '';
-
-if (!$timezone) {
-    if (open my $tzfh, '<:encoding(UTF-8)', '/etc/timezone') {
-        $timezone = <$tzfh>;
-        chomp $timezone if defined $timezone;
-        close $tzfh;
-    }
-}
-
-# Validate that zoneinfo exists (avoid invalid names)
-if (!$timezone || !-f "/usr/share/zoneinfo/$timezone") {
-    # Fallback to UTC if not found
-    $timezone = 'UTC';
-}
-
 # Create a logging object
 my $log = LoxBerry::Log->new (
 	package => 'weather4lox',
@@ -94,6 +77,10 @@ if ($verbose) {
 
 LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
+
+# all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
+my $timezone = _systemTimezone();
+LOGDEB "Using timezone: $timezone";
 
 # Validate coordinates
 if ( !defined $lat || $lat eq '' || !defined $lon || $lon eq '' ) {

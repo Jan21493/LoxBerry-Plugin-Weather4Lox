@@ -89,23 +89,8 @@ LOGDEB "This is $0 Version $version";
 requireOrLogdie('DateTime::Format::ISO8601');
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
-
-# Determine system timezone (Debian / DietPi)
-my $timezone = $ENV{TZ} // '';
-
-if (!$timezone) {
-    if (open my $tzfh, '<:encoding(UTF-8)', '/etc/timezone') {
-        $timezone = <$tzfh>;
-        chomp $timezone if defined $timezone;
-        close $tzfh;
-    }
-}
-
-# Validate that zoneinfo exists (avoid invalid names)
-if (!$timezone || !-f "/usr/share/zoneinfo/$timezone") {
-    # Fallback to UTC if not found
-    $timezone = 'UTC';
-}
+my $timezone = _systemTimezone();
+LOGDEB "Using timezone: $timezone";
 
 my $apikey = apiCall(
     url => "$urlGetKeyRaw",
@@ -139,14 +124,17 @@ my $heatIndex = getFormatted('%.1f', $resCurrent, 'observations', 0, 'metric', '
 
 # Only set temperature if it is defined, otherwise we might overwrite existing valid data with undefined values
 if (defined $temp) {
+    LOGDEB "Adding/overwriting temperature/air with $temp degC.";
     $cur->{temperature}{air} = $temp;                                                                    # cur_tt        - hourly max temperature (°C)
 }
 # Windchill is only relevant if it differs significantly from the actual temperature
 if (defined $windChill && defined $temp && abs($windChill - $temp) > 0.1 || !defined $cur->{temperature}{windChill}) {
+    LOGDEB "Adding/overwriting temperature/windChill with $windChill degC.";
     $cur->{temperature}{windChill} = $windChill;                                                   # cur_w_ch      - min feels-like temperature, same as cur_w_ch  - wind chill (feel)
 }
 # Heat index is only relevant if it differs significantly from the actual temperature
 if (defined $heatIndex && defined $temp && abs($heatIndex - $temp) > 0.1 || !defined $cur->{temperature}{heatIndex}) {
+    LOGDEB "Adding/overwriting temperature/heatIndex with $heatIndex degC.";
     $cur->{temperature}{heatIndex} = $heatIndex;                                                   # cur_hi        - heat index (°C)
 }
 
@@ -157,40 +145,48 @@ my $windGust = getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'w
 
 # Only set wind data if all values are defined, otherwise we might overwrite existing valid data with undefined values
 if ( (defined $windDir && defined $windSpeed)) {
+    LOGDEB "Adding/overwriting wind/direction=$windDir, wind/speed=$windSpeed, wind/cardinal=" . getWindDirCardinal($windDir);
     $cur->{wind} = {
         direction       => $windDir,                                                                  # cur_w_dir     - wind direction (degree)
         cardinal        => getWindDirCardinal($windDir),                                              #               - cardinal and intercardinal directions, "N", "NE", "E", "SE", "S", "SW", "W", "NW" in english
         speed           => $windSpeed,                                                                # cur_w_sp      - wind speed (km/h)
     };
-}
-# wind gust may not be provided at all times
-if (defined $windGust) {
-    $cur->{wind}{gust} = $windGust;                                                                # cur_w_gu      - wind gust (km/h)
+    # wind gust may not be provided at all times
+    if (defined $windGust) {
+        LOGDEB "Adding/overwriting wind/gust with $windGust km/h.";
+        $cur->{wind}{gust} = $windGust;                                                                # cur_w_gu      - wind gust (km/h)
+    }
 }
 
 # other weather data - only set if defined, otherwise we might overwrite existing valid data with undefined values
 my $humidity = getFormatted('%.1f', $resCurrent, 'observations', 0, 'humidity');
 if (defined $humidity) {
+    LOGDEB "Adding/overwriting humidity with $humidity %.";
     $cur->{humidity} = $humidity;                                                                 # cur_hu        - humidity
 }
 my $pressure = getFormatted('%.0f', $resCurrent, 'observations', 0, 'metric', 'pressure');
 if (defined $pressure) {
+    LOGDEB "Adding/overwriting pressure with $pressure hPa.";
     $cur->{pressure} = $pressure;                                                                 # cur_pr        - air pressure (hPa)
 }
 my $dewpoint = getFormatted('%.1f', $resCurrent, 'observations', 0, 'metric', 'dewpt');
 if (defined $dewpoint) {
+    LOGDEB "Adding/overwriting dewpoint with $dewpoint degC.";
     $cur->{dewpoint} = $dewpoint;                                                                 # cur_dp        - dew point (°C)
 }
 my $uvIndex = getFormatted('%.1f', $resCurrent, 'observations', 0, 'uv');
 if (defined $uvIndex) {
+    LOGDEB "Adding/overwriting uvIndex with $uvIndex.";
     $cur->{uvIndex} = $uvIndex;                                                                   # cur_uvi       - UV index
 }
 my $visibility = getPercentage('%.0f', $resCurrent, 'observations', 0, 'visibility');
 if (defined $visibility) {
+    LOGDEB "Adding/overwriting visibility with $visibility.";
     $cur->{visibility} = $visibility;                                                             # cur_vis       - visibility (m/km as needed)
 }
 my $solarRadiation = getFormatted('%.1f', $resCurrent, 'observations', 0, 'solarRadiation');
 if (defined $solarRadiation) {
+    LOGDEB "Adding/overwriting solarRadiation with $solarRadiation W/m2.";
     $cur->{solarRadiation} = $solarRadiation;                                                     # cur_sr        - solar radiation (W/m²)
 }
 
@@ -199,10 +195,12 @@ my %precipitation = %{ $cur->{precipitation} // {} };
 
 my $rainToday = getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'precipTotal');
 if (defined $rainToday) {
+    LOGDEB "Adding/overwriting precipitation/rainToday with $rainToday mm.";
     $precipitation{rainToday} = $rainToday;                                                    # cur_prec_today, today precipitation in mm
 }
 my $rain1hr = getFormatted('%.2f', $resCurrent, 'observations', 0, 'metric', 'precipRate');
 if (defined $rain1hr) {
+    LOGDEB "Adding/overwriting precipitation/rain1hr with $rain1hr mm.";
     $precipitation{rain1hr} = $rain1hr;                                                        # cur_prec_1hr, 1h precipitation in mm
 }
 
@@ -213,11 +211,10 @@ $cur->{precipitation} = \%precipitation;
 my $stationID = getValue($resCurrent, 'observations', 0, 'stationID'); # station ID from WU data, e.g. ISCHLESW69
 my $obsTimeLocal = getValue($resCurrent, 'observations', 0, 'obsTimeLocal'); # observation time in local time, e.g. 2026-03-16 00:44:29
 
-my $dtCurrent = DateTime->now( time_zone => $timezone );
-
+my $generatedAt = DateTime->now( time_zone => $timezone );
 $envelope->{$grabberKey} = {
     filename        => "$lbplogdir/$weatherKey.json",
-    generatedAt     => _epochToIso($dtCurrent->epoch, $timezone),
+    generatedAt     => $generatedAt->iso8601(),
     observedAt      => $obsTimeLocal,
     grabberLabel    => $grabberLabel,
     grabberScript   => $grabberFile,
@@ -230,7 +227,7 @@ if ($refresh < $envelope->{refresh}) {
     LOGINF "Reducing refresh interval for $weatherKey weather data from $envelope->{refresh} to $refresh minutes.";
     $envelope->{refresh} = $refresh;
 }
-$envelope->{generatedAt} = _epochToIso($dtCurrent->epoch, $timezone);
+$envelope->{generatedAt} = $generatedAt->iso8601();
 
 # Write JSON back to file
 writeJsonFile($lbplogdir, $weatherKey, $envelope);

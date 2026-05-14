@@ -84,9 +84,12 @@ if ($verbose) {
 LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
-requireOrLogdie('Astro::MoonPhase');
 requireOrLogdie('Math::Function::Interpolator');
-requireOrLogdie('Math::Function::Interpolator::Linear');
+requireOrLogdie('Astro::MoonPhase');
+
+# all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
+my $timezone = _systemTimezone();
+LOGDEB "Using timezone: $timezone";
 
 # Mapping table for conversion of WTTR.in weather codes to Loxone weather Picto-Codes and short names for weather symbols
 # Weather codes are based on https://www.worldweatheronline.com/weather-api/api/docs/weather-icons.aspx
@@ -165,14 +168,14 @@ my $results = apiCall(
 # Common data
 ##########################################################################
 
-my $timezone = _systemTimezone();
 my $lat      = $results->{nearest_area}[0]->{latitude};
 my $lon      = $results->{nearest_area}[0]->{longitude};
 
 # Derive generatedAt from current observation time, looks that wttr.in is always using am/pm time format
 my $obs_t = Time::Piece->strptime($results->{current_condition}[0]->{localObsDateTime}, "%Y-%m-%d %R %p");
 my $currentEpoch = $obs_t->epoch;
-my $generatedAt  = _epochToIso($currentEpoch, $timezone);
+
+my $generatedAt = DateTime->now( time_zone => $timezone );
 
 # Timezone short and offset via POSIX
 my ($tzShort, $tzOffset);
@@ -294,11 +297,11 @@ if ( $current ) {
     my $weatherKey = "current";
     my $envelope = {
         refresh     => $refresh,
-        generatedAt   => $generatedAt,
+        generatedAt   => $generatedAt->iso8601(),
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt,
+            generatedAt   => $generatedAt->iso8601(),
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",
@@ -476,11 +479,11 @@ if ( $daily ) {
     my $weatherKey = "dailyforecast";
     my $envelope = {
         refresh     => $refresh,
-        generatedAt   => $generatedAt,
+        generatedAt   => $generatedAt->iso8601(),
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt,
+            generatedAt   => $generatedAt->iso8601(),
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",
@@ -662,11 +665,11 @@ if ( $hourly ) {
     my $weatherKey = "hourlyforecast";
     my $envelope = {
         refresh     => $refresh,
-        generatedAt   => $generatedAt,
+        generatedAt   => $generatedAt->iso8601(),
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt,
+            generatedAt   => $generatedAt->iso8601(),
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",

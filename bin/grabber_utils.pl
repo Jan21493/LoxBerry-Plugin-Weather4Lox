@@ -168,48 +168,6 @@ sub apiCall {
     return $decodedJson;
 }
 
-##########################################################################
-# JSON export helpers
-# Write structured JSON files alongside the legacy pipe-delimited .dat files.
-# Called by each grabber after the .dat has been written and validated.
-#
-# Design principle: The JSON files use ISO 8601 datetime strings instead
-# of the localized weekday/month name columns in the .dat files.
-# Consumers parse the ISO datetime and format in their own locale.
-
-# ── Normalized weather code mapping (legacy_code → normalized id) ──
-# Matches data/weathercodes.json v2.0
-my %WEATHER_CODE_TO_ID = (
-     1 => "clear",
-     2 => "fair",
-     3 => "partly-cloudy",
-     4 => "mostly-cloudy",
-     5 => "overcast",
-     6 => "fog",
-     7 => "haze",
-    10 => "rain-light",
-    11 => "rain",
-    12 => "rain-heavy",
-    13 => "drizzle",
-    14 => "freezing-drizzle",
-    15 => "freezing-rain",
-    16 => "rain-shower-light",
-    17 => "rain-shower-heavy",
-    18 => "thunderstorm",
-    19 => "thunderstorm-heavy",
-    20 => "snow-light",
-    21 => "snow",
-    22 => "snow-heavy",
-    23 => "snow-shower-light",
-    24 => "snow-shower-heavy",
-    25 => "sleet-light",
-    26 => "sleet",
-    27 => "sleet-heavy",
-    28 => "sleet-shower-light",
-    29 => "sleet-shower-heavy",
-);
-
-
 
 ##########################################################################
 # Helpers to retrieve values from object structure including arrays 
@@ -800,11 +758,29 @@ sub _epochToIsoDate {
 my $_systemTz;
 sub _systemTimezone {
     return $_systemTz if defined $_systemTz;
-    if (open my $fh, '<', '/etc/timezone') {
+
+    # Check environment variable first
+    if ($ENV{TZ}) {
+        $_systemTz = $ENV{TZ};
+        return $_systemTz;
+    }
+
+    # Trixie+: /etc/timezone no longer exists — read timezone from /etc/localtime symlink
+    if (-l '/etc/localtime') {
+        my $link = readlink '/etc/localtime';
+        # Extract timezone name from path, e.g. /usr/share/zoneinfo/Europe/Berlin → Europe/Berlin
+        my ($tz) = $link =~ m{zoneinfo/(.+)$};
+        $_systemTz = $tz if $tz && -f "/usr/share/zoneinfo/$tz";
+    }
+
+    # Legacy fallback: Debian < Trixie used /etc/timezone as plain text file
+    if (!$_systemTz && open my $fh, '<', '/etc/timezone') {
         $_systemTz = <$fh>;
         chomp $_systemTz if defined $_systemTz;
         close $fh;
     }
+
+    # Final fallback to UTC
     $_systemTz //= 'UTC';
     return $_systemTz;
 }
@@ -816,24 +792,6 @@ sub _hhmm {
     return sprintf("%02d:%02d", $h, $m // 0);
 }
 
-# Add normalized weatherId from legacy weather_code
-# NOTE: this function now writes camelCase key 'weatherId' and reads either weather_code or weatherCode
-sub _enrichWeatherId {
-    my ($rec) = @_;
-    return $rec unless defined $rec && ref $rec eq 'HASH';
-
-    my $code = undef;
-    if (exists $rec->{weatherCode}) {
-        $code = $rec->{weatherCode};
-    } elsif (exists $rec->{weather_code}) {
-        $code = $rec->{weather_code};
-    }
-
-    if (defined $code && exists $WEATHER_CODE_TO_ID{ $code }) {
-        $rec->{weatherId} = $WEATHER_CODE_TO_ID{ $code };
-    }
-    return $rec;
-}
 
 ##########################################################################
 # Convert Weather4Lox icon code to old-style weather_code for backward 
@@ -943,6 +901,55 @@ sub w4l_to_oldW4lCode {
     return $oldW4lCode;
 }
 
+##########################################################################
+# Convert old-style weather4lox (we_code) weather code to new Weather4Lox code.
+#
+# Only used with Loxone MS grabber for backward compatibility with existing consumers that are using cur_we_code
+#
+# Parameter:
+#   oldW4lCode: old-style weather_code, e.g. 2
+# Returns:
+#   Weather4Lox icon code, e.g. "fair"
+
+my %OLDW4LCODE_TO_W4L = (
+    1  => 'clear',                    # clear, sunny
+    2  => 'fair',                     # mostly sunny
+    3  => 'partly_cloudy',            # partly sunny
+    4  => 'cloudy',                   # cloudy, overcast
+    5  => 'haze',                     # hazy
+    6  => 'fog',                      # fog
+    7 => 'no_data',                   # fallback / no data
+    8 => 'no_data',                   # fallback / no data
+    9 => 'no_data',                   # fallback / no data
+    10 => 'cloudy_shower_1',          # chance of showers
+    11 => 'cloudy_shower_2',          # showers
+    12 => 'cloudy_rain_1',            # chance of rain
+    13 => 'cloudy_rain_2',            # rain
+    14 => 'cloudy_thunderstorm_1',    # chance of thunderstorms
+    15 => 'cloudy_thunderstorm_2',    # thunderstorms
+    16 => 'cloudy_snow_2',            # flurry
+    17 => 'no_data',                  # fallback / no data
+    18 => 'cloudy_snow_1',            # chance of flurries
+    19 => 'cloudy_sleet_1',           # sleet
+    20 => 'overcast_snow_1',          # chance of snow
+    21 => 'overcast_snow_2',          # snow
+    22 => 'wind',                     # windy
+    23 => 'no_data',                   # fallback / no data
+    24 => 'no_data',                   # fallback / no data
+    25 => 'no_data',                   # fallback / no data
+    26 => 'no_data',                   # fallback / no data
+    27 => 'no_data',                   # fallback / no data
+    28 => 'cloudy_freezingrain_1',    # light freezing rain (best-fit)
+    29 => 'cloudy_freezingrain_2',    # freezing rain (best-fit)
+);
+
+sub oldW4lCode_to_w4l {
+    my ($oldW4lCode) = @_;
+    return $oldW4lCode unless defined $oldW4lCode;
+
+    # Return canonical W4L code, fallback to 'no_data' if old code is unknown
+    return $OLDW4LCODE_TO_W4L{ $oldW4lCode } // 'no_data';
+}
 
 ##########################################################################
 # Generalized JSON file writer for any weather type (current, daily, hourly).

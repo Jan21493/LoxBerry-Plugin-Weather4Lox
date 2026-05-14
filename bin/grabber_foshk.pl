@@ -33,7 +33,6 @@ use utf8;
 use Encode qw(encode_utf8);
 use Getopt::Long;
 use Time::Piece;
-#use Data::Dumper;
 
 require "$lbpbindir/grabber_utils.pl";
 
@@ -80,6 +79,10 @@ if ($verbose) {
 
 LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
+
+# all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
+my $timezone = _systemTimezone();
+LOGDEB "Using timezone: $timezone";
 
 # Get data from FOSHK Plugin Server for current conditions
 my $decoded_json = apiCall(
@@ -140,10 +143,10 @@ $precipitation{rain1hr}   = getFormatted('%.2f', $obs, 'metric', 'precipRate'); 
 $cur->{precipitation} = \%precipitation;
 
 # Add grabber metadata
-my $dtCurrent = localtime;
+my $generatedAt = DateTime->now( time_zone => $timezone );
 $envelope->{$grabberKey} = {
     filename        => "$lbplogdir/$weatherKey.json",
-    generatedAt     => $dtCurrent->iso8601(),
+    generatedAt     => $generatedAt->iso8601(),
     grabberLabel    => $grabberLabel,
     grabberScript   => $grabberFile,
     schemaVersion   => "v1.0",
@@ -154,7 +157,7 @@ if ($refresh < $envelope->{refresh}) {
     LOGINF "Reducing refresh interval for $weatherKey weather data from $envelope->{refresh} to $refresh minutes.";
     $envelope->{refresh} = $refresh;
 }
-$envelope->{generatedAt} = $dtCurrent->iso8601();
+$envelope->{generatedAt} = $generatedAt->iso8601();
 
 # Write JSON back to file
 writeJsonFile($lbplogdir, $weatherKey, $envelope);
