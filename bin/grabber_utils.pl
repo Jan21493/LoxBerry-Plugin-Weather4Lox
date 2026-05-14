@@ -122,7 +122,7 @@ sub apiCall {
     # Perform the API call
     my $ua  = LWP::UserAgent->new( agent => $userAgent );
     my $res = $ua->get($url);
-    my $content = $res->decoded_content();
+    my $content = $res->content();
 
     # Check status of request
     my $urlstatus = $res->status_line;
@@ -149,9 +149,8 @@ sub apiCall {
         }
     } 
     # JSON response is expected, so check if it can be decoded
-
-    # Decode JSON response from server
-    my $decodedJson = decode_json( "$content" );
+    # decoded_content() returned a Perl character string —> encode to raw UTF-8 bytes -> decode_json()
+    my $decodedJson = decode_json($content);
 
     my $body    = '';
     # my $json_obj = JSON->new->pretty->canonical;

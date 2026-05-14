@@ -109,6 +109,9 @@ LOGDEB "This is $0 Version $version";
 require "$lbpbindir/grabber_utils.pl";
 requireOrLogdie('DateTime::Format::ISO8601');
 
+# all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
+my $timezone = _systemTimezone();
+LOGDEB "Using timezone: $timezone, current local system time is " . DateTime->now( time_zone => $timezone )->iso8601();
 
 ##########################################################################
 # Main program

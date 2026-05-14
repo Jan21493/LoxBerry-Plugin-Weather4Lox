@@ -28,17 +28,13 @@ use LoxBerry::System;
 use LoxBerry::Log;
 use LWP::UserAgent;
 use JSON::PP;
-#use JSON qw( decode_json );
 use File::Copy;
 use File::Basename qw(basename);
 use Getopt::Long;
 use Time::Piece;
-#use Math::Function::Interpolator;
 use HTTP::Request;
 use DateTime;
 #use DateTime::TimeZone;
-#use DateTime::Format::ISO8601;
-#use Astro::MoonPhase;
 use utf8;
 use Encode qw(encode_utf8);
 use HTML::Entities;
@@ -121,7 +117,7 @@ requireOrLogdie('Astro::MoonPhase');
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();
-LOGDEB "Using timezone: $timezone";
+LOGDEB "Using timezone: $timezone, current local system time is " . DateTime->now( time_zone => $timezone )->iso8601();
 
 if ($hourly) {
     #require_or_logdie('Lexical::Sub');
@@ -678,7 +674,7 @@ if ( $current ) {
     # astro data
     my %moon;
 
-    my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = phase();
+    my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = Astro::MoonPhase::phase();
     # age is delivered by API, , but makes no sense as phase() delivers all values
     # $moon{age} = getFormatted('%.2f', $resCurrent, 'moon', 0, 'age');
     $moon{age} = sprintf("%.2f",$moonage) + 0;                                                                                 # cur_moon_a, moon age in days
@@ -748,7 +744,7 @@ if ( $daily ) {
         }
 
         # astro data - get moon infos for specific time of data set (translated to epoch time)
-        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = phase($dtResult->epoch);
+        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = Astro::MoonPhase::phase($dtResult->epoch);
 
         # Calculating min, max values from dayparts
         # humidity (min, max)
@@ -950,7 +946,7 @@ if ( $hourly ) {
         }
 
         # astro data - get moon infos for specific time of data set (translated to epoch time)
-        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = phase($dtResult->epoch);
+        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = Astro::MoonPhase::phase($dtResult->epoch);
 
         # Get sunrise and sunset time from daily data, needed for isNighttime calculation
         my $isNighttime = undef; # default to day (undef)
@@ -1192,7 +1188,7 @@ if ( $hourly ) {
         # astro data
 
         # get moon infos for specific time of data set (translated to epoch time)
-        my ($moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang) = phase($epochTime);
+        my ($moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang) = Astro::MoonPhase::phase($epochTime);
 
         # Get sunrise and sunset time from daily data, needed for isNighttime calculation
         my $isNighttime = undef; # default to day (undef)

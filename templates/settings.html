@@ -639,6 +639,7 @@
                                     var RULE_DIGITS              = '^\\d+$';                  // digits only, min 1 char
                                     var RULE_HOSTNAME_OR_IPADDR  = 'special:hostname_or_ipaddr'; // hostname or IPv4 address
                                     var RULE_PORT                = 'special:port';            // port number 1-65535
+                                    var RULE_PREFIX              = '^[a-zA-Z0-9\\-\\_]+$';         // letters and digits, min 1 char
                                     var RULE_WEATHERFLOW_APIKEY  = '^([A-Za-z0-9\\-]){36}$'; // WeatherFlow API key: 36 chars
                                     var RULE_COORD_LAT           = 'special:number-min-max-value:-90:90';   // latitude -90..90
                                     var RULE_COORD_LONG          = 'special:number-min-max-value:-180:180'; // longitude -180..180
@@ -862,7 +863,7 @@
                                         // Apply named validation rules to input fields - the rules are defined in the variables above
                                         // empty content is not allowed if validation is turned on, see below
                                         $('#wustationid').attr('data-validation-rule',          RULE_ALPHANUMERIC);
-                                        $('#loxprefix').attr('data-validation-rule',            RULE_ALPHANUMERIC);
+                                        $('#loxprefix').attr('data-validation-rule',            RULE_PREFIX);
                                         $('#visualcrossingapikey').attr('data-validation-rule', RULE_ALPHANUMERIC);
                                         $('#openweatherapikey').attr('data-validation-rule',    RULE_ALPHANUMERIC);
                                         $('#wttrinstationid').attr('data-validation-rule',      RULE_WTTRIN_STATIONID); 

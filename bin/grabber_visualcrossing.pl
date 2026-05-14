@@ -33,7 +33,6 @@ use Getopt::Long;
 use Time::Piece;
 use Time::Seconds;
 use DateTime;
-#use Astro::MoonPhase;
 
 require "$lbpbindir/grabber_utils.pl";
 
@@ -91,11 +90,12 @@ if ($verbose) {
 LOGSTART "Weather4Lox GRABBER_VISUALCROSSING process started";
 LOGDEB "This is $0 Version $version";
 
+requireOrLogdie('DateTime::Format::ISO8601');
 requireOrLogdie('Astro::MoonPhase');
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();
-LOGDEB "Using timezone: $timezone";
+LOGDEB "Using timezone: $timezone, current local system time is " . DateTime->now( time_zone => $timezone )->iso8601();
 
 # Get data from www.visualcrossing.com (API request) for current conditions, daily and hourly forecasts
 my $results = apiCall(
@@ -280,7 +280,7 @@ if ( $current ) {
 
     # moon
     my %moon;
-    my ($moonphase, $moonillum, $moonage) = (phase())[0,1,2];
+    my ($moonphase, $moonillum, $moonage) = (Astro::MoonPhase::phase())[0,1,2];
     $moon{age}       = sprintf("%.2f", $moonage) + 0;                                              # cur_moon_a, moon age in days
     $moon{percent}   = sprintf("%.2f", $moonillum * 100) + 0;                                      # cur_moon_p, moon illumination in percent
     $moon{phase}     = sprintf("%.2f", $moonphase * 100) + 0;                                      # cur_moon_ph, moon phase in percent (0% = new moon, 50% = half moon, 100% = full moon)
@@ -398,7 +398,7 @@ if ( $daily ) {
 
         # moon
         my %moon;
-        my ($moonphase, $moonillum, $moonage) = (phase($resDay->{datetimeEpoch}))[0,1,2];
+        my ($moonphase, $moonillum, $moonage) = (Astro::MoonPhase::phase($resDay->{datetimeEpoch}))[0,1,2];
         $moon{age}       = sprintf("%.1f", $moonage) + 0;                                          # dfc<X>_moon_a    - moon age in days
         $moon{percent}   = sprintf("%.1f", $moonillum * 100) + 0;                                  # dfc<X>_moon_p    - moon percent illumination
         $moon{phase}     = sprintf("%.1f", $moonphase * 100) + 0;                                  # dfc<X>_moon_ph   - moon phase
@@ -510,7 +510,7 @@ if ( $hourly ) {
 
             # moon
             my %moon;
-            my ($moonphase, $moonillum, $moonage) = (phase($hourEpoch))[0,1,2];
+            my ($moonphase, $moonillum, $moonage) = (Astro::MoonPhase::phase($hourEpoch))[0,1,2];
             $moon{age}       = sprintf("%.2f", $moonage) + 0;                                      # hfc<X>_moon_a    - moon age in days
             $moon{percent}   = sprintf("%.2f", $moonillum * 100) + 0;                              # hfc<X>_moon_p    - moon percentage illumination
             $moon{phase}     = sprintf("%.2f", $moonphase * 100) + 0;                              # hfc<X>_moon_ph   - moon phase

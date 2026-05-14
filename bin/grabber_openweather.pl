@@ -116,7 +116,7 @@ requireOrLogdie('Astro::MoonPhase');
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();
-LOGDEB "Using timezone: $timezone";
+LOGDEB "Using timezone: $timezone, current local system time is " . DateTime->now( time_zone => $timezone )->iso8601();
 
 # Get weather data from openweathermap.org (API request) for current conditions
 my $results = apiCall(
@@ -611,7 +611,7 @@ if ( $current ) {
     # astro data
     my %moon;
 
-    my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = phase();
+    my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = Astro::MoonPhase::phase();
     # age is delivered by API, , but makes no sense as phase() delivers all values
     $moon{age} = sprintf("%.1f",$moonage) + 0;                                                                                 # cur_moon_a        - moon age in days
     $moon{percent} = sprintf("%.1f",$moonillum * 100) + 0;                                                                     # cur_moon_p        - moon illumination in percent
@@ -677,7 +677,7 @@ if ( $daily ) {
         }
 
         # astro data - get moon infos for specific time of data set (translated to epoch time)
-        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = phase($dtEpoch);
+        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = Astro::MoonPhase::phase($dtEpoch);
 
         push @dailyData, {
 
@@ -809,7 +809,7 @@ if ( $hourly ) {
         }
 
         # astro data - get moon infos for specific time of data set (translated to epoch time)
-        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = phase($dtEpoch);
+        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = Astro::MoonPhase::phase($dtEpoch);
 
         $hourlyData = {
             hour           => $hour,                                                               # hfc<X>_per        -  counter of day
@@ -911,7 +911,7 @@ if ( $hourly ) {
                 my $dtEpoch = $lastHourlyData->{time}{epoch} + ($step * 3600); # add hours in seconds to last known hourly data timestamp
 
                 # astro data - get moon infos for specific time of data set (translated to epoch time)
-                my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = phase($dtEpoch);
+                my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = Astro::MoonPhase::phase($dtEpoch);
 
                 sub interpolate {
                     my ($lastValue, $nextValue, $step, $delta) = @_;

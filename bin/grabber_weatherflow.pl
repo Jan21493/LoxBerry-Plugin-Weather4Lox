@@ -32,7 +32,6 @@ use JSON qw( decode_json );
 use File::Copy;
 use Getopt::Long;
 use Time::Piece;
-#use Astro::MoonPhase;
 
 require "$lbpbindir/grabber_utils.pl";
 
@@ -90,11 +89,12 @@ if ($verbose) {
 LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
+requireOrLogdie('DateTime::Format::ISO8601');
 requireOrLogdie('Astro::MoonPhase');
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();
-LOGDEB "Using timezone: $timezone";
+LOGDEB "Using timezone: $timezone, current local system time is " . DateTime->now( time_zone => $timezone )->iso8601();
 
 # Get forecast data from Weatherflow Server
 # API: https://weatherflow.github.io/Tempest/api/swagger/#/forecast
@@ -283,7 +283,7 @@ if ( $current ) {
 
     # moon
     my %moon;
-    my ($moonphase, $moonillum, $moonage) = (phase())[0,1,2];
+    my ($moonphase, $moonillum, $moonage) = (Astro::MoonPhase::phase())[0,1,2];
     $moon{age}       = sprintf("%.2f", $moonage) + 0;
     $moon{percent}   = sprintf("%.2f", $moonillum * 100) + 0;
     $moon{phase}     = sprintf("%.2f", $moonphase * 100) + 0;
@@ -404,7 +404,7 @@ if ( $daily ) {
 
         # moon
         my %moon;
-        my ($moonphase, $moonillum, $moonage) = (phase($results->{day_start_local}))[0,1,2];
+        my ($moonphase, $moonillum, $moonage) = (Astro::MoonPhase::phase($results->{day_start_local}))[0,1,2];
         $moon{age}       = sprintf("%.2f", $moonage) + 0;
         $moon{percent}   = sprintf("%.2f", $moonillum * 100) + 0;
         $moon{phase}     = sprintf("%.2f", $moonphase * 100) + 0;
@@ -505,7 +505,7 @@ if ( $hourly ) {
 
         # moon
         my %moon;
-        my ($moonphase, $moonillum, $moonage) = (phase($h->{time}))[0,1,2];
+        my ($moonphase, $moonillum, $moonage) = (Astro::MoonPhase::phase($h->{time}))[0,1,2];
         $moon{age}       = sprintf("%.2f", $moonage) + 0;
         $moon{percent}   = sprintf("%.2f", $moonillum * 100) + 0;
         $moon{phase}     = sprintf("%.2f", $moonphase * 100) + 0;
