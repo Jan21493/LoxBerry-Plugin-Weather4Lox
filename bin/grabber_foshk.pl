@@ -51,7 +51,7 @@ my $port        = $pcfg->param("FOSHK.PORT");
 
 # names for JSON
 my $grabberFile     = basename(__FILE__);
-my $grabberLabel    = "FOSHK";
+my $grabberLabel    = "FOSHK Weather Station";
 my $grabberKey      = "foshk";              # name in JSONs
 my $refresh         = 60;
 

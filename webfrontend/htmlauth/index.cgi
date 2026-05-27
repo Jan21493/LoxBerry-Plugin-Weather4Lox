@@ -256,6 +256,22 @@ if ($R::form eq "1" || !$R::form) {
     );
     $template->param( WEATHERSERVICE => $wservice );
 
+    # Weather Service for Observations
+    $template->param("CURRENT_WEATHERSERVICEOBS", $cfg->param("SERVER.WEATHERSERVICEOBS"));
+
+    @values = ( 'visualcrossing', );
+    %labels = (
+        'visualcrossing' => 'Visual Crossing',
+    );
+    my $wserviceobs = $cgi->popup_menu(
+        -name    => 'weatherserviceobs',
+        -id      => 'weatherserviceobs',
+        -values  => \@values,
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.WEATHERSERVICEOBS'),
+    );
+    $template->param( WEATHERSERVICEOBS => $wserviceobs );
+
     # DFC Weather Service
     $template->param("CURRENT_WEATHERSERVICEDFC", $cfg->param("SERVER.WEATHERSERVICEDFC"));
 
@@ -493,7 +509,7 @@ if ($R::form eq "1" || !$R::form) {
     );
     $template->param( POLLEN_RAGWEED => $pollen_ragweed );
 
-
+    # Maskkeys
     @values = ('0', '1' );
     %labels = (
         '0' => $L{'SETTINGS.LABEL_OFF'},
@@ -507,6 +523,21 @@ if ($R::form eq "1" || !$R::form) {
         -default => $cfg->param('SERVER.MASKKEYS'),
     );
     $template->param( MASKKEYS => $maskkeys );
+
+    # fetch observations
+    @values = ('0', '1' );
+    %labels = (
+        '0' => $L{'SETTINGS.LABEL_OFF'},
+        '1' => $L{'SETTINGS.LABEL_ON'},
+    );
+    my $fetchobs = $cgi->popup_menu(
+        -name    => 'fetchobs',
+        -id      => 'fetchobs',
+        -values  => \@values,
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.FETCHOBS') // 0,
+    );
+    $template->param( FETCHOBS => $fetchobs );
 
     # GetData
     @values = ('0', '1' );
@@ -522,6 +553,21 @@ if ($R::form eq "1" || !$R::form) {
         -default => $cfg->param('SERVER.GETDATA'),
     );
     $template->param( GETDATA => $getdata );
+
+    # GetData Observations
+    @values = ('0', '1' );
+    %labels = (
+        '0' => $L{'SETTINGS.LABEL_OFF'},
+        '1' => $L{'SETTINGS.LABEL_ON'},
+    );
+    my $useweatherobs = $cgi->popup_menu(
+        -name    => 'useweatherobs',
+        -id      => 'useweatherobs',
+        -values  => \@values,
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.USEWEATHEROBS') // 0,
+    );
+    $template->param( USEWEATHEROBS => $useweatherobs );
 
     # Cron
     @values = ('1', '3', '5', '10', '15', '30', '60' );
@@ -564,6 +610,27 @@ if ($R::form eq "1" || !$R::form) {
     );
     $template->param( CRON_ALTERNATE => $cron_alternate );
 
+    # Cron Air Quality
+    @values = ('0', '1', '3', '5', '10', '15', '30', '60' );
+    %labels = (
+        '0' => $L{'SETTINGS.LABEL_SAME_AS_DEFAULT'},
+        '1' => $L{'SETTINGS.LABEL_1MINUTE'},
+        '3' => $L{'SETTINGS.LABEL_3MINUTE'},
+        '5' => $L{'SETTINGS.LABEL_5MINUTE'},
+        '10' => $L{'SETTINGS.LABEL_10MINUTE'},
+        '15' => $L{'SETTINGS.LABEL_15MINUTE'},
+        '30' => $L{'SETTINGS.LABEL_30MINUTE'},
+        '60' => $L{'SETTINGS.LABEL_60MINUTE'},
+    );
+    my $cron_airquality = $cgi->popup_menu(
+        -name    => 'cron_airquality',
+        -id      => 'cron_airquality',
+        -values  => \@values,
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.CRON_AIRQUALITY'),
+    );
+    $template->param( CRON_AIRQUALITY => $cron_airquality );
+
     # Cron local / own weather station for more accurate current weather data
     @values = ('0', '1', '3', '5', '10', '15', '30', '60' );
     %labels = (
@@ -584,6 +651,21 @@ if ($R::form eq "1" || !$R::form) {
         -default => $cfg->param('SERVER.CRON_LOCAL'),
     );
     $template->param( CRON_LOCAL => $cron_local );
+
+    # Cron observations
+    @values = ('24', '0' );
+    %labels = (
+         '24' => $L{'SETTINGS.LABEL_1DAY_MIDNIGHT'},
+         '0' => $L{'SETTINGS.LABEL_CALCULATED_ONLY'},
+    );
+    my $cronobs = $cgi->popup_menu(
+        -name    => 'cron_obs',
+        -id      => 'cron_obs',
+        -values  => \@values,
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.CRON_OBS'),
+    );
+    $template->param( CRON_OBS => $cronobs );
 
     # OpenWeather Language
     @values = ('af', 'ar', 'az', 'bg', 'ca', 'cz', 'da', 'de', 'el', 'en', 'es', 'eu', 'fa', 'fi', 'fr', 'gl', 'he', 'hi', 'hr', 'hu', 'id', 'it', 'ja', 'kr', 'la', 'lt', 'mk', 'no', 'nl', 'pl', 'pt', 'pt_br', 'ro', 'ru', 'se', 'sk', 'sl', 'sr', 'th', 'tr', 'uk', 'vi', 'zh_cn', 'zh_tw', 'zu');

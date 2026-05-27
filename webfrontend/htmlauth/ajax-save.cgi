@@ -133,6 +133,7 @@ eval {
     }
 
     if (!$apicheck_error && ( ( ($R->{getdata})         && ($R->{weatherservice}    // '') eq "visualcrossing") ||
+                              ( ($R->{useweatherobs})      && ($R->{weatherserviceobs} // '') eq "visualcrossing") ||
                               ( ($R->{usealternatedfc}) && ($R->{weatherservicedfc} // '') eq "visualcrossing") ||
                               ( ($R->{usealternatehfc}) && ($R->{weatherservicehfc} // '') eq "visualcrossing") ) ) {
         push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_VISUALCROSSING'};
@@ -238,10 +239,13 @@ eval {
 
     $cfg->param("SERVER.USEALTERNATEDFC", $R->{usealternatedfc} // "");
     $cfg->param("SERVER.USEALTERNATEHFC", $R->{usealternatehfc} // "");
+    $cfg->param("SERVER.USEWEATHEROBS", $R->{useweatherobs} // "");
     $cfg->param("SERVER.GETDATA", $R->{getdata} // "");
     $cfg->param("SERVER.CRON", $R->{cron} // "");
     $cfg->param("SERVER.CRON_ALTERNATE", $R->{cron_alternate} // "");
     $cfg->param("SERVER.CRON_LOCAL", $R->{cron_local} // "");
+    $cfg->param("SERVER.CRON_OBS", $R->{cron_obs} // "");
+    $cfg->param("SERVER.CRON_AIRQUALITY", $R->{cron_airquality} // "");
     $cfg->param("SERVER.METRIC", $R->{metric} // "");
     $cfg->param("SERVER.COORDLAT", $central_lat // "");
     $cfg->param("SERVER.COORDLONG", $central_long // "");
@@ -249,6 +253,7 @@ eval {
     $cfg->param("SERVER.WEATHERSERVICE", $R->{weatherservice} // "");
     $cfg->param("SERVER.WEATHERSERVICEDFC", $R->{weatherservicedfc} // "");
     $cfg->param("SERVER.WEATHERSERVICEHFC", $R->{weatherservicehfc} // "");
+    $cfg->param("SERVER.WEATHERSERVICEOBS", $R->{weatherserviceobs} // "");
     $cfg->param("SERVER.MASKKEYS", $R->{maskkeys} // "");
     $cfg->param("SERVER.CITY", $R->{city} // "");
     $cfg->param("SERVER.COUNTRY", $R->{country} // "");

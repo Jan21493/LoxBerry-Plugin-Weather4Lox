@@ -1022,7 +1022,7 @@ sub readJsonFile {
         LOGWARN "Failed to decode JSON from $filename: $@";
         return undef;
     }
-    LOGOK "Read $filename weather data as JSON from $filename";
+    LOGOK "Read $filename weather data as JSON finished.";
 
     return $data;
 }

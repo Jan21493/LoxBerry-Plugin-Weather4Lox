@@ -39,11 +39,15 @@ my $pcfg = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $service = $pcfg->param("SERVER.WEATHERSERVICE");
 my $servicedfc;
 my $servicehfc;
+my $serviceobs;
 if ( $pcfg->param("SERVER.USEALTERNATEDFC") ) {
     $servicedfc = $pcfg->param("SERVER.WEATHERSERVICEDFC");
 }
 if ( $pcfg->param("SERVER.USEALTERNATEHFC") ) {
     $servicehfc = $pcfg->param("SERVER.WEATHERSERVICEHFC");
+}
+if ( $pcfg->param("SERVER.USEWEATHEROBS") ) {
+    $serviceobs = $pcfg->param("SERVER.WEATHERSERVICEOBS");
 }
 
 # Commandline options
@@ -51,8 +55,10 @@ my $verbose = '';
 my $cronjob = '';
 my $default = '';
 my $alternate = '';
+my $airquality = '';
 my $local = '';
 my $interval = 60; # default interval for refresh in minutes
+my $includeObs = '';
 
 # optional, default: 1, used to mask keyparam in URLs and literal key value in dumps
 my $maskkeys = $pcfg->param('SERVER.MASKKEYS');
@@ -63,9 +69,11 @@ GetOptions ('verbose' => \$verbose,
             'cronjob' => \$cronjob,
             'default' => \$default,
             'alternate' => \$alternate,
+            'airquality' => \$airquality,
             'local' => \$local,
             'maskkeys' => \$maskkeys,
             'interval=i' => \$interval,
+            'includeobs' => \$includeObs,
             );
 
 # Create a logging object
@@ -93,7 +101,7 @@ my $maskkeys_opt = '';
 if ($maskkeys) {
     $maskkeys_opt = "--maskkeys";
 } 
-LOGINF "Weather4Lox Fetch (masking API keys in dumps is " . ($maskkeys ? "enabled" : "disabled") . ")";
+LOGINF "Weather4Lox Fetch - masking API keys is " . ($maskkeys ? "enabled" : "disabled") . ", include observations is " . ($includeObs ? "enabled" : "disabled") . ".";
 
 # execute when fetch.pl is called directly or with cronjob and default flag
 if( !$cronjob || ( $cronjob && $default ) ){
@@ -125,7 +133,11 @@ if( !$cronjob || ( $cronjob && $default ) ){
 if( !$cronjob || ( $cronjob && $alternate ) ){
     LOGINF "Fetch alternate weather data ...";
 
+    # get interval for alternate weather service, if not set, use default interval, 0 means to use default weather service interval
     $interval = $pcfg->param("SERVER.CRON_ALTERNATE") || $interval;
+    if ($interval == 0) {
+        $interval = $pcfg->param("SERVER.CRON");
+    } 
 
     # Grab alternate DFC / HFC
     if ( $servicedfc && $servicedfc eq $servicehfc ) {
@@ -160,6 +172,42 @@ if( !$cronjob || ( $cronjob && $alternate ) ){
         }
     }
     $log->open;
+}
+# only execute when fetch.pl is called with includeObs flag, either directly or with cronjob
+# reason: observations are quite expensive, so flag is needed to avoid running it with every manual fetch
+if( $includeObs ) {
+    LOGINF "Fetch  weather observations ...";
+    # Add option for observations grabber
+    my $service_opt = "--observations";
+
+    if (-e "$lbpbindir/grabber_$serviceobs.pl") {
+        LOGINF "Starting Grabber grabber_$serviceobs.pl $service_opt $verbose_opt $maskkeys_opt";
+        $log->close;
+        system ("$lbpbindir/grabber_$serviceobs.pl $service_opt $verbose_opt $maskkeys_opt");
+    } else {
+        LOGCRIT "Cannot find grabber script for service $serviceobs.";
+        exit (1);
+    }
+    $log->open;
+}
+
+# execute when fetch.pl is called directly or with cronjob and default or alternate flag
+if( !$cronjob || ( $cronjob && $airquality) ) {
+    LOGINF "Fetch air quality and pollen data ...";
+
+    # get interval for air quality, if not set, use default interval, 0 means to use default weather service interval
+    $interval = $pcfg->param("SERVER.CRON_AIRQUALITY") || $interval;
+    if ($interval == 0) {
+        $interval = $pcfg->param("SERVER.CRON");
+    } 
+
+    # Grab air quality / pollen data from Open-Meteo
+    if ( $pcfg->param("SERVER.OPENMETEOAIRQUALITYGRABBER") ) {
+        LOGINF "Starting Grabber grabber_openmeteo_airquality.pl $verbose_opt $maskkeys_opt --interval $interval";
+        $log->close;
+        system ("$lbpbindir/grabber_openmeteo_airquality.pl $verbose_opt $maskkeys_opt --interval $interval");
+        $log->open;
+    }
 }
 
 # execute when fetch.pl is called directly or with cronjob and local flag
@@ -197,19 +245,6 @@ if( !$cronjob || ( $cronjob && $local ) ) {
         LOGINF "Starting Grabber grabber_loxone.pl $verbose_opt --interval $interval";
         $log->close;
         system ("$lbpbindir/grabber_loxone.pl $verbose_opt --interval $interval");
-        $log->open;
-    }
-}
-
-# execute when fetch.pl is called directly or with cronjob and default or alternate flag
-if( !$cronjob || ( $cronjob && ($default || $alternate) ) ) {
-    LOGINF "Fetch additional weather data ...";
-
-    # Grab air quality / pollen data from Open-Meteo
-    if ( $pcfg->param("SERVER.OPENMETEOAIRQUALITYGRABBER") ) {
-        LOGINF "Starting Grabber grabber_openmeteo_airquality.pl $verbose_opt --interval $interval";
-        $log->close;
-        system ("$lbpbindir/grabber_openmeteo_airquality.pl $verbose_opt --interval $interval");
         $log->open;
     }
 }

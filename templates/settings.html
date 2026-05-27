@@ -33,6 +33,24 @@
                                                     </tr>
                                                     <tr>
                                                         <td width="25%">
+                                                            <label id="labelweatherserviceobs"><TMPL_VAR SETTINGS.LABEL_FETCH_WEATHER_SERVICE_OBS></label>
+                                                        </td>
+                                                        <td colspan="4">
+                                                            <table border="0" width="100%"><tr>
+                                                                <td width="10%">
+                                                                    <TMPL_VAR FETCHOBS>
+                                                                </td>
+                                                                <td width="5%">
+                                                                    &nbsp;
+                                                                </td>
+                                                                <td width="85%">
+                                                                    <font size="-1"><TMPL_VAR SETTINGS.HINT_FETCH_WEATHER_SERVICE_OBS></font>
+                                                                </td>
+                                                            </tr></table>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
                                                             <label id="labelfetch"><TMPL_VAR SETTINGS.LABEL_FETCH></label>
                                                         </td>
                                                         <td width="50%">
@@ -165,7 +183,7 @@
                                                             &nbsp;
                                                         </td>
                                                         <td width="20%">
-                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_CONFIGUREWEATHERSERVICE></font>
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_CONFIGURE_WEATHERSERVICE></font>
                                                         </td>
                                                     </tr>
                                                     <tr>
@@ -175,7 +193,7 @@
                                                         <td width="50%">
                                                             <table border="0" width="100%">
                                                                 <tr>
-                                                                    <td><fieldset><TMPL_VAR GETDATA></fieldset></td>
+                                                                    <td><TMPL_VAR GETDATA></td>
                                                                     <td width="100%"><TMPL_VAR CRON></td>
                                                                  </tr>
                                                             </table>
@@ -185,6 +203,51 @@
                                                         </td>
                                                         <td width="20%">
                                                             <font size="-1"><TMPL_VAR SETTINGS.HINT_FREE_ACCOUNT></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan="4">
+                                                            <hr>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan=3 width="75%">
+                                                            <h2><TMPL_VAR SETTINGS.LABEL_SECTION_WEATHER_OBSERVATIONS></h2>
+                                                            <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_WEATHER_OBSERVATIONS></i></font>
+                                                        </td>
+                                                        <td align="right">&nbsp;</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelweatherserviceobs"><TMPL_VAR SETTINGS.LABEL_WEATHER_SERVICE_OBS></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <TMPL_VAR WEATHERSERVICEOBS>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_CONFIGURE_WEATHER_SERVICE_OBS></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelauto"><TMPL_VAR SETTINGS.LABEL_FETCH_DATA_OBS></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <table border="0" width="100%">
+                                                                <tr>
+                                                                    <td><TMPL_VAR USEWEATHEROBS></td>
+                                                                    <td width="100%"><TMPL_VAR CRON_OBS></td>
+                                                                 </tr>
+                                                            </table>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_FREE_ACCOUNT_OBS></font>
                                                         </td>
                                                     </tr>
                                                 </table>
@@ -374,9 +437,10 @@
                                                     </td>
                                                     <td width="50%">
                                                         <table border="0" width="100%">
-                                                        <tr>
-                                                            <td><TMPL_VAR OPENMETEOAIRQUALITYGRABBER></td>
-                                                        </tr>
+                                                            <tr>
+                                                                <td><TMPL_VAR OPENMETEOAIRQUALITYGRABBER></td>
+                                                                <td width="100%"><TMPL_VAR CRON_AIRQUALITY></td>
+                                                            </tr>
                                                         </table>
                                                     </td>
                                                     <td width="5%">&nbsp;</td>
@@ -695,15 +759,18 @@
                                     // the corresponding getdata / usealternatedfc / usealternatehfc is ON
                                     function updateServiceFieldRequirements() {
                                         var getdata         = $('select[name=getdata]').val()         === '1';
+                                        var useobs          = $('select[name=useweatherobs]').val()   === '1';
                                         var usedfc          = $('select[name=usealternatedfc]').val() === '1';
                                         var usehfc          = $('select[name=usealternatehfc]').val() === '1';
                                         var mainService     = $('#weatherservice').val();
+                                        var obsService      = $('#weatherserviceobs').val();
                                         var dfcService      = $('#weatherservicedfc').val();
                                         var hfcService      = $('#weatherservicehfc').val();
 
                                         // Check if a service is active in any of the three slots
                                         function isActive(serviceName) {
                                             return ( getdata && mainService === serviceName ) ||
+                                                   ( useobs  && obsService  === serviceName ) ||
                                                    ( usedfc  && dfcService  === serviceName ) ||
                                                    ( usehfc  && hfcService  === serviceName );
                                         }
@@ -835,6 +902,11 @@
                                         if ( (currentService) && $( "select[name=getdata]" ).val()  === "1" ) {
                                             $('#section-' + currentService).collapsible('expand');
                                         }
+                                        // Expand collapsible for selected weather service for observations if enabled
+                                        var currentServiceObs = '<TMPL_VAR CURRENT_WEATHERSERVICEOBS>';
+                                        if ( (currentServiceObs) && $( "select[name=useweatherobs]" ).val()  === "1" ) {
+                                            $('#section-' + currentServiceObs).collapsible('expand');
+                                        }
                                         // Also expand alternate services if enabled
                                         var currentService = '<TMPL_VAR CURRENT_WEATHERSERVICEDFC>';
                                         if ( (currentService) && $( "select[name=usealternatedfc]" ).val()  === "1" ) {
@@ -924,6 +996,16 @@
                                         updateServiceFieldRequirements();
                                     });
 
+                                    // Auto-expand collapsible on weather service for observations change
+                                    $(document).on('change', '#weatherserviceobs', function() {
+                                        $('.service-collapsible').collapsible('collapse');
+                                        var selected = $(this).val();
+                                        if (selected && $("select[name=useweatherobs]").val() === "1") {
+                                            $('#section-' + selected).collapsible('expand');
+                                        }
+                                        updateServiceFieldRequirements();
+                                    });
+
                                     // Expand collapsible when alternate DFC service changes
                                     $(document).on('change', '#weatherservicedfc', function() {
                                         var selected = $(this).val();
@@ -943,8 +1025,9 @@
                                     });
 
                                     // Add some attributes PERL::CGI doesn't provide
+                                    $('select[name=fetchobs]').attr('data-role','flipswitch');
                                     $('select[name=getdata]').attr('data-role','flipswitch');
-                                    $('select[name=getdata_forecast]').attr('data-role','flipswitch');
+                                    $('select[name=useweatherobs]').attr('data-role','flipswitch');
                                     $('select[name=loxgrabber]').attr('data-role','flipswitch');
                                     $('select[name=maskkeys]').attr('data-role','flipswitch');
                                     $('select[name=wugrabber]').attr('data-role','flipswitch');
@@ -954,12 +1037,15 @@
                                     $('select[name=usealternatedfc]').attr('data-role','flipswitch');
                                     $('select[name=usealternatehfc]').attr('data-role','flipswitch');
                                     $('select[name=weatherservice]').attr('data-mini','true');
+                                    $('select[name=weatherserviceobs]').attr('data-mini','true');
                                     $('select[name=weatherservicedfc]').attr('data-mini','true');
                                     $('select[name=weatherservicehfc]').attr('data-mini','true');
                                     $('select[name=metric]').attr('data-mini','true');
                                     $('select[name=serverlang]').attr('data-mini','true');
                                     $('select[name=cron]').attr('data-mini','true');
+                                    $('select[name=cron_obs]').attr('data-mini','true');
                                     $('select[name=cron_alternate]').attr('data-mini','true');
+                                    $('select[name=cron_airquality]').attr('data-mini','true');
                                     $('select[name=cron_local]').attr('data-mini','true');
                                     $('select[name=pollen_grasses]').attr('data-mini','true');
                                     $('select[name=pollen_birch]').attr('data-mini','true');
@@ -985,6 +1071,37 @@
                                             $('#cron').selectmenu('refresh');
                                             // collapse previously selected weather service
                                             var selected = $('#weatherservice').val();
+                                            if (selected) {
+                                                $('#section-' + selected).collapsible('collapse');
+                                            }
+                                        }
+                                        updateServiceFieldRequirements();
+                                    });
+
+                                    // Get Data for observations
+                                    $( document ).on( 'change', '#useweatherobs', function ( e ) {
+                                        if ( $( "select[name=useweatherobs]" ).val()  === "1" ) {
+                                            //alert("An!");
+                                            $('#cron_obs').removeClass('ui-disabled');
+                                            $('#cron_obs').selectmenu('refresh');
+                                            $('#fetchobs').removeClass('ui-disabled');
+                                            $('#fetchobs').flipswitch('enable');
+                                            $('#fetchobs').selectmenu('refresh');
+                                            // expand section of selected weather service
+                                            var selected = $('#weatherserviceobs').val();
+                                            if (selected) {
+                                                $('#section-' + selected).collapsible('expand');
+                                            }
+                                        } else {
+                                            //alert("Aus!");
+                                            $('#cron_obs').addClass('ui-disabled');
+                                            $('#cron_obs').selectmenu('refresh');
+                                            $('#fetchobs').addClass('ui-disabled');
+                                            $( "select[name=fetchobs]" ).val("0");
+                                            $('#fetchobs').flipswitch('refresh');
+                                            $('#fetchobs').flipswitch('disable');
+                                            // collapse previously selected weather service
+                                            var selected = $('#weatherserviceobs').val();
                                             if (selected) {
                                                 $('#section-' + selected).collapsible('collapse');
                                             }
@@ -1047,19 +1164,6 @@
                                         }
                                         updateServiceFieldRequirements();
                                     });
-                                    // TODO: verify if this can be removed after above two handlers are working correctly
-                                    $( document ).on( 'change', '#getdata_forecast', function ( e ) {
-                                        if ( $( "select[name=getdata_forecast]" ).val()  === "1" ) {
-                                            //alert("An!");
-                                            $('#cron_alternate').removeClass('ui-disabled');
-                                            $('#cron_alternate').selectmenu('refresh');
-                                        } else {
-                                            //alert("Aus!");
-                                            $('#cron_alternate').addClass('ui-disabled');
-                                            $('#cron_alternate').selectmenu('refresh');
-                                        }
-                                        updateServiceFieldRequirements();
-                                    });
 
                                     // WUGrabber
                                     $( document ).on( 'change', '#wugrabber', function ( e ) {
@@ -1117,9 +1221,14 @@
                                         if ( $( "select[name=openmeteoairqualitygrabber]" ).val()  === "1" ) {
                                             $('.pollen-row').show();
                                             $('#rowpollensettings').show();
+                                            $('#cron_airquality').removeClass('ui-disabled');
+                                            $('#cron_airquality').selectmenu('refresh');
+
                                         } else {
                                             $('.pollen-row').hide();
                                             $('#rowpollensettings').hide();
+                                            $('#cron_airquality').addClass('ui-disabled');
+                                            $('#cron_airquality').selectmenu('refresh');
                                         }
                                     });
 
@@ -1163,9 +1272,15 @@
                                         }
                                         if ( $( "select[name=getdata]" ).val()  === "0" ) {
                                             $('#cron').addClass('ui-disabled');
+                                            $('#cron').selectmenu('refresh');
                                         }
-                                        if ( $( "select[name=getdata_forecast]" ).val()  === "0" ) {
-                                            $('#cron').addClass('ui-disabled');
+                                        if ( $( "select[name=useweatherobs]" ).val()  === "0" ) {
+                                            $('#cron_obs').addClass('ui-disabled');
+                                            $('#cron_obs').selectmenu('refresh');
+                                            $('#fetchobs').addClass('ui-disabled');
+                                            $( "select[name=fetchobs]" ).val("0");
+                                            $('#fetchobs').flipswitch('refresh');
+                                            $('#fetchobs').flipswitch('disable');
                                         }
                                         if ( $( "select[name=wugrabber]" ).val()  === "0" ) {
                                             $('#labelwustationid').addClass('ui-disabled');
@@ -1184,6 +1299,8 @@
                                         if ( $( "select[name=openmeteoairqualitygrabber]" ).val()  === "0" ) {
                                             $('.pollen-row').hide();
                                             $('#rowpollensettings').hide();
+                                            $('#cron_airquality').addClass('ui-disabled');
+                                            $('#cron_airquality').selectmenu('refresh');
                                         }
                                     }
 
@@ -1192,11 +1309,13 @@
 
                                         $('#fetch').addClass('ui-disabled');
                                         $("#fetchstate").attr("style", "color:blue").html("<TMPL_VAR SETTINGS.HINT_FETCHWAIT>");
+                                        var includeObs = $( "select[name=fetchobs]" ).val() === "1" ? "1" : "0";
                                         $.ajax( {
                                                 type: 'POST',
                                                 url: "./ajax-handler.cgi",
                                                 data: {
                                                     ajax: 'fetch',
+                                                    includeObs: includeObs
                                                 }
                                             } )
                                         .done(function(resp) {

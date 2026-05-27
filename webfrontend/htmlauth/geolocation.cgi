@@ -149,33 +149,47 @@ if ($search) {
   } else { 
     $i = 1;
       for $results( @{$decoded_json} ){
-	$city = $results->{address}->{city}
-		|| $results->{address}->{town}
-		|| $results->{address}->{village}
-		|| $results->{address}->{hamlet}
-		|| $results->{address}->{municipality}
-		|| "";
-	$country = $results->{address}->{country} || "";
-	$lat = sprintf "%.6f", $results->{lat};
-	$long = sprintf "%.6f", $results->{lon};
-	# Build field ID prefix: for "server" service, coord fields have no prefix
-	my $coord_prefix = ($service eq "server") ? "" : $service;
+        $city = $results->{address}->{city}
+            || $results->{address}->{town}
+            || $results->{address}->{village}
+            || $results->{address}->{hamlet}
+            || $results->{address}->{municipality}
+            || $results->{address}->{island}          # e.g. Fuerteventura, Mallorca
+            || $results->{address}->{archipelago}     # e.g. Canary Islands
+            || $results->{address}->{county}          # e.g. administrative county
+            || $results->{address}->{region}          # e.g. regional name
+            || $results->{address}->{state}           # e.g. state or province
+            || $results->{address}->{suburb}          # e.g. city district
+            || $results->{address}->{neighbourhood}   # e.g. neighbourhood
+            || "";
+        $country = $results->{address}->{country} || "";
 
-  # Escape city/country for safe embedding inside a JS single-quoted string:
-	# backslash must be escaped first, then single-quote.
-	(my $city_js    = $city)    =~ s/\\/\\\\/g; $city_js    =~ s/'/\\'/g;
-	(my $country_js = $country) =~ s/\\/\\\\/g; $country_js =~ s/'/\\'/g;
-	# Add City and Country update
-	  $addon = "";
-	  if ($service eq "server") {
-	    $addon = ";window.opener.document.getElementById('city').value = '$city_js'";
-	    $addon = $addon . ";window.opener.document.getElementById('country').value = '$country_js'";
-	  } else {
-	    $addon = ";window.opener.document.getElementById('" . $service . "city').value = '$city_js'";
-	    $addon = $addon . ";window.opener.document.getElementById('" . $service . "country').value = '$country_js'";
-	  }
+        # For some edge cases (e.g. natural features like mountains or seas), there may be no city/town/village,
+        #  but the "name" field contains a useful name for the location. Use it as city if available and not identical to country name.
+        if (!$city) {
+            $city = $results->{name} || "-";
+        }
+
+        $lat = sprintf "%.6f", $results->{lat};
+        $long = sprintf "%.6f", $results->{lon};
+        # Build field ID prefix: for "server" service, coord fields have no prefix
+        my $coord_prefix = ($service eq "server") ? "" : $service;
+
+        # Escape city/country for safe embedding inside a JS single-quoted string:
+        # backslash must be escaped first, then single-quote.
+        (my $city_js    = $city)    =~ s/\\/\\\\/g; $city_js    =~ s/'/\\'/g;
+        (my $country_js = $country) =~ s/\\/\\\\/g; $country_js =~ s/'/\\'/g;
+        # Add City and Country update
+        $addon = "";
+        if ($service eq "server") {
+          $addon = ";window.opener.document.getElementById('city').value = '$city_js'";
+          $addon = $addon . ";window.opener.document.getElementById('country').value = '$country_js'";
+        } else {
+          $addon = ";window.opener.document.getElementById('" . $service . "city').value = '$city_js'";
+          $addon = $addon . ";window.opener.document.getElementById('" . $service . "country').value = '$country_js'";
+        }
         $table = $table . "<tr><td align=\"right\">$i\.</td><td>$results->{display_name}</td>\n";
-        $table = "$table" ."<td style=\"vertical-align: middle; text-align: center\"><button type=\"button\" data-role=\"button\" data-inline=\"true\" data-mini=\"true\" onClick=\"window.opener.document.getElementById('" . $coord_prefix . "coordlat').value = '$lat';window.opener.document.getElementById('" . $coord_prefix . "coordlong').value = '$long'$addon;window.close()\"> <font size=\"-1\">" . $L{'SETTINGS.BUTTON_APPLY'} .  "</font></button></td></tr>\n";
+        $table = "$table" ."<td style=\"vertical-align: middle; text-align: center\"><button type=\"button\" data-role=\"button\" data-inline=\"true\" data-mini=\"true\" onClick=\"window.opener.document.getElementById('" . $coord_prefix . "coordlat').value = '$lat';window.opener.document.getElementById('" . $coord_prefix . "coordlong').value = '$long';window.opener.document.getElementById('" . $coord_prefix . "city').value = '$city_js';window.opener.document.getElementById('" . $coord_prefix . "country').value = '$country_js'$addon;window.close()\"> <font size=\"-1\">" . $L{'SETTINGS.BUTTON_APPLY'} .  "</font></button></td></tr>\n";
         $i++;
       };
   }

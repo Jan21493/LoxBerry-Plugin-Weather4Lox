@@ -59,7 +59,8 @@ if( !$q->{ajax} )  {
 
 # Save MQTT Settings
 if( $q->{ajax} eq "fetch" ) {
-	$response{error} = &fetch();
+	my $includeObs = $q->{includeObs} // "0";
+	$response{error} = &fetch($includeObs);
 	print JSON->new->canonical(1)->encode(\%response);
 }
 
@@ -70,6 +71,13 @@ exit;
 #
 sub fetch
 {
-	system ("$lbpbindir/fetch.pl -v >/dev/null 2>&1");
+	my ($includeObs) = @_;
+	my $includeObs_opt = "";
+	if ($includeObs) {
+		$includeObs_opt = $includeObs eq "1" ? "--includeobs" : "";
+	} else {
+		$includeObs_opt = "";
+	}
+	system ("$lbpbindir/fetch.pl -v $includeObs_opt >/dev/null 2>&1");
 	return ("0");
 }

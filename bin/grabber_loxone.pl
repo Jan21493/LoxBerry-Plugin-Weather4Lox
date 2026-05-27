@@ -44,12 +44,12 @@ require "$lbpbindir/grabber_utils.pl";
 my $version = LoxBerry::System::pluginversion();
 
 my $pcfg         = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
-my $prefix       = $pcfg->param("LOX.PREFIX") || "w4l";  # prefix of VI/VO names to request from Miniserver, default is "w4l" 
+my $prefix       = $pcfg->param("LOX.PREFIX") || "w4l";         # prefix of VI/VO names to request from Miniserver, default is "w4l" 
 
 # names for JSON
 my $grabberFile     = basename(__FILE__);
 my $grabberLabel    = "Loxone MS Weather Data";
-my $grabberKey      = "loxone";              # name in JSONs
+my $grabberKey      = "loxone";                                 # name in JSONs
 my $refresh         = 60;
 
 # Read language phrases
@@ -105,7 +105,7 @@ my @lox_vi_names = map { "$prefix\_$_" } qw(
 	cur_we_code
 );
 
-LOGDEB "VI's to request: " . join(', ', @lox_vi_names);
+LOGDEB "VI's/VO's to request via HTTP call from Loxone Config: " . join(', ', @lox_vi_names);
 
 # Fetching data from Miniserver
 my $msno = defined $pcfg->param("SERVER.MSNO") ? $pcfg->param("SERVER.MSNO") : 1;
@@ -132,12 +132,19 @@ my $cur = $envelope->{$weatherKey} // {};
 
 LOGDEB "Adding $grabberLabel data to $weatherKey weather data (existing values for same keys will be overwritten).";
 
+# Read existing loxone_current_hour.json envelope
+my $loxCurrentHour = $grabberKey . "_current_hour";
+my $envelope = readJsonFile($lbplogdir, $loxCurrentHour);
+my $cur = $envelope->{$loxCurrentHour} // {};
+
+LOGDEB "Adding $grabberLabel data to $loxCurrentHour weather data (existing values for same keys will be overwritten).";
+
 # Helper: extract numeric value from Loxone response, skip -9999 sentinel
 sub loxVal {
 	my ($key, $fmt) = @_;
 	my $v = $lox_response{$key};
 	return undef unless defined $v && $v ne "-9999";
-	$v =~ s/^([-\d\.]+).*/$1/g;                   # strip trailing non-numeric
+	$v =~ s/^([-\d\.]+).*/$1/g;                                 # strip trailing non-numeric
 	return undef unless Scalar::Util::looks_like_number($v);
 	if (defined $fmt) {
 		# Apply formatting and convert back to number to avoid locale issues with decimal separator
@@ -150,64 +157,64 @@ sub loxVal {
 }
 
 # temperature
-my $tempAir = loxVal("${prefix}_cur_tt", '%.1f');   # cur_tt  - air temperature (°C)
+my $tempAir = loxVal("${prefix}_cur_tt", '%.1f');               # cur_tt  - air temperature (°C)
 if (defined $tempAir && $tempAir != -9999) {
 	LOGDEB "Adding/overwriting temperature/air with $tempAir degC.";
-	$cur->{temperature}{air}       = $tempAir;   # cur_tt  - air temperature (°C)
+	$cur->{temperature}{air}       = $tempAir;                  # cur_tt  - air temperature (°C)
 }
-my $tempFeelsLike = loxVal('${prefix}_cur_tt_fl', '%.1f');   # cur_tt_fl - feels like (°C)
+my $tempFeelsLike = loxVal("${prefix}_cur_tt_fl", '%.1f');      # cur_tt_fl - feels like (°C)
 if (defined $tempFeelsLike && $tempFeelsLike != -9999) {
 	LOGDEB "Adding/overwriting temperature/feelsLike with $tempFeelsLike degC.";
-	$cur->{temperature}{feelsLike} = $tempFeelsLike;   # cur_tt_fl - feels like (°C)
+	$cur->{temperature}{feelsLike} = $tempFeelsLike;            # cur_tt_fl - feels like (°C)
 }
-my $tempWindChill = loxVal('${prefix}_cur_w_ch', '%.1f');   # cur_w_ch  - wind chill (°C)
+my $tempWindChill = loxVal("${prefix}_cur_w_ch", '%.1f');       # cur_w_ch  - wind chill (°C)
 if (defined $tempWindChill && $tempWindChill != -9999) {
 	LOGDEB "Adding/overwriting temperature/windChill with $tempWindChill degC.";
-	$cur->{temperature}{windChill} = $tempWindChill;   # cur_w_ch  - wind chill (°C)
+	$cur->{temperature}{windChill} = $tempWindChill;            # cur_w_ch  - wind chill (°C)
 }
 
 # wind data
-my $windDir = loxVal('${prefix}_cur_w_dir', '%.0f');
-my $windSpeed = loxVal('${prefix}_cur_w_sp', '%.2f');
+my $windDir = loxVal("${prefix}_cur_w_dir", '%.0f');
+my $windSpeed = loxVal("${prefix}_cur_w_sp", '%.2f');
 if (defined $windDir && defined $windSpeed && $windDir != -9999 && $windSpeed != -9999) {
 	LOGDEB "Adding/overwriting wind/direction with $windDir (deg), wind/speed with $windSpeed km/h.";
-	$cur->{wind}{direction}  = $windDir;                                                   # cur_w_dir    - wind direction (degree)
-	$cur->{wind}{cardinal}   = getWindDirCardinal($windDir);                               # to calculate cur_w_dirdes - wind direction description from (N, NE, E, SE, S, SW, W, NW)
-	$cur->{wind}{speed}      = $windSpeed;                                                 # cur_w_sp     - wind speed (km/h)
+	$cur->{wind}{direction}  = $windDir;                        # cur_w_dir    - wind direction (degree)
+	$cur->{wind}{cardinal}   = getWindDirCardinal($windDir);    # to calculate cur_w_dirdes - wind direction description from (N, NE, E, SE, S, SW, W, NW)
+	$cur->{wind}{speed}      = $windSpeed;                      # cur_w_sp     - wind speed (km/h)
 
 	# Only set gust if it is defined, otherwise we might overwrite existing valid data with undefined values
-	my $windGust = loxVal('${prefix}_cur_w_gu', '%.2f');
+	my $windGust = loxVal("${prefix}_cur_w_gu", '%.2f');
 	if (defined $windGust && $windGust != -9999) {
 		LOGDEB "Adding/overwriting wind/gust with $windGust km/h.";
-		$cur->{wind}{gust}   = $windGust;                                                  # cur_w_gu     - wind gust (km/h)
+		$cur->{wind}{gust}   = $windGust;                       # cur_w_gu     - wind gust (km/h)
 	}	
 } 
 
 # other weather data
-my $humidity = loxVal('${prefix}_cur_hu', '%.1f');
+my $humidity = loxVal("${prefix}_cur_hu", '%.1f');
 if (defined $humidity && $humidity != -9999) {
 	LOGDEB "Adding/overwriting humidity with $humidity %.";
-	$cur->{humidity}        = $humidity;              # cur_hu  - humidity (%)
+	$cur->{humidity}        = $humidity;                        # cur_hu  - humidity (%)
 }
-my $pressure = loxVal('${prefix}_cur_pr', '%.0f');
+my $pressure = loxVal("${prefix}_cur_pr", '%.0f');
 if (defined $pressure && $pressure != -9999) {
 	LOGDEB "Adding/overwriting pressure with $pressure hPa.";
-	$cur->{pressure}        = $pressure;              # cur_pr  - air pressure (hPa)
+	$cur->{pressure}        = $pressure;                        # cur_pr  - air pressure (hPa)
 }
-my $dewPoint = loxVal('${prefix}_cur_dp', '%.1f');
+my $dewPoint = loxVal("${prefix}_cur_dp", '%.1f');
 if (defined $dewPoint && $dewPoint != -9999) {
 	LOGDEB "Adding/overwriting dewpoint with $dewPoint degC.";
-	$cur->{dewpoint}        = $dewPoint;              # cur_dp  - dew point (°C)
+	$cur->{dewpoint}        = $dewPoint;                        # cur_dp  - dew point (°C)
 }
-my $solarRadiation = loxVal('${prefix}_cur_sr', '%.0f');
+my $solarRadiation = loxVal("${prefix}_cur_sr", '%.0f');
 if (defined $solarRadiation && $solarRadiation != -9999) {
 	LOGDEB "Adding/overwriting solarRadiation with $solarRadiation W/m2.";
-	$cur->{solarRadiation}  = $solarRadiation;        # cur_sr  - solar radiation (W/m²)
+	$cur->{solarRadiation}  = $solarRadiation;                  # cur_sr  - solar radiation (W/m²)
 }
-my $weatherCode = loxVal('${prefix}_cur_we_code', '%.0f');
+my $weatherCode = loxVal("${prefix}_cur_we_code", '%.0f');
 if (defined $weatherCode && $weatherCode != -9999) {
 	LOGDEB "Adding/overwriting weatherCode with $weatherCode.";
-	$cur->{weatherCode}{weather4lox}     = oldW4lCode_to_w4l($weatherCode);           # cur_we_code - weather code
+	$cur->{weatherCode}{weather4lox} = oldW4lCode_to_w4l($weatherCode);    # cur_we_code - weather code
 }
 
 # Add grabber metadata
