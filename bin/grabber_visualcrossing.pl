@@ -335,6 +335,33 @@ if ( $current ) {
         },
         $weatherKey => \%currentData,
     };
+
+    # Store current conditions in local SQLite observation buffer for offline aggregation
+    if ( $pcfg->param("SERVER.OBS_BUFFER") ) {
+        require "$lbpbindir/observation_buffer.pl";
+        my $obsDbh = initObsDb("$lbpdatadir/observations.db");
+        my $retentionHours = $pcfg->param("SERVER.OBS_RETENTION") || 72;
+        storeObservation($obsDbh, $retentionHours,
+            epoch      => $currentData{time}{epoch} // time(),
+            source     => $grabberKey,
+            temp       => $currentData{temperature}{air},
+            feelsLike  => $currentData{temperature}{feelsLike},
+            humidity   => $currentData{humidity},
+            pressure   => $currentData{pressure},
+            windSpeed  => $currentData{wind}{speed},
+            windGust   => $currentData{wind}{gust},
+            windDir    => $currentData{wind}{direction},
+            precip     => $currentData{precipitation}{rain1hr},
+            dewpoint   => $currentData{dewpoint},
+            cloudCover => $currentData{cloudCover},
+            uvIndex    => $currentData{uvIndex},
+            solarRad   => $currentData{solarRadiation},
+            icon       => $currentData{weatherCode}{weather4lox},
+        );
+        $obsDbh->disconnect();
+        LOGDEB "Stored current conditions in local observation buffer (source: $grabberKey).";
+    }
+
     writeJsonFile($lbplogdir, $weatherKey, $envelope);
 
 } # End current

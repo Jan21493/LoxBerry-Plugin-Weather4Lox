@@ -173,24 +173,6 @@ if( !$cronjob || ( $cronjob && $alternate ) ){
     }
     $log->open;
 }
-# only execute when fetch.pl is called with includeObs flag, either directly or with cronjob
-# reason: observations are quite expensive, so flag is needed to avoid running it with every manual fetch
-if( $includeObs ) {
-    LOGINF "Fetch  weather observations ...";
-    # Add option for observations grabber
-    my $service_opt = "--observations";
-
-    if (-e "$lbpbindir/grabber_$serviceobs.pl") {
-        LOGINF "Starting Grabber grabber_$serviceobs.pl $service_opt $verbose_opt $maskkeys_opt";
-        $log->close;
-        system ("$lbpbindir/grabber_$serviceobs.pl $service_opt $verbose_opt $maskkeys_opt");
-    } else {
-        LOGCRIT "Cannot find grabber script for service $serviceobs.";
-        exit (1);
-    }
-    $log->open;
-}
-
 # execute when fetch.pl is called directly or with cronjob and default or alternate flag
 if( !$cronjob || ( $cronjob && $airquality) ) {
     LOGINF "Fetch air quality and pollen data ...";
@@ -212,41 +194,42 @@ if( !$cronjob || ( $cronjob && $airquality) ) {
 
 # execute when fetch.pl is called directly or with cronjob and local flag
 if( !$cronjob || ( $cronjob && $local ) ) {
-    LOGINF "Fetch current weather data from local or own weather station ...";
+    LOGINF "Fetch current weather data from local Weather Underground PWS ...";
 
     $interval = $pcfg->param("SERVER.CRON_LOCAL") || $interval;
 
-    # Grab some data from Wunderground
+    # Grab data from Weather Underground PWS
     if ( $pcfg->param("SERVER.WUGRABBER") ) {
-        LOGINF "Starting Grabber grabber_wu.pl $verbose_opt --interval $interval";
+        LOGINF "Starting Grabber grabber_wu_pws.pl $verbose_opt --interval $interval";
         $log->close;
-        system ("$lbpbindir/grabber_wu.pl $verbose_opt --interval $interval");
+        system ("$lbpbindir/grabber_wu_pws.pl $verbose_opt --interval $interval");
+        $log->open;
+    }
+}
+
+# only execute when fetch.pl is called with includeObs flag, either directly or with cronjob
+# reason: observations are quite expensive, so flag is needed to avoid running it with every manual fetch
+if( $includeObs ) {
+    if ( $pcfg->param("SERVER.OBS_AGGREGATE") ) {
+        LOGINF "Aggregating hourly and daily observations from local buffer ...";
+        $log->close;
+        system ("$lbpbindir/aggregate_observations.pl --hourly --daily $verbose_opt");
         $log->open;
     }
 
-    # Grab some data from FOSHKplugin
-    if ( $pcfg->param("SERVER.FOSHKGRABBER") ) {
-        LOGINF "Starting Grabber grabber_foshk.pl $verbose_opt --interval $interval";
-        $log->close;
-        system ("$lbpbindir/grabber_foshk.pl $verbose_opt --interval $interval");
-        $log->open;
-    }
+    LOGINF "Fetch weather observations ...";
+    # Add option for observations grabber
+    my $service_opt = "--observations";
 
-    # Grab some data from PWSCatchUpload
-    if ( $pcfg->param("SERVER.PWSCATCHUPLOADGRABBER") ) {
-        LOGINF "Starting Grabber grabber_pwscatchupload.pl $verbose_opt --interval $interval";
+    if (-e "$lbpbindir/grabber_$serviceobs.pl") {
+        LOGINF "Starting Grabber grabber_$serviceobs.pl $service_opt $verbose_opt $maskkeys_opt";
         $log->close;
-        system ("$lbpbindir/grabber_pwscatchupload.pl $verbose_opt --interval $interval");
-        $log->open;
+        system ("$lbpbindir/grabber_$serviceobs.pl $service_opt $verbose_opt $maskkeys_opt");
+    } else {
+        LOGCRIT "Cannot find grabber script for service $serviceobs.";
+        exit (1);
     }
-
-    # Grab some data from Loxone Miniserver
-    if ( $pcfg->param("SERVER.LOXGRABBER") ) {
-        LOGINF "Starting Grabber grabber_loxone.pl $verbose_opt --interval $interval";
-        $log->close;
-        system ("$lbpbindir/grabber_loxone.pl $verbose_opt --interval $interval");
-        $log->open;
-    }
+    $log->open;
 }
 
 # Data to Loxone

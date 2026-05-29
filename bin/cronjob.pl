@@ -50,10 +50,7 @@ my $usealternatedfc = $pcfg->param("SERVER.USEALTERNATEDFC");
 my $usealternatehfc = $pcfg->param("SERVER.USEALTERNATEHFC");
 
 # Local / own weather station
-my $use_local = $pcfg->param('SERVER.WUGRABBER') || 
-				$pcfg->param('SERVER.FOSHKGRABBER') || 
-				$pcfg->param('SERVER.PWSCATCHUPLOADGRABBER') ||
-				$pcfg->param('SERVER.LOXGRABBER');
+my $use_local = $pcfg->param('SERVER.WUGRABBER');
 my $cron_local = $pcfg->param("SERVER.CRON_LOCAL");
 if (!$cron_local || $cron_local eq "0") {
 	$cron_local = $cron; # Set to default weather service if not defined or 0
@@ -84,6 +81,7 @@ if ($verbose) {
 
 LOGSTART "Weather4Lox CRONJOB process";
 LOGDEB "This is $0 Version $version";
+LOGINF "FOSHK, PWSCatchUpload and Loxone grabbers are executed every minute via weather4lox_minutecron.pl.";
 
 # calculate time
 my $timestamp = time();
@@ -112,15 +110,20 @@ if ($usealternatedfc || $usealternatehfc) {
 }
 
 if ($use_local) {
-	LOGDEB "Calculate interval for own weather station / local service: $timestamp_minute_round_down / $cron_local = " . ($timestamp_minute_round_down / $cron_local);
+	LOGDEB "Calculate interval for local Weather Underground PWS: $timestamp_minute_round_down / $cron_local = " . ($timestamp_minute_round_down / $cron_local);
 	if ( $timestamp_minute_round_down % $cron_local == 0 ){
-		LOGINF "Fetch interval ($cron_local) for own weather station / local service reached";
+		LOGINF "Fetch interval ($cron_local) for local Weather Underground PWS reached";
 		$command_opt .= ' --local'
 	} else {
-		LOGINF "Fetch interval ($cron_local) for own weather station / local service NOT reached";
+		LOGINF "Fetch interval ($cron_local) for local Weather Underground PWS NOT reached";
 	}
 } else {
-	LOGDEB "Own weather station / local service is disabled. Skipping.";
+	LOGDEB "Local Weather Underground PWS grabber is disabled. Skipping.";
+}
+
+if ( $pcfg->param("SERVER.OBS_AGGREGATE") && $timestamp_minute_round_down % 60 == 0 ) {
+	LOGINF "Observation aggregation interval reached, enabling --includeobs.";
+	$command_opt .= ' --includeobs';
 }
 
 if ( $command_opt ne "" ){
