@@ -100,7 +100,7 @@ case "$1" in
         fi
 
         # 4. Write state file for later restore
-        STATEFILE="$LBPCONFIGDIR/cloudemu_state"
+        STATEFILE="$LBPCONFIG/$pluginname/cloudemu_state"
         printf 'DNSMASQ_INSTALLED_BY_W4L=%s\nRESOLVED_WAS_ACTIVE=%s\nUPSTREAM_DNS=%s\n' \
             "$DNSMASQ_INSTALLED_BY_W4L" "$RESOLVED_WAS_ACTIVE" "$UPSTREAM_DNS" \
             | sudo tee "$STATEFILE" > /dev/null
@@ -131,7 +131,7 @@ case "$1" in
         sudo rm -f /etc/dnsmasq.d/$pluginname.conf
 
         # 2. Read state file
-        STATEFILE="$LBPCONFIGDIR/cloudemu_state"
+        STATEFILE="$LBPCONFIG/$pluginname/cloudemu_state"
         DNSMASQ_INSTALLED_BY_W4L=0
         RESOLVED_WAS_ACTIVE=0
         UPSTREAM_DNS=""
