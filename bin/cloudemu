@@ -9,6 +9,22 @@ export $ENVIRONMENT
 
 echo "Loxone Weather Emulator started..."
 
+getUpstreamDns() {
+    # systemd-resolved stores real upstream here, not the stub at 127.0.0.53
+    if [ -f /run/systemd/resolve/resolv.conf ]; then
+        DNS=$(grep "^nameserver" /run/systemd/resolve/resolv.conf | \
+              grep -v "^nameserver 127\." | grep -v "^nameserver ::1" | \
+              head -1 | awk '{print $2}')
+        [ -n "$DNS" ] && echo "$DNS" && return
+    fi
+    # Fallback: /etc/resolv.conf, skip loopback
+    DNS=$(grep "^nameserver" /etc/resolv.conf 2>/dev/null | \
+          grep -v "^nameserver 127\." | grep -v "^nameserver ::1" | \
+          head -1 | awk '{print $2}')
+    [ -n "$DNS" ] && echo "$DNS" && return
+    echo "8.8.8.8"
+}
+
 # Check for WLAN adapter
 #CHECKWLAN=`ifconfig | grep -c -i wlan0`
 #if [ $CHECKWLAN -eq 1 ]; then
@@ -56,10 +72,44 @@ case "$1" in
         echo "Enabling DNSMasq Configuration for Weather4Lox (without installed DNSMasq Plugin)."
         echo "My own IP is $OWNIP. Redirecting weather.loxone.com to $OWNIP."
 
-        sudo sh -c "touch /etc/dnsmasq.d/$pluginname.conf" > /dev/null 2>&1
+        # 1. Determine upstream DNS BEFORE making any changes
+        UPSTREAM_DNS=$(getUpstreamDns)
+
+        # 2. Check if systemd-resolved stub is active on port 53
+        RESOLVED_WAS_ACTIVE=0
+        if systemctl is-active --quiet systemd-resolved 2>/dev/null; then
+            if ss -tlnp 2>/dev/null | grep -qE "127\.0\.0\.53:53|0\.0\.0\.0:53"; then
+                RESOLVED_WAS_ACTIVE=1
+                # Disable systemd-resolved stub listener to free port 53 for dnsmasq
+                echo "<INFO> Disabling systemd-resolved stub listener to free port 53"
+                sudo mkdir -p /etc/systemd/resolved.conf.d
+                sudo sh -c "printf '[Resolve]\nDNSStubListener=no\n' > /etc/systemd/resolved.conf.d/weather4lox-nostub.conf"
+                sudo systemctl restart systemd-resolved
+                # Update /etc/resolv.conf to point to dnsmasq (127.0.0.1) instead of stub
+                sudo sh -c "echo 'nameserver 127.0.0.1' > /etc/resolv.conf"
+            fi
+        fi
+
+        # 3. Install dnsmasq if not present
+        DNSMASQ_INSTALLED_BY_W4L=0
+        if ! command -v dnsmasq > /dev/null 2>&1; then
+            echo "<INFO> Installing dnsmasq for Cloud Emulator"
+            sudo apt-get install -y dnsmasq > /dev/null 2>&1
+            sudo systemctl stop dnsmasq > /dev/null 2>&1   # stop before configuring
+            DNSMASQ_INSTALLED_BY_W4L=1
+        fi
+
+        # 4. Write state file for later restore
+        STATEFILE="$LBPCONFIGDIR/$pluginname/cloudemu_state"
+        sudo mkdir -p "$LBPCONFIGDIR/$pluginname"
+        sudo sh -c "printf 'DNSMASQ_INSTALLED_BY_W4L=%s\nRESOLVED_WAS_ACTIVE=%s\nUPSTREAM_DNS=%s\n' \
+            '$DNSMASQ_INSTALLED_BY_W4L' '$RESOLVED_WAS_ACTIVE' '$UPSTREAM_DNS' > '$STATEFILE'"
+
+        # 5. Configure dnsmasq
         sudo sh -c "echo 'address=/weather.loxone.com/$OWNIP' > /etc/dnsmasq.d/$pluginname.conf"
         sudo sh -c "echo 'address=/weather-beta.loxone.com/$OWNIP' >> /etc/dnsmasq.d/$pluginname.conf"
-        sudo service dnsmasq restart > /dev/null 2>&1
+        sudo sh -c "echo 'server=$UPSTREAM_DNS' >> /etc/dnsmasq.d/$pluginname.conf"
+        sudo service dnsmasq restart
     fi
     # Enable Apache Config
     echo "Enabling Apache2 Configuration for Weather4Lox"
@@ -77,8 +127,41 @@ case "$1" in
         sudo rm /etc/dnsmasq.d/$pluginname.conf > /dev/null 2>&1
     else
         echo "Disabling DNSMasq Configuration for Weather4Lox"
-        sudo rm /etc/dnsmasq.d/$pluginname.conf > /dev/null 2>&1
-        sudo service dnsmasq restart > /dev/null 2>&1
+        # 1. Remove weather4lox dnsmasq config
+        sudo rm -f /etc/dnsmasq.d/$pluginname.conf
+
+        # 2. Read state file
+        STATEFILE="$LBPCONFIGDIR/$pluginname/cloudemu_state"
+        DNSMASQ_INSTALLED_BY_W4L=0
+        RESOLVED_WAS_ACTIVE=0
+        UPSTREAM_DNS=""
+        if [ -f "$STATEFILE" ]; then
+            . "$STATEFILE"
+        fi
+
+        # 3. If we installed dnsmasq: stop and remove it
+        if [ "$DNSMASQ_INSTALLED_BY_W4L" = "1" ]; then
+            echo "<INFO> Removing dnsmasq (installed by Weather4Lox)"
+            sudo systemctl stop dnsmasq > /dev/null 2>&1
+            sudo systemctl disable dnsmasq > /dev/null 2>&1
+            sudo apt-get remove -y dnsmasq > /dev/null 2>&1
+        else
+            # dnsmasq was already present - just reload without weather4lox config
+            sudo service dnsmasq reload > /dev/null 2>&1
+        fi
+
+        # 4. Restore systemd-resolved stub if it was active before
+        if [ "$RESOLVED_WAS_ACTIVE" = "1" ]; then
+            echo "<INFO> Restoring systemd-resolved stub listener"
+            sudo rm -f /etc/systemd/resolved.conf.d/weather4lox-nostub.conf
+            sudo systemctl restart systemd-resolved
+            # Restore /etc/resolv.conf to point to systemd-resolved stub
+            sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf 2>/dev/null || \
+            sudo sh -c "echo 'nameserver 127.0.0.53' > /etc/resolv.conf"
+        fi
+
+        # 5. Delete state file
+        sudo rm -f "$STATEFILE"
     fi
     # Disable Apache Config
     echo "Disabling Apache2 Configuration for Weather4Lox"
