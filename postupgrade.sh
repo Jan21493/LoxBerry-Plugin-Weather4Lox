@@ -43,9 +43,15 @@ LBHOMEDIR="${LBHOMEDIR:-$ARGV5}"
 . "${LBHOMEDIR}/libs/bashlib/iniparser.sh"
 iniparser "${ARGV5}/config/plugins/${ARGV3}/weather4lox.cfg" "SERVER"
 
-if [ "${SERVEREMU:-0}" -eq 1 ]; then   # safe default if variable is empty
-    echo "<INFO> Enabling Cloud Weather Emulator"
-    $ARGV5/bin/plugins/$ARGV3/cloudemu enable > /dev/null 2>&1
+if [ "${SERVEREMU:-0}" -eq 1 ]; then
+    echo "<INFO> Re-enabling Cloud Weather Emulator after upgrade"
+    # Check for potential DNS conflict before enabling
+    if systemctl is-active --quiet systemd-resolved 2>/dev/null; then
+        echo "<WARNING> systemd-resolved is active - cloudemu will handle the DNS transition"
+    fi
+    if ! $ARGV5/bin/plugins/$ARGV3/cloudemu enable; then
+        echo "<WARNING> Cloud Emulator could not be enabled - check DNS configuration manually"
+    fi
 fi
 echo "<INFO> POSTUPGRADE script completed!"
 # Exit with Status 0
