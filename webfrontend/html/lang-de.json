@@ -228,6 +228,8 @@
     "sunset": "Sonnenuntergang",
     "feelsLike": "Gefühlt",
     "precipitation": "Niederschlag",
+    "precipProbability": "Niederschlagswahrscheinlichkeit",
+    "precipAmount": "Niederschlagsmenge",
     "cloud_cover": "Bewölkung",
     "uv_index": "UV-Index",
     "visibility": "Sichtweite",

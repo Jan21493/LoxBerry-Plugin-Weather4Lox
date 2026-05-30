@@ -110,6 +110,8 @@ my $results = apiCall(
 	info => "for Location $stationid (Current, Daily, and Hourly Weather Data)",
 );
 
+# API documentation: https://www.visualcrossing.com/resources/documentation/weather-api/timeline-weather-api/
+
 my $i;
 
 # Convert Visual Crossing weather icon string into Loxone picto-code and icon name

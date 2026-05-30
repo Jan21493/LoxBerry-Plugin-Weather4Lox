@@ -256,7 +256,16 @@
 
     /* ===== SVG TEMP CHART ===== */
     .chart-title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; padding-left: 4px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
-    .chart-title .precip-toggle { cursor: pointer; color: var(--sky); border-bottom: 1px dashed var(--sky); transition: opacity 0.2s; }
+    .chart-title .precip-toggle {
+      cursor: pointer;
+      color: var(--sky);
+      border-bottom: 1px dashed var(--sky);
+      transition: opacity 0.2s;
+      /* Force own compositing layer on Safari/WebKit to prevent stale text rendering */
+      will-change: transform;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+    }
     .chart-title .precip-toggle:hover { opacity: 0.7; }
     .chart-wrap {
       margin-top: 16px; overflow-x: auto; padding-bottom: 4px;
@@ -588,6 +597,9 @@ function loadAllData() {
     processHourlyEnvelope(results[1]);
     processDailyEnvelope(results[2]);
 
+    chartPrecipMode['tempChartHeute'] = 'prob';
+    chartPrecipMode['tempChartMorgen'] = 'prob';
+
     renderAll();
     return liveData;
   }).catch(function(err) {
@@ -723,6 +735,8 @@ function applyLang(strings, vars) {
       el.textContent = formatI18nString(val, vars);
     }
   });
+  updateChartPrecipToggleButton('tempChartHeute');
+  updateChartPrecipToggleButton('tempChartMorgen');
 }
 
 function getRoundedCurrentHour(date) {
@@ -753,7 +767,7 @@ function buildNowEntry(currentData, nowLabel) {
     temp: cTemp.air,
     feelsLike: cTemp.feelsLike,
     rainProb: cPrecip.probability,
-    rainAmount: cPrecip.rainToday,
+    rainAmount: cPrecip.rain1hr,
     wind: cWind.speed,
     gust: cWind.gust,
     windDir: cWind.direction,
@@ -871,7 +885,7 @@ function renderAll() {
   // Hero icon with moon phase handling
   updateHeroIcon(c, resolveIcon(cWx.weather4lox, c.isNight, c.moon ? c.moon.age : 0));
   // Side stats (precipitation, pressure); visibility is now in extra-stats row
-  document.getElementById('statPrecip').textContent = (cPrecip.rainToday != null ? cPrecip.rainToday : 0) + ' mm';
+  document.getElementById('statPrecip').textContent = (cPrecip.rain1hr != null ? cPrecip.rain1hr : 0) + ' mm';
   document.getElementById('statPressure').innerHTML = (c.pressure != null ? c.pressure : '--') + ' <small style="color:var(--text-muted)">hPa</small>';
 
   // Extra stats (sunrise/sunset + weather details + visibility)
@@ -1487,17 +1501,30 @@ function makeDragScroll(el) {
   }, {passive: false});
 }
 
+function updateChartPrecipToggleButton(svgId) {
+  var precipProbabilityText = (liveData.lang && liveData.lang.theme.precipProbability) ? liveData.lang.theme.precipProbability : 'Probability';
+  var precipAmountText = (liveData.lang && liveData.lang.theme.precipAmount) ? liveData.lang.theme.precipAmount : 'Amount';
+
+  var btn = document.getElementById('precipToggle-' + svgId);
+  if (!btn) return;
+
+  var newText = (chartPrecipMode[svgId] === 'prob') ? precipProbabilityText : precipAmountText;
+
+  // Safari/WebKit on iPad caches the composited text layer when backdrop-filter is active.
+  // Clearing the content first forces layer invalidation; the new text is then set in the
+  // next animation frame so Safari has no chance to re-use the stale painted layer.
+  btn.textContent = '\u00a0'; // non-breaking space keeps element height stable during the frame gap
+  requestAnimationFrame(function() {
+    btn.textContent = newText;
+  });
+}
+
 // ===== TOGGLE PRECIPITATION MODE IN CHART =====
 function toggleChartPrecipMode(svgId) {
   var current = chartPrecipMode[svgId] || 'prob';
   chartPrecipMode[svgId] = (current === 'prob') ? 'amount' : 'prob';
   // Update the toggle button label to reflect the now-active mode
-  var btn = document.getElementById('precipToggle-' + svgId);
-  if (btn) {
-    btn.textContent = (chartPrecipMode[svgId] === 'prob')
-      ? 'Niederschlagswahrscheinlichkeit'
-      : 'Niederschlagsmenge';
-  }
+  updateChartPrecipToggleButton(svgId);
   // Re-render chart with the updated precipitation mode
   var dataArray = (svgId === 'tempChartHeute') ? hourlyTodayRendered : hourlyTomorrowRendered;
   renderTempChart(svgId, dataArray);

@@ -132,13 +132,6 @@ my $cur = $envelope->{$weatherKey} // {};
 
 LOGDEB "Adding $grabberLabel data to $weatherKey weather data (existing values for same keys will be overwritten).";
 
-# Read existing loxone_current_hour.json envelope
-my $loxCurrentHour = $grabberKey . "_current_hour";
-my $envelope = readJsonFile($lbplogdir, $loxCurrentHour);
-my $cur = $envelope->{$loxCurrentHour} // {};
-
-LOGDEB "Adding $grabberLabel data to $loxCurrentHour weather data (existing values for same keys will be overwritten).";
-
 # Helper: extract numeric value from Loxone response, skip -9999 sentinel
 sub loxVal {
 	my ($key, $fmt) = @_;

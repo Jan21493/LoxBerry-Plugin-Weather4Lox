@@ -413,8 +413,9 @@ my %wetteronlineToLox = (
     "bwg3__" => [19, "cloudy_thunderstorm_3", "Bewölkt mit kräftigen Gewittern"],                       # starke Gewitter (Tag)
 
     # Bedeckt mit Gewitter (Tag und Nacht)
-    "bdg1__" => [18, "overcast_thunderstorm_1", "Bedeckt mit vereinzelten Gewittern"],                                   # bedeckt, vereinzelt Schauer und Gewitter
-    "bdg2__" => [18, "overcast_thunderstorm_2", "Bedeckt mit Gewittern"],                               # bedeckt, Schauer und Gewitter (Tag)
+    "bdg1__" => [18, "overcast_thunderstorm_1", "Bedeckt mit vereinzelten Gewittern"],                  # bedeckt, vereinzelt Schauer und Gewitter
+    "bdg2__" => [18, "overcast_thunderstorm_2", "Bedeckt mit Gewittern"],                               # bedeckt, Gewitter (Tag)
+    "bdg3__" => [18, "overcast_thunderstorm_3", "Bedeckt mit schweren Gewittern"],                      # bedeckt, schwere Gewitter (Tag)
 
     # gefrierender Regen
 

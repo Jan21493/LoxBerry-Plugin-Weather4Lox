@@ -234,6 +234,8 @@
     "sunset": "Puesta del sol",
     "feelsLike": "Sensación",
     "precipitation": "Precipitación",
+    "precipProbability": "Probabilidad de precipitación",
+    "precipAmount": "Cantidad de precipitación",
     "cloud_cover": "Nubosidad",
     "uv_index": "Índice UV",
     "visibility": "Visibilidad",

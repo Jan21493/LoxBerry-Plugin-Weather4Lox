@@ -234,6 +234,8 @@
     "sunset": "Západ slnka",
     "feelsLike": "Pocitovo",
     "precipitation": "Zrážky",
+    "precipProbability": "Pravdepodobnosť zrážok",
+    "precipAmount": "Množstvo zrážok",
     "cloud_cover": "Oblačnosť",
     "uv_index": "UV index",
     "visibility": "Viditeľnosť",

@@ -234,6 +234,8 @@
     "sunset": "Zonsondergang",
     "feelsLike": "Gevoelstemperatuur",
     "precipitation": "Neerslag",
+    "precipProbability": "Neerslagkans",
+    "precipAmount": "Neerslaghoeveelheid",
     "cloud_cover": "Wolkenbedekking",
     "uv_index": "UV-index",
     "visibility": "Zichtbaarheid",

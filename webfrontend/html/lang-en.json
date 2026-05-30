@@ -234,6 +234,8 @@
     "sunset": "Sunset",
     "feelsLike": "Feels like",
     "precipitation": "Precipitation",
+    "precipProbability": "Precipitation probability",
+    "precipAmount": "Precipitation amount",
     "cloud_cover": "Cloud cover",
     "uv_index": "UV index",
     "visibility": "Visibility",
