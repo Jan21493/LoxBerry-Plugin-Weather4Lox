@@ -48,19 +48,6 @@ run_cmd "Adding Apache2 headers module" a2enmod headers
 # apt-get update
 # apt-get install -y libdatetime-format-iso8601-perl
 
-# Ensure dnsmasq does not start automatically after installation
-# dnsmasq is no longer in dpkg/apt but may be installed later by cloudemu enable.
-# This guard is a safety net in case dnsmasq is already installed on the system.
-if command -v dnsmasq > /dev/null 2>&1; then
-    echo "<INFO> dnsmasq found on system - ensuring it does not interfere with DNS if emulator is disabled"
-    # Only stop dnsmasq if weather4lox cloudemu_state does NOT exist
-    # (meaning the emulator was never enabled by this plugin)
-    if [ ! -f "${ARGV5}/config/plugins/${ARGV3}/cloudemu_state" ]; then
-        systemctl stop dnsmasq > /dev/null 2>&1 || true
-        systemctl disable dnsmasq > /dev/null 2>&1 || true
-    fi
-fi
-
 echo "<INFO> POSTROOT script completed!"
 # Exit with Status 0
 exit 0
