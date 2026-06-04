@@ -851,6 +851,17 @@ if ($R::form eq "1" || !$R::form) {
     );
     $template->param( SERVERLANG => $serverlang );
 
+    # Show 'Address from MS' button only, if LoxBerry version is >= 4 and if at least one MS is configured in the Loxberry System
+    my $lbversion = LoxBerry::System::lbversion();
+    my ($major) = $lbversion =~ /^(\d+)/;
+    my %miniservers = LoxBerry::System::get_miniservers();
+
+    if (defined $major && $major >= 4 && %miniservers && keys(%miniservers) > 0) {
+        $template->param( SHOW_MSADDRESS_BUTTON => 1);
+    } else {
+        $template->param( SHOW_MSADDRESS_BUTTON => 0);
+    }
+
 #########################################################################################
 # Menu: Send to Miniserver
 #########################################################################################

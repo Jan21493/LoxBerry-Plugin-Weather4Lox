@@ -111,11 +111,11 @@ foreach my $ms (sort keys %miniservers) {
   my $coord_prefix = ($service eq "server") ? "" : $service;
 
   $city = $miniservers{$ms}{Location} || "My City";
-  $country = $miniservers{$ms}{Country} || "My Country";
-  $lat = sprintf "%.6f", $miniservers{$ms}{Latitude} || 0;
-  $long = sprintf "%.6f", $miniservers{$ms}{Longitude} || 0;
+  $country = "My Country";
+  $lat  = sprintf "%.6f", ($miniservers{$ms}{Latitude}  || -3.0674);
+  $long = sprintf "%.6f", ($miniservers{$ms}{Longitude} || 37.3556);
 
-  if ($lat != 0 && $long != 0) {
+  if ($lat != 0 || $long != 0) {
     # Get country from geolocation (not provided by Loxone Config) if lat/long are available
     $queryurl = "https://nominatim.openstreetmap.org/search?q=$lat,$long&format=json&addressdetails=1&accept-language=$lang";
 

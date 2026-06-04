@@ -85,11 +85,12 @@
                                                             <table border="0" width="100%">
                                                             <tr>
                                                                 <td>&nbsp;</td>
-                                                                <td>
-                                                                    <a id="coordaddresssearch" data-role="button" data-inline="true" data-mini="true" href="#" onClick="window.open('/admin/plugins/<TMPL_VAR LBPPLUGINDIR>/geolocation.cgi?service=server','NewWindow2','scrollbars=true,toolbar=no,location=no,directories=no,status=no,menubar=no,copyhistory=no,width=900,height=600')">
+                                                                <td><a id="coordaddresssearch" data-role="button" data-inline="true" data-mini="true" href="#" onClick="window.open('/admin/plugins/<TMPL_VAR LBPPLUGINDIR>/geolocation.cgi?service=server','NewWindow2','scrollbars=true,toolbar=no,location=no,directories=no,status=no,menubar=no,copyhistory=no,width=900,height=600')">
                                                                         <font size="-1"><TMPL_VAR SETTINGS.LABEL_ADDRESSSEARCH></font></a>
+                                                                    <TMPL_IF SHOW_MSADDRESS_BUTTON>
                                                                     <a id="msaddresssearch" data-role="button" data-inline="true" data-mini="true" href="#" onClick="window.open('/admin/plugins/<TMPL_VAR LBPPLUGINDIR>/mslocation.cgi?service=server','NewWindow3','scrollbars=true,toolbar=no,location=no,directories=no,status=no,menubar=no,copyhistory=no,width=900,height=600')">
                                                                         <font size="-1"><TMPL_VAR SETTINGS.LABEL_MSADDRESS></font></a>
+                                                                    </TMPL_IF>
                                                                 </td>
                                                             </tr>
                                                             <tr>
