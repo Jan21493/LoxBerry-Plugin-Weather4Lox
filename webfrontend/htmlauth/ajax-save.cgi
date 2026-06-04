@@ -258,18 +258,10 @@ eval {
     $cfg->param("SERVER.CITY", $R->{city} // "");
     $cfg->param("SERVER.COUNTRY", $R->{country} // "");
 
-    push @checks, $L{'SETTINGS.SAVING_POLLEN'};
-
-    $cfg->param("POLLEN.ALDER",   ( $R->{pollen_alder}   // 0 ) + 0);
-    $cfg->param("POLLEN.BIRCH",   ( $R->{pollen_birch}   // 0 ) + 0);
-    $cfg->param("POLLEN.GRASS",   ( $R->{pollen_grasses} // 0 ) + 0);
-    $cfg->param("POLLEN.MUGWORT", ( $R->{pollen_mugwort} // 0 ) + 0);
-    $cfg->param("POLLEN.OLIVE",   ( $R->{pollen_olive}   // 0 ) + 0);
-    $cfg->param("POLLEN.RAGWEED", ( $R->{pollen_ragweed} // 0 ) + 0);
-    
     atomic_save_config($cfg, "$lbpconfigdir/weather4lox.cfg");
 
-    # Mirror pollen sensitivity into w4l-settings.json so the web client can read it
+    # Save pollen sensitivity into w4l-settings.json (single source of truth)
+    push @checks, $L{'SETTINGS.SAVING_POLLEN'};
     {
         my %w4lSettings = (
             pollen => {

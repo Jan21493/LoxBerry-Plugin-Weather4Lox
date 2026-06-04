@@ -433,15 +433,26 @@ if ($R::form eq "1" || !$R::form) {
     $template->param( OPENMETEOAIRQUALITYGRABBER => $openmeteoairqualitygrabber );
 
     # Pollen sensitivity dropdowns (0-7 scale)
-    # Read defaults from config
-    my %pollen_defaults = (
-        grasses => $cfg->param("POLLEN.GRASS")   // 0,
-        birch   => $cfg->param("POLLEN.BIRCH")   // 0,
-        alder   => $cfg->param("POLLEN.ALDER")   // 0,
-        mugwort => $cfg->param("POLLEN.MUGWORT") // 0,
-        olive   => $cfg->param("POLLEN.OLIVE")   // 0,
-        ragweed => $cfg->param("POLLEN.RAGWEED") // 0,
-    );
+    # Read defaults from w4l-settings.json (single source of truth)
+    my %pollen_defaults = (grasses => 0, birch => 0, alder => 0, mugwort => 0, olive => 0, ragweed => 0);
+    {
+        my $settingsFile = "$lbphtmldir/w4l-settings.json";
+        if (-f $settingsFile && open(my $fh, '<:utf8', $settingsFile)) {
+            my $json_str = do { local $/; <$fh> };
+            close $fh;
+            my $w4l = eval { decode_json($json_str) };
+            if ($w4l && ref($w4l->{pollen}) eq 'HASH') {
+                %pollen_defaults = (
+                    grasses => $w4l->{pollen}{grass}   // 0,
+                    birch   => $w4l->{pollen}{birch}   // 0,
+                    alder   => $w4l->{pollen}{alder}   // 0,
+                    mugwort => $w4l->{pollen}{mugwort} // 0,
+                    olive   => $w4l->{pollen}{olive}   // 0,
+                    ragweed => $w4l->{pollen}{ragweed} // 0,
+                );
+            }
+        }
+    }
 
     @values = ('0', '1', '2', '3', '4', '5', '6', '7');
     %labels = (

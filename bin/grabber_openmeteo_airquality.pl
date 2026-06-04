@@ -93,11 +93,10 @@ if ( !defined $lat || $lat eq '' || !defined $lon || $lon eq '' ) {
 LOGINF "Using coordinates: lat=$lat, lon=$lon";
 
 ##########################################################################
-# Pollen sensitivity — prefer w4l-settings.json (web-accessible), fall
-# back to [POLLEN] section in weather4lox.cfg for backward compatibility
+# Pollen sensitivity — read from w4l-settings.json (single source of truth)
 ##########################################################################
 
-my %pollenSensitivity;
+my %pollenSensitivity = (alder => 0, birch => 0, grass => 0, mugwort => 0, olive => 0, ragweed => 0);
 my $w4lSettingsFile = "$lbphtmldir/w4l-settings.json";
 if (-f $w4lSettingsFile) {
     my $w4lSettings = readJsonFile($lbphtmldir, "w4l-settings");
@@ -112,17 +111,6 @@ if (-f $w4lSettingsFile) {
             ragweed => $w4lSettings->{pollen}{ragweed} // 0,
         );
     }
-}
-if (!%pollenSensitivity) {
-    LOGINF "Reading pollen sensitivity from weather4lox.cfg (fallback)";
-    %pollenSensitivity = (
-        alder   => $pcfg->param("POLLEN.ALDER")   // 0,
-        birch   => $pcfg->param("POLLEN.BIRCH")    // 0,
-        grass   => $pcfg->param("POLLEN.GRASS")    // 0,
-        mugwort => $pcfg->param("POLLEN.MUGWORT")  // 0,
-        olive   => $pcfg->param("POLLEN.OLIVE")    // 0,
-        ragweed => $pcfg->param("POLLEN.RAGWEED")  // 0,
-    );
 }
 
 ##########################################################################
