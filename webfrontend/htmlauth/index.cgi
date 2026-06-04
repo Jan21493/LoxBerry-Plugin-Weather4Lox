@@ -437,19 +437,25 @@ if ($R::form eq "1" || !$R::form) {
     my %pollen_defaults = (grasses => 0, birch => 0, alder => 0, mugwort => 0, olive => 0, ragweed => 0);
     {
         my $settingsFile = "$lbphtmldir/w4l-settings.json";
-        if (-f $settingsFile && open(my $fh, '<:utf8', $settingsFile)) {
-            my $json_str = do { local $/; <$fh> };
-            close $fh;
-            my $w4l = eval { decode_json($json_str) };
-            if ($w4l && ref($w4l->{pollen}) eq 'HASH') {
-                %pollen_defaults = (
-                    grasses => $w4l->{pollen}{grass}   // 0,
-                    birch   => $w4l->{pollen}{birch}   // 0,
-                    alder   => $w4l->{pollen}{alder}   // 0,
-                    mugwort => $w4l->{pollen}{mugwort} // 0,
-                    olive   => $w4l->{pollen}{olive}   // 0,
-                    ragweed => $w4l->{pollen}{ragweed} // 0,
-                );
+        if (-f $settingsFile) {
+            if (open(my $fh, '<:utf8', $settingsFile)) {
+                my $json_str = do { local $/; <$fh> };
+                close $fh;
+                my $w4l = eval { decode_json($json_str) };
+                if ($@) {
+                    warn "weather4lox: could not parse $settingsFile: $@";
+                } elsif ($w4l && ref($w4l->{pollen}) eq 'HASH') {
+                    %pollen_defaults = (
+                        grasses => $w4l->{pollen}{grass}   // 0,
+                        birch   => $w4l->{pollen}{birch}   // 0,
+                        alder   => $w4l->{pollen}{alder}   // 0,
+                        mugwort => $w4l->{pollen}{mugwort} // 0,
+                        olive   => $w4l->{pollen}{olive}   // 0,
+                        ragweed => $w4l->{pollen}{ragweed} // 0,
+                    );
+                }
+            } else {
+                warn "weather4lox: could not open $settingsFile: $!";
             }
         }
     }
