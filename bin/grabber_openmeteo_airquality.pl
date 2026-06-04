@@ -93,17 +93,37 @@ if ( !defined $lat || $lat eq '' || !defined $lon || $lon eq '' ) {
 LOGINF "Using coordinates: lat=$lat, lon=$lon";
 
 ##########################################################################
-# Pollen sensitivity from config [POLLEN] section
+# Pollen sensitivity — prefer w4l-settings.json (web-accessible), fall
+# back to [POLLEN] section in weather4lox.cfg for backward compatibility
 ##########################################################################
 
-my %pollenSensitivity = (
-    alder   => $pcfg->param("POLLEN.ALDER")   // 0,
-    birch   => $pcfg->param("POLLEN.BIRCH")    // 0,
-    grass   => $pcfg->param("POLLEN.GRASS")    // 0,
-    mugwort => $pcfg->param("POLLEN.MUGWORT")  // 0,
-    olive   => $pcfg->param("POLLEN.OLIVE")    // 0,
-    ragweed => $pcfg->param("POLLEN.RAGWEED")  // 0,
-);
+my %pollenSensitivity;
+my $w4lSettingsFile = "$lbphtmldir/w4l-settings.json";
+if (-f $w4lSettingsFile) {
+    my $w4lSettings = readJsonFile($lbphtmldir, "w4l-settings");
+    if ($w4lSettings && ref($w4lSettings->{pollen}) eq 'HASH') {
+        LOGINF "Reading pollen sensitivity from $w4lSettingsFile";
+        %pollenSensitivity = (
+            alder   => $w4lSettings->{pollen}{alder}   // 0,
+            birch   => $w4lSettings->{pollen}{birch}   // 0,
+            grass   => $w4lSettings->{pollen}{grass}   // 0,
+            mugwort => $w4lSettings->{pollen}{mugwort} // 0,
+            olive   => $w4lSettings->{pollen}{olive}   // 0,
+            ragweed => $w4lSettings->{pollen}{ragweed} // 0,
+        );
+    }
+}
+if (!%pollenSensitivity) {
+    LOGINF "Reading pollen sensitivity from weather4lox.cfg (fallback)";
+    %pollenSensitivity = (
+        alder   => $pcfg->param("POLLEN.ALDER")   // 0,
+        birch   => $pcfg->param("POLLEN.BIRCH")    // 0,
+        grass   => $pcfg->param("POLLEN.GRASS")    // 0,
+        mugwort => $pcfg->param("POLLEN.MUGWORT")  // 0,
+        olive   => $pcfg->param("POLLEN.OLIVE")    // 0,
+        ragweed => $pcfg->param("POLLEN.RAGWEED")  // 0,
+    );
+}
 
 ##########################################################################
 # Fetch data from Open-Meteo Air Quality API

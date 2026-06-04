@@ -269,6 +269,25 @@ eval {
     
     atomic_save_config($cfg, "$lbpconfigdir/weather4lox.cfg");
 
+    # Mirror pollen sensitivity into w4l-settings.json so the web client can read it
+    {
+        my %w4lSettings = (
+            pollen => {
+                alder   => ( $R->{pollen_alder}   // 0 ) + 0,
+                birch   => ( $R->{pollen_birch}   // 0 ) + 0,
+                grass   => ( $R->{pollen_grasses} // 0 ) + 0,
+                mugwort => ( $R->{pollen_mugwort} // 0 ) + 0,
+                olive   => ( $R->{pollen_olive}   // 0 ) + 0,
+                ragweed => ( $R->{pollen_ragweed} // 0 ) + 0,
+            }
+        );
+        my $settingsFile = "$lbphtmldir/w4l-settings.json";
+        if (open my $fh, '>:utf8', $settingsFile) {
+            print $fh JSON::PP->new->utf8->pretty->canonical->encode(\%w4lSettings);
+            close $fh;
+        }
+    }
+
     push @checks, $L{'SETTINGS.SAVING_CRONJOB'};
 
     my $cronlink = "$lbhomedir/system/cron/cron.01min/$lbpplugindir";

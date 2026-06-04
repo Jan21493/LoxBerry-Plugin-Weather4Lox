@@ -214,9 +214,9 @@
     }
     .hcard-dot-label { font-size: 0.6rem; color: var(--text-muted); margin-bottom: 6px; }
     .hcard-pollen-dot {
-      width: 22px; height: 22px; border-radius: 50%; margin: 0 auto 2px;
+      width: 28px; height: 28px; border-radius: 50%; margin: 0 auto 2px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.65rem; font-weight: 600; color: #fff;
+      font-size: 0.7rem; font-weight: 600; color: #fff;
     }
     .hcard-pollen-label { font-size: 0.6rem; color: var(--text-muted); }
 
@@ -268,6 +268,60 @@
       color: var(--text-primary); padding: 12px 24px; border-radius: 12px;
       z-index: 101; backdrop-filter: blur(12px); font-size: 0.9rem; max-width: 90%;
     }
+
+    /* ===== INFO BUTTON ===== */
+    .info-btn {
+      width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--border);
+      background: var(--bg-card); color: var(--text-muted); cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 700; font-family: inherit;
+      flex-shrink: 0; vertical-align: middle; margin-left: 4px;
+      transition: all 0.2s;
+    }
+    .info-btn:hover { border-color: var(--border-hover); color: var(--text-primary); background: var(--bg-card-hover); }
+
+    /* ===== SELECTED HOURLY CARD ===== */
+    .hcard.selected {
+      border-color: rgba(74,222,128,0.5); background: rgba(74,222,128,0.08);
+    }
+
+    /* ===== INFO MODAL ===== */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; backdrop-filter: blur(4px); padding: 16px;
+    }
+    .modal-box {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 20px; padding: 24px; max-width: 480px; width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4); max-height: 80vh; overflow-y: auto;
+    }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .modal-title { font-size: 1rem; font-weight: 600; }
+    .modal-close {
+      width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg-card); color: var(--text-secondary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 1rem;
+      font-family: inherit; transition: all 0.2s;
+    }
+    .modal-close:hover { border-color: var(--border-hover); color: var(--text-primary); }
+    .modal-section { margin-bottom: 14px; }
+    .modal-section-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 8px; }
+    .modal-text { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5; }
+    .modal-scale { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+    .modal-scale-row { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; }
+    .modal-scale-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .modal-scale-range { color: var(--text-muted); font-size: 0.72rem; min-width: 52px; }
+    .modal-scale-label { color: var(--text-primary); font-weight: 500; }
+    .modal-scale-desc { color: var(--text-secondary); font-size: 0.72rem; }
+    .mix-settings-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
+    .mix-settings-row:last-child { border-bottom: none; }
+    .mix-emoji { font-size: 1.1rem; width: 24px; text-align: center; }
+    .mix-name { flex: 1; color: var(--text-primary); font-weight: 500; }
+    .mix-bar-wrap { flex: 2; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden; }
+    html.light .mix-bar-wrap { background: rgba(0,0,0,0.08); }
+    .mix-bar-fill { height: 100%; border-radius: 3px; }
+    .mix-level { font-size: 0.75rem; color: var(--text-muted); min-width: 24px; text-align: right; }
 
     /* ===== RESPONSIVE ===== */
     @media (max-width: 700px) {
@@ -339,7 +393,8 @@
     <div class="section">
       <div class="section-title">
         <i data-lucide="wind" style="width:14px;height:14px"></i>
-        Luftqualität — Aktuell
+        Luftqualität — <span id="aqiTitleToday">--:--</span>
+        <button class="info-btn" id="aqiInfoBtn" title="Was ist AQI?" aria-label="AQI Info">?</button>
       </div>
       <div class="glass aqi-card" id="aqiToday"></div>
     </div>
@@ -348,7 +403,7 @@
     <div class="section">
       <div class="section-title">
         <i data-lucide="flower-2" style="width:14px;height:14px"></i>
-        Pollenflug — Aktuell
+        Pollenflug — <span id="pollenTitleToday">--:--</span>
       </div>
       <div class="pollen-grid" id="pollenToday"></div>
     </div>
@@ -371,7 +426,8 @@
     <div class="section">
       <div class="section-title">
         <i data-lucide="wind" style="width:14px;height:14px"></i>
-        Luftqualität — Morgen (Tagesmaximum)
+        Luftqualität — <span id="aqiTitleTomorrow">Morgen</span>
+        <button class="info-btn" id="aqiInfoBtnTomorrow" title="Was ist AQI?" aria-label="AQI Info">?</button>
       </div>
       <div class="glass aqi-card" id="aqiTomorrow"></div>
     </div>
@@ -380,7 +436,7 @@
     <div class="section">
       <div class="section-title">
         <i data-lucide="flower-2" style="width:14px;height:14px"></i>
-        Pollenflug — Morgen (Tagesmaximum)
+        Pollenflug — <span id="pollenTitleTomorrow">Morgen</span>
       </div>
       <div class="pollen-grid" id="pollenTomorrow"></div>
     </div>
@@ -418,6 +474,51 @@
   <div class="footer" id="footerInfo"></div>
 
 </div><!-- .page -->
+
+<!-- ===== AQI INFO MODAL ===== -->
+<div id="aqiInfoModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="aqiModalTitle">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="aqiModalTitle">Europäischer Luftqualitätsindex (EAQI)</span>
+      <button class="modal-close" id="aqiModalClose" aria-label="Schließen">✕</button>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Was ist der EAQI?</div>
+      <p class="modal-text">Der Europäische Luftqualitätsindex (EAQI) fasst die Konzentrationen mehrerer Luftschadstoffe zu einem einzigen Wert zusammen. Er basiert auf den Messungen von PM2.5, PM10, Ozon (O₃), Stickstoffdioxid (NO₂) und Schwefeldioxid (SO₂). Der schlechteste Einzelwert bestimmt den Gesamtindex.</p>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Einheiten</div>
+      <p class="modal-text">PM2.5 und PM10 werden in µg/m³ gemessen. O₃, NO₂ und SO₂ werden in µg/m³ angegeben. Der Index selbst ist dimensionslos (0–500+).</p>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Indexskala &amp; Bedeutung</div>
+      <div class="modal-scale" id="aqiModalScale"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PERSONAL MIX INFO MODAL ===== -->
+<div id="mixInfoModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="mixModalTitle">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="mixModalTitle">👤 Persönlicher Mix — Einstellungen</span>
+      <button class="modal-close" id="mixModalClose" aria-label="Schließen">✕</button>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Was ist der persönliche Mix?</div>
+      <p class="modal-text">Der persönliche Mix berechnet ein gewichtetes Gesamt-Pollenbelastungs-Level basierend auf Ihrer persönlichen Sensitivität gegenüber den einzelnen Pollenarten. Höhere Sensitivität bedeutet, dass diese Pollenart stärker in den Gesamtwert einfließt.</p>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Konfigurierte Sensitivitäten</div>
+      <div id="mixSettingsContent">
+        <p class="modal-text" style="color:var(--text-muted)">Lade Einstellungen…</p>
+      </div>
+    </div>
+    <div class="modal-section">
+      <p class="modal-text" style="font-size:0.75rem; color:var(--text-muted)">Einstellungen können im Admin-Bereich unter Einstellungen → Pollen-Sensitivität geändert werden.</p>
+    </div>
+  </div>
+</div>
 
 <script>
 // ===== CONFIGURATION =====
@@ -461,6 +562,12 @@ var liveData = {
   dailyRaw: [],        // raw dailyforecast array (includes pollen and AQI)
   lang: null           // lang-XX.json
 };
+
+// Client-accessible settings (from w4l-settings.json)
+var w4lSettings = { pollen: {} };
+
+// Selected hour per panel (null = default current/daily-max view)
+var selectedHourPanel = { Today: null, Tomorrow: null };
 
 // Refresh timers per data type
 var refreshState = {
@@ -784,7 +891,9 @@ function renderPollenGrid(containerId, pollenObj) {
       '<div class="pollen-card glass personal-mix" style="border-color:' + mixColor + '22">' +
         '<div class="pollen-level-num">' + mixLevel + '</div>' +
         '<div class="pollen-emoji">👤</div>' +
-        '<div class="pollen-name">Persönlicher Mix</div>' +
+        '<div class="pollen-name">Persönlicher Mix ' +
+          '<button class="info-btn" id="mixInfoBtn" title="Einstellungen anzeigen" aria-label="Persönlicher Mix Info">?</button>' +
+        '</div>' +
         '<div class="pollen-bar-track">' +
           '<div class="pollen-bar-fill" style="width:' + mixPct + '%; background:' + mixColor + '"></div>' +
         '</div>' +
@@ -797,17 +906,19 @@ function renderPollenGrid(containerId, pollenObj) {
 
 // ===== RENDER: HOURLY STRIP =====
 // Shows each forecast hour as a small card with AQI dot and pollen mix dot
-function renderHourlyStrip(stripId, hourlyEntries) {
+// panel: 'Today' or 'Tomorrow' — used for click-to-detail feature
+function renderHourlyStrip(stripId, hourlyEntries, panel) {
   var strip = document.getElementById(stripId);
   if (!strip) return;
 
   if (!hourlyEntries || hourlyEntries.length === 0) {
     strip.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;padding:4px 0">Keine Stundendaten verfügbar</div>';
+    strip.onclick = null;
     return;
   }
 
   var html = '';
-  hourlyEntries.forEach(function (h) {
+  hourlyEntries.forEach(function (h, idx) {
     var timeStr = formatHour(h.time ? h.time.datetime : null);
 
     // European AQI maximum for this hour
@@ -827,7 +938,7 @@ function renderHourlyStrip(stripId, hourlyEntries) {
     var pollenCol = levelColor(pollenMix);
 
     html +=
-      '<div class="hcard">' +
+      '<div class="hcard" data-idx="' + idx + '">' +
         '<div class="hcard-time">' + timeStr + '</div>' +
         '<div class="hcard-dot" style="background:' + aqiCol + '">' + (aqiMax || '--') + '</div>' +
         '<div class="hcard-dot-label">AQI</div>' +
@@ -837,6 +948,34 @@ function renderHourlyStrip(stripId, hourlyEntries) {
   });
 
   strip.innerHTML = html;
+
+  // Re-apply selected state if a card was previously selected for this panel
+  if (panel && selectedHourPanel[panel] !== null) {
+    var prevCard = strip.querySelector('[data-idx="' + selectedHourPanel[panel] + '"]');
+    if (prevCard) prevCard.classList.add('selected');
+  }
+
+  // Click handler via event delegation — overwrite any previous handler
+  strip.onclick = panel ? function (e) {
+    var card = e.target.closest('.hcard');
+    if (!card) return;
+    var idx = parseInt(card.getAttribute('data-idx'), 10);
+    var hourEntry = hourlyEntries[idx];
+    if (!hourEntry) return;
+
+    if (card.classList.contains('selected')) {
+      // Deselect — return to default view
+      card.classList.remove('selected');
+      selectedHourPanel[panel] = null;
+      resetToDefault(panel);
+    } else {
+      // Select this hour
+      strip.querySelectorAll('.hcard').forEach(function (c) { c.classList.remove('selected'); });
+      card.classList.add('selected');
+      selectedHourPanel[panel] = idx;
+      selectHour(panel, hourEntry);
+    }
+  } : null;
 }
 
 // ===== RENDER: DAYS HEATMAP TABLE =====
@@ -976,6 +1115,10 @@ function renderFooter() {
 function renderToday() {
   var cur = liveData.current || {};
 
+  // Update section titles with current hour from live data (default state)
+  var curHour = formatHour(cur.time ? cur.time.datetime : null);
+  setSectionTitle('Today', curHour);
+
   // AQI from current hour
   renderAqiCard('aqiToday', cur.europeanAqi || null);
 
@@ -983,13 +1126,22 @@ function renderToday() {
   renderPollenGrid('pollenToday', cur.pollen || null);
 
   // Hourly progression strip (remaining hours today)
-  renderHourlyStrip('hourStripToday', liveData.hourlyToday);
+  renderHourlyStrip('hourStripToday', liveData.hourlyToday, 'Today');
+
+  // Re-apply selected hour detail if a card was active before refresh
+  var selIdx = selectedHourPanel['Today'];
+  if (selIdx !== null && liveData.hourlyToday[selIdx]) {
+    selectHour('Today', liveData.hourlyToday[selIdx]);
+  }
 }
 
 // ===== RENDER: TOMORROW PANEL =====
 function renderTomorrow() {
   // Find tomorrow in the daily raw array (day index 1)
   var tomorrow = liveData.dailyRaw.length > 1 ? liveData.dailyRaw[1] : null;
+
+  // Default title for tomorrow (daily max, no specific hour)
+  setSectionTitle('Tomorrow', 'Morgen (Tagesmax.)');
 
   // Use daily max AQI for tomorrow
   var tomorrowAqi = tomorrow && tomorrow.europeanAqi ? tomorrow.europeanAqi.max || tomorrow.europeanAqi.avg : null;
@@ -1000,7 +1152,39 @@ function renderTomorrow() {
   renderPollenGrid('pollenTomorrow', tomorrowPollen);
 
   // Hourly strip for tomorrow
-  renderHourlyStrip('hourStripTomorrow', liveData.hourlyTomorrow);
+  renderHourlyStrip('hourStripTomorrow', liveData.hourlyTomorrow, 'Tomorrow');
+
+  // Re-apply selected hour detail if a card was active before refresh
+  var selIdxTmrw = selectedHourPanel['Tomorrow'];
+  if (selIdxTmrw !== null && liveData.hourlyTomorrow[selIdxTmrw]) {
+    selectHour('Tomorrow', liveData.hourlyTomorrow[selIdxTmrw]);
+  }
+}
+
+// ===== SECTION TITLE HELPERS =====
+function setSectionTitle(panel, text) {
+  var aqiEl    = document.getElementById('aqiTitle' + panel);
+  var pollenEl = document.getElementById('pollenTitle' + panel);
+  if (aqiEl)    aqiEl.textContent    = text;
+  if (pollenEl) pollenEl.textContent = text;
+}
+
+// ===== HOURLY HOUR SELECTION =====
+// Show the data of a specific hourly entry in the AQI and pollen sections above
+function selectHour(panel, hourEntry) {
+  var timeStr = formatHour(hourEntry.time ? hourEntry.time.datetime : null);
+  setSectionTitle(panel, timeStr);
+  renderAqiCard('aqi' + panel, hourEntry.europeanAqi || null);
+  renderPollenGrid('pollen' + panel, hourEntry.pollen || null);
+}
+
+// Reset the AQI and pollen sections to the default view (current / daily max)
+function resetToDefault(panel) {
+  if (panel === 'Today') {
+    renderToday();
+  } else if (panel === 'Tomorrow') {
+    renderTomorrow();
+  }
 }
 
 // ===== MAIN RENDER FUNCTION =====
@@ -1030,6 +1214,106 @@ document.querySelectorAll('.tab').forEach(function (btn) {
   });
 });
 
+// ===== AQI INFO MODAL =====
+(function () {
+  var aqiScaleData = [
+    { lvl: 0, range: '0–20',   label: 'Sehr gut',         desc: 'Keinerlei Risiko für die Bevölkerung' },
+    { lvl: 1, range: '21–40',  label: 'Gut',              desc: 'Vernachlässigbares Risiko für empfindliche Gruppen' },
+    { lvl: 2, range: '41–60',  label: 'Mäßig',            desc: 'Geringes Risiko für sehr empfindliche Personen' },
+    { lvl: 3, range: '61–80',  label: 'Schlecht',         desc: 'Mögliche Symptome bei empfindlichen Gruppen' },
+    { lvl: 4, range: '81–100', label: 'Sehr schlecht',    desc: 'Risiko für Bevölkerungsgruppen mit Vorerkrankungen' },
+    { lvl: 5, range: '101–150',label: 'Extrem schlecht',  desc: 'Gesundheitliche Auswirkungen auf breite Bevölkerung' },
+    { lvl: 6, range: '151–200',label: 'Gefährlich',       desc: 'Ernsthafte Gesundheitsauswirkungen für alle' },
+    { lvl: 7, range: '>200',   label: 'Katastrophal',     desc: 'Notfallsituation — Aufenthalt im Freien vermeiden' }
+  ];
+
+  // Build scale HTML once
+  var scaleEl = document.getElementById('aqiModalScale');
+  if (scaleEl) {
+    scaleEl.innerHTML = aqiScaleData.map(function (d) {
+      return '<div class="modal-scale-row">' +
+        '<div class="modal-scale-dot" style="background:' + levelColor(d.lvl) + '"></div>' +
+        '<span class="modal-scale-range">' + d.range + '</span>' +
+        '<span class="modal-scale-label">' + d.label + '</span>' +
+        '<span class="modal-scale-desc"> — ' + d.desc + '</span>' +
+        '</div>';
+    }).join('');
+  }
+
+  function openAqiModal() {
+    document.getElementById('aqiInfoModal').style.display = 'flex';
+  }
+  function closeAqiModal() {
+    document.getElementById('aqiInfoModal').style.display = 'none';
+  }
+
+  ['aqiInfoBtn', 'aqiInfoBtnTomorrow'].forEach(function (id) {
+    var btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', openAqiModal);
+  });
+  document.getElementById('aqiModalClose').addEventListener('click', closeAqiModal);
+  document.getElementById('aqiInfoModal').addEventListener('click', function (e) {
+    if (e.target === this) closeAqiModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeAqiModal();
+  });
+})();
+
+// ===== PERSONAL MIX INFO MODAL =====
+(function () {
+  function openMixModal() {
+    var content = document.getElementById('mixSettingsContent');
+    if (!content) return;
+    var pollenSettings = (w4lSettings && w4lSettings.pollen) ? w4lSettings.pollen : null;
+
+    if (!pollenSettings || Object.keys(pollenSettings).length === 0) {
+      content.innerHTML = '<p class="modal-text" style="color:var(--text-muted)">Keine Einstellungen gefunden. Bitte im Admin-Bereich konfigurieren.</p>';
+    } else {
+      var rowsHtml = pollenTypes.map(function (pt) {
+        var sens = Math.round(pollenSettings[pt.key] || 0);
+        var color = levelColor(sens);
+        var pct   = Math.round(sens / 7 * 100);
+        return '<div class="mix-settings-row">' +
+          '<span class="mix-emoji">' + pt.emoji + '</span>' +
+          '<span class="mix-name">' + pt.labelDe + '</span>' +
+          '<div class="mix-bar-wrap">' +
+            '<div class="mix-bar-fill" style="width:' + pct + '%; background:' + color + '"></div>' +
+          '</div>' +
+          '<span class="mix-level" style="color:' + color + '">' + sens + '/7</span>' +
+          '</div>';
+      }).join('');
+      content.innerHTML = rowsHtml;
+    }
+    document.getElementById('mixInfoModal').style.display = 'flex';
+  }
+  function closeMixModal() {
+    document.getElementById('mixInfoModal').style.display = 'none';
+  }
+
+  // The mix info button is injected dynamically, so use event delegation on the page
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('#mixInfoBtn')) openMixModal();
+  });
+  document.getElementById('mixModalClose').addEventListener('click', closeMixModal);
+  document.getElementById('mixInfoModal').addEventListener('click', function (e) {
+    if (e.target === this) closeMixModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeMixModal();
+  });
+})();
+
+// ===== LOAD CLIENT SETTINGS (w4l-settings.json) =====
+function loadClientSettings() {
+  return fetch(JSON_BASE + 'w4l-settings.json')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (data) {
+      if (data) w4lSettings = data;
+    })
+    .catch(function () { /* silently ignore — settings file is optional */ });
+}
+
 // ===== DARK / LIGHT MODE TOGGLE =====
 (function () {
   var saved = localStorage.getItem('aqTheme') || 'dark';
@@ -1046,7 +1330,8 @@ document.querySelectorAll('.tab').forEach(function (btn) {
 // ===== BOOT =====
 if (typeof lucide !== 'undefined') lucide.createIcons();
 
-loadAllData()
+loadClientSettings()
+  .then(function () { return loadAllData(); })
   .then(function () { scheduleRefresh(); })
   .catch(function (err) { console.error('Initial data load failed:', err); });
 </script>
