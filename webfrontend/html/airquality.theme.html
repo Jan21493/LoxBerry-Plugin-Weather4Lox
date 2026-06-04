@@ -873,7 +873,7 @@ function renderDaysHeatmap() {
 
     // Day name + date cell
     tbody +=
-      '<td class="heatmap-table td" style="border-radius:10px; ' + todayStyle + '">' +
+      '<td class="hm-day-col" style="border-radius:10px; ' + todayStyle + '">' +
         '<div class="hm-day-cell">' +
           '<div class="hm-day-name">' + dayInfo.day + (isToday ? ' <span style="color:#4ade80;font-size:0.65rem">Heute</span>' : '') + '</div>' +
           '<div class="hm-day-date">' + dayInfo.date + '</div>' +
@@ -930,7 +930,7 @@ function renderDaysHeatmap() {
       { lvl: 3, label: 'Mäßig' },
       { lvl: 4, label: 'Hoch' },
       { lvl: 5, label: 'Sehr hoch' },
-      { lvl: 6, label: 'Extrem hoch' },
+      { lvl: 6, label: 'Extrem' },
       { lvl: 7, label: 'Gefährlich' }
     ];
     var legHtml = legendItems.map(function (li) {
