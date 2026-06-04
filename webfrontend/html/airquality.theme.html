@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta id="meta-theme" name="theme-color" content="#0f172a">
+  <meta name="title" content="Air Quality & Pollen Theme">
+  <meta name="color-scheme" content="dark light">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Weather4Lox -- Air Quality &amp; Pollen Theme</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    * { font-family: 'Outfit', sans-serif; -webkit-user-select: none; user-select: none; }
+
+    /* ===== THEME VARIABLES ===== */
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: rgba(255,255,255,0.03);
+      --bg-card-hover: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.15);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --shadow: 0 4px 24px -6px rgba(0,0,0,0.3);
+      --shadow-hover: 0 12px 32px -8px rgba(0,0,0,0.4);
+      --tab-from: rgba(74,222,128,0.15);
+      --tab-to: rgba(250,204,21,0.1);
+      --tab-border: rgba(74,222,128,0.35);
+      --grain-opacity: 0.025;
+      background: var(--bg-primary);
+    }
+
+    html.light {
+      --bg-primary: #f0f4f8;
+      --bg-secondary: #e2e8f0;
+      --bg-card: rgba(255,255,255,0.7);
+      --bg-card-hover: rgba(255,255,255,0.85);
+      --border: rgba(0,0,0,0.08);
+      --border-hover: rgba(0,0,0,0.14);
+      --text-primary: #1e293b;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --shadow: 0 4px 24px -6px rgba(0,0,0,0.08);
+      --shadow-hover: 0 12px 32px -8px rgba(0,0,0,0.12);
+      --tab-from: rgba(74,222,128,0.12);
+      --tab-to: rgba(250,204,21,0.08);
+      --tab-border: rgba(74,222,128,0.3);
+      --grain-opacity: 0.012;
+      background: var(--bg-primary);
+    }
+
+    /* ===== POLLUTION LEVEL COLOR SCALE (0–7) ===== */
+    /* Blue=none, Green=veryLow, LightGreen=low, Yellow=moderate,
+       Orange=high, LightRed=veryHigh, Red=extremelyHigh, Purple=danger */
+    :root {
+      --lvl-0: #60a5fa;
+      --lvl-1: #4ade80;
+      --lvl-2: #86efac;
+      --lvl-3: #facc15;
+      --lvl-4: #fb923c;
+      --lvl-5: #f87171;
+      --lvl-6: #ef4444;
+      --lvl-7: #a855f7;
+    }
+
+    body {
+      background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary), var(--bg-primary));
+      color: var(--text-primary); min-height: 100vh; padding: 12px;
+      transition: background 0.4s, color 0.4s;
+    }
+
+    .grain {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      opacity: var(--grain-opacity);
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .page { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
+
+    /* Glass card base */
+    .glass {
+      background: var(--bg-card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border); box-shadow: var(--shadow); border-radius: 20px;
+      transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      display: flex; flex-wrap: wrap; justify-content: space-between;
+      align-items: center; margin-bottom: 16px; gap: 12px;
+    }
+    .hdr-left { display: flex; flex-direction: column; gap: 4px; }
+    .hdr-brand { display: flex; align-items: center; gap: 10px; }
+    .hdr-logo {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+      background: rgba(74,222,128,0.15); border: 1px solid rgba(74,222,128,0.3);
+    }
+    .hdr-title { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.02em; }
+    .hdr-meta { font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; display: inline-block; }
+    .controls { display: flex; align-items: center; gap: 8px; }
+    .theme-btn {
+      width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--bg-card); color: var(--text-secondary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.3s; backdrop-filter: blur(12px);
+    }
+    .theme-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
+
+    /* ===== TABS ===== */
+    .tab-nav { margin-bottom: 16px; }
+    .tabs { display: flex; gap: 4px; padding: 5px; }
+    .tab {
+      padding: 8px 20px; border-radius: 12px; border: 1px solid transparent;
+      background: transparent; color: var(--text-muted); font-size: 0.82rem;
+      font-weight: 500; cursor: pointer; transition: all 0.3s; font-family: inherit;
+    }
+    .tab:hover { color: var(--text-primary); }
+    .tab.active {
+      background: linear-gradient(135deg, var(--tab-from), var(--tab-to));
+      border-color: var(--tab-border); color: #4ade80;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ===== SECTION TITLE ===== */
+    .section-title {
+      font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 0.07em; margin-bottom: 10px; padding-left: 2px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .section { margin-bottom: 16px; }
+
+    /* ===== AQI OVERVIEW CARD ===== */
+    .aqi-card { padding: 22px 24px; }
+    .aqi-card-inner {
+      display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+    }
+    .aqi-badge {
+      width: 100px; height: 100px; border-radius: 50%; flex-shrink: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border: 3px solid currentColor;
+    }
+    .aqi-value { font-size: 2.2rem; font-weight: 300; line-height: 1; }
+    .aqi-badge-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; opacity: 0.8; }
+    .aqi-info { flex: 1; min-width: 180px; }
+    .aqi-category { font-size: 1.3rem; font-weight: 600; margin-bottom: 4px; }
+    .aqi-subtitle { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px; }
+    .aqi-components {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .aqi-comp {
+      padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border);
+      font-size: 0.75rem; display: flex; flex-direction: column; align-items: center;
+      min-width: 52px; background: var(--bg-card);
+    }
+    .aqi-comp-name { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .aqi-comp-value { font-weight: 600; margin-top: 1px; }
+
+    /* ===== POLLEN GRID ===== */
+    .pollen-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    }
+    .pollen-card {
+      padding: 16px 14px; border-radius: 16px; border: 1px solid var(--border);
+      background: var(--bg-card); transition: all 0.2s; position: relative; overflow: hidden;
+    }
+    .pollen-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      border-radius: 16px 16px 0 0;
+    }
+    .pollen-emoji { font-size: 1.5rem; margin-bottom: 6px; }
+    .pollen-name { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .pollen-bar-track {
+      height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08);
+      margin-bottom: 8px; overflow: hidden; position: relative;
+    }
+    html.light .pollen-bar-track { background: rgba(0,0,0,0.08); }
+    .pollen-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+    .pollen-level-label { font-size: 0.78rem; font-weight: 500; }
+    .pollen-level-num {
+      position: absolute; top: 14px; right: 14px;
+      font-size: 1.4rem; font-weight: 300; opacity: 0.25;
+    }
+
+    /* personalMix card spans full width when it's the 7th item */
+    .pollen-card.personal-mix { grid-column: 1 / -1; }
+    .pollen-card.personal-mix .pollen-bar-track { height: 10px; }
+
+    /* ===== HOURLY STRIP ===== */
+    .hour-strip {
+      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+    .hour-strip::-webkit-scrollbar { height: 6px; }
+    .hour-strip::-webkit-scrollbar-track { background: transparent; }
+    .hour-strip::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .hcard {
+      min-width: 72px; padding: 10px 6px; text-align: center; border-radius: 14px;
+      flex-shrink: 0; background: var(--bg-card); border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+    .hcard-time { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 8px; }
+    .hcard-dot {
+      width: 28px; height: 28px; border-radius: 50%; margin: 0 auto 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 600; color: #fff;
+    }
+    .hcard-dot-label { font-size: 0.6rem; color: var(--text-muted); margin-bottom: 6px; }
+    .hcard-pollen-dot {
+      width: 22px; height: 22px; border-radius: 50%; margin: 0 auto 2px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 600; color: #fff;
+    }
+    .hcard-pollen-label { font-size: 0.6rem; color: var(--text-muted); }
+
+    /* ===== DAYS HEATMAP ===== */
+    .heatmap-wrap { overflow-x: auto; padding-bottom: 6px; }
+    .heatmap-table { width: 100%; border-collapse: separate; border-spacing: 4px; min-width: 480px; }
+    .heatmap-table th {
+      font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted); padding: 4px 6px; text-align: center; font-weight: 600;
+    }
+    .heatmap-table td { padding: 0; border-radius: 10px; }
+    .hm-day-cell {
+      padding: 10px 12px; text-align: left;
+    }
+    .hm-day-name { font-size: 0.85rem; font-weight: 600; }
+    .hm-day-date { font-size: 0.68rem; color: var(--text-muted); }
+    .hm-cell {
+      padding: 8px 4px; text-align: center; border-radius: 10px;
+      font-size: 0.78rem; font-weight: 500; color: #fff;
+      transition: transform 0.15s;
+    }
+    .hm-cell:hover { transform: scale(1.08); cursor: default; }
+    .hm-cell-label { font-size: 0.6rem; opacity: 0.85; display: block; margin-top: 1px; }
+
+    /* ===== COLOR LEGEND ===== */
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding: 12px 16px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--text-secondary); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ===== FOOTER ===== */
+    .footer { text-align: center; color: var(--text-muted); font-size: 0.72rem; margin-top: 24px; padding: 12px; }
+
+    /* ===== LOADING + ERROR ===== */
+    .loading-overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.6);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; backdrop-filter: blur(4px);
+    }
+    html.light .loading-overlay { background: rgba(240,244,248,0.6); }
+    .loading-spinner {
+      width: 48px; height: 48px; border-radius: 50%;
+      border: 3px solid rgba(74,222,128,0.3); border-top-color: #4ade80;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-banner {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(239,68,68,0.15); border: 1px solid #ef4444;
+      color: var(--text-primary); padding: 12px 24px; border-radius: 12px;
+      z-index: 101; backdrop-filter: blur(12px); font-size: 0.9rem; max-width: 90%;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 700px) {
+      .pollen-grid { grid-template-columns: repeat(2, 1fr); }
+      .pollen-card.personal-mix { grid-column: 1 / -1; }
+      .aqi-card-inner { flex-direction: column; align-items: flex-start; }
+    }
+    @media (max-width: 480px) {
+      body { padding: 6px; }
+      .pollen-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .aqi-badge { width: 80px; height: 80px; }
+      .aqi-value { font-size: 1.8rem; }
+      .tabs { gap: 2px; padding: 3px; }
+      .tab { padding: 6px 14px; font-size: 0.76rem; }
+      .glass { border-radius: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Film-grain texture overlay -->
+<div class="grain"></div>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="loading-spinner"></div>
+</div>
+
+<!-- Error notification banner -->
+<div id="errorBanner" class="error-banner" style="display:none">
+  <span id="errorMsg">Daten konnten nicht geladen werden.</span>
+</div>
+
+<div class="page">
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="hdr-left">
+      <div class="hdr-brand">
+        <div class="hdr-logo">🍃</div>
+        <span class="hdr-title">Air Quality &amp; Pollen</span>
+      </div>
+      <div class="hdr-meta">
+        <span class="dot"></span>
+        <span id="headerLocation">--</span>
+        <span>·</span>
+        <span id="headerUpdated">--</span>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="theme-btn" id="themeToggle" title="Dark / Light Mode" aria-label="Toggle dark/light mode">
+        <i data-lucide="sun"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== TAB NAVIGATION ===== -->
+  <div class="glass tab-nav">
+    <div class="tabs">
+      <button class="tab active" data-tab="today">Heute</button>
+      <button class="tab" data-tab="tomorrow">Morgen</button>
+      <button class="tab" data-tab="days">Tage</button>
+    </div>
+  </div>
+
+  <!-- ===== TODAY PANEL ===== -->
+  <div class="tab-panel active" id="panelToday">
+    <!-- AQI overview -->
+    <div class="section">
+      <div class="section-title">
+        <i data-lucide="wind" style="width:14px;height:14px"></i>
+        Luftqualität — Aktuell
+      </div>
+      <div class="glass aqi-card" id="aqiToday"></div>
+    </div>
+
+    <!-- Pollen level cards -->
+    <div class="section">
+      <div class="section-title">
+        <i data-lucide="flower-2" style="width:14px;height:14px"></i>
+        Pollenflug — Aktuell
+      </div>
+      <div class="pollen-grid" id="pollenToday"></div>
+    </div>
+
+    <!-- Hourly progression strip -->
+    <div class="section">
+      <div class="section-title">
+        <i data-lucide="clock" style="width:14px;height:14px"></i>
+        Stundenverlauf — Heute
+      </div>
+      <div class="glass" style="padding:14px 16px">
+        <div class="hour-strip" id="hourStripToday"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOMORROW PANEL ===== -->
+  <div class="tab-panel" id="panelTomorrow">
+    <!-- AQI overview for tomorrow -->
+    <div class="section">
+      <div class="section-title">
+        <i data-lucide="wind" style="width:14px;height:14px"></i>
+        Luftqualität — Morgen (Tagesmaximum)
+      </div>
+      <div class="glass aqi-card" id="aqiTomorrow"></div>
+    </div>
+
+    <!-- Pollen level cards for tomorrow -->
+    <div class="section">
+      <div class="section-title">
+        <i data-lucide="flower-2" style="width:14px;height:14px"></i>
+        Pollenflug — Morgen (Tagesmaximum)
+      </div>
+      <div class="pollen-grid" id="pollenTomorrow"></div>
+    </div>
+
+    <!-- Hourly strip for tomorrow -->
+    <div class="section">
+      <div class="section-title">
+        <i data-lucide="clock" style="width:14px;height:14px"></i>
+        Stundenverlauf — Morgen
+      </div>
+      <div class="glass" style="padding:14px 16px">
+        <div class="hour-strip" id="hourStripTomorrow"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DAYS PANEL ===== -->
+  <div class="tab-panel" id="panelDays">
+    <div class="section">
+      <div class="section-title">
+        <i data-lucide="calendar-days" style="width:14px;height:14px"></i>
+        Pollenflug &amp; Luftqualität — Tagesübersicht
+      </div>
+      <div class="glass" style="padding:16px 20px">
+        <div class="heatmap-wrap">
+          <table class="heatmap-table" id="daysHeatmap"></table>
+        </div>
+        <!-- Color legend -->
+        <div class="legend glass" id="colorLegend" style="border-radius:12px; margin-top:12px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <div class="footer" id="footerInfo"></div>
+
+</div><!-- .page -->
+
+<script>
+// ===== CONFIGURATION =====
+var JSON_BASE = './';
+var SUPPORTED_LANGS = ['de', 'en', 'es', 'nl', 'sk'];
+
+// Read a URL query parameter by name
+function getUrlParam(name) {
+  var m = location.search.match(new RegExp('[?&]' + name + '=([^&]*)'));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+var currentLang = (function () {
+  var p = getUrlParam('lang');
+  return (p && SUPPORTED_LANGS.indexOf(p) !== -1) ? p : 'de';
+})();
+
+// ===== POLLEN TYPE DEFINITIONS =====
+// Label, emoji and sensitivity threshold type for each pollen category
+var pollenTypes = [
+  { key: 'alder',   labelDe: 'Erle',     labelEn: 'Alder',   emoji: '🌳' },
+  { key: 'birch',   labelDe: 'Birke',    labelEn: 'Birch',   emoji: '🌿' },
+  { key: 'grass',   labelDe: 'Gräser',   labelEn: 'Grass',   emoji: '🌾' },
+  { key: 'mugwort', labelDe: 'Beifuß',   labelEn: 'Mugwort', emoji: '🌱' },
+  { key: 'olive',   labelDe: 'Olive',    labelEn: 'Olive',   emoji: '🫒' },
+  { key: 'ragweed', labelDe: 'Ambrosia', labelEn: 'Ragweed', emoji: '🌻' }
+];
+
+// Level labels for pollen scale 0–7
+var levelLabels = ['Keine', 'Sehr gering', 'Gering', 'Mäßig', 'Hoch', 'Sehr hoch', 'Extrem', 'Gefährlich'];
+
+// Color stops for pollen/AQI level scale
+var levelColors = ['#60a5fa', '#4ade80', '#86efac', '#facc15', '#fb923c', '#f87171', '#ef4444', '#a855f7'];
+
+// ===== GLOBAL STATE =====
+var liveData = {
+  current: null,       // current.json -> current object
+  location: null,      // current.json -> location object
+  hourlyToday: [],     // hourlyforecast entries for today (remaining hours)
+  hourlyTomorrow: [],  // hourlyforecast entries for tomorrow
+  dailyRaw: [],        // raw dailyforecast array (includes pollen and AQI)
+  lang: null           // lang-XX.json
+};
+
+// Refresh timers per data type
+var refreshState = {
+  current: { timer: null, refresh: 900, generatedAt: null },
+  hourly:  { timer: null, refresh: 900, generatedAt: null },
+  daily:   { timer: null, refresh: 900, generatedAt: null }
+};
+
+// ===== HELPER: Return level color string for a given level (0–7) =====
+function levelColor(level) {
+  var idx = Math.min(7, Math.max(0, Math.round(level) || 0));
+  return levelColors[idx];
+}
+
+// ===== HELPER: Return level label string for a given level (0–7) =====
+function levelLabel(level) {
+  var idx = Math.min(7, Math.max(0, Math.round(level) || 0));
+  return levelLabels[idx];
+}
+
+// ===== HELPER: Map European AQI value (0–500+) to level index 0–7 =====
+function aqiToLevel(aqi) {
+  var v = aqi || 0;
+  if (v <= 20)  return 0;
+  if (v <= 40)  return 1;
+  if (v <= 60)  return 2;
+  if (v <= 80)  return 3;
+  if (v <= 100) return 4;
+  if (v <= 150) return 5;
+  if (v <= 200) return 6;
+  return 7;
+}
+
+// ===== HELPER: Return category label for European AQI value =====
+function aqiCategory(aqi) {
+  var lvl = aqiToLevel(aqi);
+  var cats = ['Sehr gut', 'Gut', 'Mäßig', 'Schlecht', 'Sehr schlecht', 'Extrem schlecht', 'Gefährlich', 'Katastrophal'];
+  return cats[lvl];
+}
+
+// ===== HELPER: format a datetime string to "HH:MM" =====
+function formatHour(datetimeStr) {
+  if (!datetimeStr) return '--';
+  return datetimeStr.slice(11, 16);
+}
+
+// ===== HELPER: Format an ISO datetime to short weekday + date =====
+function formatDayShort(datetimeStr) {
+  if (!datetimeStr) return { day: '--', date: '--' };
+  var weekdays = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  var d = new Date(datetimeStr);
+  var pad2 = function (n) { return n < 10 ? '0' + n : '' + n; };
+  return {
+    day:  weekdays[d.getDay()],
+    date: pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + '.'
+  };
+}
+
+// ===== HELPER: Safely get a numeric pollen level from a pollen object =====
+function getPollenLevel(pollenObj, key) {
+  if (!pollenObj) return 0;
+  return Math.round(pollenObj[key] || 0);
+}
+
+// ===== HELPER: Safely get European AQI value =====
+function getAqi(aqiObj, key) {
+  if (!aqiObj) return 0;
+  return Math.round(aqiObj[key] || 0);
+}
+
+// ===== UI HELPERS =====
+function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
+function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+function showError(msg) {
+  var b = document.getElementById('errorBanner');
+  document.getElementById('errorMsg').textContent = msg || 'Daten konnten nicht geladen werden.';
+  b.style.display = 'block';
+  setTimeout(function () { b.style.display = 'none'; }, 8000);
+}
+
+// ===== DATA PROCESSING =====
+
+// Process the envelope from current.json
+function processCurrentEnvelope(envelope) {
+  var env = envelope || {};
+  liveData.current  = env.current  || {};
+  liveData.location = env.location || {};
+
+  refreshState.current.refresh     = env.refresh     || 900;
+  refreshState.current.generatedAt = env.generatedAt || null;
+
+  // Ensure time.datetime is present
+  var curTime = liveData.current.time || {};
+  if (!curTime.datetime && curTime.epoch) {
+    curTime.datetime = new Date(curTime.epoch * 1000).toISOString();
+  }
+  if (!curTime.datetime) curTime.datetime = new Date().toISOString();
+  liveData.current.time = curTime;
+}
+
+// Process the envelope from hourlyforecast.json
+function processHourlyEnvelope(envelope) {
+  var env = envelope || {};
+  refreshState.hourly.refresh     = env.refresh     || 900;
+  refreshState.hourly.generatedAt = env.generatedAt || null;
+
+  var curTime   = (liveData.current && liveData.current.time) || {};
+  var todayStr  = curTime.datetime ? curTime.datetime.slice(0, 10) : new Date().toISOString().slice(0, 10);
+  var todayDate = new Date(todayStr + 'T00:00:00');
+  var tomorrowDate = new Date(todayDate);
+  tomorrowDate.setDate(todayDate.getDate() + 1);
+  var pad2 = function (n) { return n < 10 ? '0' + n : '' + n; };
+  var tomorrowStr = tomorrowDate.getFullYear() + '-' + pad2(tomorrowDate.getMonth() + 1) + '-' + pad2(tomorrowDate.getDate());
+
+  var hourlyRaw = env.hourlyforecast || [];
+  if (!Array.isArray(hourlyRaw)) hourlyRaw = [];
+
+  // Ensure each entry has a datetime string
+  hourlyRaw.forEach(function (h) {
+    var ht = h.time || {};
+    if (!ht.datetime && ht.epoch) ht.datetime = new Date(ht.epoch * 1000).toISOString();
+    if (!h.time) h.time = ht;
+  });
+
+  var currentHour = curTime.datetime ? parseInt(curTime.datetime.slice(11, 13), 10) : new Date().getHours();
+
+  // Today: only remaining hours (strictly after current hour)
+  liveData.hourlyToday = hourlyRaw.filter(function (h) {
+    return h.time && h.time.datetime &&
+      h.time.datetime.slice(0, 10) === todayStr &&
+      parseInt(h.time.datetime.slice(11, 13), 10) > currentHour;
+  });
+
+  // Tomorrow: all hours
+  liveData.hourlyTomorrow = hourlyRaw.filter(function (h) {
+    return h.time && h.time.datetime && h.time.datetime.slice(0, 10) === tomorrowStr;
+  });
+}
+
+// Process the envelope from dailyforecast.json
+function processDailyEnvelope(envelope) {
+  var env = envelope || {};
+  refreshState.daily.refresh     = env.refresh     || 900;
+  refreshState.daily.generatedAt = env.generatedAt || null;
+
+  var rawArr = env.dailyforecast || [];
+  if (!Array.isArray(rawArr)) rawArr = [];
+
+  // Ensure datetime is present, store the full raw entries (pollen + AQI included)
+  rawArr.forEach(function (d) {
+    var dt = d.time || {};
+    if (!dt.datetime && dt.epoch) dt.datetime = new Date(dt.epoch * 1000).toISOString().slice(0, 10);
+    if (!d.time) d.time = dt;
+  });
+
+  liveData.dailyRaw = rawArr;
+}
+
+// ===== DATA LOADING =====
+function loadAllData() {
+  showLoading();
+  return Promise.all([
+    fetch(JSON_BASE + 'current.json').then(checkOk).then(function (r) { return r.json(); }),
+    fetch(JSON_BASE + 'hourlyforecast.json').then(checkOk).then(function (r) { return r.json(); }),
+    fetch(JSON_BASE + 'dailyforecast.json').then(checkOk).then(function (r) { return r.json(); })
+  ]).then(function (results) {
+    hideLoading();
+    processCurrentEnvelope(results[0]);
+    processHourlyEnvelope(results[1]);
+    processDailyEnvelope(results[2]);
+    renderAll();
+    return liveData;
+  }).catch(function (err) {
+    hideLoading();
+    showError(err.message);
+    throw err;
+  });
+}
+
+// HTTP response check helper
+function checkOk(response) {
+  if (!response.ok) throw new Error('HTTP ' + response.status + ': ' + response.url);
+  return response;
+}
+
+// ===== AUTO-REFRESH HELPERS =====
+// Calculate delay until next refresh based on generatedAt + refresh interval
+function calculateRefreshDelay(generatedAt, refreshSec) {
+  var refreshMs = (refreshSec || 900) * 1000;
+  if (generatedAt) {
+    var genTime = new Date(generatedAt).getTime();
+    if (!isNaN(genTime)) {
+      var delay = (genTime + refreshMs) - Date.now();
+      return Math.max(10000, delay);
+    }
+  }
+  return refreshMs;
+}
+
+// Re-fetch a single data type and re-render
+function refreshDataType(type) {
+  var urls = {
+    current: JSON_BASE + 'current.json',
+    hourly:  JSON_BASE + 'hourlyforecast.json',
+    daily:   JSON_BASE + 'dailyforecast.json'
+  };
+  return fetch(urls[type]).then(checkOk).then(function (r) { return r.json(); })
+    .then(function (envelope) {
+      if      (type === 'current') processCurrentEnvelope(envelope);
+      else if (type === 'hourly')  processHourlyEnvelope(envelope);
+      else if (type === 'daily')   processDailyEnvelope(envelope);
+      renderAll();
+    });
+}
+
+// Schedule the next refresh for a given data type
+function scheduleDataRefresh(type) {
+  var state = refreshState[type];
+  if (state.timer) { clearTimeout(state.timer); state.timer = null; }
+  var delay = calculateRefreshDelay(state.generatedAt, state.refresh);
+  state.timer = setTimeout(function () {
+    refreshDataType(type).finally(function () { scheduleDataRefresh(type); });
+  }, delay);
+}
+
+// Start all three refresh schedules
+function scheduleRefresh() {
+  scheduleDataRefresh('current');
+  scheduleDataRefresh('hourly');
+  scheduleDataRefresh('daily');
+}
+
+// ===== RENDER: AQI OVERVIEW CARD =====
+// Renders the European AQI badge + category + component pills
+function renderAqiCard(containerId, aqiObj) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+
+  var maxAqi = getAqi(aqiObj, 'maximum');
+  var lvl    = aqiToLevel(maxAqi);
+  var color  = levelColor(lvl);
+  var cat    = aqiCategory(maxAqi);
+
+  // Component sub-values
+  var components = [
+    { name: 'PM2.5', value: getAqi(aqiObj, 'pm25') },
+    { name: 'PM10',  value: getAqi(aqiObj, 'pm10') },
+    { name: 'O₃',    value: getAqi(aqiObj, 'ozone') },
+    { name: 'NO₂',   value: getAqi(aqiObj, 'nitrogenDioxide') },
+    { name: 'SO₂',   value: getAqi(aqiObj, 'sulphurDioxide') }
+  ];
+
+  var compHtml = components.map(function (c) {
+    var cLvl   = aqiToLevel(c.value);
+    var cColor = levelColor(cLvl);
+    return '<div class="aqi-comp">' +
+      '<span class="aqi-comp-name">' + c.name + '</span>' +
+      '<span class="aqi-comp-value" style="color:' + cColor + '">' + (c.value || '--') + '</span>' +
+      '</div>';
+  }).join('');
+
+  // No data state
+  if (!aqiObj || maxAqi === 0) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;padding:8px">Keine Luftqualitätsdaten verfügbar</div>';
+    return;
+  }
+
+  container.innerHTML =
+    '<div class="aqi-card-inner">' +
+      '<div class="aqi-badge" style="color:' + color + '; border-color:' + color + '">' +
+        '<span class="aqi-value" style="color:' + color + '">' + maxAqi + '</span>' +
+        '<span class="aqi-badge-label">AQI</span>' +
+      '</div>' +
+      '<div class="aqi-info">' +
+        '<div class="aqi-category" style="color:' + color + '">' + cat + '</div>' +
+        '<div class="aqi-subtitle">Europäischer Luftqualitätsindex</div>' +
+        '<div class="aqi-components">' + compHtml + '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+// ===== RENDER: POLLEN LEVEL CARD GRID =====
+// Renders 6 pollen type cards + optional personalMix card
+function renderPollenGrid(containerId, pollenObj) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (!pollenObj) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;padding:8px">Keine Pollendaten verfügbar</div>';
+    return;
+  }
+
+  var html = '';
+
+  // Render individual pollen type cards
+  pollenTypes.forEach(function (pt) {
+    var lvl   = getPollenLevel(pollenObj, pt.key);
+    var color = levelColor(lvl);
+    var label = levelLabel(lvl);
+    var pct   = Math.round(lvl / 7 * 100);
+
+    html +=
+      '<div class="pollen-card glass" style="border-color:' + color + '22">' +
+        '<div class="pollen-level-num">' + lvl + '</div>' +
+        '<div class="pollen-emoji">' + pt.emoji + '</div>' +
+        '<div class="pollen-name">' + pt.labelDe + '</div>' +
+        '<div class="pollen-bar-track">' +
+          '<div class="pollen-bar-fill" style="width:' + pct + '%; background:' + color + '"></div>' +
+        '</div>' +
+        '<div class="pollen-level-label" style="color:' + color + '">' + label + '</div>' +
+      '</div>';
+  });
+
+  // personalMix card — only show if value > 0 or object has the key
+  var mixLevel = getPollenLevel(pollenObj, 'personalMix');
+  if (typeof pollenObj.personalMix !== 'undefined') {
+    var mixColor = levelColor(mixLevel);
+    var mixLabel = levelLabel(mixLevel);
+    var mixPct   = Math.round(mixLevel / 7 * 100);
+    html +=
+      '<div class="pollen-card glass personal-mix" style="border-color:' + mixColor + '22">' +
+        '<div class="pollen-level-num">' + mixLevel + '</div>' +
+        '<div class="pollen-emoji">👤</div>' +
+        '<div class="pollen-name">Persönlicher Mix</div>' +
+        '<div class="pollen-bar-track">' +
+          '<div class="pollen-bar-fill" style="width:' + mixPct + '%; background:' + mixColor + '"></div>' +
+        '</div>' +
+        '<div class="pollen-level-label" style="color:' + mixColor + '">' + mixLabel + '</div>' +
+      '</div>';
+  }
+
+  container.innerHTML = html;
+}
+
+// ===== RENDER: HOURLY STRIP =====
+// Shows each forecast hour as a small card with AQI dot and pollen mix dot
+function renderHourlyStrip(stripId, hourlyEntries) {
+  var strip = document.getElementById(stripId);
+  if (!strip) return;
+
+  if (!hourlyEntries || hourlyEntries.length === 0) {
+    strip.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;padding:4px 0">Keine Stundendaten verfügbar</div>';
+    return;
+  }
+
+  var html = '';
+  hourlyEntries.forEach(function (h) {
+    var timeStr = formatHour(h.time ? h.time.datetime : null);
+
+    // European AQI maximum for this hour
+    var aqiMax  = getAqi(h.europeanAqi, 'maximum');
+    var aqiLvl  = aqiToLevel(aqiMax);
+    var aqiCol  = levelColor(aqiLvl);
+
+    // Personal pollen mix for this hour
+    var pollenMix = getPollenLevel(h.pollen, 'personalMix');
+    // Fall back to highest individual pollen level if personalMix is unavailable
+    if (pollenMix === 0 && h.pollen) {
+      pollenTypes.forEach(function (pt) {
+        var v = getPollenLevel(h.pollen, pt.key);
+        if (v > pollenMix) pollenMix = v;
+      });
+    }
+    var pollenCol = levelColor(pollenMix);
+
+    html +=
+      '<div class="hcard">' +
+        '<div class="hcard-time">' + timeStr + '</div>' +
+        '<div class="hcard-dot" style="background:' + aqiCol + '">' + (aqiMax || '--') + '</div>' +
+        '<div class="hcard-dot-label">AQI</div>' +
+        '<div class="hcard-pollen-dot" style="background:' + pollenCol + '">' + pollenMix + '</div>' +
+        '<div class="hcard-pollen-label">Pollen</div>' +
+      '</div>';
+  });
+
+  strip.innerHTML = html;
+}
+
+// ===== RENDER: DAYS HEATMAP TABLE =====
+// Rows = days, columns = pollen types + AQI; cells colored by level
+function renderDaysHeatmap() {
+  var table   = document.getElementById('daysHeatmap');
+  var legend  = document.getElementById('colorLegend');
+  if (!table) return;
+
+  var days = liveData.dailyRaw;
+  if (!days || days.length === 0) {
+    table.innerHTML = '<tr><td style="color:var(--text-muted);font-size:0.85rem;padding:8px">Keine Tagesdaten verfügbar</td></tr>';
+    return;
+  }
+
+  // Build header row
+  var thead = '<thead><tr>' +
+    '<th style="text-align:left; min-width:80px">Tag</th>';
+
+  pollenTypes.forEach(function (pt) {
+    thead += '<th>' + pt.emoji + '<br>' + pt.labelDe + '</th>';
+  });
+  thead += '<th>AQI</th>';
+  thead += '</tr></thead>';
+
+  // Build data rows
+  var tbody = '<tbody>';
+  days.forEach(function (d, dayIdx) {
+    var dayInfo  = formatDayShort(d.time ? d.time.datetime : null);
+    var isToday  = (dayIdx === 0);
+    var todayStyle = isToday ? 'background:rgba(74,222,128,0.07); outline:1px solid rgba(74,222,128,0.2);' : '';
+
+    tbody += '<tr>';
+
+    // Day name + date cell
+    tbody +=
+      '<td class="heatmap-table td" style="border-radius:10px; ' + todayStyle + '">' +
+        '<div class="hm-day-cell">' +
+          '<div class="hm-day-name">' + dayInfo.day + (isToday ? ' <span style="color:#4ade80;font-size:0.65rem">Heute</span>' : '') + '</div>' +
+          '<div class="hm-day-date">' + dayInfo.date + '</div>' +
+        '</div>' +
+      '</td>';
+
+    // Pollen type cells — use max daily value
+    pollenTypes.forEach(function (pt) {
+      var lvl   = 0;
+      if (d.pollen && d.pollen.max) {
+        lvl = getPollenLevel(d.pollen.max, pt.key);
+      } else if (d.pollen && d.pollen.avg) {
+        lvl = getPollenLevel(d.pollen.avg, pt.key);
+      }
+      var color = levelColor(lvl);
+      tbody +=
+        '<td>' +
+          '<div class="hm-cell" style="background:' + color + '">' +
+            lvl +
+            '<span class="hm-cell-label">' + levelLabel(lvl).split(' ')[0] + '</span>' +
+          '</div>' +
+        '</td>';
+    });
+
+    // AQI cell — use max daily value
+    var aqiMax  = 0;
+    if (d.europeanAqi && d.europeanAqi.max) {
+      aqiMax = getAqi(d.europeanAqi.max, 'maximum');
+    } else if (d.europeanAqi && d.europeanAqi.avg) {
+      aqiMax = getAqi(d.europeanAqi.avg, 'maximum');
+    }
+    var aqiLvl  = aqiToLevel(aqiMax);
+    var aqiCol  = levelColor(aqiLvl);
+    tbody +=
+      '<td>' +
+        '<div class="hm-cell" style="background:' + aqiCol + '">' +
+          (aqiMax || '--') +
+          '<span class="hm-cell-label">' + aqiCategory(aqiMax).split(' ')[0] + '</span>' +
+        '</div>' +
+      '</td>';
+
+    tbody += '</tr>';
+  });
+  tbody += '</tbody>';
+
+  table.innerHTML = thead + tbody;
+
+  // Build color legend
+  if (legend) {
+    var legendItems = [
+      { lvl: 0, label: 'Keine' },
+      { lvl: 1, label: 'Sehr gering' },
+      { lvl: 2, label: 'Gering' },
+      { lvl: 3, label: 'Mäßig' },
+      { lvl: 4, label: 'Hoch' },
+      { lvl: 5, label: 'Sehr hoch' },
+      { lvl: 6, label: 'Extrem hoch' },
+      { lvl: 7, label: 'Gefährlich' }
+    ];
+    var legHtml = legendItems.map(function (li) {
+      return '<div class="legend-item">' +
+        '<div class="legend-dot" style="background:' + levelColor(li.lvl) + '"></div>' +
+        li.label +
+        '</div>';
+    }).join('');
+    legend.innerHTML = legHtml;
+  }
+}
+
+// ===== RENDER: HEADER =====
+function renderHeader() {
+  var loc = liveData.location || {};
+  var locationEl  = document.getElementById('headerLocation');
+  var updatedEl   = document.getElementById('headerUpdated');
+
+  if (locationEl) locationEl.textContent = loc.city || '--';
+
+  // Format generatedAt timestamp
+  var genAt = liveData.current && liveData.current.time ? liveData.current.time.datetime : null;
+  if (updatedEl && genAt) {
+    updatedEl.textContent = genAt.slice(11, 16) + ' Uhr';
+  }
+}
+
+// ===== RENDER: FOOTER =====
+function renderFooter() {
+  var el = document.getElementById('footerInfo');
+  if (!el) return;
+  var loc = liveData.location || {};
+  var parts = [];
+  if (loc.city)    parts.push(loc.city);
+  if (loc.country) parts.push(loc.country);
+  if (loc.latitude && loc.longitude) {
+    parts.push(parseFloat(loc.latitude).toFixed(2) + '° / ' + parseFloat(loc.longitude).toFixed(2) + '°');
+  }
+  el.textContent = 'Air Quality & Pollen Theme · Weather4Lox' + (parts.length ? ' · ' + parts.join(', ') : '');
+}
+
+// ===== RENDER: TODAY PANEL =====
+function renderToday() {
+  var cur = liveData.current || {};
+
+  // AQI from current hour
+  renderAqiCard('aqiToday', cur.europeanAqi || null);
+
+  // Pollen levels from current hour
+  renderPollenGrid('pollenToday', cur.pollen || null);
+
+  // Hourly progression strip (remaining hours today)
+  renderHourlyStrip('hourStripToday', liveData.hourlyToday);
+}
+
+// ===== RENDER: TOMORROW PANEL =====
+function renderTomorrow() {
+  // Find tomorrow in the daily raw array (day index 1)
+  var tomorrow = liveData.dailyRaw.length > 1 ? liveData.dailyRaw[1] : null;
+
+  // Use daily max AQI for tomorrow
+  var tomorrowAqi = tomorrow && tomorrow.europeanAqi ? tomorrow.europeanAqi.max || tomorrow.europeanAqi.avg : null;
+  renderAqiCard('aqiTomorrow', tomorrowAqi);
+
+  // Use daily max pollen for tomorrow
+  var tomorrowPollen = tomorrow && tomorrow.pollen ? tomorrow.pollen.max || tomorrow.pollen.avg : null;
+  renderPollenGrid('pollenTomorrow', tomorrowPollen);
+
+  // Hourly strip for tomorrow
+  renderHourlyStrip('hourStripTomorrow', liveData.hourlyTomorrow);
+}
+
+// ===== MAIN RENDER FUNCTION =====
+function renderAll() {
+  renderHeader();
+  renderToday();
+  renderTomorrow();
+  renderDaysHeatmap();
+  renderFooter();
+
+  // Re-initialise Lucide icons in case new elements were injected
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// ===== TAB SWITCHING =====
+document.querySelectorAll('.tab').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    // Deactivate all tabs and panels
+    document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('active'); });
+
+    // Activate selected
+    btn.classList.add('active');
+    var panelId = 'panel' + btn.dataset.tab.charAt(0).toUpperCase() + btn.dataset.tab.slice(1);
+    var panel   = document.getElementById(panelId);
+    if (panel) panel.classList.add('active');
+  });
+});
+
+// ===== DARK / LIGHT MODE TOGGLE =====
+(function () {
+  var saved = localStorage.getItem('aqTheme') || 'dark';
+  if (saved === 'light') document.documentElement.classList.add('light');
+
+  document.getElementById('themeToggle').addEventListener('click', function () {
+    var isLight = document.documentElement.classList.toggle('light');
+    localStorage.setItem('aqTheme', isLight ? 'light' : 'dark');
+    document.getElementById('meta-theme').setAttribute('content', isLight ? '#f0f4f8' : '#0f172a');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  });
+})();
+
+// ===== BOOT =====
+if (typeof lucide !== 'undefined') lucide.createIcons();
+
+loadAllData()
+  .then(function () { scheduleRefresh(); })
+  .catch(function (err) { console.error('Initial data load failed:', err); });
+</script>
+</body>
+</html>
