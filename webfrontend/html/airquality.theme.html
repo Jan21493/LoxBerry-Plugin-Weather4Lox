@@ -1255,9 +1255,6 @@ document.querySelectorAll('.tab').forEach(function (btn) {
   document.getElementById('aqiInfoModal').addEventListener('click', function (e) {
     if (e.target === this) closeAqiModal();
   });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeAqiModal();
-  });
 })();
 
 // ===== PERSONAL MIX INFO MODAL =====
@@ -1299,10 +1296,17 @@ document.querySelectorAll('.tab').forEach(function (btn) {
   document.getElementById('mixInfoModal').addEventListener('click', function (e) {
     if (e.target === this) closeMixModal();
   });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeMixModal();
-  });
 })();
+
+// ===== SHARED ESCAPE KEY HANDLER FOR MODALS =====
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  if (document.getElementById('aqiInfoModal').style.display === 'flex') {
+    document.getElementById('aqiInfoModal').style.display = 'none';
+  } else if (document.getElementById('mixInfoModal').style.display === 'flex') {
+    document.getElementById('mixInfoModal').style.display = 'none';
+  }
+});
 
 // ===== LOAD CLIENT SETTINGS (w4l-settings.json) =====
 function loadClientSettings() {
@@ -1311,7 +1315,9 @@ function loadClientSettings() {
     .then(function (data) {
       if (data) w4lSettings = data;
     })
-    .catch(function () { /* silently ignore — settings file is optional */ });
+    .catch(function (err) {
+      console.warn('w4l-settings.json not available:', err.message);
+    });
 }
 
 // ===== DARK / LIGHT MODE TOGGLE =====

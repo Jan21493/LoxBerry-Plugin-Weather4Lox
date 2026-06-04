@@ -285,6 +285,8 @@ eval {
         if (open my $fh, '>:utf8', $settingsFile) {
             print $fh JSON::PP->new->utf8->pretty->canonical->encode(\%w4lSettings);
             close $fh;
+        } else {
+            push @checks, "WARNING: Could not write $settingsFile: $!";
         }
     }
 
