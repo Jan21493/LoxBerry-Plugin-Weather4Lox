@@ -258,16 +258,29 @@ eval {
     $cfg->param("SERVER.CITY", $R->{city} // "");
     $cfg->param("SERVER.COUNTRY", $R->{country} // "");
 
-    push @checks, $L{'SETTINGS.SAVING_POLLEN'};
-
-    $cfg->param("POLLEN.ALDER",   ( $R->{pollen_alder}   // 0 ) + 0);
-    $cfg->param("POLLEN.BIRCH",   ( $R->{pollen_birch}   // 0 ) + 0);
-    $cfg->param("POLLEN.GRASS",   ( $R->{pollen_grasses} // 0 ) + 0);
-    $cfg->param("POLLEN.MUGWORT", ( $R->{pollen_mugwort} // 0 ) + 0);
-    $cfg->param("POLLEN.OLIVE",   ( $R->{pollen_olive}   // 0 ) + 0);
-    $cfg->param("POLLEN.RAGWEED", ( $R->{pollen_ragweed} // 0 ) + 0);
-    
     atomic_save_config($cfg, "$lbpconfigdir/weather4lox.cfg");
+
+    # Save pollen sensitivity into w4l-settings.json (single source of truth)
+    push @checks, $L{'SETTINGS.SAVING_POLLEN'};
+    {
+        my %w4lSettings = (
+            pollen => {
+                alder   => ( $R->{pollen_alder}   // 0 ) + 0,
+                birch   => ( $R->{pollen_birch}   // 0 ) + 0,
+                grass   => ( $R->{pollen_grasses} // 0 ) + 0,
+                mugwort => ( $R->{pollen_mugwort} // 0 ) + 0,
+                olive   => ( $R->{pollen_olive}   // 0 ) + 0,
+                ragweed => ( $R->{pollen_ragweed} // 0 ) + 0,
+            }
+        );
+        my $settingsFile = "$lbphtmldir/w4l-settings.json";
+        if (open my $fh, '>:utf8', $settingsFile) {
+            print $fh JSON::PP->new->utf8->pretty->canonical->encode(\%w4lSettings);
+            close $fh;
+        } else {
+            push @checks, "WARNING: Could not write $settingsFile: $!";
+        }
+    }
 
     push @checks, $L{'SETTINGS.SAVING_CRONJOB'};
 
