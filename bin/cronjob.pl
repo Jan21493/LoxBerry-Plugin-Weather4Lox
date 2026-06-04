@@ -58,6 +58,23 @@ my $cron_local = $pcfg->param("SERVER.CRON_LOCAL");
 if (!$cron_local || $cron_local eq "0") {
 	$cron_local = $cron; # Set to default weather service if not defined or 0
 }
+
+# Air quality and pollution data
+my $use_airquality = $pcfg->param("SERVER.OPENMETEOAIRQUALITYGRABBER");
+my $cron_airquality = $pcfg->param("SERVER.CRON_AIRQUALITY");
+if (!$cron_airquality || $cron_airquality eq "0") {
+	$cron_airquality = $cron; # Set to default weather service if not defined or 0
+}
+
+my $use_local = $pcfg->param('SERVER.WUGRABBER') || 
+				$pcfg->param('SERVER.FOSHKGRABBER') || 
+				$pcfg->param('SERVER.PWSCATCHUPLOADGRABBER') ||
+				$pcfg->param('SERVER.LOXGRABBER');
+my $cron_local = $pcfg->param("SERVER.CRON_LOCAL");
+if (!$cron_local || $cron_local eq "0") {
+	$cron_local = $cron; # Set to default weather service if not defined or 0
+}
+
 # Commandline options
 my $verbose = '';
 
@@ -109,6 +126,18 @@ if ($usealternatedfc || $usealternatehfc) {
 	}
 } else {
 	LOGDEB "Alternate Weather services are disabled. Skipping.";
+}
+
+if ($use_airquality) {
+	LOGDEB "Calculate interval for air quality service: $timestamp_minute_round_down / $cron_airquality = " . ($timestamp_minute_round_down / $cron_airquality);
+	if ( $timestamp_minute_round_down % $cron_airquality == 0 ){
+		LOGINF "Fetch interval ($cron_airquality) for air quality and pollen grabber service reached";
+		$command_opt .= ' --airquality'
+	} else {
+		LOGINF "Fetch interval ($cron_airquality) for air quality and pollen grabber service NOT reached";
+	}
+} else {
+	LOGDEB "Air quality and pollen grabber service is disabled. Skipping.";
 }
 
 if ($use_local) {

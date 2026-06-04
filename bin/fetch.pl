@@ -203,9 +203,9 @@ if( !$cronjob || ( $cronjob && $airquality) ) {
 
     # Grab air quality / pollen data from Open-Meteo
     if ( $pcfg->param("SERVER.OPENMETEOAIRQUALITYGRABBER") ) {
-        LOGINF "Starting Grabber grabber_openmeteo_airquality.pl $verbose_opt $maskkeys_opt --interval $interval";
+        LOGINF "Starting Grabber grabber_openmeteo_airquality.pl $verbose_opt --interval $interval";
         $log->close;
-        system ("$lbpbindir/grabber_openmeteo_airquality.pl $verbose_opt $maskkeys_opt --interval $interval");
+        system ("$lbpbindir/grabber_openmeteo_airquality.pl $verbose_opt --interval $interval");
         $log->open;
     }
 }
