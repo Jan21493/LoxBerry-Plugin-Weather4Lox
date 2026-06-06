@@ -1,10 +1,10 @@
 {
-  "pollen": {
-    "alder": 0,
-    "birch": 0,
-    "grass": 0,
-    "mugwort": 0,
-    "olive": 0,
-    "ragweed": 0
-  }
+   "pollen" : {
+      "alder" : 5,
+      "birch" : 6,
+      "grass" : 7,
+      "mugwort" : 4,
+      "olive" : 1,
+      "ragweed" : 2
+   }
 }

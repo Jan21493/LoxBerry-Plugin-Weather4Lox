@@ -274,12 +274,25 @@ if ( $current ) {
 
     # precipitation
     my %precipitation;
-    $precipitation{rainToday}    = undef;                                                          # not available from VC current data
     $precipitation{rain1hr}      = getFormatted('%.1f', $cur, 'precip');                           # cur_prec_1h, 1-hour precipitation in mm
     $precipitation{probability}  = getFormatted('%.0f', $cur, 'precipprob');                       # cur_pop, probability in percent, API provides as decimal (e.g. 0.25 for 25%)
     $precipitation{type}         = getValue($cur, 'preciptype', 0);                                # type of precipitation (rain, snow), undef, if it is currently not raining/snowing
-    $precipitation{snowToday}    = undef;                                                          # not available from VC current data
-    $precipitation{snow1hr}      = getFormatted('%.1f', $cur, 'snow');
+    $precipitation{snow1hr}      = getFormattedMultiplied('%.1f', 0.1, $cur, 'snow');               # cur_snow_1h, 1-hour snow in cm, API provides as mm
+
+    $precipitation{rainToday} = 0;                                                                 # cur_prec_today, available from VC via past hours and observations
+    $precipitation{snowToday} = 0;                                                                 # cur_snow_today, available from VC via past hours and observations
+    my $todayDay = $results->{days}[0];
+    for my $resHour ( @{$todayDay->{hours}} ) {
+
+        # Add precipitation of past hours of the current day to rainToday and snowToday (source is "obs" = observations for past hours, "fcst" = forecast for future hours in VC API)
+        my $hourEpoch = getValue($resHour, 'datetimeEpoch');
+        my $hfctime = localtime($hourEpoch);
+        my $source = getValue($resHour, 'source');
+        if ($source eq "obs") {
+            $precipitation{rainToday} += getFormatted('%.1f', $resHour, 'precip');
+            $precipitation{snowToday} += getFormattedMultiplied('%.1f', 0.1, $resHour, 'snow');
+        }
+    }
 
     # weather codes
     my $iconRaw = $cur->{icon};
