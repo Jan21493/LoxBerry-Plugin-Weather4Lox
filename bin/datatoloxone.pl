@@ -191,14 +191,22 @@ our $sendUDPqueue;
 my $tzseconds = tzOffsetSeconds($location->{tzOffset} // "");
 
 # Times are send in local time 
-my $curDate = DateTime->from_epoch(epoch => $cur->{time}{epoch}, time_zone => $location->{timezone});
+my $epoch = $cur->{time}{epoch} // 0;
+my $curDate;
+if ($epoch != 0) {
+    $curDate = DateTime->from_epoch(epoch => $epoch, time_zone => $location->{timezone});
+} else {
+    $curDate = DateTime->now( time_zone => $location->{timezone} );
+    $epoch = $curDate->epoch;
+    LOGWARN "Time stamp for current weather observations is not set properly, using current time (" . $curDate->iso8601() . ") instead.";
+}
 my $curDateMidnight = $curDate->clone->set(hour => 0, minute => 0, second => 0);
 my $curDateLoxEpoch = toLoxEpoch($curDateMidnight->epoch);
 
 my $doLog = 1; # log the first data set in detail, but not all subsequent ones to avoid log flooding
 
 # sending to Loxone Miniserver via MQTT, HTML webpage and UDP with logging of each value
-sendToLox($toMS, $doLog, "cur_date", toLoxEpoch($cur->{time}{epoch}));                             # Loxone epoch (1.1.2009, MEZ), e.g. 542934004
+sendToLox($toMS, $doLog, "cur_date", toLoxEpoch($epoch));                                          # Loxone epoch (1.1.2009, MEZ), e.g. 542934004
 sendToLox($toMS, $doLog, "cur_date_des", $cur->{time}{datetime});                                  # was RFC822, now ISO 8601, e.g. Mon, 16 Mar 2026 23:00:04 +0100
 sendToLox($toMS, $doLog, "cur_date_tz_des_sh", $location->{timezone});                             # IANA timezone name, e.g. Europe/Berlin
 sendToLox($toMS, $doLog, "cur_date_tz_des", $location->{tzShort});                                 # Time Zone Abbreviation, e.g. CET

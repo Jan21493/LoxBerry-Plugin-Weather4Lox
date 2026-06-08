@@ -170,8 +170,18 @@ my $lat      = $results->{nearest_area}[0]->{latitude};
 my $lon      = $results->{nearest_area}[0]->{longitude};
 
 # Derive generatedAt from current observation time, looks that wttr.in is always using am/pm time format
-my $obs_t = Time::Piece->strptime($results->{current_condition}[0]->{localObsDateTime}, "%Y-%m-%d %R %p");
-my $currentEpoch = $obs_t->epoch;
+my $currentEpoch;
+my $obs_local_time_str = $results->{current_condition}[0]->{localObsDateTime};
+if (!$obs_local_time_str) {
+    $obs_local_time_str = $results->{weather}[0]->{date} . ' ' . $results->{current_condition}[0]->{observation_time};
+    my $obs_t = Time::Piece->strptime($obs_local_time_str, "%Y-%m-%d %R %p");
+    $currentEpoch = $obs_t->epoch;
+    LOGINF "No local observation time ('localObsDateTime') provided by wttr.in, API might have changed. Combining date and observation time to: $obs_local_time_str, Local time is " . _epochToIso($currentEpoch, $timezone) . ".";
+} else {
+    my $obs_t = Time::Piece->strptime($obs_local_time_str, "%Y-%m-%d %R %p");
+    $currentEpoch = $obs_t->epoch;
+    LOGDEB "Using local observation time from wttr.in: $obs_local_time_str.";
+}
 
 my $generatedAt = DateTime->now( time_zone => $timezone );
 
