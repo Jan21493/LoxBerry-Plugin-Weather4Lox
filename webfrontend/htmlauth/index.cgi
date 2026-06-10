@@ -138,9 +138,18 @@ if ($R::saveformdata2) {
         }
     }
 
+    my $nxh;
+    my @periods = (4, 8, 12, 16, 24, 32, 40, 48);
+    for my $p (@periods) {
+        if ( $cgi->param("nxh$p") ) {
+            $nxh = $nxh ? "$nxh;$p" : $p;
+        }
+    }
+
     # Write configuration file(s)
     $cfg->param("SERVER.SENDDFC", "$dfc");
     $cfg->param("SERVER.SENDHFC", "$hfc");
+    $cfg->param("SERVER.SENDNXH", "$nxh");
     $cfg->param("SERVER.SENDUDP", "$R::sendudp");
     $cfg->param("SERVER.UDPPORT", "$R::udpport");
     $cfg->param("SERVER.MSNO", "$R::msno");
@@ -199,9 +208,9 @@ if ($R::saveformdata3) {
 
     # Enable/Disable CloudEmu
     if ( $R::emu ) {
-        system("sudo $lbpbindir/cloudemu enable > /dev/null 2>&1");
+        system("sudo $lbpbindir/cloudemu.sh enable > /dev/null 2>&1");
     } else {
-        system("sudo $lbpbindir/cloudemu disable > /dev/null 2>&1");
+        system("sudo $lbpbindir/cloudemu.sh disable > /dev/null 2>&1");
     }
 
     save($message);
@@ -948,6 +957,27 @@ if ($R::form eq "1" || !$R::form) {
         );
     }
     $template->param( HFC => $hfc );
+
+    # NXH
+    my $nxh;
+    @fields = split(/;/,$cfg->param('SERVER.SENDNXH'));
+    my @periods = (4, 8, 12, 16, 24, 32, 40, 48);
+    for my $p (@periods) {
+        $checked = 0;
+        foreach ( split( /;/,$cfg->param('SERVER.SENDNXH') ) ) {
+            if ($_ eq $p) {
+                $checked = 1;
+            }
+        }
+        $nxh .= $cgi->checkbox(
+            -name    => "nxh$p",
+            -id      => "nxh$p",
+            -checked => $checked,
+            -value   => '1',
+            -label   => sprintf($L{'SETTINGS.LABEL_NXH_AGG'}, $p),
+        );
+    }
+    $template->param( NXH => $nxh );
 
 #########################################################################################
 # Menu: Website / Cloud weather Emulator

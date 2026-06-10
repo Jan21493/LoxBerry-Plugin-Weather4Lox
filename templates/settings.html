@@ -1425,6 +1425,39 @@
                                                         </td>
                                                     </tr>
                                                     <tr>
+                                                        <td width="25%">
+                                                            <label id="labelnxh"><TMPL_VAR SETTINGS.LABEL_NXH></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <div data-role="collapsible">
+                                                                <h4><TMPL_VAR SETTINGS.LABEL_PLEASECHOOSE></h4>
+                                                                <fieldset data-role="controlgroup">
+                                                                    <TMPL_VAR NXH>
+                                                                </fieldset>
+                                                            </div>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                        <font size="-1"><TMPL_VAR SETTINGS.HINT_FORECAST_NXH></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%">
+                                                            <label id="labelnxh"><TMPL_VAR SETTINGS.LABEL_SEND_PARAMS></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <textarea id="sendparams" name="sendparams" class="textfield" readonly rows="1" style="resize:none; overflow:hidden; width:100%; font-family:monospace; font-size:1.1em;"><TMPL_VAR SENDPARAMS></textarea>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                        <font size="-1"><TMPL_VAR SETTINGS.HINT_SEND_PARAMS></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
                                                         <td colspan=3 width="75%">
                                                             <h3><TMPL_VAR SETTINGS.LABEL_MQTTCONNECTION></h3>
                                                             <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_MQTT></i></font>
@@ -1584,14 +1617,42 @@
                                     </p>
 
                                     <script>
+                                        // ── Update the send-params summary field ─────────────────────────────────────
+                                        // Reads all checked DFC/HFC/NXH checkboxes and writes their names to #sendparams
+                                        // Example result: "dfc1, dfc3, hfc2, hfc24, nxh4"
+                                        function updateSendParams() {
+                                            var parts = [];
+                                            // DFC: checkbox names are dfc1..dfc8, but data prefixes are dfc0..dfc7 (day offset)
+                                            $('input[name^="dfc"]:checked').each(function() {
+                                                var n = parseInt($(this).attr('name').replace('dfc', ''), 10) - 1;
+                                                parts.push('dfc' + n + '_');
+                                            });
+                                            // HFC and NXH: checkbox names match data prefixes directly
+                                            $('input[name^="hfc"]:checked').each(function() { parts.push($(this).attr('name') + '_'); });
+                                            $('input[name^="nxh"]:checked').each(function() { parts.push($(this).attr('name') + '_'); });
 
-                                    $( document ).ready(function() {
-                                        // Validates
-                                        validate_enable('#udpport');
-                                        validate_enable('#mqtttopic');
-                                    });
-                                    // Add some attributes PERL::CGI doesn't provide
-                                    $('#sendudp').attr('data-role','flipswitch');
+                                            var $el = $('#sendparams');
+                                            $el.val(parts.join(', '));
+                                            // Auto-resize: collapse first, then expand to full content height
+                                            $el.css('height', 'auto').css('height', Math.max($el[0].scrollHeight, 10) + 'px');
+                                        }
+
+                                        $( document ).ready(function() {
+                                            // Validates
+                                            validate_enable('#udpport');
+                                            validate_enable('#mqtttopic');
+
+                                            // Initialize send-params summary on page load based on server-rendered state
+                                            updateSendParams();
+
+                                            // Update summary on every DFC/HFC/NXH checkbox change
+                                            $(document).on('change', 'input[name^="dfc"], input[name^="hfc"], input[name^="nxh"]', function() {
+                                                updateSendParams();
+                                            });
+                                        });
+
+                                        // Add some attributes PERL::CGI doesn't provide
+                                        $('#sendudp').attr('data-role','flipswitch');
                                     </script>
 </TMPL_IF>
 <TMPL_IF FORM3>

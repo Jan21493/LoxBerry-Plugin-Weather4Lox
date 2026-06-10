@@ -31,7 +31,7 @@ if [ -d "/tmp/${ARGV1}_upgrade/themes" ] && \
 fi
 
 echo "<INFO> Remove temporary folders"
-rm -r /tmp/$ARGV1\_upgrade
+rm -r /tmp/${ARGV1}_upgrade
 
 echo "<INFO> Recreate cronjob for fetching data from Weather Services"
 # Remove existing cronjob symlink - just in case. This is automatically done by installation script. To be verified with Loxberry core developers if this is really needed.
@@ -40,16 +40,15 @@ ln -s $ARGV5/bin/plugins/$ARGV3/cronjob.pl $ARGV5/system/cron/cron.01min/$ARGV3
 
 # Read config, explicitly export/set LBHOMEDIR from ARGV5 as a fallback:
 LBHOMEDIR="${LBHOMEDIR:-$ARGV5}"
-. "${LBHOMEDIR}/libs/bashlib/iniparser.sh"
-iniparser "${ARGV5}/config/plugins/${ARGV3}/weather4lox.cfg" "SERVER"
+if [ -f "${ARGV5}/config/plugins/${ARGV3}/weather4lox.cfg" ]; then
+    . "${LBHOMEDIR}/libs/bashlib/iniparser.sh"
+    iniparser "${ARGV5}/config/plugins/${ARGV3}/weather4lox.cfg" "SERVER"
+fi
 
+# Re-enable Cloud Emulator if it was enabled before upgrade
 if [ "${SERVEREMU:-0}" -eq 1 ]; then
     echo "<INFO> Re-enabling Cloud Weather Emulator after upgrade"
-    # Check for potential DNS conflict before enabling
-    if systemctl is-active --quiet systemd-resolved 2>/dev/null; then
-        echo "<WARNING> systemd-resolved is active - cloudemu will handle the DNS transition"
-    fi
-    if ! $ARGV5/bin/plugins/$ARGV3/cloudemu enable; then
+    if ! $ARGV5/bin/plugins/$ARGV3/cloudemu.sh enable; then
         echo "<WARNING> Cloud Emulator could not be enabled - check DNS configuration manually"
     fi
 fi

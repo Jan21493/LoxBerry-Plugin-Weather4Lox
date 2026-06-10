@@ -55,6 +55,7 @@ my  $udpport          = $pcfg->param("SERVER.UDPPORT");
 # hashref for quick lookup, e.g. $dfcAllowed->{1} is true if period 1 should be sent
 my  $dfcAllowed       = { map { $_ => 1 } split /;/, $pcfg->param('SERVER.SENDDFC') };
 my  $hfcAllowed       = { map { $_ => 1 } split /;/, $pcfg->param('SERVER.SENDHFC') };
+my  $nxhAllowed       = { map { $_ => 1 } split /;/, $pcfg->param('SERVER.SENDNXH') };
 our $sendUDP          = $pcfg->param("SERVER.SENDUDP");
 our $metric           = $pcfg->param("SERVER.METRIC");
 our $emu              = $pcfg->param("SERVER.EMU");
@@ -515,7 +516,11 @@ foreach my $hfcEntry (@$hfc) {
 }
 $doLog = 1;
 for my $p (@periods) {
-    LOGINF "Aggregating hourly forecasts (sum, min or max - depending on the parameter) for next $p hours (nxh${p}) and sending data to MS.";
+
+    # Check if we should send this period to MS via MQTT and UDP
+    $toMS = $nxhAllowed->{$p};
+
+    LOGINF "Aggregating hourly forecasts (sum, min or max - depending on the parameter) for next $p hours (nxh${p})". ($toMS ? " and sending data to MS (as configured)." : ", but not sending data to MS (as configured).");
 
     sendToLox($toMS, $doLog, "nxh${p}_prec", !$metric ? sprintf("%.2f", $var{prec}{$p}*MM_TO_INCH) : sprintf("%.2f", $var{prec}{$p}));
     sendToLox($toMS, $doLog, "nxh${p}_snow", !$metric ? sprintf("%.2f", $var{snow}{$p}*CM_TO_INCH) : sprintf("%.2f", $var{snow}{$p}));
