@@ -35,6 +35,23 @@ cp $LBHOMEDIR/config/plugins/$ARGV3/apache2.conf $LBHOMEDIR/system/apache2/sites
 echo "<INFO> Installing Cronjob"
 ln -s REPLACELBPBINDIR/weather4lox_cronjob.sh $LBHOMEDIR/system/cron/cron.hourly/99-weather4lox_cronjob > /dev/null 2>&1
 
+# Remove old minutecron symlink if it exists from a previous installation
+if [ -e $ARGV5/system/cron/cron.01min/99-weather4lox_minutecron ]; then
+    echo "<INFO> Removing old minutecron symlink"
+    rm $ARGV5/system/cron/cron.01min/99-weather4lox_minutecron > /dev/null 2>&1
+fi
+
+# Install 1-minute cronjob for local grabbers (FOSHK, PWSCatchUpload, Loxone)
+echo "<INFO> Installing 1-minute cronjob for local grabbers"
+ln -s REPLACELBPBINDIR/weather4lox_minutecron.pl \
+    $LBHOMEDIR/system/cron/cron.01min/99-weather4lox_minutecron > /dev/null 2>&1
+
+# Install Perl SQLite modules required for local observation buffer
+echo "<INFO> Installing SQLite Perl modules for local observation buffer"
+apt-get install -y libdbi-perl libdbd-sqlite3-perl sqlite3 > /dev/null 2>&1 \
+    && echo "<OK> SQLite Perl modules installed successfully" \
+    || echo "<WARNING> SQLite install had warnings - check manually"
+
 # Copy Dummy files
 echo "<INFO> Copy dummy data files"
 # JSON dummy files for fresh installations
