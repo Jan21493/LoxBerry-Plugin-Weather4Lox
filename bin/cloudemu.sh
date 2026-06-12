@@ -49,6 +49,10 @@ NAME="Emulator"
 LOGDIR=$LBPLOG/$pluginname
 
 LOGSTART "Cloud emulator $ACTION"
+
+LOGFILE="${ARRLOGS["$ACTIVELOG.filename"]}"
+LOGDEB "Log file for this session: $LOGFILE, setting ownership to loxberry:loxberry"
+chown loxberry:loxberry "$LOGFILE" 2>&1 | PIPE_TO_LOG
 # ─────────────────────────────────────────────────────────────────────────────
 
 LOGOK "Loxone weather cloud emulator script started ..."
