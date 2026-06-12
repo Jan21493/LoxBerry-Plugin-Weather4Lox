@@ -697,658 +697,622 @@
                                       </center>
                                     </div>
 
-                                    <script>
+    <script>
+    // ── Validation rules ──────────────────────────────────────────────────
+    // Use + (one or more) instead of * (zero or more) to reject empty strings
+    var RULE_ALPHANUMERIC        = '^[a-zA-Z0-9]+$';         // letters and digits, min 1 char
+    var RULE_ALPHANUMERIC_OPT    = '^[a-zA-Z0-9]*$';         // letters and digits, optional (empty allowed)
+    var RULE_DIGITS              = '^\\d+$';                  // digits only, min 1 char
+    var RULE_HOSTNAME_OR_IPADDR  = 'special:hostname_or_ipaddr'; // hostname or IPv4 address
+    var RULE_PORT                = 'special:port';            // port number 1-65535
+    var RULE_PREFIX              = '^[a-zA-Z0-9\\-\\_]+$';         // letters and digits, min 1 char
+    var RULE_WEATHERFLOW_APIKEY  = '^([A-Za-z0-9\\-]){36}$'; // WeatherFlow API key: 36 chars
+    var RULE_COORD_LAT           = 'special:number-min-max-value:-90:90';   // latitude -90..90
+    var RULE_COORD_LONG          = 'special:number-min-max-value:-180:180'; // longitude -180..180
+    // Station ID: letters, digits, whitespace, accented chars, and some special chars commonly used in station names (e.g. _- . ! ?)
+    var RULE_WTTRIN_STATIONID    = '^([@~])?([a-zA-Z0-9\\+\\!\\_\\-\\.\\,\\/\\u00C0-\\u017F])*$';
+    var RULE_WO_STATIONID        = '^[A-Za-z0-9]+([\\-\\/][A-Za-z0-9]+)*$';
 
-                                    // ── Validation rules ──────────────────────────────────────────────────
-                                    // Use + (one or more) instead of * (zero or more) to reject empty strings
-                                    var RULE_ALPHANUMERIC        = '^[a-zA-Z0-9]+$';         // letters and digits, min 1 char
-                                    var RULE_ALPHANUMERIC_OPT    = '^[a-zA-Z0-9]*$';         // letters and digits, optional (empty allowed)
-                                    var RULE_DIGITS              = '^\\d+$';                  // digits only, min 1 char
-                                    var RULE_HOSTNAME_OR_IPADDR  = 'special:hostname_or_ipaddr'; // hostname or IPv4 address
-                                    var RULE_PORT                = 'special:port';            // port number 1-65535
-                                    var RULE_PREFIX              = '^[a-zA-Z0-9\\-\\_]+$';         // letters and digits, min 1 char
-                                    var RULE_WEATHERFLOW_APIKEY  = '^([A-Za-z0-9\\-]){36}$'; // WeatherFlow API key: 36 chars
-                                    var RULE_COORD_LAT           = 'special:number-min-max-value:-90:90';   // latitude -90..90
-                                    var RULE_COORD_LONG          = 'special:number-min-max-value:-180:180'; // longitude -180..180
-                                    // Station ID: letters, digits, whitespace, accented chars, and some special chars commonly used in station names (e.g. _- . ! ?)
-                                    var RULE_WTTRIN_STATIONID    = '^([@~])?([a-zA-Z0-9\\+\\!\\_\\-\\.\\,\\/\\u00C0-\\u017F])*$';
-                                    var RULE_WO_STATIONID        = '^[A-Za-z0-9]+([\\-\\/][A-Za-z0-9]+)*$';
+    // Add some attributes PERL::CGI doesn't provide
+    $('select[name=fetchobs]').attr('data-role','flipswitch');
+    $('select[name=getdata]').attr('data-role','flipswitch');
+    $('select[name=useweatherobs]').attr('data-role','flipswitch');
+    $('select[name=loxgrabber]').attr('data-role','flipswitch');
+    $('select[name=maskkeys]').attr('data-role','flipswitch');
+    $('select[name=wugrabber]').attr('data-role','flipswitch');
+    $('select[name=foshkgrabber]').attr('data-role','flipswitch');
+    $('select[name=pwscatchuploadgrabber]').attr('data-role','flipswitch');
+    $('select[name=openmeteoairqualitygrabber]').attr('data-role','flipswitch');
+    $('select[name=usealternatedfc]').attr('data-role','flipswitch');
+    $('select[name=usealternatehfc]').attr('data-role','flipswitch');
+    $('select[name=weatherservice]').attr('data-mini','true');
+    $('select[name=weatherservicedfc]').attr('data-mini','true');
+    $('select[name=weatherservicehfc]').attr('data-mini','true');
+    $('select[name=weatherserviceobs]').attr('data-mini','true');
+    $('select[name=metric]').attr('data-mini','true');
+    $('select[name=serverlang]').attr('data-mini','true');
+    $('select[name=cron]').attr('data-mini','true');
+    $('select[name=cron_obs]').attr('data-mini','true');
+    $('select[name=cron_alternate]').attr('data-mini','true');
+    $('select[name=cron_airquality]').attr('data-mini','true');
+    $('select[name=cron_local]').attr('data-mini','true');
+    $('select[name=pollen_grasses]').attr('data-mini','true');
+    $('select[name=pollen_birch]').attr('data-mini','true');
+    $('select[name=pollen_alder]').attr('data-mini','true');
+    $('select[name=pollen_mugwort]').attr('data-mini','true');
+    $('select[name=pollen_olive]').attr('data-mini','true');
+    $('select[name=pollen_ragweed]').attr('data-mini','true');
 
-                                    // ── Helper: add a field to / remove it from the validation list ───────
+    // ── Helper: add a field to / remove it from the validation list ───────
 
-                                    function removeFromValidation(selector) {
-                                        if (!window.obj_to_validate) return;
-                                        var normalized = selector.replace(/(\\)/g, '').replace(/(:|\.|\[|\]|,|=|@)/g, '\\$1');
-                                        var idx = $.inArray(normalized, window.obj_to_validate);
-                                        if (idx > -1) {
-                                            window.obj_to_validate.splice(idx, 1);
-                                        }
-                                        // Save the original rule (only once) so it can be restored later
-                                        if (!$(selector).attr('data-validation-rule-original')) {
-                                            $(selector).attr('data-validation-rule-original', $(selector).attr('data-validation-rule'));
-                                        }
-                                        // Set permissive rule so blur does not trigger error tooltip when field is inactive
-                                        $(selector).attr('data-validation-rule', '.*');
-                                        // Reset visual state: remove red background and hide error tooltip
-                                        $(selector).css('background-color', $(selector).attr('original-background-color') || 'transparent');
-                                        $(selector).css('border-radius', 'inherit');
-                                        $('#error-msg-' + selector.substring(1)).fadeOut(100);
-                                    }
+    function removeFromValidation(selector) {
+        if (!window.obj_to_validate) return;
+        var normalized = selector.replace(/(\\)/g, '').replace(/(:|\.|\[|\]|,|=|@)/g, '\\$1');
+        var idx = $.inArray(normalized, window.obj_to_validate);
+        if (idx > -1) {
+            window.obj_to_validate.splice(idx, 1);
+        }
+        // Save the original rule (only once) so it can be restored later
+        if (!$(selector).attr('data-validation-rule-original')) {
+            $(selector).attr('data-validation-rule-original', $(selector).attr('data-validation-rule'));
+        }
+        // Set permissive rule so blur does not trigger error tooltip when field is inactive
+        $(selector).attr('data-validation-rule', '.*');
+        // Reset visual state: remove red background and hide error tooltip
+        $(selector).css('background-color', $(selector).attr('original-background-color') || 'transparent');
+        $(selector).css('border-radius', 'inherit');
+        $('#error-msg-' + selector.substring(1)).fadeOut(100);
+    }
 
-                                    function addToValidation(selector) {
-                                        window.obj_to_validate = window.obj_to_validate || [];
-                                        var normalized = selector.replace(/(\\)/g, '').replace(/(:|\.|\[|\]|,|=|@)/g, '\\$1');
-                                        if ($.inArray(normalized, window.obj_to_validate) === -1) {
-                                            window.obj_to_validate.push(normalized);
-                                        }
-                                        // Restore original validation rule so the field is checked strictly again
-                                        var originalRule = $(selector).attr('data-validation-rule-original');
-                                        if (originalRule) {
-                                            $(selector).attr('data-validation-rule', originalRule);
-                                        }
-                                    }
+    function addToValidation(selector) {
+        window.obj_to_validate = window.obj_to_validate || [];
+        var normalized = selector.replace(/(\\)/g, '').replace(/(:|\.|\[|\]|,|=|@)/g, '\\$1');
+        if ($.inArray(normalized, window.obj_to_validate) === -1) {
+            window.obj_to_validate.push(normalized);
+        }
+        // Restore original validation rule so the field is checked strictly again
+        var originalRule = $(selector).attr('data-validation-rule-original');
+        if (originalRule) {
+            $(selector).attr('data-validation-rule', originalRule);
+        }
+    }
 
-                                    // ── save button state based on validation ─────────────
-                                    function updateSaveButton() {
-                                        if (validate_all()) {
-                                            $('#btnsubmit').button('enable');
-                                        } else {
-                                            $('#btnsubmit').button('disable');
-                                        }
-                                    }
+    // ── save button state based on validation ─────────────
+    function updateSaveButton() {
+        var $btn = $('#btnsubmit');
+        if (!$btn.length) return;
 
-                                    // ── Check which service fields are currently required ─────────────────
-                                    // A service API key is required when the service is selected AND
-                                    // the corresponding getdata / usealternatedfc / usealternatehfc is ON
-                                    function updateServiceFieldRequirements() {
-                                        var getdata         = $('select[name=getdata]').val()         === '1';
-                                        var useobs          = $('select[name=useweatherobs]').val()   === '1';
-                                        var usedfc          = $('select[name=usealternatedfc]').val() === '1';
-                                        var usehfc          = $('select[name=usealternatehfc]').val() === '1';
-                                        var mainService     = $('#weatherservice').val();
-                                        var obsService      = $('#weatherserviceobs').val();
-                                        var dfcService      = $('#weatherservicedfc').val();
-                                        var hfcService      = $('#weatherservicehfc').val();
+        var disabled = !validate_all();
 
-                                        // Check if a service is active in any of the three slots
-                                        function isActive(serviceName) {
-                                            return ( getdata && mainService === serviceName ) ||
-                                                   ( useobs  && obsService  === serviceName ) ||
-                                                   ( usedfc  && dfcService  === serviceName ) ||
-                                                   ( usehfc  && hfcService  === serviceName );
-                                        }
+        if ($btn.data('mobile-button')) {
+            $btn.button(disabled ? 'disable' : 'enable');
+        } else {
+            $btn.prop('disabled', disabled);
+        }
+    }
 
-                                        // Visual Crossing
-                                        if ( isActive('visualcrossing') ) {
-                                            addToValidation('#visualcrossingapikey');
-                                        } else {
-                                            removeFromValidation('#visualcrossingapikey');
-                                        }
+    // ── Service configuration ─────────────────────────────
+    var serviceSlots = [
+        { enabled: 'select[name=getdata]',         select: '#weatherservice' },
+        { enabled: 'select[name=useweatherobs]',   select: '#weatherserviceobs' },
+        { enabled: 'select[name=usealternatedfc]', select: '#weatherservicedfc' },
+        { enabled: 'select[name=usealternatehfc]', select: '#weatherservicehfc' }
+    ];
 
-                                        // OpenWeather
-                                        if ( isActive('openweather') ) {
-                                            addToValidation('#openweatherapikey');
-                                        } else {
-                                            removeFromValidation('#openweatherapikey');
-                                        }
+    var serviceValidationFields = {
+        visualcrossing: ['#visualcrossingapikey'],
+        openweather:    ['#openweatherapikey'],
+        wttrin:         ['#wttrinstationid'],
+        wetteronline:   ['#wetteronlinestationid'],
+        weatherflow:    ['#weatherflowapikey', '#weatherflowstationid']
+    };
 
-                                        // wttr.in
-                                        if ( isActive('wttrin') ) {
-                                            addToValidation('#wttrinstationid');
-                                        } else {
-                                            removeFromValidation('#wttrinstationid');
-                                        }
+    var uiToggleMap = [
+        { selector: '#wugrabber', enabled: '1', on: function() {
+            $('#labelwustationid').removeClass('ui-disabled');
+            $('#wustationid').removeClass('ui-disabled');
+            addToValidation('#wustationid');
+        }, off: function() {
+            $('#labelwustationid').addClass('ui-disabled');
+            $('#wustationid').addClass('ui-disabled');
+            removeFromValidation('#wustationid');
+        } },
+        { selector: '#foshkgrabber', enabled: '1', on: function() {
+            $('#labelfoshkserver').removeClass('ui-disabled');
+            $('#foshkserver').removeClass('ui-disabled');
+            $('#labelfoshkport').removeClass('ui-disabled');
+            $('#foshkport').removeClass('ui-disabled');
+            addToValidation('#foshkserver');
+            addToValidation('#foshkport');
+        }, off: function() {
+            $('#labelfoshkserver').addClass('ui-disabled');
+            $('#foshkserver').addClass('ui-disabled');
+            $('#labelfoshkport').addClass('ui-disabled');
+            $('#foshkport').addClass('ui-disabled');
+            removeFromValidation('#foshkserver');
+            removeFromValidation('#foshkport');
+        } },
+        { selector: '#loxgrabber', enabled: '1', on: function() {
+            $('#labelloxprefix').removeClass('ui-disabled');
+            $('#loxprefix').removeClass('ui-disabled');
+            addToValidation('#loxprefix');
+        }, off: function() {
+            $('#labelloxprefix').addClass('ui-disabled');
+            $('#loxprefix').addClass('ui-disabled');
+            removeFromValidation('#loxprefix');
+        } }
+    ];
 
-                                        // WetterOnline
-                                        if ( isActive('wetteronline') ) {
-                                            addToValidation('#wetteronlinestationid');
-                                        } else {
-                                            removeFromValidation('#wetteronlinestationid');
-                                        }
+    // ── Helper: expand or collapse a service section ───────────────────────
+    function toggleServiceSection(serviceName, shouldExpand) {
+        if (!serviceName) return;
+        $('#section-' + serviceName).collapsible(shouldExpand ? 'expand' : 'collapse');
+    }
 
-                                        // WeatherFlow
-                                        if ( isActive('weatherflow') ) {
-                                            addToValidation('#weatherflowapikey');
-                                            addToValidation('#weatherflowstationid');
-                                        } else {
-                                            removeFromValidation('#weatherflowapikey');
-                                            removeFromValidation('#weatherflowstationid');
-                                        }
 
-                                        updateSaveButton();
-                                    }
+    // ── Check which service fields are currently required ─────────────────
+    // A service API key is required when the service is selected AND
+    // the corresponding getdata / usealternatedfc / usealternatehfc is ON
+    function toggleWeatherServices() {
+        var activeServices = [];
 
-                                    $( document ).ready(function() {
-                                        // Intercept Form 1 submit: POST to ajax-save.cgi synchronously
-                                        $("#main_form").on("submit", function(e) {
-                                            e.preventDefault();
+        // Collect all currently active service selections
+        $.each(serviceSlots, function(_, slot) {
+            if ($(slot.enabled).val() === '1') {
+                var serviceName = $(slot.select).val();
+                if (serviceName) {
+                    activeServices.push(serviceName);
+                }
+            }
+        });
 
-                                            // Run LoxBerry validation before firing AJAX — block if invalid
-                                            if (!validate_all()) {
-                                                return false;
-                                            }
-                                            var $form = $(this);
+        // Toggle validation per service
+        Object.keys(serviceValidationFields).forEach(function(serviceName) {
+            var active = $.inArray(serviceName, activeServices) !== -1;
+            // expand/collapse the service section
+            toggleServiceSection(serviceName, active);
+            serviceValidationFields[serviceName].forEach(function(fieldSelector) {
+                if (active) {
+                    addToValidation(fieldSelector);
 
-                                            // Hide form, show save overlay
-                                            $form.hide();
-                                            $("#btncancel").closest("p").hide();
-                                            $("#save-overlay").show();
-                                            $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_SAVING>");
-                                            $("#save-log").text("<TMPL_VAR SETTINGS.SAVING_STARTING>");
-                                            $("#save-log").css("color", "#333");
-                                            $("#save-back").hide();
+                } else {
+                    removeFromValidation(fieldSelector);
+                }
+            });
+        });
 
-                                            $.ajax({
-                                                url: "./ajax-save.cgi",
-                                                type: "POST",
-                                                dataType: "json",
-                                                data: $form.serialize() + "&form=1",
-                                                cache: false
-                                            }).done(function(resp) {
-                                                // Show check messages step by step
-                                                if (resp && resp.checks && resp.checks.length) {
-                                                    var $log = $("#save-log");
-                                                    $log.text("");
-                                                    var checks = resp.checks;
-                                                    var i = 0;
-                                                    function showNext() {
-                                                        if (i < checks.length) {
-                                                            if (i > 0) $log.append("\n");
-                                                            $log.append(document.createTextNode(checks[i]));
-                                                            // Auto-scroll the log to the bottom
-                                                            $log.scrollTop($log[0].scrollHeight);
-                                                            i++;
-                                                            setTimeout(showNext, 150);
-                                                        } else {
-                                                            // All messages shown – display final status
-                                                            if (resp.ok) {
-                                                                $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_OK>");
-                                                                $log.css("color", "#080");
-                                                            } else {
-                                                                $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_ERROR>");
-                                                                $log.css("color", "#c00");
-                                                                if (resp.error) {
-                                                                    $log.append("\n\n" + resp.error);
-                                                                }
-                                                            }
-                                                            $("#save-back").show();
-                                                        }
-                                                    }
-                                                    showNext();
-                                                } else {
-                                                    // No check messages – show final status immediately
-                                                    if (resp && resp.ok) {
-                                                        $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_OK>");
-                                                        $("#save-log").css("color", "#080");
-                                                    } else {
-                                                        $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_ERROR>");
-                                                        $("#save-log").css("color", "#c00");
-                                                        if (resp && resp.error) {
-                                                            $("#save-log").text(resp.error);
-                                                        }
-                                                    }
-                                                    $("#save-back").show();
-                                                }
-                                            }).fail(function(xhr) {
-                                                $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_ERROR>");
-                                                $("#save-log").text("<TMPL_VAR SETTINGS.SAVING_ERR_START>" + "\n" + (xhr.responseText || ""));
-                                                $("#save-log").css("color", "#c00");
-                                                $("#save-back").show();
-                                            });
-                                        });
+        updateSaveButton();
+    }
 
-                                        // Activate on Load
-                                        disable();
+    // ── Helper: keep grouped UI state in sync ─────────────────────────────
+    function updateAllUiToggles() {
+        $.each(uiToggleMap, function(_, config) {
+            var isOn = $(config.selector).val() === config.enabled;
+            if (isOn) {
+                config.on();
+            } else {
+                config.off();
+            }
+        });
+    }
 
-                                        // Expand collapsible for currently selected weather service
-                                        var currentService = '<TMPL_VAR CURRENT_WEATHERSERVICE>';
-                                        if ( (currentService) && $( "select[name=getdata]" ).val()  === "1" ) {
-                                            $('#section-' + currentService).collapsible('expand');
-                                        }
-                                        // Expand collapsible for selected weather service for observations if enabled
-                                        var currentServiceObs = '<TMPL_VAR CURRENT_WEATHERSERVICEOBS>';
-                                        if ( (currentServiceObs) && $( "select[name=useweatherobs]" ).val()  === "1" ) {
-                                            $('#section-' + currentServiceObs).collapsible('expand');
-                                        }
-                                        // Also expand alternate services if enabled
-                                        var currentService = '<TMPL_VAR CURRENT_WEATHERSERVICEDFC>';
-                                        if ( (currentService) && $( "select[name=usealternatedfc]" ).val()  === "1" ) {
-                                            $('#section-' + currentService).collapsible('expand');
-                                        }
-                                        var currentService = '<TMPL_VAR CURRENT_WEATHERSERVICEHFC>';
-                                        if ( (currentService) && $( "select[name=usealternatehfc]" ).val()  === "1" ) {
-                                            $('#section-' + currentService).collapsible('expand');
-                                        }
-                                        // Expand alternate weather service section if either alternate DFC or HFC is enabled
-                                        if ( ( $( "select[name=usealternatedfc]" ).val()  === "1" ) || ( $( "select[name=usealternatehfc]" ).val()  === "1" ) ) {
-                                            $('#section-alternate-weatherservice').collapsible('expand');
-                                        }
-                                        // Expand local/own weather service section if one of the grabbers is enabled
-                                        if ( ( $( "select[name=wugrabber]" ).val()  === "1" ) || 
-                                             ( $( "select[name=foshkgrabber]" ).val()  === "1" ) || 
-                                             ( $( "select[name=pwscatchuploadgrabber]" ).val()  === "1" ) || 
-                                             ( $( "select[name=loxgrabber]" ).val()  === "1" ) ) {
-                                            $('#section-local-weatherservice').collapsible('expand');
-                                        }
-                                        // Expand pollen / air quality weather service section if either alternate DFC or HFC is enabled
-                                        if ( $( "select[name=openmeteoairqualitygrabber]" ).val()  === "1" ) {
-                                            $('#section-pollen').collapsible('expand');
-                                        }
+    $(document).ready(function() {
+        // Intercept Form 1 submit: POST to ajax-save.cgi synchronously
+        $("#main_form").on("submit", function(e) {
+            e.preventDefault();
 
-                                        // Apply named validation rules to input fields - the rules are defined in the variables above
-                                        // empty content is not allowed if validation is turned on, see below
-                                        $('#wustationid').attr('data-validation-rule',          RULE_ALPHANUMERIC);
-                                        $('#loxprefix').attr('data-validation-rule',            RULE_PREFIX);
-                                        $('#visualcrossingapikey').attr('data-validation-rule', RULE_ALPHANUMERIC);
-                                        $('#openweatherapikey').attr('data-validation-rule',    RULE_ALPHANUMERIC);
-                                        $('#wttrinstationid').attr('data-validation-rule',      RULE_WTTRIN_STATIONID); 
-                                        $('#wetteronlinestationid').attr('data-validation-rule', RULE_WO_STATIONID);
-                                        $('#foshkserver').attr('data-validation-rule',          RULE_HOSTNAME_OR_IPADDR);
-                                        $('#foshkport').attr('data-validation-rule',            RULE_PORT);
-                                        $('#weatherflowapikey').attr('data-validation-rule',    RULE_WEATHERFLOW_APIKEY);
-                                        $('#weatherflowstationid').attr('data-validation-rule', RULE_DIGITS);
-                                        $('#coordlat').attr('data-validation-rule',             RULE_COORD_LAT);
-                                        $('#coordlong').attr('data-validation-rule',            RULE_COORD_LONG);
+            // Run LoxBerry validation before firing AJAX — block if invalid
+            if (!validate_all()) {
+                return false;
+            }
+            var $form = $(this);
 
-                                        // Registers the field: creates error tooltip, hooks blur/input/keyup events
-                                        validate_enable('#wustationid');
-                                        validate_enable('#foshkserver');
-                                        validate_enable('#foshkport');
-                                        validate_enable('#loxprefix');
-                                        validate_enable('#visualcrossingapikey');
-                                        validate_enable('#openweatherapikey');
-                                        validate_enable('#wttrinstationid');
-                                        validate_enable('#wetteronlinestationid');
-                                        validate_enable('#coordlat');
-                                        validate_enable('#coordlong');
-                                        validate_enable('#weatherflowapikey');
-                                        validate_enable('#weatherflowstationid');
+            // Hide form, show save overlay
+            $form.hide();
+            $("#btncancel").closest("p").hide();
+            $("#save-overlay").show();
+            $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_SAVING>");
+            $("#save-log").text("<TMPL_VAR SETTINGS.SAVING_STARTING>");
+            $("#save-log").css("color", "#333");
+            $("#save-back").hide();
 
-                                        // Initialize validation state on page load based on current switch positions
-                                        if ( $('select[name=wugrabber]').val()    !== '1' ) removeFromValidation('#wustationid');
-                                        if ( $('select[name=foshkgrabber]').val() !== '1' ) { removeFromValidation('#foshkserver'); removeFromValidation('#foshkport'); }
-                                        if ( $('select[name=loxgrabber]').val()   !== '1' ) removeFromValidation('#loxprefix');
-                                        // Service fields are all optional until the combined change handler runs once
-                                        removeFromValidation('#visualcrossingapikey');
-                                        removeFromValidation('#openweatherapikey');
-                                        removeFromValidation('#wttrinstationid');
-                                        removeFromValidation('#wetteronlinestationid');
-                                        removeFromValidation('#weatherflowapikey');
-                                        removeFromValidation('#weatherflowstationid');
-                                        
-                                        // Now set correct required state based on current selections
-                                        updateServiceFieldRequirements();    
+            $.ajax({
+                url: "./ajax-save.cgi",
+                type: "POST",
+                dataType: "json",
+                data: $form.serialize() + "&form=1",
+                cache: false
+            }).done(function(resp) {
+                // Show check messages step by step
+                if (resp && resp.checks && resp.checks.length) {
+                    var $log = $("#save-log");
+                    $log.text("");
+                    var checks = resp.checks;
+                    var i = 0;
+                    function showNext() {
+                        if (i < checks.length) {
+                            if (i > 0) $log.append("\n");
+                            $log.append(document.createTextNode(checks[i]));
+                            // Auto-scroll the log to the bottom
+                            $log.scrollTop($log[0].scrollHeight);
+                            i++;
+                            setTimeout(showNext, 150);
+                        } else {
+                            // All messages shown – display final status
+                            if (resp.ok) {
+                                $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_OK>");
+                                $log.css("color", "#080");
+                            } else {
+                                $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_ERROR>");
+                                $log.css("color", "#c00");
+                                if (resp.error) {
+                                    $log.append("\n\n" + resp.error);
+                                }
+                            }
+                            $("#save-back").show();
+                        }
+                    }
+                    showNext();
+                } else {
+                    // No check messages – show final status immediately
+                    if (resp && resp.ok) {
+                        $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_OK>");
+                        $("#save-log").css("color", "#080");
+                    } else {
+                        $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_ERROR>");
+                        $("#save-log").css("color", "#c00");
+                        if (resp && resp.error) {
+                            $("#save-log").text(resp.error);
+                        }
+                    }
+                    $("#save-back").show();
+                }
+            }).fail(function(xhr) {
+                $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_ERROR>");
+                $("#save-log").text("<TMPL_VAR SETTINGS.SAVING_ERR_START>" + "\n" + (xhr.responseText || ""));
+                $("#save-log").css("color", "#c00");
+                $("#save-back").show();
+            });
+        });
 
-                                        // Disable save button on page load if any field is invalid
-                                        updateSaveButton();
+        // Disable some form elements depending on selected options on load
+        if ($("select[name=usealternatedfc]").val() === "0") {
+            $('#weatherservicedfc').addClass('ui-disabled');
+            $('#weatherservicedfc').selectmenu('refresh');
+        }
+        if ($("select[name=usealternatehfc]").val() === "0") {
+            $('#weatherservicehfc').addClass('ui-disabled');
+            $('#weatherservicehfc').selectmenu('refresh');
+        }
+        if (($("select[name=usealternatedfc]").val() === "0") && ($("select[name=usealternatehfc]").val() === "0")) {
+            $('#cron_alternate').addClass('ui-disabled');
+            $('#cron_alternate').selectmenu('refresh');
+        }
+        if ($("select[name=getdata]").val() === "0") {
+            $('#cron').addClass('ui-disabled');
+            $('#cron').selectmenu('refresh');
+            $('#weatherservice').addClass('ui-disabled');
+            $('#weatherservice').selectmenu('refresh');
+        }
+        if ($("select[name=useweatherobs]").val() === "0") {
+            $('#cron_obs').addClass('ui-disabled');
+            $('#cron_obs').selectmenu('refresh');
+            $('#fetchobs').addClass('ui-disabled');
+            $("select[name=fetchobs]").val("0");
+            $('#fetchobs').flipswitch('refresh');
+            $('#fetchobs').flipswitch('disable');
+            $('#weatherserviceobs').addClass('ui-disabled');
+            $('#weatherserviceobs').selectmenu('refresh');
+        }
+        if ($("select[name=wugrabber]").val() === "0") {
+            $('#labelwustationid').addClass('ui-disabled');
+            $('#wustationid').addClass('ui-disabled');
+        }
+        if ($("select[name=loxgrabber]").val() === "0") {
+            $('#labelloxprefix').addClass('ui-disabled');
+            $('#loxprefix').addClass('ui-disabled');
+        }
+        if ($("select[name=foshkgrabber]").val() === "0") {
+            $('#labelfoshkserver').addClass('ui-disabled');
+            $('#foshkserver').addClass('ui-disabled');
+            $('#labelfoshkport').addClass('ui-disabled');
+            $('#foshkport').addClass('ui-disabled');
+        }
+        if ($("select[name=openmeteoairqualitygrabber]").val() === "0") {
+            $('.pollen-row').hide();
+            $('#rowpollensettings').hide();
+            $('#cron_airquality').addClass('ui-disabled');
+            $('#cron_airquality').selectmenu('refresh');
+        }
 
-                                        // Re-check on every change in any validated field
-                                        $('#wustationid, #foshkserver, #foshkport, #loxprefix, #visualcrossingapikey, #openweatherapikey, #wttrinstationid, #wetteronlinestationid, #coordlat, #coordlong, #weatherflowapikey, #weatherflowstationid')
-                                            .on('input blur keyup', function() {
-                                                updateSaveButton();
-                                            });
-                                    });
+        // Expand alternate weather service section if either alternate DFC or HFC is enabled
+        if (($("select[name=usealternatedfc]").val() === "1") || ($("select[name=usealternatehfc]").val() === "1")) {
+            $('#section-alternate-weatherservice').collapsible('expand');
+        }
 
-                                    // Auto-expand collapsible on weather service change
-                                    $(document).on('change', '#weatherservice', function() {
-                                        $('.service-collapsible').collapsible('collapse');
-                                        var selected = $(this).val();
-                                        if (selected && $("select[name=getdata]").val() === "1") {
-                                            $('#section-' + selected).collapsible('expand');
-                                        }
-                                        updateServiceFieldRequirements();
-                                    });
+        // Expand local/own weather service section if one of the grabbers is enabled
+        if (($("select[name=wugrabber]").val() === "1") || 
+            ($("select[name=foshkgrabber]").val() === "1") || 
+            ($("select[name=pwscatchuploadgrabber]").val() === "1") || 
+            ($("select[name=loxgrabber]").val() === "1")) {
+            $('#section-local-weatherservice').collapsible('expand');
+        }
 
-                                    // Auto-expand collapsible on weather service for observations change
-                                    $(document).on('change', '#weatherserviceobs', function() {
-                                        $('.service-collapsible').collapsible('collapse');
-                                        var selected = $(this).val();
-                                        if (selected && $("select[name=useweatherobs]").val() === "1") {
-                                            $('#section-' + selected).collapsible('expand');
-                                        }
-                                        updateServiceFieldRequirements();
-                                    });
+        // Expand pollen / air quality weather service section if the grabber is enabled
+        if ($("select[name=openmeteoairqualitygrabber]").val() === "1") {
+            $('#section-pollen').collapsible('expand');
+        }
 
-                                    // Expand collapsible when alternate DFC service changes
-                                    $(document).on('change', '#weatherservicedfc', function() {
-                                        var selected = $(this).val();
-                                        if (selected && $("select[name=usealternatedfc]").val() === "1") {
-                                            $('#section-' + selected).collapsible('expand');
-                                        }
-                                        updateServiceFieldRequirements();
-                                    });
+        // Apply named validation rules to input fields - the rules are defined in the variables above
+        // empty content is not allowed if validation is turned on, see below
+        $('#wustationid').attr('data-validation-rule',          RULE_ALPHANUMERIC);
+        $('#loxprefix').attr('data-validation-rule',            RULE_PREFIX);
+        $('#visualcrossingapikey').attr('data-validation-rule', RULE_ALPHANUMERIC);
+        $('#openweatherapikey').attr('data-validation-rule',    RULE_ALPHANUMERIC);
+        $('#wttrinstationid').attr('data-validation-rule',      RULE_WTTRIN_STATIONID);
+        $('#wetteronlinestationid').attr('data-validation-rule', RULE_WO_STATIONID);
+        $('#foshkserver').attr('data-validation-rule',          RULE_HOSTNAME_OR_IPADDR);
+        $('#foshkport').attr('data-validation-rule',            RULE_PORT);
+        $('#weatherflowapikey').attr('data-validation-rule',    RULE_WEATHERFLOW_APIKEY);
+        $('#weatherflowstationid').attr('data-validation-rule', RULE_DIGITS);
+        $('#coordlat').attr('data-validation-rule',             RULE_COORD_LAT);
+        $('#coordlong').attr('data-validation-rule',            RULE_COORD_LONG);
 
-                                    // Expand collapsible when alternate HFC service changes
-                                    $(document).on('change', '#weatherservicehfc', function() {
-                                        var selected = $(this).val();
-                                        if (selected && $("select[name=usealternatehfc]").val() === "1") {
-                                            $('#section-' + selected).collapsible('expand');
-                                        }
-                                        updateServiceFieldRequirements();
-                                    });
+        // Registers the field: creates error tooltip, hooks blur/input/keyup events
+        validate_enable('#wustationid');
+        validate_enable('#foshkserver');
+        validate_enable('#foshkport');
+        validate_enable('#loxprefix');
+        validate_enable('#visualcrossingapikey');
+        validate_enable('#openweatherapikey');
+        validate_enable('#wttrinstationid');
+        validate_enable('#wetteronlinestationid');
+        validate_enable('#coordlat');
+        validate_enable('#coordlong');
+        validate_enable('#weatherflowapikey');
+        validate_enable('#weatherflowstationid');
 
-                                    // Add some attributes PERL::CGI doesn't provide
-                                    $('select[name=fetchobs]').attr('data-role','flipswitch');
-                                    $('select[name=getdata]').attr('data-role','flipswitch');
-                                    $('select[name=useweatherobs]').attr('data-role','flipswitch');
-                                    $('select[name=loxgrabber]').attr('data-role','flipswitch');
-                                    $('select[name=maskkeys]').attr('data-role','flipswitch');
-                                    $('select[name=wugrabber]').attr('data-role','flipswitch');
-                                    $('select[name=foshkgrabber]').attr('data-role','flipswitch');
-                                    $('select[name=pwscatchuploadgrabber]').attr('data-role','flipswitch');
-                                    $('select[name=openmeteoairqualitygrabber]').attr('data-role','flipswitch');
-                                    $('select[name=usealternatedfc]').attr('data-role','flipswitch');
-                                    $('select[name=usealternatehfc]').attr('data-role','flipswitch');
-                                    $('select[name=weatherservice]').attr('data-mini','true');
-                                    $('select[name=weatherserviceobs]').attr('data-mini','true');
-                                    $('select[name=weatherservicedfc]').attr('data-mini','true');
-                                    $('select[name=weatherservicehfc]').attr('data-mini','true');
-                                    $('select[name=metric]').attr('data-mini','true');
-                                    $('select[name=serverlang]').attr('data-mini','true');
-                                    $('select[name=cron]').attr('data-mini','true');
-                                    $('select[name=cron_obs]').attr('data-mini','true');
-                                    $('select[name=cron_alternate]').attr('data-mini','true');
-                                    $('select[name=cron_airquality]').attr('data-mini','true');
-                                    $('select[name=cron_local]').attr('data-mini','true');
-                                    $('select[name=pollen_grasses]').attr('data-mini','true');
-                                    $('select[name=pollen_birch]').attr('data-mini','true');
-                                    $('select[name=pollen_alder]').attr('data-mini','true');
-                                    $('select[name=pollen_mugwort]').attr('data-mini','true');
-                                    $('select[name=pollen_olive]').attr('data-mini','true');
-                                    $('select[name=pollen_ragweed]').attr('data-mini','true');
+        // Initialize validation state on page load based on current switch positions
+        if ($('select[name=wugrabber]').val() !== '1') removeFromValidation('#wustationid');
+        if ($('select[name=foshkgrabber]').val() !== '1') { removeFromValidation('#foshkserver'); removeFromValidation('#foshkport'); }
+        if ($('select[name=loxgrabber]').val() !== '1') removeFromValidation('#loxprefix');
 
-                                    // Get Data
-                                    $( document ).on( 'change', '#getdata', function ( e ) {
-                                        if ( $( "select[name=getdata]" ).val()  === "1" ) {
-                                            //alert("An!");
-                                            $('#cron').removeClass('ui-disabled');
-                                            $('#cron').selectmenu('refresh');
-                                            // expand section of selected weather service
-                                            var selected = $('#weatherservice').val();
-                                            if (selected) {
-                                                $('#section-' + selected).collapsible('expand');
-                                            }
-                                        } else {
-                                            //alert("Aus!");
-                                            $('#cron').addClass('ui-disabled');
-                                            $('#cron').selectmenu('refresh');
-                                            // collapse previously selected weather service
-                                            var selected = $('#weatherservice').val();
-                                            if (selected) {
-                                                $('#section-' + selected).collapsible('collapse');
-                                            }
-                                        }
-                                        updateServiceFieldRequirements();
-                                    });
+        // Service fields are all optional until the combined change handler runs once
+        removeFromValidation('#visualcrossingapikey');
+        removeFromValidation('#openweatherapikey');
+        removeFromValidation('#wttrinstationid');
+        removeFromValidation('#wetteronlinestationid');
+        removeFromValidation('#weatherflowapikey');
+        removeFromValidation('#weatherflowstationid');
 
-                                    // Get Data for observations
-                                    $( document ).on( 'change', '#useweatherobs', function ( e ) {
-                                        if ( $( "select[name=useweatherobs]" ).val()  === "1" ) {
-                                            //alert("An!");
-                                            $('#cron_obs').removeClass('ui-disabled');
-                                            $('#cron_obs').selectmenu('refresh');
-                                            $('#fetchobs').removeClass('ui-disabled');
-                                            $('#fetchobs').flipswitch('enable');
-                                            $('#fetchobs').selectmenu('refresh');
-                                            // expand section of selected weather service
-                                            var selected = $('#weatherserviceobs').val();
-                                            if (selected) {
-                                                $('#section-' + selected).collapsible('expand');
-                                            }
-                                        } else {
-                                            //alert("Aus!");
-                                            $('#cron_obs').addClass('ui-disabled');
-                                            $('#cron_obs').selectmenu('refresh');
-                                            $('#fetchobs').addClass('ui-disabled');
-                                            $( "select[name=fetchobs]" ).val("0");
-                                            $('#fetchobs').flipswitch('refresh');
-                                            $('#fetchobs').flipswitch('disable');
-                                            // collapse previously selected weather service
-                                            var selected = $('#weatherserviceobs').val();
-                                            if (selected) {
-                                                $('#section-' + selected).collapsible('collapse');
-                                            }
-                                        }
-                                        updateServiceFieldRequirements();
-                                    });
+        // Set correct required state based on current selections
+        toggleWeatherServices();
 
-                                    // Alternate DFC
-                                    $( document ).on( 'change', '#usealternatedfc', function ( e ) {
-                                        if ( ( $( "select[name=usealternatedfc]" ).val()  === "1" ) || ( $( "select[name=usealternatehfc]" ).val()  === "1" ) ) {
-                                            //alert("An!");
-                                            $('#cron_alternate').removeClass('ui-disabled');
-                                            $('#cron_alternate').selectmenu('refresh');
-                                        } else {
-                                            //alert("Aus!");
-                                            $('#cron_alternate').addClass('ui-disabled');
-                                            $('#cron_alternate').selectmenu('refresh');
-                                        }
-                                        // expand or collapse selected alternate weather service
-                                        if ( $( "select[name=usealternatedfc]" ).val()  === "1" ) {
-                                            // expand section of selected weather service
-                                            var selected = $('#weatherservicedfc').val();
-                                            if (selected) {
-                                                $('#section-' + selected).collapsible('expand');
-                                            }
-                                        } else {
-                                            // collapse section of selected weather service
-                                            var selected = $('#weatherservicedfc').val();
-                                            if (selected) {
-                                                $('#section-' + selected).collapsible('collapse');
-                                            }
-                                        }
-                                        updateServiceFieldRequirements();
-                                    });
+        // Keep grouped UI state in sync on load
+        updateAllUiToggles();
 
-                                    // Alternate HFC
-                                    $( document ).on( 'change', '#usealternatehfc', function ( e ) {
-                                        if ( ( $( "select[name=usealternatehfc]" ).val()  === "1" ) || ( $( "select[name=usealternatedfc]" ).val()  === "1" ) ) {
-                                            //alert("An!");
-                                            $('#cron_alternate').removeClass('ui-disabled');
-                                            $('#cron_alternate').selectmenu('refresh');
-                                        } else {
-                                            //alert("Aus!");
-                                            $('#cron_alternate').addClass('ui-disabled');
-                                            $('#cron_alternate').selectmenu('refresh');
-                                        }
-                                        // expand or collapse selected alternate weather service
-                                        if ( $( "select[name=usealternatehfc]" ).val()  === "1" ) {
-                                            // expand section of selected weather service
-                                            var selected = $('#weatherservicehfc').val();
-                                            if (selected) {
-                                                $('#section-' + selected).collapsible('expand');
-                                            }
-                                        } else {
-                                            // collapse section of selected weather service
-                                            var selected = $('#weatherservicehfc').val();
-                                            if (selected) {
-                                                $('#section-' + selected).collapsible('collapse');
-                                            }
-                                        }
-                                        updateServiceFieldRequirements();
-                                    });
+        // Disable save button on page load if any field is invalid
+        updateSaveButton();
 
-                                    // WUGrabber
-                                    $( document ).on( 'change', '#wugrabber', function ( e ) {
-                                        if ( $( "select[name=wugrabber]" ).val()  === "1" ) {
-                                            //alert("An!");
-                                            $('#labelwustationid').removeClass('ui-disabled');
-                                            $('#wustationid').removeClass('ui-disabled');
-                                            addToValidation('#wustationid');
-                                        } else {
-                                            //alert("Aus!");
-                                            $('#labelwustationid').addClass('ui-disabled');
-                                            $('#wustationid').addClass('ui-disabled');
-                                            removeFromValidation('#wustationid');
-                                        }
-                                    });
+        // Re-check on every change in any validated field
+        $('#wustationid, #foshkserver, #foshkport, #loxprefix, #visualcrossingapikey, #openweatherapikey, #wttrinstationid, #wetteronlinestationid, #coordlat, #coordlong, #weatherflowapikey, #weatherflowstationid')
+            .on('input blur keyup', function() {
+                updateSaveButton();
+            });
+    });
 
-                                    // FOSHKGrabber
-                                    $( document ).on( 'change', '#foshkgrabber', function ( e ) {
-                                        if ( $( "select[name=foshkgrabber]" ).val()  === "1" ) {
-                                            //alert("An!");
-                                            $('#labelfoshkserver').removeClass('ui-disabled');
-                                            $('#foshkserver').removeClass('ui-disabled');
-                                            $('#labelfoshkport').removeClass('ui-disabled');
-                                            $('#foshkport').removeClass('ui-disabled');
-                                            addToValidation('#foshkserver');
-                                            addToValidation('#foshkport');
-                                        } else {
-                                            //alert("Aus!");
-                                            $('#labelfoshkserver').addClass('ui-disabled');
-                                            $('#foshkserver').addClass('ui-disabled');
-                                            $('#labelfoshkport').addClass('ui-disabled');
-                                            $('#foshkport').addClass('ui-disabled');
-                                            removeFromValidation('#foshkserver');
-                                            removeFromValidation('#foshkport');
-                                        }
-                                    });
-                                    
-                                    // LoxGrabber
-                                    $( document ).on( 'change', '#loxgrabber', function ( e ) {
-                                        if ( $( "select[name=loxgrabber]" ).val()  === "1" ) {
-                                            //alert("An!");
-                                            $('#labelloxprefix').removeClass('ui-disabled');
-                                            $('#loxprefix').removeClass('ui-disabled');
-                                            addToValidation('#loxprefix');
-                                        } else {
-                                            //alert("Aus!");
-                                            $('#labelloxprefix').addClass('ui-disabled');
-                                            $('#loxprefix').addClass('ui-disabled');
-                                            removeFromValidation('#loxprefix');
-                                        }
-                                    });
+    // Auto-expand/collapse collapsibles on weather service changes
+    $(document).on('change', '#weatherservice, #weatherserviceobs, #weatherservicedfc, #weatherservicehfc', function() {
+        // Keep all service sections in sync with their switches
+        toggleWeatherServices();
+    });
 
-                                    // OpenMeteoAirQualityGrabber
-                                    $( document ).on( 'change', '#openmeteoairqualitygrabber', function ( e ) {
-                                        if ( $( "select[name=openmeteoairqualitygrabber]" ).val()  === "1" ) {
-                                            $('.pollen-row').show();
-                                            $('#rowpollensettings').show();
-                                            $('#cron_airquality').removeClass('ui-disabled');
-                                            $('#cron_airquality').selectmenu('refresh');
+    // Get Data
+    $(document).on('change', '#getdata', function() {
+        if ($("select[name=getdata]").val() === "1") {
+            $('#cron').removeClass('ui-disabled');
+            $('#cron').selectmenu('refresh');
+            $('#weatherservice').removeClass('ui-disabled');
+            $('#weatherservice').selectmenu('refresh');
+        } else {
+            $('#cron').addClass('ui-disabled');
+            $('#cron').selectmenu('refresh');
+            $('#weatherservice').addClass('ui-disabled');
+            $('#weatherservice').selectmenu('refresh');
+        }
 
-                                        } else {
-                                            $('.pollen-row').hide();
-                                            $('#rowpollensettings').hide();
-                                            $('#cron_airquality').addClass('ui-disabled');
-                                            $('#cron_airquality').selectmenu('refresh');
-                                        }
-                                    });
+        // Keep the selected weather service section in sync
+        toggleWeatherServices();
+    });
 
-                                    // Pollen hint texts by level
-                                    var pollenHints = {
-                                        '0': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_0>',
-                                        '1': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_1>',
-                                        '2': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_2>',
-                                        '3': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_3>',
-                                        '4': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_4>',
-                                        '5': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_5>',
-                                        '6': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_6>',
-                                        '7': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_7>'
-                                    };
+    // Get Data for observations
+    $(document).on('change', '#useweatherobs', function() {
+        if ($("select[name=useweatherobs]").val() === "1") {
+            $('#cron_obs').removeClass('ui-disabled');
+            $('#cron_obs').selectmenu('refresh');
+            $('#fetchobs').removeClass('ui-disabled');
+            $('#fetchobs').flipswitch('enable');
+            $('#fetchobs').flipswitch('refresh');
+            $('#weatherserviceobs').removeClass('ui-disabled');
+            $('#weatherserviceobs').selectmenu('refresh');
+        } else {
+            $('#cron_obs').addClass('ui-disabled');
+            $('#cron_obs').selectmenu('refresh');
+            $('#fetchobs').addClass('ui-disabled');
+            $("select[name=fetchobs]").val("0");
+            $('#fetchobs').flipswitch('refresh');
+            $('#fetchobs').flipswitch('disable');
+            $('#weatherserviceobs').addClass('ui-disabled');
+            $('#weatherserviceobs').selectmenu('refresh');
+         }
 
-                                    function updatePollenHint(name) {
-                                        var val = $('select[name=' + name + ']').val();
-                                        $('#hint_pollen_' + name.replace('pollen_','') ).text(pollenHints[val] || '');
-                                    }
+        // Keep the selected observation service section in sync
+        toggleWeatherServices();
+    });
 
-                                    var pollenNames = ['pollen_grasses','pollen_birch','pollen_alder','pollen_mugwort','pollen_olive','pollen_ragweed'];
-                                    $.each(pollenNames, function(i, name) {
-                                        updatePollenHint(name);
-                                        $( document ).on( 'change', '#' + name, function() { updatePollenHint(name); });
-                                    });
+    // Alternate DFC
+    $(document).on('change', '#usealternatedfc', function() {
+        if ($("select[name=usealternatedfc]").val() === "1") {
+            $('#weatherservicedfc').removeClass('ui-disabled');
+            $('#weatherservicedfc').selectmenu('refresh');
+        } else {
+            $('#weatherservicedfc').addClass('ui-disabled');
+            $('#weatherservicedfc').selectmenu('refresh');
+        }
+        if (($("select[name=usealternatedfc]").val() === "1") || ($("select[name=usealternatehfc]").val() === "1")) {
+            $('#cron_alternate').removeClass('ui-disabled');
+            $('#cron_alternate').selectmenu('refresh');
+        } else {
+            $('#cron_alternate').addClass('ui-disabled');
+            $('#cron_alternate').selectmenu('refresh');
+        }
 
-                                    // Disable some form elements depending on selected options
-                                    function disable() {
-                                        if ( $( "select[name=usealternatedfc]" ).val()  === "0" ) {
-                                            $('#weatherservicedfc').addClass('ui-disabled');
-                                            $('#weatherservicedfc').selectmenu('refresh');
-                                        }
-                                        if ( $( "select[name=usealternatehfc]" ).val()  === "0" ) {
-                                            $('#weatherservicehfc').addClass('ui-disabled');
-                                            $('#weatherservicehfc').selectmenu('refresh');
-                                        }
-                                        if ( ( $( "select[name=usealternatedfc]" ).val()  === "0" ) && ( $( "select[name=usealternatehfc]" ).val()  === "0" ) )
-                                        {
-                                            $('#cron_alternate').addClass('ui-disabled');
-                                            $('#cron_alternate').selectmenu('refresh');
-                                        }
-                                        if ( $( "select[name=getdata]" ).val()  === "0" ) {
-                                            $('#cron').addClass('ui-disabled');
-                                            $('#cron').selectmenu('refresh');
-                                        }
-                                        if ( $( "select[name=useweatherobs]" ).val()  === "0" ) {
-                                            $('#cron_obs').addClass('ui-disabled');
-                                            $('#cron_obs').selectmenu('refresh');
-                                            $('#fetchobs').addClass('ui-disabled');
-                                            $( "select[name=fetchobs]" ).val("0");
-                                            $('#fetchobs').flipswitch('refresh');
-                                            $('#fetchobs').flipswitch('disable');
-                                        }
-                                        if ( $( "select[name=wugrabber]" ).val()  === "0" ) {
-                                            $('#labelwustationid').addClass('ui-disabled');
-                                            $('#wustationid').addClass('ui-disabled');
-                                        }
-                                        if ( $( "select[name=loxgrabber]" ).val()  === "0" ) {
-                                            $('#labelloxprefix').addClass('ui-disabled');
-                                            $('#loxprefix').addClass('ui-disabled');
-                                        }
-                                        if ( $( "select[name=foshkgrabber]" ).val()  === "0" ) {
-                                            $('#labelfoshkserver').addClass('ui-disabled');
-                                            $('#foshkserver').addClass('ui-disabled');
-                                            $('#labelfoshkport').addClass('ui-disabled');
-                                            $('#foshkport').addClass('ui-disabled');
-                                        }
-                                        if ( $( "select[name=openmeteoairqualitygrabber]" ).val()  === "0" ) {
-                                            $('.pollen-row').hide();
-                                            $('#rowpollensettings').hide();
-                                            $('#cron_airquality').addClass('ui-disabled');
-                                            $('#cron_airquality').selectmenu('refresh');
-                                        }
-                                    }
+        // Keep the selected alternate DFC section in sync
+        toggleWeatherServices();
+    });
 
-                                    function fetchweather()
-                                    {
+    // Alternate HFC
+    $(document).on('change', '#usealternatehfc', function() {
+        if ($("select[name=usealternatehfc]").val() === "1") {
+            $('#weatherservicehfc').removeClass('ui-disabled');
+            $('#weatherservicehfc').selectmenu('refresh');
+        } else {
+            $('#weatherservicehfc').addClass('ui-disabled');
+            $('#weatherservicehfc').selectmenu('refresh');
+        }
+        if (($("select[name=usealternatehfc]").val() === "1") || ($("select[name=usealternatedfc]").val() === "1")) {
+            $('#cron_alternate').removeClass('ui-disabled');
+            $('#cron_alternate').selectmenu('refresh');
+        } else {
+            $('#cron_alternate').addClass('ui-disabled');
+            $('#cron_alternate').selectmenu('refresh');
+        }
 
-                                        $('#fetch').addClass('ui-disabled');
-                                        $("#fetchstate").attr("style", "color:blue").html("<TMPL_VAR SETTINGS.HINT_FETCHWAIT>");
-                                        var includeObs = $( "select[name=fetchobs]" ).val() === "1" ? "1" : "0";
-                                        $.ajax( {
-                                                type: 'POST',
-                                                url: "./ajax-handler.cgi",
-                                                data: {
-                                                    ajax: 'fetch',
-                                                    includeObs: includeObs
-                                                }
-                                            } )
-                                        .done(function(resp) {
-                                            console.log( "fetch", "success", resp );
-                                            $("#fetchstate").attr("style", "color:green").html("<TMPL_VAR SETTINGS.HINT_FETCHOK>");
-                                        })
-                                        .fail(function(resp) {
-                                            console.log( "fetch", "failed", resp );
-                                            $("#fetchstate").attr("style", "color:red").html("<TMPL_VAR SETTINGS.HINT_FETCHFAILED>");
-                                        })
-                                        .always(function(resp) {
-                                        $('#fetch').removeClass('ui-disabled');
-                                            console.log( "fetch", "finished", resp );
-                                        });
+        // Keep the selected alternate HFC section in sync
+        toggleWeatherServices();
+    });
 
-                                    }
+    // WUGrabber
+    $(document).on('change', '#wugrabber', function() {
+        if ($("select[name=wugrabber]").val() === "1") {
+            $('#labelwustationid').removeClass('ui-disabled');
+            $('#wustationid').removeClass('ui-disabled');
+            addToValidation('#wustationid');
+        } else {
+            $('#labelwustationid').addClass('ui-disabled');
+            $('#wustationid').addClass('ui-disabled');
+            removeFromValidation('#wustationid');
+        }
+    });
 
-                                    // Test Link for wtt.in
-                                    function testwttrin() {
-                                        var url = 'https://wttr.in/' + $('#wttrinstationid').val();
-                                        window.open(url, 'NewWindow');
-                                    }
+    // FOSHKGrabber
+    $(document).on('change', '#foshkgrabber', function() {
+        if ($("select[name=foshkgrabber]").val() === "1") {
+            $('#labelfoshkserver').removeClass('ui-disabled');
+            $('#foshkserver').removeClass('ui-disabled');
+            $('#labelfoshkport').removeClass('ui-disabled');
+            $('#foshkport').removeClass('ui-disabled');
+            addToValidation('#foshkserver');
+            addToValidation('#foshkport');
+        } else {
+            $('#labelfoshkserver').addClass('ui-disabled');
+            $('#foshkserver').addClass('ui-disabled');
+            $('#labelfoshkport').addClass('ui-disabled');
+            $('#foshkport').addClass('ui-disabled');
+            removeFromValidation('#foshkserver');
+            removeFromValidation('#foshkport');
+        }
+    });
 
-                                    // Test Link for Wetteronline
-                                    function testwetteronline() {
-                                        var url = 'https://www.wetteronline.de/wetter/' + $('#wetteronlinestationid').val();
-                                        window.open(url, 'NewWindow');
-                                    }
+    // LoxGrabber
+    $(document).on('change', '#loxgrabber', function() {
+        if ($("select[name=loxgrabber]").val() === "1") {
+            $('#labelloxprefix').removeClass('ui-disabled');
+            $('#loxprefix').removeClass('ui-disabled');
+            addToValidation('#loxprefix');
+        } else {
+            $('#labelloxprefix').addClass('ui-disabled');
+            $('#loxprefix').addClass('ui-disabled');
+            removeFromValidation('#loxprefix');
+        }
+    });
 
-                                    </script>
+    // OpenMeteoAirQualityGrabber
+    $(document).on('change', '#openmeteoairqualitygrabber', function() {
+        if ($("select[name=openmeteoairqualitygrabber]").val() === "1") {
+            $('.pollen-row').show();
+            $('#rowpollensettings').show();
+            $('#cron_airquality').removeClass('ui-disabled');
+            $('#cron_airquality').selectmenu('refresh');
+        } else {
+            $('.pollen-row').hide();
+            $('#rowpollensettings').hide();
+            $('#cron_airquality').addClass('ui-disabled');
+            $('#cron_airquality').selectmenu('refresh');
+        }
+    });
+
+    // Pollen hint texts by level
+    var pollenHints = {
+        '0': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_0>',
+        '1': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_1>',
+        '2': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_2>',
+        '3': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_3>',
+        '4': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_4>',
+        '5': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_5>',
+        '6': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_6>',
+        '7': '<TMPL_VAR SETTINGS.HINT_POLLEN_LEVEL_7>'
+    };
+
+    function updatePollenHint(name) {
+        var val = $('select[name=' + name + ']').val();
+        $('#hint_pollen_' + name.replace('pollen_', '')).text(pollenHints[val] || '');
+    }
+
+    var pollenNames = ['pollen_grasses','pollen_birch','pollen_alder','pollen_mugwort','pollen_olive','pollen_ragweed'];
+    $.each(pollenNames, function(i, name) {
+        updatePollenHint(name);
+        $(document).on('change', '#' + name, function() { updatePollenHint(name); });
+    });
+
+    function fetchweather() {
+        $('#fetch').addClass('ui-disabled');
+        $("#fetchstate").attr("style", "color:blue").html("<TMPL_VAR SETTINGS.HINT_FETCHWAIT>");
+        var includeObs = $("select[name=fetchobs]").val() === "1" ? "1" : "0";
+        $.ajax({
+            type: 'POST',
+            url: "./ajax-handler.cgi",
+            data: {
+                ajax: 'fetch',
+                includeObs: includeObs
+            }
+        })
+        .done(function(resp) {
+            console.log("fetch", "success", resp);
+            $("#fetchstate").attr("style", "color:green").html("<TMPL_VAR SETTINGS.HINT_FETCHOK>");
+        })
+        .fail(function(resp) {
+            console.log("fetch", "failed", resp);
+            $("#fetchstate").attr("style", "color:red").html("<TMPL_VAR SETTINGS.HINT_FETCHFAILED>");
+        })
+        .always(function(resp) {
+            $('#fetch').removeClass('ui-disabled');
+            console.log("fetch", "finished", resp);
+        });
+    }
+
+    // Test Link for wtt.in
+    function testwttrin() {
+        var url = 'https://wttr.in/' + $('#wttrinstationid').val();
+        window.open(url, 'NewWindow');
+    }
+
+    // Test Link for Wetteronline
+    function testwetteronline() {
+        var url = 'https://www.wetteronline.de/wetter/' + $('#wetteronlinestationid').val();
+        window.open(url, 'NewWindow');
+    }
+    </script>
 </TMPL_IF>
 
 

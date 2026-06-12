@@ -1,3 +1,3 @@
 # Sudoers file for the Weather4Lox plugin.
 # Note: All scripts in sbin will be added automatically by LoxBerry.
-%loxberry ALL = NOPASSWD: REPLACELBPBINDIR/cloudemu, /bin/sh, /bin/rm, /bin/touch, /bin/echo, /usr/sbin/service, /usr/sbin/a2ensite, /usr/sbin/a2dissite, /usr/bin/tee, /bin/mkdir, /usr/bin/mkdir, /usr/bin/apt-get, /usr/bin/systemctl, /bin/systemctl, /bin/ln, /usr/bin/ln
+%loxberry ALL = NOPASSWD: REPLACELBPBINDIR/cloudemu.sh, /bin/sh, /bin/rm, /bin/touch, /bin/echo, /usr/sbin/service, /usr/sbin/a2ensite, /usr/sbin/a2dissite, /usr/bin/tee, /bin/mkdir, /usr/bin/mkdir, /usr/bin/apt-get, /usr/bin/systemctl, /bin/systemctl, /bin/ln, /usr/bin/ln, /usr/sbin/resolvconf
