@@ -222,6 +222,7 @@
     "NW": "Noordwest"
   },
   "theme": {
+    "stale_data_info": "⚠ Geen recente weergegevens beschikbaar (laatste gegevens zijn ouder dan 12 uur).",
     "current_weather": "Actueel weer",
     "forecast": "Voorspelling",
     "daily_forecast": "Dagelijkse voorspelling",

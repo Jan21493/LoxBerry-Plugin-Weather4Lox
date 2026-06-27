@@ -380,6 +380,8 @@
 // ===== CONFIGURATION =====
 var JSON_BASE = './';
 var SUPPORTED_LANGS = ['de', 'en', 'es', 'nl', 'sk'];
+// Max accepted weather data age: 12 hours
+var MAX_DATA_AGE_MS = 12 * 60 * 60 * 1000;
 
 // getUrlParam is needed here; defined again in second script block as well
 // Use a self-contained version to avoid ordering issues
@@ -484,6 +486,77 @@ function showError(msg) {
   setTimeout(function() { b.style.display = 'none'; }, 8000);
 }
 
+function parseTimeValueToMs(val) {
+  if (val == null) return null;
+
+  // Support epoch seconds or milliseconds
+  if (typeof val === 'number' && isFinite(val)) {
+    return val < 1e12 ? val * 1000 : val;
+  }
+
+  // Support ISO/time strings
+  var t = Date.parse(val);
+  return isNaN(t) ? null : t;
+}
+
+function getLatestWeatherTimestampMs() {
+  var candidates = [];
+
+  // current
+  if (liveData.current && liveData.current.time) {
+    var c = liveData.current.time;
+    var cMs = parseTimeValueToMs(c.datetime != null ? c.datetime : c.epoch);
+    if (cMs != null) candidates.push(cMs);
+  }
+
+  // hourly
+  var hourlyArrays = [liveData.hourlyToday, liveData.hourlyTomorrow];
+  hourlyArrays.forEach(function(arr) {
+    (arr || []).forEach(function(h) {
+      var ht = h && h.time ? h.time : null;
+      if (!ht) return;
+      var hMs = parseTimeValueToMs(ht.datetime != null ? ht.datetime : ht.epoch);
+      if (hMs != null) candidates.push(hMs);
+    });
+  });
+
+  // daily
+  (liveData.daily || []).forEach(function(d) {
+    var dt = d && d.time ? d.time : null;
+    if (!dt) return;
+    var dMs = parseTimeValueToMs(dt.datetime != null ? dt.datetime : dt.epoch);
+    if (dMs != null) candidates.push(dMs);
+  });
+
+  if (!candidates.length) return null;
+  return Math.max.apply(null, candidates);
+}
+
+function isWeatherDataFresh(maxAgeMs) {
+  var latestMs = getLatestWeatherTimestampMs();
+  if (latestMs == null) return false;
+  return (Date.now() - latestMs) <= maxAgeMs;
+}
+
+function showStaleDataInfo() {
+  var b = document.getElementById('errorBanner');
+  var m = document.getElementById('errorMsg');
+  if (!b || !m) return;
+
+  // Use i18n key if available, otherwise fallback English text
+  var staleMsg = (liveData.lang && liveData.lang.theme && liveData.lang.theme.stale_data_info) ||
+    '⚠ No recent weather data available (latest data is older than 12 hours).';
+
+  m.textContent = staleMsg;
+  b.style.display = 'block';
+}
+
+function hideStaleDataInfo() {
+  var b = document.getElementById('errorBanner');
+  if (!b) return;
+  b.style.display = 'none';
+}
+
 // ===== DATA PROCESSING (per data type) =====
 function processCurrentEnvelope(envelope) {
   var currentEnvelope = envelope || {};
@@ -554,6 +627,7 @@ function processDailyEnvelope(envelope) {
     var dtime = (d.time && d.time.datetime) || new Date().toISOString();
     var dt = new Date(dtime);
     return {
+      time: d.time, // keep original daily time for freshness validation
       day: weekdaysShort[dt.getDay()],
       date: pad2(dt.getDate()) + '.' + pad2(dt.getMonth() + 1) + '.',
       weatherCode: d.weatherCode ? d.weatherCode.weather4lox : undefined,
@@ -601,6 +675,11 @@ function loadAllData() {
     chartPrecipMode['tempChartMorgen'] = 'prob';
 
     renderAll();
+    if (isWeatherDataFresh(MAX_DATA_AGE_MS)) {
+      hideStaleDataInfo();
+    } else {
+      showStaleDataInfo();
+    }
     return liveData;
   }).catch(function(err) {
     hideLoading();
@@ -942,6 +1021,11 @@ function refreshDataType(type) {
       else if (type === 'hourly') processHourlyEnvelope(envelope);
       else if (type === 'daily') processDailyEnvelope(envelope);
       renderAll();
+      if (isWeatherDataFresh(MAX_DATA_AGE_MS)) {
+        hideStaleDataInfo();
+      } else {
+        showStaleDataInfo();
+      }
     });
 }
 
@@ -961,6 +1045,40 @@ function scheduleRefresh() {
   scheduleDataRefresh('current');
   scheduleDataRefresh('hourly');
   scheduleDataRefresh('daily');
+}
+
+var activeRefreshInFlight = false;
+
+function refreshAllDataNow() {
+  if (activeRefreshInFlight) return Promise.resolve();
+  activeRefreshInFlight = true;
+
+  return Promise.all([
+    refreshDataType('current'),
+    refreshDataType('hourly'),
+    refreshDataType('daily')
+  ]).catch(function(err) {
+    showError(err && err.message ? err.message : 'Refresh failed');
+  }).finally(function() {
+    activeRefreshInFlight = false;
+  });
+}
+
+function setupActiveRefreshListeners() {
+  // Refetch when tab becomes visible again
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') refreshAllDataNow();
+  });
+
+  // Refetch when window gets focus
+  window.addEventListener('focus', function() {
+    refreshAllDataNow();
+  });
+
+  // Refetch on page restore (browser back-forward cache)
+  window.addEventListener('pageshow', function() {
+    refreshAllDataNow();
+  });
 }
 </script>
 
@@ -1920,6 +2038,7 @@ function hideEmptyStats() {
 // ===== BOOT =====
 document.querySelector('.tab-panel.active').classList.add('fade-in');
 lucide.createIcons();
+setupActiveRefreshListeners();
 loadAllData()
   .then(function() {
     scheduleRefresh();

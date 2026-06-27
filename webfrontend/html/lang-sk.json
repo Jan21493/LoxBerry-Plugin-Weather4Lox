@@ -222,6 +222,7 @@
     "NW": "Severozápad"
   },
   "theme": {
+    "stale_data_info": "⚠ Nie sú k dispozícii žiadne aktuálne meteorologické údaje (najnovšie údaje sú staršie ako 12 hodín).",
     "current_weather": "Aktuálne počasie",
     "forecast": "Predpoveď",
     "daily_forecast": "Denná predpoveď",

@@ -222,6 +222,7 @@
     "NW": "North-West"
   },
   "theme": {
+    "stale_data_info": "⚠ No recent weather data available (latest data is older than 12 hours).",
     "current_weather": "Current weather",
     "forecast": "Forecast",
     "daily_forecast": "Daily forecast",

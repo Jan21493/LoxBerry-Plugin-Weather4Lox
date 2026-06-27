@@ -222,6 +222,7 @@
     "NW": "Noroeste"
   },
   "theme": {
+    "stale_data_info": "⚠ No hay datos meteorológicos recientes disponibles (los datos más recientes tienen más de 12 horas).",
     "current_weather": "Tiempo actual",
     "forecast": "Pronóstico",
     "daily_forecast": "Pronóstico diario",
