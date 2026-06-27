@@ -12,7 +12,7 @@ mkdir -p /tmp/$ARGV1\_upgrade
 mkdir -p /tmp/$ARGV1\_upgrade/config
 mkdir -p /tmp/$ARGV1\_upgrade/log
 mkdir -p /tmp/$ARGV1\_upgrade/themes
-chown loxberry:loxberry $ARGV5/log/plugins/$ARGV3/*Emulator.log
+
 if [ -f $ARGV5/config/plugins/$ARGV3/cloudemu_state ]; then
     echo "<INFO> Removing existing cloudemu_state file"
     rm $ARGV5/config/plugins/$ARGV3/cloudemu_state

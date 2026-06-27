@@ -58,7 +58,7 @@ if [ $SERVEREMU -eq 1 ]; then
 		/usr/bin/logger "loxberry-plugin-$pluginname - Reenable Cloud Emulator"
 	fi
 	# Enable
-	$LBHOMEDIR/bin/plugins/$pluginname/cloudemu enable >> $LBPLOG/$pluginname/weather4lox.log 2>&1
+	$LBHOMEDIR/bin/plugins/$pluginname/cloudemu.sh enable >> $LBPLOG/$pluginname/weather4lox.log 2>&1
 fi
 
 # Exit with Status 0
