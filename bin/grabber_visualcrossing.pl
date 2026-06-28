@@ -379,12 +379,12 @@ if ( $daily ) {
         # temperature
         my %tempMax;
         $tempMax{air}       = getFormatted('%.1f', $resDay, 'tempmax');                            # dfc<X>_tt_h      - daily max temperature (°C)
-        $tempMax{feelsLike} = getFormatted('%.1f', $resDay, 'feelslikemax'),                       # dfc<X>_tt_fl_h   - max feels-like temperature
+        $tempMax{feelsLike} = getFormatted('%.1f', $resDay, 'feelslikemax');                       # dfc<X>_tt_fl_h   - max feels-like temperature
         $tempMax{heatIndex} = undef;                                                               # dfc<X>_hi_h      - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
 
         my %tempMin;
         $tempMin{air}       = getFormatted('%.1f', $resDay, 'tempmin');                            # dfc<X>_tt_l      - daily min temperature (°C)
-        $tempMin{feelsLike} = getFormatted('%.1f', $resDay, 'feelslikemin'),                       # dfc<X>_tt_fl_l   - min feels-like temperature
+        $tempMin{feelsLike} = getFormatted('%.1f', $resDay, 'feelslikemin');                       # dfc<X>_tt_fl_l   - min feels-like temperature
         $tempMin{windChill} = undef;  #                                                            # dfc<X>_hi_l      - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
 
         # wind - VC provides only one set of wind data per day, use for both avg and max
@@ -400,17 +400,17 @@ if ( $daily ) {
 
         # humidity - VC provides only one humidity value per day
         my %humidity;
-        $humidity{avg} = getFormatted('%.1f', $resDay, 'humidity'),                                # dfc<X>_hu_a      - average humidity
+        $humidity{avg} = getFormatted('%.1f', $resDay, 'humidity');                                # dfc<X>_hu_a      - average humidity
         $humidity{max} = undef;  	                                                               # dfc<X>_hu_l      - minimum humidity, not available from VC
         $humidity{min} = undef;                                                                    # dfc<X>_hu_h      - maximum humidity, not available from VC
 
         # precipitation
         my %precipitation;
-        $precipitation{probability} = getFormatted('%.0f', $resDay, 'precipprob'),                 # dfc<X>_pop        - probability of precipitation (%)
-        $precipitation{rainHigh}    = getFormatted('%.1f', $resDay, 'precip'),                     # dfc<X>_prec       - precipitation (mm)
-        $precipitation{snowHigh}    = getFormatted('%.1f', $resDay, 'snow'),                       # dfc<X>_snow       - snow height (cm)
+        $precipitation{probability} = getFormatted('%.0f', $resDay, 'precipprob');                 # dfc<X>_pop        - probability of precipitation (%)
+        $precipitation{rainHigh}    = getFormatted('%.1f', $resDay, 'precip');                     # dfc<X>_prec       - precipitation (mm)
+        $precipitation{snowHigh}    = getFormatted('%.1f', $resDay, 'snow');                       # dfc<X>_snow       - snow height (cm)
         $precipitation{duration}    = undef;                                                       #                   - duration of precipitation, not available from VC
-        $precipitation{type}        = getValue($resDay, 'preciptype', 0 ),                         #                   - precipitation type
+        $precipitation{type}        = getValue($resDay, 'preciptype', 0 );                         #                   - precipitation type
 
         # weather codes
         my $iconRaw = getValue($resDay, 'icon');
@@ -491,11 +491,18 @@ if ( $hourly ) {
 
         for my $resHour ( @{$resDay->{hours}} ) {
 
+            # Skip past hours (hourly forecast contains also data for current day from observations)
+            my $source = getValue($resHour, 'source');
+            next if $source eq "obs"; # skip past hours, only use forecast hours
+            
             # Skip past hours (hourly forecast contains also data for current day, subtract one hour margin)
-            my $now = localtime - ONE_HOUR;
+            # my $now = DateTime->now( time_zone => $timezone );
+            # $now->subtract( minutes => 55 );
             my $hourEpoch = getValue($resHour, 'datetimeEpoch');
-            my $hfctime = localtime($hourEpoch);
-            next if $now->epoch > $hfctime->epoch;
+            # my $hfctime = localtime($hourEpoch);
+
+            # LOGDEB "Checking hourly forecast hour: $hourEpoch ($hfctime) against current time: " . $now->epoch . " ($now), skipping if forecast hour is in the past. ($hfctime->epoch > $now->epoch)";
+            # next if $now->epoch > $hfctime->epoch;
  
             # time
             my %time;
@@ -505,7 +512,7 @@ if ( $hourly ) {
             # temperature
             my %temperature;
             $temperature{air}       = getFormatted('%.1f', $resHour, 'temp');                      # hfc<X>_tt        - daily max temperature (°C)
-            $temperature{feelsLike} = getFormatted('%.1f', $resHour, 'feelslike'),                 # hfc<X>_tt_fl     - min feels-like temperature
+            $temperature{feelsLike} = getFormatted('%.1f', $resHour, 'feelslike');                 # hfc<X>_tt_fl     - min feels-like temperature
             $temperature{heatIndex} = undef;
             $temperature{windChill} = undef;
 
@@ -514,16 +521,16 @@ if ( $hourly ) {
             my $windDir = getFormatted('%.0f', $resHour, 'winddir');
             $wind{direction} = $windDir;                                                           # hfc<X>_w_dir     - wind direction (degree)
             $wind{cardinal}  = getWindDirCardinal($windDir);                                       #                  - cardinal and intercardinal directions, "N", "NE", "E", "SE", "S", "SW", "W", "NW" in english
-            $wind{speed}     = getFormatted('%.1f', $resHour, 'windspeed'),                        # hfc<X>_w_sp      - wind speed (km/h)
-            $wind{gust}      = getFormatted('%.1f', $resHour, 'windgust'),                         # hfc<X>_w_sp      - wind gust (km/h)
+            $wind{speed}     = getFormatted('%.1f', $resHour, 'windspeed');                        # hfc<X>_w_sp      - wind speed (km/h)
+            $wind{gust}      = getFormatted('%.1f', $resHour, 'windgust');                         # hfc<X>_w_sp      - wind gust (km/h)
 
             # precipitation
             my %precipitation;
-            $precipitation{probability} = getFormatted('%.0f', $resHour, 'precipprob'),            # hfc<X>_pop         - probability of precipitation (%)
-            $precipitation{rainHigh}    = getFormatted('%.1f', $resHour, 'precip'),                # hfc<X>_prec        - precipitation (mm)
-            $precipitation{snowHigh}    = getFormattedMultiplied('%.1f', 0.1, $resHour, 'snow'),   # hfc<X>_snow        - snow height (cm)
+            $precipitation{probability} = getFormatted('%.0f', $resHour, 'precipprob');            # hfc<X>_pop         - probability of precipitation (%)
+            $precipitation{rainHigh}    = getFormatted('%.1f', $resHour, 'precip');                # hfc<X>_prec        - precipitation (mm)
+            $precipitation{snowHigh}    = getFormattedMultiplied('%.1f', 0.1, $resHour, 'snow');   # hfc<X>_snow        - snow height (cm)
             $precipitation{duration}    = undef;
-            $precipitation{type}        = getValue($resHour, 'preciptype'),                        #                    - precipitation type
+            $precipitation{type}        = getValue($resHour, 'preciptype');                        #                    - precipitation type
 
             # weather codes
             my $iconRaw = getValue($resHour, 'icon');
@@ -620,13 +627,13 @@ if ( $observations ) {
         # temperature
         my %tempMax;
         $tempMax{air}       = getFormatted('%.1f', $resDay, 'tempmax');                            # dob<X>_tt_h      - daily max temperature (°C)
-        $tempMax{feelsLike} = getFormatted('%.1f', $resDay, 'feelslikemax'),                       # dob<X>_tt_fl_h   - max feels-like temperature
+        $tempMax{feelsLike} = getFormatted('%.1f', $resDay, 'feelslikemax');                       # dob<X>_tt_fl_h   - max feels-like temperature
         $tempMax{heatIndex} = undef;                                                               # dob<X>_hi_h      - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
 
         my %tempMin;
         $tempMin{air}       = getFormatted('%.1f', $resDay, 'tempmin');                            # dob<X>_tt_l      - daily min temperature (°C)
-        $tempMin{feelsLike} = getFormatted('%.1f', $resDay, 'feelslikemin'),                       # dob<X>_tt_fl_l   - min feels-like temperature
-        $tempMin{windChill} = undef;  #                                                            # dob<X>_hi_l      - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
+        $tempMin{feelsLike} = getFormatted('%.1f', $resDay, 'feelslikemin');                       # dob<X>_tt_fl_l   - min feels-like temperature
+        $tempMin{windChill} = undef;                                                               # dob<X>_hi_l      - heat index (not present), feel-like temperature considering humidity, only relevant for high temperatures
 
         # wind - VC provides only one set of wind data per day, use for both avg and max
         my $windDir = getFormatted('%.0f', $resDay, 'winddir');
@@ -641,17 +648,17 @@ if ( $observations ) {
 
         # humidity - VC provides only one humidity value per day
         my %humidity;
-        $humidity{avg} = getFormatted('%.1f', $resDay, 'humidity'),                                # dob<X>_hu_a      - average humidity
+        $humidity{avg} = getFormatted('%.1f', $resDay, 'humidity');                                # dob<X>_hu_a      - average humidity
         $humidity{max} = undef;  	                                                               # dob<X>_hu_l      - minimum humidity, not available from VC
         $humidity{min} = undef;                                                                    # dob<X>_hu_h      - maximum humidity, not available from VC
 
         # precipitation
         my %precipitation;
-        $precipitation{probability} = getFormatted('%.0f', $resDay, 'precipprob'),                 # dob<X>_pop        - probability of precipitation (%)
-        $precipitation{rainHigh}    = getFormatted('%.1f', $resDay, 'precip'),                     # dob<X>_prec       - precipitation (mm)
-        $precipitation{snowHigh}    = getFormatted('%.1f', $resDay, 'snow'),                       # dob<X>_snow       - snow height (cm)
+        $precipitation{probability} = getFormatted('%.0f', $resDay, 'precipprob');                 # dob<X>_pop        - probability of precipitation (%)
+        $precipitation{rainHigh}    = getFormatted('%.1f', $resDay, 'precip');                     # dob<X>_prec       - precipitation (mm)
+        $precipitation{snowHigh}    = getFormatted('%.1f', $resDay, 'snow');                       # dob<X>_snow       - snow height (cm)
         $precipitation{duration}    = undef;                                                       #                   - duration of precipitation, not available from VC
-        $precipitation{type}        = getValue($resDay, 'preciptype', 0 ),                         #                   - precipitation type
+        $precipitation{type}        = getValue($resDay, 'preciptype', 0 );                         #                   - precipitation type
 
         # weather codes
         my $iconRaw = getValue($resDay, 'icon');
@@ -743,7 +750,7 @@ if ( $observations ) {
             # temperature
             my %temperature;
             $temperature{air}       = getFormatted('%.1f', $resHour, 'temp');                      # hob<X>_tt        - daily max temperature (°C)
-            $temperature{feelsLike} = getFormatted('%.1f', $resHour, 'feelslike'),                 # hob<X>_tt_fl     - min feels-like temperature
+            $temperature{feelsLike} = getFormatted('%.1f', $resHour, 'feelslike');                 # hob<X>_tt_fl     - min feels-like temperature
             $temperature{heatIndex} = undef;
             $temperature{windChill} = undef;
 
@@ -752,16 +759,16 @@ if ( $observations ) {
             my $windDir = getFormatted('%.0f', $resHour, 'winddir');
             $wind{direction} = $windDir;                                                           # hob<X>_w_dir     - wind direction (degree)
             $wind{cardinal}  = getWindDirCardinal($windDir);                                       #                  - cardinal and intercardinal directions, "N", "NE", "E", "SE", "S", "SW", "W", "NW" in english
-            $wind{speed}     = getFormatted('%.1f', $resHour, 'windspeed'),                        # hob<X>_w_sp      - wind speed (km/h)
-            $wind{gust}      = getFormatted('%.1f', $resHour, 'windgust'),                         # hob<X>_w_sp      - wind gust (km/h)
+            $wind{speed}     = getFormatted('%.1f', $resHour, 'windspeed');                        # hob<X>_w_sp      - wind speed (km/h)
+            $wind{gust}      = getFormatted('%.1f', $resHour, 'windgust');                         # hob<X>_w_sp      - wind gust (km/h)
 
             # precipitation
             my %precipitation;
-            $precipitation{probability} = getFormatted('%.0f', $resHour, 'precipprob'),            # hob<X>_pop         - probability of precipitation (%)
-            $precipitation{rainHigh}    = getFormatted('%.1f', $resHour, 'precip'),                # hob<X>_prec        - precipitation (mm)
-            $precipitation{snowHigh}    = getFormattedMultiplied('%.1f', 0.1, $resHour, 'snow'),   # hob<X>_snow        - snow height (cm)
+            $precipitation{probability} = getFormatted('%.0f', $resHour, 'precipprob');            # hob<X>_pop         - probability of precipitation (%)
+            $precipitation{rainHigh}    = getFormatted('%.1f', $resHour, 'precip');                # hob<X>_prec        - precipitation (mm)
+            $precipitation{snowHigh}    = getFormattedMultiplied('%.1f', 0.1, $resHour, 'snow');   # hob<X>_snow        - snow height (cm)
             $precipitation{duration}    = undef;
-            $precipitation{type}        = getValue($resHour, 'preciptype'),                        #                    - precipitation type
+            $precipitation{type}        = getValue($resHour, 'preciptype');                        #                    - precipitation type
 
             # weather codes
             my $iconRaw = getValue($resHour, 'icon');

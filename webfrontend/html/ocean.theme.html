@@ -820,6 +820,12 @@ function applyLang(strings, vars) {
 
 function getRoundedCurrentHour(date) {
   var rounded = new Date(date);
+  var mins = rounded.getMinutes();
+
+  if (mins >= 30) {
+    rounded.setHours(rounded.getHours() + 1);
+  }
+
   rounded.setMinutes(0, 0, 0);
   return rounded;
 }
