@@ -777,6 +777,8 @@ if ( $daily ) {
 # Fetch hourly data
 ##########################################################################
 
+my $curDtEpoch = getValue($results, 'current', 'dt');
+
 if ( $hourly ) {
 
     my @hourlyArray;
@@ -792,6 +794,8 @@ if ( $hourly ) {
 
         # time
         my $dtEpoch = getValue($resHour, 'dt');
+
+        next if ($dtEpoch <= $curDtEpoch); # skip hours that are in the past (current hour or earlier)
 
         # wind
         my $windDir     = getFormatted('%.0f', $resHour, 'wind_deg');
