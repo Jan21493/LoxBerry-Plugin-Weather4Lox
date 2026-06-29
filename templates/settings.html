@@ -337,7 +337,7 @@
                                                                     <td width="10%"><TMPL_VAR WUGRABBER></td>
                                                                     <td width="10%" align="right"><label id="labelwustationid"><TMPL_VAR SETTINGS.LABEL_STATIONID></label></td>
                                                                     <td width="80%"><input id="wustationid" name="wustationid" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR WUNDERGROUND.STATIONID>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_STATIONID>">
-                                                                    <font size="-1"><a id="linkwundermap" href="https://www.wunderground.com/wundermap/?renderer=2&amp;Units=<TMPL_IF SERVER.METRIC>metric<TMPL_ELSE>e</TMPL_IF>&amp;zoom=15&amp;lat=<TMPL_VAR SERVER.COORDLAT>&amp;lon=<TMPL_VAR SERVER.COORDLONG>&amp;wxstn=1&amp;wxstnmode=tw" target="_blank"><TMPL_VAR SETTINGS.LABEL_WUMAP></a></font></td>
+                                                                    <font size="-1"><a id="linkwundermap" href="https://www.wunderground.com/wundermap/?renderer=2&amp;Units=<TMPL_IF SERVER.METRIC>metric<TMPL_ELSE>english</TMPL_IF>&amp;zoom=15&amp;lat=<TMPL_VAR SERVER.COORDLAT>&amp;lon=<TMPL_VAR SERVER.COORDLONG>&amp;wxstn=1&amp;wxstnmode=tw" target="_blank"><TMPL_VAR SETTINGS.LABEL_WUMAP></a></font></td>
                                                                 </tr>
                                                             </table>
                                                         </td>
@@ -1317,7 +1317,7 @@
     function updateWundermapLink() {
         var lat   = $('#coordlat').val();
         var lon   = $('#coordlong').val();
-        var units = $('select[name=metric]').val() === '1' ? 'metric' : 'e';
+        var units = $('select[name=metric]').val() === '1' ? 'metric' : 'english';
         var url   = 'https://www.wunderground.com/wundermap/?renderer=2&Units=' + units + '&zoom=15';
         if (lat !== '') url += '&lat=' + lat;
         if (lon !== '') url += '&lon=' + lon;
