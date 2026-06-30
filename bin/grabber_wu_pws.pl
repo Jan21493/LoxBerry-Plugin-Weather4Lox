@@ -88,11 +88,8 @@ if ($verbose) {
 LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
-requireOrLogdie('DateTime::Format::ISO8601');
-
-# all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();
-LOGDEB "Using timezone: $timezone, current local system time is " . DateTime->now( time_zone => $timezone )->iso8601();
+LOGDEB "Using timezone: $timezone, current local system time is " . localtime->datetime;
 
 # see https://developer.weather.com/docs/openapi/pws-observations-current-conditions-2-0/get-v2-pws-observations-current-by-stationid
 my $apikey = apiCall(
@@ -216,10 +213,10 @@ $cur->{precipitation} = \%precipitation;
 my $stationID = getValue($resCurrent, 'observations', 0, 'stationID'); # station ID from WU data, e.g. ISCHLESW69
 my $obsTimeLocal = getValue($resCurrent, 'observations', 0, 'obsTimeLocal'); # observation time in local time, e.g. 2026-03-16 00:44:29
 
-my $generatedAt = DateTime->now( time_zone => $timezone );
+my $generatedAt = localtime->datetime;
 $envelope->{$grabberKey} = {
     filename        => "$lbplogdir/$weatherKey.json",
-    generatedAt     => $generatedAt->iso8601(),
+    generatedAt     => $generatedAt,
     observedAt      => $obsTimeLocal,
     grabberLabel    => $grabberLabel,
     grabberScript   => $grabberFile,
@@ -232,7 +229,7 @@ if ($refresh < $envelope->{refresh}) {
     LOGINF "Reducing refresh interval for $weatherKey weather data from $envelope->{refresh} to $refresh minutes.";
     $envelope->{refresh} = $refresh;
 }
-$envelope->{generatedAt} = $generatedAt->iso8601();
+$envelope->{generatedAt} = $generatedAt;
 
 # Write JSON back to file
 writeJsonFile($lbplogdir, $weatherKey, $envelope);
@@ -274,10 +271,6 @@ if ($history) {
 
         # Get observation time and convert to local time zone
         my $obsEpoch = getValue($resHour, 'epoch'); # observation time in epoch seconds
-        my $dtObs = DateTime->from_epoch(
-            epoch     => $obsEpoch,
-            time_zone => $timezone,   # direkt in lokaler Timezone
-        );
 
         # time
         if (defined $obsEpoch && defined $hObsHour->{time}{epoch} && abs($obsEpoch - $hObsHour->{time}{epoch}) > 3600) {
@@ -382,10 +375,10 @@ if ($history) {
     my $stationID = getValue($resObservations, 'observations', 0, 'stationID'); # station ID from WU data, e.g. ISCHLESW69
     my $obsTimeLocal = getValue($resObservations, 'observations', 0, 'obsTimeLocal'); # observation time in local time, e.g. 2026-03-16 00:44:29
 
-    my $generatedAt = DateTime->now( time_zone => $timezone );
+    my $generatedAt = localtime->datetime;
     $envelope->{$grabberKey} = {
         filename        => "$lbplogdir/$weatherKey.json",
-        generatedAt     => $generatedAt->iso8601(),
+        generatedAt     => $generatedAt,
         observedAt      => $obsTimeLocal,
         grabberLabel    => $grabberLabel,
         grabberScript   => $grabberFile,
@@ -393,7 +386,7 @@ if ($history) {
         schemaVersion   => "v1.0",
     };
     $envelope->{$weatherKey} = $hObs;
-    $envelope->{generatedAt} = $generatedAt->iso8601();
+    $envelope->{generatedAt} = $generatedAt;
 
     # Write JSON back to file
     writeJsonFile($lbplogdir, $weatherKey, $envelope);
