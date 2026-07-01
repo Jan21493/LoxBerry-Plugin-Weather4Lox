@@ -49,6 +49,7 @@ my $version = LoxBerry::System::pluginversion();
 # params from config
 my $pcfg             = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $city             = $pcfg->param("WETTERONLINE.STATIONID");
+my $maskKeys     = $pcfg->param("SERVER.MASKKEYS");
 
 # names for JSON 
 my $grabberFile     = basename(__FILE__);
@@ -92,7 +93,7 @@ my $verbose = '';
 my $current = '';
 my $daily = '';
 my $hourly = '';
-my $maskKeys = 1;
+
 GetOptions ('verbose'  => \$verbose,
             'interval=i' => \$refresh,
             'quiet'    => sub { $verbose = 0 },
@@ -177,7 +178,7 @@ my $resCurrent = apiCall(
     # maskkeys => $maskKeys,    # no masking needed here as there are no secret API keys
     # keyparam => 'appid',
     # apikey => $apiKey,
-    info => "for Location $city (Current Weather Data)",
+    info => "for location $city (current weather data)",
 );
 
 # Get weather data from wetteronline.de (API request) for daily conditions
@@ -186,7 +187,7 @@ my $resDaily = apiCall(
     # maskkeys => $maskKeys,    # no masking needed here as there are no secret API keys
     # keyparam => 'appid',
     # apikey => $apiKey,
-    info => "for Location $city (Daily Weather Data)",
+    info => "for location $city (daily weather data)",
 );
 
 # Get weather data from wetteronline.de (API request) for hourly conditions
@@ -195,7 +196,7 @@ my $resHourly = apiCall(
     # maskkeys => $maskKeys,    # no masking needed here as there are no secret API keys
     # keyparam => 'appid',
     # apikey => $apiKey,
-    info => "for Location $city (Hourly Weather Data)",
+    info => "for location $city (hourly weather data)",
 );
 
 my $t;
@@ -529,17 +530,8 @@ sub isNighttime {
 # Fetch common data
 ##########################################################################
 
-# date/time in different ways for different use cases in W4L (e.g. epoch for calculations, ISO format for display, timezone info for reference)
-my $dtCurrent = _parseIso8601($resCurrent->{current}->{date});   # returns epoch
-
-my ($tzShort, $tzOffset);
-{
-    local $ENV{TZ} = $timezone;
-    POSIX::tzset();
-    $tzShort  = POSIX::strftime('%Z', localtime($dtCurrent));
-    $tzOffset = POSIX::strftime('%z', localtime($dtCurrent));
-}
-POSIX::tzset();
+# WetterOnline provides the current date/time in ISO 8601 format, e.g. "2026-07-01T18:26:48+00:00" (always UTC)
+my $currentEpoch = _parseIso8601($resCurrent->{current}->{date});   # returns epoch
 
 # location information
 my $cityName = getValue($resGeodata, 'locationname');
@@ -551,7 +543,7 @@ my $path = getValue($resGeodata, 'path');
 my @locpath = $path ? split(/;/, $path) : ();
 my $country = $locpath[5] // undef; 
 
-# add location information once
+# add location information once, timezone and timezone abbreviation are retrieved from localtime() and not from API response
 my $location = {
     city         => $cityName,                                                           # cur_loc_n, e.g. "Schwarzenbek"
     country      => $country,                                                            # country name, e.g. Deutschland
@@ -560,8 +552,8 @@ my $location = {
     latitude     => getFormatted('%.3f', $resGeodata, 'lat'),                            # latitude
     longitude    => getFormatted('%.3f', $resGeodata, 'lon'),                            # longitude
     timezone     => $timezone,                                                           # timezone string (e.g. "Europe/Berlin")
-    tzShort      => $tzShort,                                                            # timezone abbreviation (e.g. "CET")
-    tzOffset     => $tzOffset,                                                           # timezone offset (e.g. "+0100")
+    tzShort      => localtime->strftime('%Z'),                                           # timezone abbreviation (e.g. "CET")
+    tzOffset     => localtime->strftime('%z'),                                           # timezone offset (e.g. "+0100")
 };
 
 
@@ -574,12 +566,13 @@ if ( $current ) {
     # Build clean record
     my %currentData;
 
-    LOGINF "Reading current weather data from API response into W4L structure at " . _epochToIso($dtCurrent, $timezone) . ".";
+    my $dtCurrent = _epochToIso($currentEpoch, $timezone);
+    LOGINF "Reading current weather data from API response into W4L structure. Observation time was $dtCurrent.";
 
+    # time
     my %time;
-    # $time{date}      = getValue($resCurrent, 'current', 'date');
-    $time{datetime}  = _epochToIso($dtCurrent, $timezone);                                                                     # cur_date_des
-    $time{epoch}     = $dtCurrent;                                                                                              # cur_date
+    $time{datetime}  = $dtCurrent;                                                                                            # cur_date_des - is always in local time of Loxberry
+    $time{epoch}     = $currentEpoch;                                                                                         # cur_date     - is always in UNIX epoch time
 
     # cur_date_tz_des (e.g. Europe/Berlin), cur_date_tz_des_sh (e.g. "CET"), cur_date_tz (e.g. "+0100") are send in location section 
 
@@ -724,7 +717,7 @@ if ( $daily ) {
     my $results;
     my $day = 0;               # used for days, starts with 0 for current day, 1 for next day, etc.
 
-    LOGINF "Reading daily weather data from API response into W4L structure at $dtCurrent.";
+    LOGINF "Reading daily weather data from API response into W4L structure.";
 
     # it is assumed, that the elements are ordered by time (ascending)
     for my $results (@{$resDaily}) {
@@ -924,7 +917,7 @@ if ( $hourly ) {
     my $results;
     my $hour = 1;                # used for hours, starts with 1 for first forecasted hour, 2 for next hour, etc.
 
-    LOGINF "Reading hourly weather data from API response into W4L structure at $dtCurrent.";
+    LOGINF "Reading hourly weather data from API response into W4L structure.";
 
     # it is assumed, that the elements are ordered by time (ascending)
     for my $results (@{$resHourly->{hours}}) {
