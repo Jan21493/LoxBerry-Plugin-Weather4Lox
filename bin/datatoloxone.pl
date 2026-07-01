@@ -189,22 +189,24 @@ our $sendUDPqueue;
 # Get timezone offset in seconds from tz_offset, e.g. "+0100" => 3600, "-0230" => -9000
 my $tzseconds = tzOffsetSeconds($location->{tzOffset} // "");
 
+# Warn if the location timezone differs from the system timezone; all times are shown in system timezone
+if (defined $location->{timezone} && $location->{timezone} ne '' && $location->{timezone} ne $timezone) {
+    LOGWARN "System timezone ($timezone) does not match location timezone ($location->{timezone}). All times are shown in system timezone ($timezone).";
+}
+
 # Times are send in local time 
 my $epoch = $cur->{time}{epoch} // 0;
 if ($epoch == 0) {
     $epoch = time();
-    LOGWARN "Time stamp for current weather observations is not set properly, using current time (" . _epochToIso($epoch, $location->{timezone}) . ") instead.";
+    LOGWARN "Time stamp for current weather observations is not set properly, using current time (" . _epochToIso($epoch, $timezone) . ") instead.";
 }
-my $curDate = _epochToTimePiece($epoch, $location->{timezone});
+my $curDate = _epochToTimePiece($epoch, $timezone);
 my $midnightEpoch;
 {
-    local $ENV{TZ} = $location->{timezone} // 'UTC';
-    POSIX::tzset();
     my @lt = localtime($epoch);
     $lt[0] = $lt[1] = $lt[2] = 0;
     $midnightEpoch = POSIX::mktime(@lt);
 }
-POSIX::tzset();
 my $curDateLoxEpoch = toLoxEpoch($midnightEpoch);
 
 my $doLog = 1; # log the first data set in detail, but not all subsequent ones to avoid log flooding
@@ -304,17 +306,14 @@ foreach my $dfcEntry (@$dfc) {
     LOGINF "Processing daily forecast entry for day $per (dfc${per}) with date " . $dfcEntry->{time}{datetime} . ($toMS ? " and sending data to MS (as configured)." : ", but not sending data to MS (as configured).");
 
     # Times are send in local time 
-    my $dfcDate = _epochToTimePiece($dfcEntry->{time}{epoch}, $location->{timezone});
+    my $dfcDate = _epochToTimePiece($dfcEntry->{time}{epoch}, $timezone);
 
     my $dfcDate_midnightEpoch;
     {
-        local $ENV{TZ} = $location->{timezone} // 'UTC';
-        POSIX::tzset();
         my @lt = localtime($dfcEntry->{time}{epoch});
         $lt[0] = $lt[1] = $lt[2] = 0;
         $dfcDate_midnightEpoch = POSIX::mktime(@lt);
     }
-    POSIX::tzset();
     my $dfcDate_LoxoneEpoch = toLoxEpoch($dfcDate_midnightEpoch);
 
     # sending to Loxone Miniserver via MQTT, HTML webpage and UDP with logging of first day (today) in detail
@@ -322,13 +321,13 @@ foreach my $dfcEntry (@$dfc) {
     sendToLox($toMS, $doLog, "dfc${per}_date", toLoxEpoch($dfcEntry->{time}{epoch}));    # Loxone epoch (1.1.2009, MEZ), e.g. 542934004
     sendToLox($toMS, $doLog, "dfc${per}_day", encode_utf8(sprintf("%02d", $dfcDate->mday)));
     sendToLox($toMS, $doLog, "dfc${per}_month", encode_utf8(sprintf("%02d", $dfcDate->mon)));
-    sendToLox($toMS, $doLog, "dfc${per}_monthn", encode_utf8($dfcDate->strftime('%B')));
-    sendToLox($toMS, $doLog, "dfc${per}_monthn_sh", encode_utf8($dfcDate->strftime('%b')));
+    sendToLox($toMS, $doLog, "dfc${per}_monthn", encode_utf8($langData->{theme}{months}[$dfcDate->mon - 1] // $dfcDate->strftime('%B')));
+    sendToLox($toMS, $doLog, "dfc${per}_monthn_sh", encode_utf8($langData->{theme}{months_short}[$dfcDate->mon - 1] // $dfcDate->strftime('%b')));
     sendToLox($toMS, $doLog, "dfc${per}_year", encode_utf8($dfcDate->year));
     sendToLox($toMS, $doLog, "dfc${per}_hour", encode_utf8(sprintf("%02d", $dfcDate->hour)));
     sendToLox($toMS, $doLog, "dfc${per}_min", encode_utf8(sprintf("%02d", $dfcDate->min)));
-    sendToLox($toMS, $doLog, "dfc${per}_wday", encode_utf8($dfcDate->strftime('%A')));
-    sendToLox($toMS, $doLog, "dfc${per}_wday_sh", encode_utf8($dfcDate->strftime('%a')));
+    sendToLox($toMS, $doLog, "dfc${per}_wday", encode_utf8($langData->{theme}{weekdays}[$dfcDate->wday - 1] // $dfcDate->strftime('%A')));
+    sendToLox($toMS, $doLog, "dfc${per}_wday_sh", encode_utf8($langData->{theme}{weekdays_short}[$dfcDate->wday - 1] // $dfcDate->strftime('%a')));
     sendToLox($toMS, $doLog, "dfc${per}_tt_h", !$metric ? $dfcEntry->{temperature}{max}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{temperature}{max}{air});
     sendToLox($toMS, $doLog, "dfc${per}_tt_l", !$metric ? $dfcEntry->{temperature}{min}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{temperature}{min}{air});
     sendToLox($toMS, $doLog, "dfc${per}_pop", $dfcEntry->{precipitation}{probability});
@@ -395,20 +394,20 @@ foreach my $hfcEntry (@$hfc) {
     if ( $per > 72 ) { last; }
 
     # Times are send in local time 
-    my $hfc_date = _epochToTimePiece($hfcEntry->{time}{epoch}, $location->{timezone});
+    my $hfc_date = _epochToTimePiece($hfcEntry->{time}{epoch}, $timezone);
 
     # sending to Loxone Miniserver via MQTT, HTML webpage and UDP with logging of first hour in detail
     sendToLox($toMS, $doLog, "hfc${per}_per", $per);
     sendToLox($toMS, $doLog, "hfc${per}_date", toLoxEpoch($hfcEntry->{time}{epoch}));
     sendToLox($toMS, $doLog, "hfc${per}_day", encode_utf8(sprintf("%02d", $hfc_date->mday)));
     sendToLox($toMS, $doLog, "hfc${per}_month", encode_utf8(sprintf("%02d", $hfc_date->mon)));
-    sendToLox($toMS, $doLog, "hfc${per}_monthn", encode_utf8($hfc_date->strftime('%B')));
-    sendToLox($toMS, $doLog, "hfc${per}_monthn_sh", encode_utf8($hfc_date->strftime('%b')));
+    sendToLox($toMS, $doLog, "hfc${per}_monthn", encode_utf8($langData->{theme}{months}[$hfc_date->mon - 1] // $hfc_date->strftime('%B')));
+    sendToLox($toMS, $doLog, "hfc${per}_monthn_sh", encode_utf8($langData->{theme}{months_short}[$hfc_date->mon - 1] // $hfc_date->strftime('%b')));
     sendToLox($toMS, $doLog, "hfc${per}_year", encode_utf8($hfc_date->year));
     sendToLox($toMS, $doLog, "hfc${per}_hour", encode_utf8(sprintf("%02d", $hfc_date->hour)));
     sendToLox($toMS, $doLog, "hfc${per}_min", encode_utf8(sprintf("%02d", $hfc_date->min)));
-    sendToLox($toMS, $doLog, "hfc${per}_wday", encode_utf8($hfc_date->strftime('%A')));
-    sendToLox($toMS, $doLog, "hfc${per}_wday_sh", encode_utf8($hfc_date->strftime('%a')));
+    sendToLox($toMS, $doLog, "hfc${per}_wday", encode_utf8($langData->{theme}{weekdays}[$hfc_date->wday - 1] // $hfc_date->strftime('%A')));
+    sendToLox($toMS, $doLog, "hfc${per}_wday_sh", encode_utf8($langData->{theme}{weekdays_short}[$hfc_date->wday - 1] // $hfc_date->strftime('%a')));
     sendToLox($toMS, $doLog, "hfc${per}_tt", !$metric ? $hfcEntry->{temperature}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{air});
     sendToLox($toMS, $doLog, "hfc${per}_tt_fl", !$metric ? $hfcEntry->{temperature}{feelsLike}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{feelsLike});
     sendToLox($toMS, $doLog, "hfc${per}_pop", $hfcEntry->{precipitation}{probability});
@@ -934,7 +933,7 @@ if ($emu) {
         if ( $i >= 168 ) { last; }
 
         # Construct hfc date from epoch (per Research Pattern 7)
-        my $hfc_date = _epochToTimePiece($hfcEntry->{time}{epoch}, $location->{timezone});
+        my $hfc_date = _epochToTimePiece($hfcEntry->{time}{epoch}, $timezone);
 
         # Calculate precipitation in the last hour and snow fraction for current conditions
         my $rain_mm = $hfcEntry->{precipitation}{rainHigh} // 0;
