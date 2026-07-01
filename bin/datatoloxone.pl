@@ -27,6 +27,7 @@ use LoxBerry::Log;
 use Getopt::Long;
 use IO::Socket; # For sending UDP packages
 use Time::HiRes;
+use Time::Piece;
 use Net::MQTT::Simple;
 #use Data::Dumper;
 use Config::Simple;

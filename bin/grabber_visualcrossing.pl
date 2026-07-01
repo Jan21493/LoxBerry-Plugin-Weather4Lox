@@ -31,7 +31,6 @@ use JSON::PP;
 use File::Copy;
 use Getopt::Long;
 use Time::Piece;
-use Time::Seconds;
 
 require "$lbpbindir/grabber_utils.pl";
 
