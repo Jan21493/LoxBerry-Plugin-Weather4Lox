@@ -26,7 +26,6 @@ use LoxBerry::IO;
 use LoxBerry::Log;
 use Getopt::Long;
 use IO::Socket; # For sending UDP packages
-use DateTime;
 use Time::HiRes;
 use Net::MQTT::Simple;
 #use Data::Dumper;
@@ -34,7 +33,7 @@ use Config::Simple;
 use JSON::PP ();
 use utf8;
 use Encode qw(encode_utf8);
-use POSIX qw(setlocale LC_NUMERIC);
+use POSIX qw(setlocale LC_NUMERIC mktime);
 
 use constant MM_TO_INCH    => 0.0393700787;  # millimetres to inches
 use constant CM_TO_INCH    => 0.393700787;   # centimetres to inches
@@ -108,11 +107,10 @@ LOGSTART "Weather4Lox $scriptLabel process started";
 LOGDEB "This is $0 Version $version";
 
 require "$lbpbindir/grabber_utils.pl";
-requireOrLogdie('DateTime::Format::ISO8601');
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();
-LOGDEB "Using timezone: $timezone, current local system time is " . DateTime->now( time_zone => $timezone )->iso8601();
+LOGDEB "Using timezone: $timezone, current local system time is " . _epochToIso(time(), $timezone);
 
 ##########################################################################
 # Main program
@@ -193,16 +191,21 @@ my $tzseconds = tzOffsetSeconds($location->{tzOffset} // "");
 
 # Times are send in local time 
 my $epoch = $cur->{time}{epoch} // 0;
-my $curDate;
-if ($epoch != 0) {
-    $curDate = DateTime->from_epoch(epoch => $epoch, time_zone => $location->{timezone});
-} else {
-    $curDate = DateTime->now( time_zone => $location->{timezone} );
-    $epoch = $curDate->epoch;
-    LOGWARN "Time stamp for current weather observations is not set properly, using current time (" . $curDate->iso8601() . ") instead.";
+if ($epoch == 0) {
+    $epoch = time();
+    LOGWARN "Time stamp for current weather observations is not set properly, using current time (" . _epochToIso($epoch, $location->{timezone}) . ") instead.";
 }
-my $curDateMidnight = $curDate->clone->set(hour => 0, minute => 0, second => 0);
-my $curDateLoxEpoch = toLoxEpoch($curDateMidnight->epoch);
+my $curDate = _epochToTimePiece($epoch, $location->{timezone});
+my $midnightEpoch;
+{
+    local $ENV{TZ} = $location->{timezone} // 'UTC';
+    POSIX::tzset();
+    my @lt = localtime($epoch);
+    $lt[0] = $lt[1] = $lt[2] = 0;
+    $midnightEpoch = POSIX::mktime(@lt);
+}
+POSIX::tzset();
+my $curDateLoxEpoch = toLoxEpoch($midnightEpoch);
 
 my $doLog = 1; # log the first data set in detail, but not all subsequent ones to avoid log flooding
 
@@ -212,11 +215,11 @@ sendToLox($toMS, $doLog, "cur_date_des", $cur->{time}{datetime});               
 sendToLox($toMS, $doLog, "cur_date_tz_des_sh", $location->{timezone});                             # IANA timezone name, e.g. Europe/Berlin
 sendToLox($toMS, $doLog, "cur_date_tz_des", $location->{tzShort});                                 # Time Zone Abbreviation, e.g. CET
 sendToLox($toMS, $doLog, "cur_date_tz", $location->{tzOffset});                                    # Numeric timezone offset, e.g. +0100
-sendToLox($toMS, $doLog, "cur_day", encode_utf8(sprintf("%02d", $curDate->day)));
-sendToLox($toMS, $doLog, "cur_month", encode_utf8(sprintf("%02d", $curDate->month)));
+sendToLox($toMS, $doLog, "cur_day", encode_utf8(sprintf("%02d", $curDate->mday)));
+sendToLox($toMS, $doLog, "cur_month", encode_utf8(sprintf("%02d", $curDate->mon)));
 sendToLox($toMS, $doLog, "cur_year", encode_utf8($curDate->year));
 sendToLox($toMS, $doLog, "cur_hour", encode_utf8(sprintf("%02d", $curDate->hour)));
-sendToLox($toMS, $doLog, "cur_min", encode_utf8(sprintf("%02d", $curDate->minute)));
+sendToLox($toMS, $doLog, "cur_min", encode_utf8(sprintf("%02d", $curDate->min)));
 sendToLox($toMS, $doLog, "cur_loc_n", encode_utf8($location->{city}));
 sendToLox($toMS, $doLog, "cur_loc_c", encode_utf8($location->{country}));
 sendToLox($toMS, $doLog, "cur_loc_ccode", encode_utf8($location->{countryCode}));
@@ -255,7 +258,7 @@ sendToLox($toMS, $doLog, "cur_ozone", $cur->{airQuality}{ozone});
 sendToLox($toMS, $doLog, "cur_sky", $cur->{cloudCover});
 
 # Use night icons between sunset and sunrise
-my $curSec = timeToSec($curDate->hour . ":" . $curDate->minute);
+my $curSec = timeToSec($curDate->hour . ":" . $curDate->min);
 my $sunriseSec = timeToSec($cur->{sunrise}) // 6;
 my $sunsetSec = timeToSec($cur->{sunset}) // 18;
 my $iconName = '';
@@ -301,23 +304,31 @@ foreach my $dfcEntry (@$dfc) {
     LOGINF "Processing daily forecast entry for day $per (dfc${per}) with date " . $dfcEntry->{time}{datetime} . ($toMS ? " and sending data to MS (as configured)." : ", but not sending data to MS (as configured).");
 
     # Times are send in local time 
-    my $dfcDate = DateTime->from_epoch(epoch => $dfcEntry->{time}{epoch}, time_zone => $location->{timezone});
+    my $dfcDate = _epochToTimePiece($dfcEntry->{time}{epoch}, $location->{timezone});
 
-    my $dfcDate_midnight = $dfcDate->clone->set(hour => 0, minute => 0, second => 0);
-    my $dfcDate_LoxoneEpoch = toLoxEpoch($dfcDate_midnight->epoch);
+    my $dfcDate_midnightEpoch;
+    {
+        local $ENV{TZ} = $location->{timezone} // 'UTC';
+        POSIX::tzset();
+        my @lt = localtime($dfcEntry->{time}{epoch});
+        $lt[0] = $lt[1] = $lt[2] = 0;
+        $dfcDate_midnightEpoch = POSIX::mktime(@lt);
+    }
+    POSIX::tzset();
+    my $dfcDate_LoxoneEpoch = toLoxEpoch($dfcDate_midnightEpoch);
 
     # sending to Loxone Miniserver via MQTT, HTML webpage and UDP with logging of first day (today) in detail
     sendToLox($toMS, $doLog, "dfc${per}_per", $per); # period starting with 0 for today, 1 for tomorrow, ...
     sendToLox($toMS, $doLog, "dfc${per}_date", toLoxEpoch($dfcEntry->{time}{epoch}));    # Loxone epoch (1.1.2009, MEZ), e.g. 542934004
-    sendToLox($toMS, $doLog, "dfc${per}_day", encode_utf8(sprintf("%02d", $dfcDate->day)));
-    sendToLox($toMS, $doLog, "dfc${per}_month", encode_utf8(sprintf("%02d", $dfcDate->month)));
-    sendToLox($toMS, $doLog, "dfc${per}_monthn", encode_utf8($dfcDate->month_name));
-    sendToLox($toMS, $doLog, "dfc${per}_monthn_sh", encode_utf8($dfcDate->month_abbr));
+    sendToLox($toMS, $doLog, "dfc${per}_day", encode_utf8(sprintf("%02d", $dfcDate->mday)));
+    sendToLox($toMS, $doLog, "dfc${per}_month", encode_utf8(sprintf("%02d", $dfcDate->mon)));
+    sendToLox($toMS, $doLog, "dfc${per}_monthn", encode_utf8($dfcDate->strftime('%B')));
+    sendToLox($toMS, $doLog, "dfc${per}_monthn_sh", encode_utf8($dfcDate->strftime('%b')));
     sendToLox($toMS, $doLog, "dfc${per}_year", encode_utf8($dfcDate->year));
     sendToLox($toMS, $doLog, "dfc${per}_hour", encode_utf8(sprintf("%02d", $dfcDate->hour)));
-    sendToLox($toMS, $doLog, "dfc${per}_min", encode_utf8(sprintf("%02d", $dfcDate->minute)));
-    sendToLox($toMS, $doLog, "dfc${per}_wday", encode_utf8($dfcDate->day_name));
-    sendToLox($toMS, $doLog, "dfc${per}_wday_sh", encode_utf8($dfcDate->day_abbr));
+    sendToLox($toMS, $doLog, "dfc${per}_min", encode_utf8(sprintf("%02d", $dfcDate->min)));
+    sendToLox($toMS, $doLog, "dfc${per}_wday", encode_utf8($dfcDate->strftime('%A')));
+    sendToLox($toMS, $doLog, "dfc${per}_wday_sh", encode_utf8($dfcDate->strftime('%a')));
     sendToLox($toMS, $doLog, "dfc${per}_tt_h", !$metric ? $dfcEntry->{temperature}{max}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{temperature}{max}{air});
     sendToLox($toMS, $doLog, "dfc${per}_tt_l", !$metric ? $dfcEntry->{temperature}{min}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{temperature}{min}{air});
     sendToLox($toMS, $doLog, "dfc${per}_pop", $dfcEntry->{precipitation}{probability});
@@ -384,20 +395,20 @@ foreach my $hfcEntry (@$hfc) {
     if ( $per > 72 ) { last; }
 
     # Times are send in local time 
-    my $hfc_date = DateTime->from_epoch(epoch => $hfcEntry->{time}{epoch}, time_zone => $location->{timezone});
+    my $hfc_date = _epochToTimePiece($hfcEntry->{time}{epoch}, $location->{timezone});
 
     # sending to Loxone Miniserver via MQTT, HTML webpage and UDP with logging of first hour in detail
     sendToLox($toMS, $doLog, "hfc${per}_per", $per);
     sendToLox($toMS, $doLog, "hfc${per}_date", toLoxEpoch($hfcEntry->{time}{epoch}));
-    sendToLox($toMS, $doLog, "hfc${per}_day", encode_utf8(sprintf("%02d", $hfc_date->day)));
-    sendToLox($toMS, $doLog, "hfc${per}_month", encode_utf8(sprintf("%02d", $hfc_date->month)));
-    sendToLox($toMS, $doLog, "hfc${per}_monthn", encode_utf8($hfc_date->month_name));
-    sendToLox($toMS, $doLog, "hfc${per}_monthn_sh", encode_utf8($hfc_date->month_abbr));
+    sendToLox($toMS, $doLog, "hfc${per}_day", encode_utf8(sprintf("%02d", $hfc_date->mday)));
+    sendToLox($toMS, $doLog, "hfc${per}_month", encode_utf8(sprintf("%02d", $hfc_date->mon)));
+    sendToLox($toMS, $doLog, "hfc${per}_monthn", encode_utf8($hfc_date->strftime('%B')));
+    sendToLox($toMS, $doLog, "hfc${per}_monthn_sh", encode_utf8($hfc_date->strftime('%b')));
     sendToLox($toMS, $doLog, "hfc${per}_year", encode_utf8($hfc_date->year));
     sendToLox($toMS, $doLog, "hfc${per}_hour", encode_utf8(sprintf("%02d", $hfc_date->hour)));
-    sendToLox($toMS, $doLog, "hfc${per}_min", encode_utf8(sprintf("%02d", $hfc_date->minute)));
-    sendToLox($toMS, $doLog, "hfc${per}_wday", encode_utf8($hfc_date->day_name));
-    sendToLox($toMS, $doLog, "hfc${per}_wday_sh", encode_utf8($hfc_date->day_abbr));
+    sendToLox($toMS, $doLog, "hfc${per}_min", encode_utf8(sprintf("%02d", $hfc_date->min)));
+    sendToLox($toMS, $doLog, "hfc${per}_wday", encode_utf8($hfc_date->strftime('%A')));
+    sendToLox($toMS, $doLog, "hfc${per}_wday_sh", encode_utf8($hfc_date->strftime('%a')));
     sendToLox($toMS, $doLog, "hfc${per}_tt", !$metric ? $hfcEntry->{temperature}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{air});
     sendToLox($toMS, $doLog, "hfc${per}_tt_fl", !$metric ? $hfcEntry->{temperature}{feelsLike}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{feelsLike});
     sendToLox($toMS, $doLog, "hfc${per}_pop", $hfcEntry->{precipitation}{probability});
@@ -881,8 +892,8 @@ if ($emu) {
     print F ";" . ($cur->{sunrise} // "-") . ";" . ($cur->{sunset} // "-") . ";\n";
     # Data line for current conditions (semicolon separated, in the order expected by Loxone)
     print F $curDate->strftime('%d.%m.%Y') . ";\t";                      # Local date in format "dd.mm.yyyy"
-    print F $curDate->day_abbr() . ";\t";                                # Weekday (abbreviated)
-    printf F "%02d;\t",$curDate->hour();                                 # Local time (hour)
+    print F $curDate->strftime('%a') . ";\t";                            # Weekday (abbreviated)
+    printf F "%02d;\t",$curDate->hour;                                 # Local time (hour)
     printf F "%1.2f;\t", $cur->{temperature}{air};                       # Temperature in Celsius
     printf F "%1.1f;\t", $cur->{temperature}{feelsLike} // $cur->{temperature}{air} // 0 ;       # Feels like temperature in Celsius
     printf F "%1d;\t", $cur->{wind}{speed} // 0;                         # Wind speed in km/h
@@ -923,7 +934,7 @@ if ($emu) {
         if ( $i >= 168 ) { last; }
 
         # Construct hfc date from epoch (per Research Pattern 7)
-        my $hfc_date = DateTime->from_epoch(epoch => $hfcEntry->{time}{epoch}, time_zone => $location->{timezone});
+        my $hfc_date = _epochToTimePiece($hfcEntry->{time}{epoch}, $location->{timezone});
 
         # Calculate precipitation in the last hour and snow fraction for current conditions
         my $rain_mm = $hfcEntry->{precipitation}{rainHigh} // 0;
@@ -934,8 +945,8 @@ if ($emu) {
 
         # "local date;weekday;local time;temperature(C);feeledTemperature(C);windspeed(km/h);winddirection(degr);wind gust(km/h);low clouds(%);medium clouds(%);high clouds(%);precipitation(mm);probability of Precip(%);snowFraction;sea level pressure(hPa);relative humidity(%);CAPE;picto-code;radiation (W/m2);\n";
         print F $hfc_date->strftime('%d.%m.%Y') . ";\t";                           # Local date in format "dd.mm.yyyy"
-        print F $hfc_date->day_abbr() . ";\t";                                     # Weekday abbreviation
-        printf F "%02d;\t",$hfc_date->hour();                                      # Local hour
+        print F $hfc_date->strftime('%a') . ";\t";                                 # Weekday abbreviation
+        printf F "%02d;\t",$hfc_date->hour;
         printf F "%1.2f;\t", $hfcEntry->{temperature}{air} // 0;                   # Temperature in Celsius
         printf F "%1.2f;\t", $hfcEntry->{temperature}{feelsLike} // 0;             # Feels like temperature in Celsius
         printf F "%1d;\t", $hfcEntry->{wind}{speed} // 0;                          # Wind speed in km/h

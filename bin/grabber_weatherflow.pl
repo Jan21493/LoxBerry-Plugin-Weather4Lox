@@ -89,12 +89,11 @@ if ($verbose) {
 LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
-requireOrLogdie('DateTime::Format::ISO8601');
 requireOrLogdie('Astro::MoonPhase');
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();
-LOGDEB "Using timezone: $timezone, current local system time is " . DateTime->now( time_zone => $timezone )->iso8601();
+LOGDEB "Using timezone: $timezone, current local system time is " . _epochToIso(time(), $timezone);
 
 # Get forecast data from Weatherflow Server
 # API: https://weatherflow.github.io/Tempest/api/swagger/#/forecast
@@ -177,7 +176,7 @@ if ($timezone ne $timezoneFromApi) {
 # Derive timezone short name and offset from current epoch
 my $currentEpoch = $forecast_json->{current_conditions}->{time};
 
-my $generatedAt = DateTime->now( time_zone => $timezone );
+my $generatedAt = _epochToIso(time(), $timezone);
 
 # Timezone short and offset via POSIX
 my ($tzShort, $tzOffset);
@@ -313,11 +312,11 @@ if ( $current ) {
     my $weatherKey = "current";
     my $envelope = {
         refresh     => $refresh,
-        generatedAt => $generatedAt->iso8601(),
+        generatedAt => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt->iso8601(),
+            generatedAt   => $generatedAt,
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",
@@ -437,11 +436,11 @@ if ( $daily ) {
     my $weatherKey = "dailyforecast";
     my $envelope = {
         refresh     => $refresh,
-        generatedAt => $generatedAt->iso8601(),
+        generatedAt => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt->iso8601(),
+            generatedAt   => $generatedAt,
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",
@@ -535,11 +534,11 @@ if ( $hourly ) {
     my $weatherKey = "hourlyforecast";
     my $envelope = {
         refresh     => $refresh,
-        generatedAt => $generatedAt->iso8601(),
+        generatedAt => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt->iso8601(),
+            generatedAt   => $generatedAt,
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",

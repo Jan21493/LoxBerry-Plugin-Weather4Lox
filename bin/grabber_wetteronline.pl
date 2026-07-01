@@ -932,8 +932,7 @@ if ( $hourly ) {
         # values with additional calculations needs to be done before hash is assigned
 
         # time
-        $dtResult = DateTime::Format::ISO8601->parse_datetime(getValue($results, 'date'));   # ISO date from API in UTC, e.g. 2026-03-13T23:00:00+00:00
-        $dtResult->set_time_zone($timezone);
+        $dtResult = _parseIso8601(getValue($results, 'date'));   # ISO date from API in UTC, e.g. 2026-03-13T23:00:00+00:00
 
         # wind
         my $windDir     = getFormatted('%.0f', $results, 'wind', 'direction'); 
@@ -958,8 +957,8 @@ if ( $hourly ) {
             if (substr(getValue($dailyresults, 'date'), 0, 10) eq substr(getValue($results, 'date'), 0, 10)) {
                 # we found the matching daily data for the current hourly data, now we can check the dayparts for precipitation type
 
-                if ($dtResult->strftime('%H:%M') lt getTimeFormatted('%H:%M', $timezone, $dailyresults, 'sun', 'rise') || 
-                    $dtResult->strftime('%H:%M') gt getTimeFormatted('%H:%M', $timezone, $dailyresults, 'sun', 'set')) {
+                if (_strftimeInTz('%H:%M', $dtResult, $timezone) lt getTimeFormatted('%H:%M', $timezone, $dailyresults, 'sun', 'rise') || 
+                    _strftimeInTz('%H:%M', $dtResult, $timezone) gt getTimeFormatted('%H:%M', $timezone, $dailyresults, 'sun', 'set')) {
                     $isNighttime = 1;
                     last; # break loop if we found the matching day and determined it is nighttime
                 }
@@ -1054,7 +1053,7 @@ if ( $hourly ) {
 
 		for my $dayPart (@dayParts) {
 			# Convert daypart timestamp to epoch seconds
-			my $ep = DateTime::Format::ISO8601->parse_datetime(getValue($dayPart, 'date'))->epoch;   # ISO date from API is in UTC, e.g. 2026-03-13T23:00:00+00:00
+			my $ep = _parseIso8601(getValue($dayPart, 'date'));   # ISO date from API is in UTC, e.g. 2026-03-13T23:00:00+00:00
 
 			push @dpEpochs, $ep;
 
@@ -1197,11 +1196,11 @@ if ( $hourly ) {
         my $isNighttime = undef; # default to day (undef)
 
         for my $dailyResults (@{$resDaily}) {
-            if (substr(getValue($dailyResults, 'date'), 0, 10) eq $dtResult->strftime('%Y-%m-%d')) {
+            if (substr(getValue($dailyResults, 'date'), 0, 10) eq _strftimeInTz('%Y-%m-%d', $dtResult, $timezone)) {
                 # we found the matching daily data for the current hourly data, now we can check the dayparts for precipitation type
 
-                if ($dtResult->strftime('%H:%M') lt getTimeFormatted('%H:%M', $timezone, $dailyResults, 'sun', 'rise') || 
-                    $dtResult->strftime('%H:%M') gt getTimeFormatted('%H:%M', $timezone, $dailyResults, 'sun', 'set')) {
+                if (_strftimeInTz('%H:%M', $dtResult, $timezone) lt getTimeFormatted('%H:%M', $timezone, $dailyResults, 'sun', 'rise') || 
+                    _strftimeInTz('%H:%M', $dtResult, $timezone) gt getTimeFormatted('%H:%M', $timezone, $dailyResults, 'sun', 'set')) {
                     $isNighttime = 1;
                     last; # break loop if we found the matching day and determined it is nighttime
                 }
@@ -1265,14 +1264,14 @@ if ( $hourly ) {
 
     # Build envelope and write JSON to file
     $weatherKey = "hourlyforecast";
-    my $generatedAt = DateTime->now( time_zone => $timezone );
+    my $generatedAt = _epochToIso(time(), $timezone);
     my $envelope = {
         refresh  => $refresh,
-        generatedAt     => $generatedAt->iso8601(),
+        generatedAt     => $generatedAt,
         location => $location,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
-            generatedAt     => $generatedAt->iso8601(),
+            generatedAt     => $generatedAt,
             grabberLabel    => $grabberLabel,
             grabberScript   => $grabberFile,
             schemaVersion   => "v1.0",
