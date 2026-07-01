@@ -26,7 +26,8 @@ use Scalar::Util qw(looks_like_number);
 use File::Copy;
 use JSON::PP;
 use Encode qw(encode_utf8);
-use POSIX qw(strftime);
+use POSIX qw(strftime tzset);
+use Time::Piece;
 my $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
 
 ##########################################################################
@@ -280,17 +281,23 @@ sub getTimeFormatted {
     my $iso_time = getValue($root, @path);
     return undef unless defined $iso_time && $iso_time ne '';
 
-    my $dt = eval { DateTime::Format::ISO8601->parse_datetime($iso_time) };
-    return undef unless $dt;
-
-    # all times are local times
-    if ($timezone eq '') {
-        $timezone = 'UTC';
-    }
-    $dt->set_time_zone($timezone);
-
     $fmt = '%H:%M' if !defined($fmt) || $fmt eq '';
-    return $dt->strftime($fmt);
+
+    # If value is already a plain time string (HH:MM or HH:MM:SS), return/format it directly
+    if ($iso_time =~ /^\d{2}:\d{2}(:\d{2})?$/) {
+        # parse to normalise with requested format
+        my $t = eval { Time::Piece->strptime($iso_time, length($iso_time) > 5 ? '%H:%M:%S' : '%H:%M') };
+        return undef unless $t;
+        return $t->strftime($fmt);
+    }
+
+    # Otherwise expect ISO 8601 string (possibly with timezone offset)
+    my $epoch = _parseIso8601($iso_time);
+    return undef unless defined $epoch;
+
+    # Convert epoch to local time in the requested timezone
+    $timezone = 'UTC' if !defined $timezone || $timezone eq '';
+    return _strftimeInTz($fmt, $epoch, $timezone);
 }
 
 ##########################################################################
@@ -310,18 +317,10 @@ sub getTimeFromEpochFormatted {
     return undef unless defined $epoch_time && $epoch_time ne '';
 
     # all times are local times
-    if (!defined $timezone || $timezone eq '') {
-        $timezone = 'UTC';
-    }
-    my $dt = DateTime->from_epoch(
-        epoch     => $epoch_time,
-        time_zone => $timezone
-    );
-
-    return undef unless $dt;
+    $timezone = 'UTC' if !defined $timezone || $timezone eq '';
 
     $fmt = '%H:%M' if !defined($fmt) || $fmt eq '';
-    return $dt->strftime($fmt);
+    return _strftimeInTz($fmt, $epoch_time, $timezone);
 }
 
 ##########################################################################
@@ -593,43 +592,21 @@ sub timeToSec {
 ##########################################################################
 # Converts time to Loxone epoch time (seconds since 01.01.1970)
 # Parameter:
-#   time:      time to convert - datetime object or unix epoch timestamp
+#   time:      numeric unix epoch timestamp
 
 sub toLoxEpoch {
     my ($dtInput) = @_;
 
-    my $date;
-    # Check, if $dtInput is a DateTime object
-    if (ref($dtInput) eq 'DateTime') {
-        $date = $dtInput;
-    }
-    # Check, if $dtInput is numeric (Epoch)
-    elsif (defined $dtInput && $dtInput =~ /^\d+$/) {
-        $date = DateTime->from_epoch(epoch => $dtInput);
-    }
-    # Otherwise: Try to parse ISO8601 string
-    else {
-        $date = DateTime::Format::ISO8601->parse_datetime($dtInput);
-    }
+    # All call sites pass numeric epoch values
+    return undef unless defined $dtInput && $dtInput =~ /^\d+$/;
 
     # see https://www.loxforum.com/forum/german/software-konfiguration-programm-und-visualisierung/451911-arbeitsweise-der-neueren-zähler?p=452490#post452490
     # for discussion about Loxone epoch "zero point"
     # Base: January 1, 2009, 00:00:00 UTC
-    # my $loxone_ref = DateTime->new(
-    #     year   => 2009,
-    #     month  => 1,
-    #     day    => 1,
-    #     hour   => 0,
-    #     minute => 0,
-    #     second => 0,
-    #     time_zone => 'MEZ'     # time reference is Kollerschlag time (MEZ/UTC+1) according to findings, not UTC!
-    # );
-    # my $loxone_epoch = $date->epoch - $loxone_ref->epoch;
+    # time reference is Kollerschlag time (MEZ/UTC+1) according to findings, not UTC!
 
-    my $loxone_ref = 1230764400;                        # time reference is Kollerschlag time (MEZ/UTC+1) according to findings, not UTC!
-    my $loxone_epoch = $date->epoch - $loxone_ref;
-
-    return $loxone_epoch;
+    my $loxone_ref = 1230764400;
+    return $dtInput - $loxone_ref;
 }
 
 ##########################################################################
@@ -650,7 +627,68 @@ sub tzOffsetSeconds {
 }
 
 ##########################################################################
-# Get timezone offset in seconds from DateTime object, e.g. "+01:00"
+# Parse an ISO 8601 datetime string (with optional timezone offset) and
+# return the corresponding Unix epoch timestamp.
+# Accepts formats like "2026-03-13T23:00:00+00:00", "2026-03-13T23:00:00Z",
+# or "2026-03-13T23:00:00+0100" (without colon in offset).
+# Returns undef if parsing fails.
+
+sub _parseIso8601 {
+    my ($iso) = @_;
+    return undef unless defined $iso && $iso ne '';
+
+    # Normalise "+HH:MM" offset to "+HHMM" for %z
+    $iso =~ s/([+-]\d{2}):(\d{2})$/$1$2/;
+    # Replace trailing Z with +0000
+    $iso =~ s/Z$//;
+    # If no offset present, assume UTC
+    unless ($iso =~ /[+-]\d{4}$/) {
+        $iso .= '+0000';
+    }
+
+    my $t = eval { Time::Piece->strptime($iso, "%Y-%m-%dT%H:%M:%S%z") };
+    return undef unless $t;
+    return $t->epoch;
+}
+
+##########################################################################
+# Convert a Unix epoch timestamp to a Time::Piece object representing
+# local time in the given IANA timezone (e.g. "Europe/Berlin").
+# Uses a temporary $ENV{TZ} override so that the system locale is unaffected.
+
+sub _epochToTimePiece {
+    my ($epoch, $tz) = @_;
+    return undef unless defined $epoch;
+    $tz //= 'UTC';
+    my $t;
+    {
+        local $ENV{TZ} = $tz;
+        POSIX::tzset();
+        $t = localtime($epoch);
+    }
+    POSIX::tzset();
+    return $t;
+}
+
+##########################################################################
+# Run POSIX::strftime for a given epoch in the specified IANA timezone.
+# Equivalent to strftime($fmt, localtime_in_tz($epoch, $tz)).
+
+sub _strftimeInTz {
+    my ($fmt, $epoch, $tz) = @_;
+    $tz //= 'UTC';
+    my $result;
+    {
+        local $ENV{TZ} = $tz;
+        POSIX::tzset();
+        $result = strftime($fmt, localtime($epoch));
+    }
+    POSIX::tzset();
+    return $result;
+}
+
+##########################################################################
+# Get timezone offset in seconds from a strftime offset string, e.g. "+01:00"
 
 sub isoTzOffset {
     my ($dt) = @_;

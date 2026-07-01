@@ -32,7 +32,6 @@ use File::Copy;
 use Getopt::Long;
 use Time::Piece;
 use Time::Seconds;
-use DateTime;
 
 require "$lbpbindir/grabber_utils.pl";
 
@@ -95,12 +94,11 @@ if ($verbose) {
 LOGSTART "Weather4Lox GRABBER_VISUALCROSSING process started";
 LOGDEB "This is $0 Version $version";
 
-requireOrLogdie('DateTime::Format::ISO8601');
 requireOrLogdie('Astro::MoonPhase');
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();
-LOGDEB "Using timezone: $timezone, current local system time is " . DateTime->now( time_zone => $timezone )->iso8601();
+LOGDEB "Using timezone: $timezone, current local system time is " . localtime->datetime;
 
 # Get data from www.visualcrossing.com (API request) for current conditions, daily and hourly forecasts
 my $results = apiCall(
@@ -200,7 +198,7 @@ my $envelope;
 my $currentEpoch = $results->{currentConditions}->{datetimeEpoch};
 
 # Use local time for generatedAt timestamp
-my $generatedAt = DateTime->now( time_zone => $timezone );
+my $generatedAt = localtime->datetime;
 
 # Timezone short and offset via POSIX
 my ($tzShort, $tzOffset);
@@ -339,11 +337,11 @@ if ( $current ) {
     $weatherKey = "current";
     $envelope = {
         refresh     => $refresh,
-        generatedAt => $generatedAt->iso8601(),
+        generatedAt => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt->iso8601(),
+            generatedAt   => $generatedAt,
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",
@@ -457,11 +455,11 @@ if ( $daily ) {
     $weatherKey = "dailyforecast";
     $envelope = {
         refresh     => $refresh,
-        generatedAt => $generatedAt->iso8601(),
+        generatedAt => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt->iso8601(),
+            generatedAt   => $generatedAt,
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",
@@ -576,11 +574,11 @@ if ( $hourly ) {
     $weatherKey = "hourlyforecast";
     $envelope = {
         refresh     => $refresh,
-        generatedAt => $generatedAt->iso8601(),
+        generatedAt => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt->iso8601(),
+            generatedAt   => $generatedAt,
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",
@@ -611,7 +609,7 @@ if ( $observations ) {
     LOGINF "Reading daily weather observations from API response into W4L structure.";
 
     # Refresh time for observations, use local time for generatedAt timestamp
-    $generatedAt = DateTime->now( time_zone => $timezone );
+    $generatedAt = localtime->datetime;
 
     for my $resDay ( reverse @{$results->{days}} ) {
 
@@ -707,11 +705,11 @@ if ( $observations ) {
     $weatherKey = "dailyobservations";
     $envelope = {
         refresh     => $refresh,
-        generatedAt => $generatedAt->iso8601(),
+        generatedAt => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt->iso8601(),
+            generatedAt   => $generatedAt,
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",
@@ -815,11 +813,11 @@ if ( $observations ) {
     $weatherKey = "hourlyobservations";
     $envelope = {
         refresh     => $refresh,
-        generatedAt => $generatedAt->iso8601(),
+        generatedAt => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt->iso8601(),
+            generatedAt   => $generatedAt,
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",

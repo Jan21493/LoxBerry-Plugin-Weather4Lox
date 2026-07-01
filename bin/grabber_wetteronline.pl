@@ -33,8 +33,6 @@ use File::Basename qw(basename);
 use Getopt::Long;
 use Time::Piece;
 use HTTP::Request;
-use DateTime;
-#use DateTime::TimeZone;
 use utf8;
 use Encode qw(encode_utf8);
 use HTML::Entities;
@@ -112,12 +110,11 @@ if ($verbose) {
 LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
-requireOrLogdie('DateTime::Format::ISO8601');
 requireOrLogdie('Astro::MoonPhase');
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();
-LOGDEB "Using timezone: $timezone, current local system time is " . DateTime->now( time_zone => $timezone )->iso8601();
+LOGDEB "Using timezone: $timezone, current local system time is " . localtime->datetime;
 
 if ($hourly) {
     #require_or_logdie('Lexical::Sub');
@@ -533,8 +530,16 @@ sub isNighttime {
 ##########################################################################
 
 # date/time in different ways for different use cases in W4L (e.g. epoch for calculations, ISO format for display, timezone info for reference)
-my $dtCurrent = DateTime::Format::ISO8601->parse_datetime($resCurrent->{current}->{date});
-$dtCurrent->set_time_zone($timezone);
+my $dtCurrent = _parseIso8601($resCurrent->{current}->{date});   # returns epoch
+
+my ($tzShort, $tzOffset);
+{
+    local $ENV{TZ} = $timezone;
+    POSIX::tzset();
+    $tzShort  = POSIX::strftime('%Z', localtime($dtCurrent));
+    $tzOffset = POSIX::strftime('%z', localtime($dtCurrent));
+}
+POSIX::tzset();
 
 # location information
 my $cityName = getValue($resGeodata, 'locationname');
@@ -555,8 +560,8 @@ my $location = {
     latitude     => getFormatted('%.3f', $resGeodata, 'lat'),                            # latitude
     longitude    => getFormatted('%.3f', $resGeodata, 'lon'),                            # longitude
     timezone     => $timezone,                                                           # timezone string (e.g. "Europe/Berlin")
-    tzShort      => $dtCurrent->strftime('%Z'),                                          # timezone abbreviation (e.g. "CET")
-    tzOffset     => $dtCurrent->strftime('%z'),                                          # timezone offset (e.g. "+0100")
+    tzShort      => $tzShort,                                                            # timezone abbreviation (e.g. "CET")
+    tzOffset     => $tzOffset,                                                           # timezone offset (e.g. "+0100")
 };
 
 
@@ -569,12 +574,12 @@ if ( $current ) {
     # Build clean record
     my %currentData;
 
-    LOGINF "Reading current weather data from API response into W4L structure at $dtCurrent.";
+    LOGINF "Reading current weather data from API response into W4L structure at " . _epochToIso($dtCurrent, $timezone) . ".";
 
     my %time;
     # $time{date}      = getValue($resCurrent, 'current', 'date');
-    $time{datetime}  = _epochToIso($dtCurrent->epoch, $timezone);                                                              # cur_date_des
-    $time{epoch}     = $dtCurrent->epoch;                                                                                      # cur_date
+    $time{datetime}  = _epochToIso($dtCurrent, $timezone);                                                                     # cur_date_des
+    $time{epoch}     = $dtCurrent;                                                                                              # cur_date
 
     # cur_date_tz_des (e.g. Europe/Berlin), cur_date_tz_des_sh (e.g. "CET"), cur_date_tz (e.g. "+0100") are send in location section 
 
@@ -690,15 +695,14 @@ if ( $current ) {
 
     # Build envelope and write JSON to file
     $weatherKey = "current";
-    my $generatedAt = DateTime->now();
-    $generatedAt->set_time_zone($timezone);
+    my $generatedAt = localtime->datetime;
     my $envelope = {
         refresh  => $refresh,
-        generatedAt     => $generatedAt->iso8601(),
+        generatedAt     => $generatedAt,
         location => $location,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
-            generatedAt     => $generatedAt->iso8601(),
+            generatedAt     => $generatedAt,
             grabberLabel    => $grabberLabel,
             grabberScript   => $grabberFile,
             schemaVersion   => "v1.0",
@@ -728,8 +732,7 @@ if ( $daily ) {
         # values with additional calculations needs to be done before hash is assigned
 
         # time
-        $dtResult = DateTime::Format::ISO8601->parse_datetime(getValue($results, 'date'));   # ISO date from API in UTC, e.g. 2026-03-13T23:00:00+00:00
-        $dtResult->set_time_zone($timezone);
+        $dtResult = _parseIso8601(getValue($results, 'date'));   # ISO date from API in UTC, e.g. 2026-03-13T23:00:00+00:00
         
         # wind
         my $windDirAvg = getFormatted('%.0f', $results, 'wind', 'direction'); 
@@ -745,7 +748,7 @@ if ( $daily ) {
         }
 
         # astro data - get moon infos for specific time of data set (translated to epoch time)
-        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = Astro::MoonPhase::phase($dtResult->epoch);
+        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = Astro::MoonPhase::phase($dtResult);
 
         # Calculating min, max values from dayparts
         # humidity (min, max)
@@ -814,8 +817,8 @@ if ( $daily ) {
             day            => $day,                                              # dfc<X>_per, counter of day
             time => {
                 # date       => getValue($results, 'date'),                      # original timestamp from API
-                datetime     => _epochToIso($dtResult->epoch, $timezone),        # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
-                epoch        => $dtResult->epoch,                                # dfc<X>_date       - UNIX timestamp
+                datetime     => _epochToIso($dtResult, $timezone),        # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
+                epoch        => $dtResult,                                # dfc<X>_date       - UNIX timestamp
                 # wdayName   => $wdayname,                                       # name of day of week, e.g. Saturday  - TODO: verify if useful, client may calculate name as well
                 # wdayShort  => $wdayshort,                                      # short name of day of week, e.g. Sa (two chars)
                 # monthName  => $monthname,                                      # name of month, e.g. March
@@ -892,15 +895,14 @@ if ( $daily ) {
  
     # Build envelope and write JSON to file
     $weatherKey = "dailyforecast";
-    my $generatedAt = DateTime->now();
-    $generatedAt->set_time_zone($timezone);
+    my $generatedAt = localtime->datetime;
     my $envelope = {
         refresh  => $refresh,
-        generatedAt     => $generatedAt->iso8601(),
+        generatedAt     => $generatedAt,
         location => $location,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
-            generatedAt     => $generatedAt->iso8601(),
+            generatedAt     => $generatedAt,
             grabberLabel    => $grabberLabel,
             grabberScript   => $grabberFile,
             schemaVersion   => "v1.0",
@@ -930,8 +932,7 @@ if ( $hourly ) {
         # values with additional calculations needs to be done before hash is assigned
 
         # time
-        $dtResult = DateTime::Format::ISO8601->parse_datetime(getValue($results, 'date'));   # ISO date from API in UTC, e.g. 2026-03-13T23:00:00+00:00
-        $dtResult->set_time_zone($timezone);
+        $dtResult = _parseIso8601(getValue($results, 'date'));   # ISO date from API in UTC, e.g. 2026-03-13T23:00:00+00:00
 
         # wind
         my $windDir     = getFormatted('%.0f', $results, 'wind', 'direction'); 
@@ -947,7 +948,7 @@ if ( $hourly ) {
         }
 
         # astro data - get moon infos for specific time of data set (translated to epoch time)
-        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = Astro::MoonPhase::phase($dtResult->epoch);
+        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = Astro::MoonPhase::phase($dtResult);
 
         # Get sunrise and sunset time from daily data, needed for isNighttime calculation
         my $isNighttime = undef; # default to day (undef)
@@ -956,8 +957,8 @@ if ( $hourly ) {
             if (substr(getValue($dailyresults, 'date'), 0, 10) eq substr(getValue($results, 'date'), 0, 10)) {
                 # we found the matching daily data for the current hourly data, now we can check the dayparts for precipitation type
 
-                if ($dtResult->strftime('%H:%M') lt getTimeFormatted('%H:%M', $timezone, $dailyresults, 'sun', 'rise') || 
-                    $dtResult->strftime('%H:%M') gt getTimeFormatted('%H:%M', $timezone, $dailyresults, 'sun', 'set')) {
+                if (_strftimeInTz('%H:%M', $dtResult, $timezone) lt getTimeFormatted('%H:%M', $timezone, $dailyresults, 'sun', 'rise') || 
+                    _strftimeInTz('%H:%M', $dtResult, $timezone) gt getTimeFormatted('%H:%M', $timezone, $dailyresults, 'sun', 'set')) {
                     $isNighttime = 1;
                     last; # break loop if we found the matching day and determined it is nighttime
                 }
@@ -968,8 +969,8 @@ if ( $hourly ) {
             hour           => $hour,                                             # hfc<X>_per, counter of day
             time => {
                 # date       => getValue($results, 'date'),                      # original timestamp from API
-                datetime     => _epochToIso($dtResult->epoch, $timezone),        # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
-                epoch        => $dtResult->epoch,                                # hfc<X>_date       - UNIX timestamp
+                datetime     => _epochToIso($dtResult, $timezone),        # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
+                epoch        => $dtResult,                                # hfc<X>_date       - UNIX timestamp
             },
             temperature => {
                 air            => getFormatted('%.1f', $results, 'temperature', 'air'),         # hfc<X>_tt        - hourly max temperature (°C)
@@ -1052,7 +1053,7 @@ if ( $hourly ) {
 
 		for my $dayPart (@dayParts) {
 			# Convert daypart timestamp to epoch seconds
-			my $ep = DateTime::Format::ISO8601->parse_datetime(getValue($dayPart, 'date'))->epoch;   # ISO date from API is in UTC, e.g. 2026-03-13T23:00:00+00:00
+			my $ep = _parseIso8601(getValue($dayPart, 'date'));   # ISO date from API is in UTC, e.g. 2026-03-13T23:00:00+00:00
 
 			push @dpEpochs, $ep;
 
@@ -1157,8 +1158,8 @@ if ( $hourly ) {
 	my $end_epoch_time = $dpEpochs[-1];
 
 	# increase time '$dtResult' by 1 hour for next entry
-	$dtResult->add(hours => 1);
-	my $epochTime = $dtResult->epoch;
+	$dtResult += 3600;
+	my $epochTime = $dtResult;
 
     # only save 5 days of hourly data to reduce loading times
 	while ($epochTime <= $end_epoch_time && !$skipInterpolation && $hour < 121) {
@@ -1174,7 +1175,7 @@ if ( $hourly ) {
 		}
 
         # calculate epoch time from last entry + 1h
-		$epochTime = $dtResult->epoch;
+		$epochTime = $dtResult;
 
         # Mapping: Wetteronline Symbol => [Loxone code, Weather4Lox code, description]
         my ($loxoneCode, $w4lCode, $description);
@@ -1195,11 +1196,11 @@ if ( $hourly ) {
         my $isNighttime = undef; # default to day (undef)
 
         for my $dailyResults (@{$resDaily}) {
-            if (substr(getValue($dailyResults, 'date'), 0, 10) eq $dtResult->strftime('%Y-%m-%d')) {
+            if (substr(getValue($dailyResults, 'date'), 0, 10) eq _strftimeInTz('%Y-%m-%d', $dtResult, $timezone)) {
                 # we found the matching daily data for the current hourly data, now we can check the dayparts for precipitation type
 
-                if ($dtResult->strftime('%H:%M') lt getTimeFormatted('%H:%M', $timezone, $dailyResults, 'sun', 'rise') || 
-                    $dtResult->strftime('%H:%M') gt getTimeFormatted('%H:%M', $timezone, $dailyResults, 'sun', 'set')) {
+                if (_strftimeInTz('%H:%M', $dtResult, $timezone) lt getTimeFormatted('%H:%M', $timezone, $dailyResults, 'sun', 'rise') || 
+                    _strftimeInTz('%H:%M', $dtResult, $timezone) gt getTimeFormatted('%H:%M', $timezone, $dailyResults, 'sun', 'set')) {
                     $isNighttime = 1;
                     last; # break loop if we found the matching day and determined it is nighttime
                 }
@@ -1257,20 +1258,20 @@ if ( $hourly ) {
             cloudCover       => skyConditionFromWoCode($sym),                           # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
             isNight          => $isNighttime,                                           # get nighttime information from sunrise / sunset
         };
-        $dtResult->add(hours => 1);
+        $dtResult += 3600;
         $hour++;
     }
 
     # Build envelope and write JSON to file
     $weatherKey = "hourlyforecast";
-    my $generatedAt = DateTime->now( time_zone => $timezone );
+    my $generatedAt = _epochToIso(time(), $timezone);
     my $envelope = {
         refresh  => $refresh,
-        generatedAt     => $generatedAt->iso8601(),
+        generatedAt     => $generatedAt,
         location => $location,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
-            generatedAt     => $generatedAt->iso8601(),
+            generatedAt     => $generatedAt,
             grabberLabel    => $grabberLabel,
             grabberScript   => $grabberFile,
             schemaVersion   => "v1.0",
