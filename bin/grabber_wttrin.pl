@@ -82,12 +82,11 @@ LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
 requireOrLogdie('Math::Function::Interpolator');
-requireOrLogdie('DateTime::Format::ISO8601');
 requireOrLogdie('Astro::MoonPhase');
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();
-LOGDEB "Using timezone: $timezone, current local system time is " . DateTime->now( time_zone => $timezone )->iso8601();
+LOGDEB "Using timezone: $timezone, current local system time is " . _epochToIso(time(), $timezone);
 
 # Mapping table for conversion of WTTR.in weather codes to Loxone weather Picto-Codes and short names for weather symbols
 # Weather codes are based on https://www.worldweatheronline.com/weather-api/api/docs/weather-icons.aspx
@@ -159,7 +158,7 @@ sub wttr_to_lox {
 # Get weather data from WTTR.in (API request)
 my $results = apiCall(
 	url => "$url/$stationid?lang=$lang&M&3&format=j1",
-	info => "for Location $stationid (Current, Daily, and Hourly Weather Data)",
+	info => "for location $stationid (current, daily, and hourly weather data)",
 );
 
 ##########################################################################
@@ -184,21 +183,12 @@ if (!$obs_local_time_str) {
     LOGDEB "Using local observation time from wttr.in: $obs_local_time_str.";
 }
 
-my $generatedAt = DateTime->now( time_zone => $timezone );
-
-# Timezone short and offset via POSIX
-my ($tzShort, $tzOffset);
-{
-    local $ENV{TZ} = $timezone;
-    POSIX::tzset();
-    $tzShort  = POSIX::strftime('%Z', localtime($currentEpoch));
-    $tzOffset = POSIX::strftime('%z', localtime($currentEpoch));
-    POSIX::tzset();
-}
+my $generatedAt = _epochToIso(time(), $timezone);
 
 my $city    = Encode::decode("UTF-8", $results->{nearest_area}[0]->{areaName}[0]->{value});
 my $country = Encode::decode("UTF-8", $results->{nearest_area}[0]->{country}[0]->{value});
 
+# add location information once, timezone and timezone abbreviation are retrieved from localtime() and not from API response
 my $location = {
     city        => $city,
     country     => $country,
@@ -207,8 +197,8 @@ my $location = {
     latitude    => defined $lat ? $lat + 0 : undef,
     longitude   => defined $lon ? $lon + 0 : undef,
     timezone    => $timezone,
-    tzOffset    => $tzOffset,
-    tzShort     => $tzShort,
+    tzShort     => localtime->strftime('%Z'),
+    tzOffset    => localtime->strftime('%z'),
 };
 
 ##########################################################################
@@ -219,12 +209,13 @@ if ( $current ) {
 
     my $cur = $results->{current_condition}[0];
 
-    LOGINF "Reading current weather data from API response into W4L structure.";
+    my $dtCurrent = _epochToIso($currentEpoch, $timezone);
+    LOGINF "Reading current weather data from API response into W4L structure. Observation time was $dtCurrent.";
 
     # time
     my %time;
-    $time{datetime} = _epochToIso($currentEpoch, $timezone);
-    $time{epoch}    = $currentEpoch;
+    $time{datetime}  = $dtCurrent;                 # cur_date_des - is always in local time of Loxberry
+    $time{epoch}     = $currentEpoch;              # cur_date     - is always in UNIX epoch time
 
     # cur_date_tz_des (e.g. Europe/Berlin), cur_date_tz_des_sh (e.g. "CET"), cur_date_tz (e.g. "+0100") are send in location section 
 
@@ -306,11 +297,11 @@ if ( $current ) {
     my $weatherKey = "current";
     my $envelope = {
         refresh     => $refresh,
-        generatedAt   => $generatedAt->iso8601(),
+        generatedAt   => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt->iso8601(),
+            generatedAt   => $generatedAt,
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",
@@ -488,11 +479,11 @@ if ( $daily ) {
     my $weatherKey = "dailyforecast";
     my $envelope = {
         refresh     => $refresh,
-        generatedAt   => $generatedAt->iso8601(),
+        generatedAt   => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt->iso8601(),
+            generatedAt   => $generatedAt,
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",
@@ -674,11 +665,11 @@ if ( $hourly ) {
     my $weatherKey = "hourlyforecast";
     my $envelope = {
         refresh     => $refresh,
-        generatedAt   => $generatedAt->iso8601(),
+        generatedAt   => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt->iso8601(),
+            generatedAt   => $generatedAt,
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",

@@ -32,7 +32,7 @@ use JSON::PP;
 use File::Copy;
 use File::Basename qw(basename);
 use Getopt::Long;
-use DateTime;
+use Time::Piece;
 use POSIX qw(floor);
 use utf8;
 use Encode qw(encode_utf8);
@@ -78,11 +78,9 @@ if ($verbose) {
 LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
-requireOrLogdie('DateTime::Format::ISO8601');
-
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();
-LOGDEB "Using timezone: $timezone, current local system time is " . DateTime->now( time_zone => $timezone )->iso8601();
+LOGDEB "Using timezone: $timezone, current local system time is " . localtime->datetime;
 
 # Validate coordinates
 if ( !defined $lat || $lat eq '' || !defined $lon || $lon eq '' ) {

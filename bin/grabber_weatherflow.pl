@@ -28,7 +28,7 @@ use warnings;
 use LoxBerry::System;
 use LoxBerry::Log;
 use LWP::UserAgent;
-use JSON qw( decode_json );
+use JSON::PP;
 use File::Copy;
 use Getopt::Long;
 use Time::Piece;
@@ -49,6 +49,7 @@ my $lang         = $pcfg->param("SERVER.LANG");
 my $city         = $pcfg->param("SERVER.CITY");
 my $country      = $pcfg->param("SERVER.COUNTRY");
 my $stationid    = $pcfg->param("WEATHERFLOW.STATIONID");
+my $maskKeys     = $pcfg->param("SERVER.MASKKEYS");
 
 # Grabber metadata for JSON envelope
 my $grabberKey   = "weatherflow";
@@ -71,14 +72,13 @@ my $verbose = '';
 my $current = '';
 my $daily = '';
 my $hourly = '';
-my $maskkeys = 1; # optional
 GetOptions ('verbose' => \$verbose,
             'interval=i' => \$refresh,
             'quiet'   => sub { $verbose = 0 },
             'current' => \$current,
             'daily' => \$daily,
             'hourly' => \$hourly,
-            'maskkeys' => \$maskkeys,
+            'maskkeys' => \$maskKeys,
             );
 
 if ($verbose) {
@@ -89,26 +89,25 @@ if ($verbose) {
 LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
-requireOrLogdie('DateTime::Format::ISO8601');
 requireOrLogdie('Astro::MoonPhase');
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();
-LOGDEB "Using timezone: $timezone, current local system time is " . DateTime->now( time_zone => $timezone )->iso8601();
+LOGDEB "Using timezone: $timezone, current local system time is " . _epochToIso(time(), $timezone);
 
 # Get forecast data from Weatherflow Server
 # API: https://weatherflow.github.io/Tempest/api/swagger/#/forecast
-# Note: the forecast data also contains current conditions, but these are not as accurate as the station observations
+# Note: the forecast data also contains current conditions, but these are not as accurate as the station observations, 
+# e.g. temperatures and wind are rounded to integers.
 # For that reason, we also query the station observations (see below)
-my $forecast_json = apiCall(
-	url => "$url\/better_forecast?station_id=$stationid&api_key=$apikey",
-	maskkeys => $maskkeys,
+my $results = apiCall(
+	url => "$url/better_forecast?station_id=$stationid&api_key=$apikey",
+	maskkeys => $maskKeys,
 	keyparam => 'api_key',
-	info => "for Location $stationid (Current, Daily, and Hourly Weather Data)",
+	info => "for location $stationid (current, daily, and hourly weather data)",
 );
 
 my $i;
-my $current_observation_json;
 
 # Mapping: WeatherFlow Icon => [Loxone Code, Weather4Lox Icon Name]
 # https://weatherflow.github.io/Tempest/api/swagger/#/forecast/getBetterForecast
@@ -141,7 +140,7 @@ sub weatherflow_to_lox {
     # Normalization
     my $weather = lc($weather_raw);           # Lowercase
     $weather =~ s/-(?:night|day)//;           # remove -night and -day
-    $weather =~ s/cc-//;                      # remove cc- (current Weatherflow API bug)
+    $weather =~ s/cc-//;                      # remove cc- (prefix used for current conditions)
     $weather =~ s/-//g;                       # remove all hyphens
     $weather =~ s/possibly/chance/;           # replace possibly with chance
 
@@ -168,26 +167,26 @@ sub wfIsNight {
 # Common data
 ##########################################################################
 
-my $lat             = $forecast_json->{latitude};
-my $lon             = $forecast_json->{longitude};
-my $timezoneFromApi = $forecast_json->{timezone};
+my $lat             = $results->{latitude};
+my $lon             = $results->{longitude};
+my $timezoneFromApi = $results->{timezone};
 if ($timezone ne $timezoneFromApi) {
     LOGWARN "Timezone for location '$city' ($timezoneFromApi) does not match the system timezone of your LoxBerry ($timezone). Time differences may occur!";
 }
 # Derive timezone short name and offset from current epoch
-my $currentEpoch = $forecast_json->{current_conditions}->{time};
+my $currentEpoch = $results->{current_conditions}->{time};
 
-my $generatedAt = DateTime->now( time_zone => $timezone );
+my $generatedAt = _epochToIso(time(), $timezone);
 
 # Timezone short and offset via POSIX
 my ($tzShort, $tzOffset);
 {
-    local $ENV{TZ} = $timezone;
-    POSIX::tzset();
+    local $ENV{TZ} = $timezoneFromApi;
+    POSIX::tzset();     # change to timezone from API
     $tzShort  = POSIX::strftime('%Z', localtime($currentEpoch));
     $tzOffset = POSIX::strftime('%z', localtime($currentEpoch));
-    POSIX::tzset();
 }
+POSIX::tzset();     # change back to system timezone
 
 $city    = Encode::decode("UTF-8", $city)    if defined $city;
 $country = Encode::decode("UTF-8", $country) if defined $country;
@@ -199,7 +198,7 @@ my $location = {
     elevation   => undef,                 # will be filled from observation if available
     latitude    => defined $lat ? $lat + 0 : undef,
     longitude   => defined $lon ? $lon + 0 : undef,
-    timezone    => $timezone,
+    timezone    => $timezoneFromApi,
     tzOffset    => $tzOffset,
     tzShort     => $tzShort,
 };
@@ -213,38 +212,40 @@ if ( $current ) {
     # Get current station observation from Weatherflow Server
     # API : https://weatherflow.github.io/Tempest/api/swagger/#!/observations/getStationObservation
     # Docs: https://apidocs.tempestwx.com/reference/get_better-forecast-1
-    $current_observation_json = apiCall(
-        url => "$url\/observations/station/$stationid?token=$apikey",
-        maskkeys => $maskkeys,
-        keyparam => 'token',
-        info => "for Location $stationid (Current Observation Data)",
+    my $resCurrent = apiCall(
+        url => "$url/observations/location?api_key=$apikey&build=175&location_id=$stationid&units_temp=c&units_wind=kph&units_pressure=mb&units_distance=km&units_precip=mm&units_other=metric&units_direction=cardinal",
+        maskkeys => $maskKeys,
+        keyparam => 'api_key',
+        info => "for location $stationid (accurate current observation data)",
     );
 
-    my $cur = $current_observation_json->{obs}->[0];
-    my $cc  = $forecast_json->{current_conditions};
+    my $cur = $resCurrent->{obs}->[0];
+    my $cc  = $results->{current_conditions};
 
     # Update location elevation from observation data
-    if (defined $current_observation_json->{elevation}) {
-        $location->{elevation} = $current_observation_json->{elevation} + 0;
+    if (defined $resCurrent->{elevation}) {
+        $location->{elevation} = $resCurrent->{elevation} + 0;
     }
 
-    LOGINF "Reading current weather data from API response into W4L structure.";
+    my $currentEpoch = $cc->{time};
+    my $dtCurrent = _epochToIso($currentEpoch, $timezone);
+    LOGINF "Reading current weather data from API response into W4L structure. Observation time was $dtCurrent.";
 
     # time
     my %time;
-    $time{datetime} = _epochToIso($cc->{time}, $timezone);
-    $time{epoch}    = $cc->{time};
+    $time{datetime}  = $dtCurrent;                                                                 # cur_date_des - is always in local time of Loxberry
+    $time{epoch}     = $currentEpoch;                                                              # cur_date     - is always in UNIX epoch time
 
     # cur_date_tz_des (e.g. Europe/Berlin), cur_date_tz_des_sh (e.g. "CET"), cur_date_tz (e.g. "+0100") are send in location section 
 
     # sunrise / sunset
     my ($sunrise, $sunset);
-    if (defined $forecast_json->{forecast}->{daily}->[0]->{sunrise}) {
-        my $t_sr = localtime($forecast_json->{forecast}->{daily}->[0]->{sunrise});
+    if (defined $results->{forecast}->{daily}->[0]->{sunrise}) {
+        my $t_sr = localtime($results->{forecast}->{daily}->[0]->{sunrise});
         $sunrise = sprintf("%02d:%02d", $t_sr->hour, $t_sr->min);
     }
-    if (defined $forecast_json->{forecast}->{daily}->[0]->{sunset}) {
-        my $t_ss = localtime($forecast_json->{forecast}->{daily}->[0]->{sunset});
+    if (defined $results->{forecast}->{daily}->[0]->{sunset}) {
+        my $t_ss = localtime($results->{forecast}->{daily}->[0]->{sunset});
         $sunset = sprintf("%02d:%02d", $t_ss->hour, $t_ss->min);
     }
 
@@ -255,19 +256,19 @@ if ( $current ) {
     $temperature{windChill} = defined $cur->{wind_chill}      ? sprintf("%.1f", $cur->{wind_chill}) + 0      : undef;
     $temperature{heatIndex} = defined $cur->{heat_index}      ? sprintf("%.1f", $cur->{heat_index}) + 0      : undef;
 
-    # wind (WeatherFlow provides m/s, convert to km/h)
+    # wind - WeatherFlow provides km/h, unit is called kph (km per hour)
     my %wind;
     my $wdeg = $cur->{wind_direction};
     $wind{direction} = defined $wdeg ? $wdeg + 0 : undef;
     $wind{cardinal}  = getWindDirCardinal($wdeg);
-    $wind{speed}     = defined $cur->{wind_avg}  ? sprintf("%.1f", $cur->{wind_avg} * 3.6) + 0  : undef;
-    $wind{gust}      = defined $cur->{wind_gust} ? sprintf("%.1f", $cur->{wind_gust} * 3.6) + 0 : undef;
+    $wind{speed}     = defined $cur->{wind_avg}  ? sprintf("%.1f", $cur->{wind_avg}) + 0  : undef;
+    $wind{gust}      = defined $cur->{wind_gust} ? sprintf("%.1f", $cur->{wind_gust}) + 0 : undef;
 
     # precipitation
     my %precipitation;
     $precipitation{rainToday}    = defined $cur->{precip_accum_local_day} ? sprintf("%.2f", $cur->{precip_accum_local_day}) + 0 : undef;
-    $precipitation{rain1hr}      = defined $forecast_json->{forecast}->{hourly}->[0]->{precip} ? sprintf("%.2f", $forecast_json->{forecast}->{hourly}->[0]->{precip}) + 0 : undef;
-    $precipitation{probability}  = defined $forecast_json->{forecast}->{daily}->[0]->{precip_probability} ? sprintf("%.0f", $forecast_json->{forecast}->{daily}->[0]->{precip_probability} * 100) + 0 : undef;
+    $precipitation{rain1hr}      = defined $cur->{precip_accum_last_1hr} ? sprintf("%.2f", $cur->{precip_accum_last_1hr}) + 0 : undef;
+    $precipitation{probability}  = defined $results->{forecast}->{daily}->[0]->{precip_probability} ? sprintf("%.0f", $results->{forecast}->{daily}->[0]->{precip_probability}) + 0 : undef;
     $precipitation{type}         = "none";  # not available from WeatherFlow observation
     $precipitation{snowToday}    = undef;   # not available from WeatherFlow API
     $precipitation{snow1hr}      = undef;   # not available from WeatherFlow API
@@ -297,7 +298,7 @@ if ( $current ) {
         temperature    => \%temperature,
         humidity       => defined $cur->{relative_humidity} ? $cur->{relative_humidity} + 0 : undef,
         wind           => \%wind,
-        pressure       => defined $cur->{sea_level_pressure} ? sprintf("%.0f", $cur->{sea_level_pressure}) + 0 : undef,
+        pressure       => defined $cur->{station_pressure}   ? sprintf("%.0f", $cur->{station_pressure}) + 0   : undef,
         dewpoint       => defined $cur->{dew_point}          ? sprintf("%.1f", $cur->{dew_point}) + 0          : undef,
         visibility     => undef,  # not available from WeatherFlow API
         solarRadiation => defined $cur->{solar_radiation}    ? sprintf("%.1f", $cur->{solar_radiation}) + 0    : undef,
@@ -313,11 +314,11 @@ if ( $current ) {
     my $weatherKey = "current";
     my $envelope = {
         refresh     => $refresh,
-        generatedAt => $generatedAt->iso8601(),
+        generatedAt => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt->iso8601(),
+            generatedAt   => $generatedAt,
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",
@@ -339,32 +340,32 @@ if ( $daily ) {
 
     LOGINF "Reading daily weather data from API response into W4L structure.";
 
-    for my $results ( @{$forecast_json->{forecast}->{daily}} ) {
+    for my $resDay ( @{$results->{forecast}->{daily}} ) {
 
         # time
         my %time;
-        $time{datetime} = _epochToIso($results->{day_start_local}, $timezone);
-        $time{epoch}    = $results->{day_start_local};
+        $time{datetime} = _epochToIso($resDay->{day_start_local}, $timezone);
+        $time{epoch}    = $resDay->{day_start_local};
 
         # sunrise / sunset
         my ($sunrise, $sunset);
-        if (defined $results->{sunrise}) {
-            my $t_sr = localtime($results->{sunrise});
+        if (defined $resDay->{sunrise}) {
+            my $t_sr = localtime($resDay->{sunrise});
             $sunrise = sprintf("%02d:%02d", $t_sr->hour, $t_sr->min);
         }
-        if (defined $results->{sunset}) {
-            my $t_ss = localtime($results->{sunset});
+        if (defined $resDay->{sunset}) {
+            my $t_ss = localtime($resDay->{sunset});
             $sunset = sprintf("%02d:%02d", $t_ss->hour, $t_ss->min);
         }
 
         # temperature
         my %tempMax;
-        $tempMax{air}       = defined $results->{air_temp_high} ? sprintf("%.1f", $results->{air_temp_high}) + 0 : undef;
+        $tempMax{air}       = defined $resDay->{air_temp_high} ? sprintf("%.1f", $resDay->{air_temp_high}) + 0 : undef;
         $tempMax{feelsLike} = undef;  # not available from WeatherFlow daily
         $tempMax{heatIndex} = undef;  # not available from WeatherFlow daily
 
         my %tempMin;
-        $tempMin{air}       = defined $results->{air_temp_low} ? sprintf("%.1f", $results->{air_temp_low}) + 0 : undef;
+        $tempMin{air}       = defined $resDay->{air_temp_low} ? sprintf("%.1f", $resDay->{air_temp_low}) + 0 : undef;
         $tempMin{feelsLike} = undef;  # not available from WeatherFlow daily
         $tempMin{windChill} = undef;  # not available from WeatherFlow daily
 
@@ -385,26 +386,26 @@ if ( $daily ) {
 
         # precipitation
         my %precipitation;
-        $precipitation{probability} = defined $results->{precip_probability} ? sprintf("%.0f", $results->{precip_probability} * 100) + 0 : undef;
+        $precipitation{probability} = defined $resDay->{precip_probability} ? sprintf("%.0f", $resDay->{precip_probability}) + 0 : undef;
         $precipitation{rainHigh}    = undef;  # not available from WeatherFlow daily
         $precipitation{rainLow}     = undef;  # not available from WeatherFlow daily
         $precipitation{snowHigh}    = undef;  # not available from WeatherFlow daily
         $precipitation{snowLow}     = undef;  # not available from WeatherFlow daily
         $precipitation{duration}    = undef;  # not available from WeatherFlow daily
-        $precipitation{type}        = "none"; # not available from WeatherFlow daily
+        $precipitation{type}        = defined $resDay->{precip_type} ? $resDay->{precip_type} : undef;
 
         # weather codes
         my %weatherCode;
-        my ($loxoneCode, $w4lCode) = weatherflow_to_lox($results->{icon});
+        my ($loxoneCode, $w4lCode) = weatherflow_to_lox($resDay->{icon});
         $weatherCode{loxone}      = $loxoneCode;
         $weatherCode{weather4lox} = $w4lCode;
-        $weatherCode{description} = $results->{conditions};
+        $weatherCode{description} = $resDay->{conditions};
         $weatherCode{image}       = undef;
         $weatherCode{metar}       = getMetarCode($w4lCode);
 
         # moon
         my %moon;
-        my ($moonphase, $moonillum, $moonage) = (Astro::MoonPhase::phase($results->{day_start_local}))[0,1,2];
+        my ($moonphase, $moonillum, $moonage) = (Astro::MoonPhase::phase($resDay->{day_start_local}))[0,1,2];
         $moon{age}       = sprintf("%.2f", $moonage) + 0;
         $moon{percent}   = sprintf("%.2f", $moonillum * 100) + 0;
         $moon{phase}     = sprintf("%.2f", $moonphase * 100) + 0;
@@ -437,11 +438,11 @@ if ( $daily ) {
     my $weatherKey = "dailyforecast";
     my $envelope = {
         refresh     => $refresh,
-        generatedAt => $generatedAt->iso8601(),
+        generatedAt => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt->iso8601(),
+            generatedAt   => $generatedAt,
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",
@@ -463,49 +464,49 @@ if ( $hourly ) {
 
     LOGINF "Reading hourly weather data from API response into W4L structure.";
 
-    for my $h ( @{$forecast_json->{forecast}->{hourly}} ) {
+    for my $resHour ( @{$results->{forecast}->{hourly}} ) {
 
         # time
         my %time;
-        $time{datetime} = _epochToIso($h->{time}, $timezone);
-        $time{epoch}    = $h->{time};
+        $time{datetime} = _epochToIso($resHour->{time}, $timezone);
+        $time{epoch}    = $resHour->{time};
 
         # temperature
         my %temperature;
-        $temperature{air}       = defined $h->{air_temperature} ? sprintf("%.1f", $h->{air_temperature}) + 0 : undef;
-        $temperature{feelsLike} = defined $h->{feels_like}      ? sprintf("%.1f", $h->{feels_like}) + 0      : undef;
+        $temperature{air}       = defined $resHour->{air_temperature} ? sprintf("%.1f", $resHour->{air_temperature}) + 0 : undef;
+        $temperature{feelsLike} = defined $resHour->{feels_like}      ? sprintf("%.1f", $resHour->{feels_like}) + 0      : undef;
         $temperature{heatIndex} = undef;  # not available from WeatherFlow hourly
         $temperature{windChill} = undef;  # not available from WeatherFlow hourly
 
-        # wind (WeatherFlow provides m/s, convert to km/h)
+        # wind - WeatherFlow provides km/h, unit is called kph (km per hour)
         my %wind;
-        my $wdeg = $h->{wind_direction};
+        my $wdeg = $resHour->{wind_direction};
         $wind{direction} = defined $wdeg ? $wdeg + 0 : undef;
         $wind{cardinal}  = getWindDirCardinal($wdeg);
-        $wind{speed}     = defined $h->{wind_avg} ? sprintf("%.1f", $h->{wind_avg} * 3.6) + 0 : undef;
+        $wind{speed}     = defined $resHour->{wind_avg} ? sprintf("%.1f", $resHour->{wind_avg}) + 0 : undef;
         $wind{gust}      = undef;  # not available from WeatherFlow hourly
 
         # precipitation
         my %precipitation;
-        $precipitation{probability} = defined $h->{precip_probability} ? sprintf("%.0f", $h->{precip_probability} * 100) + 0 : undef;
-        $precipitation{rainHigh}    = defined $h->{precip} && $h->{precip} > 0 ? sprintf("%.2f", $h->{precip}) + 0 : undef;
+        $precipitation{probability} = defined $resHour->{precip_probability} ? sprintf("%.0f", $resHour->{precip_probability}) + 0 : undef;
+        $precipitation{rainHigh}    = defined $resHour->{precip} && $resHour->{precip} > 0 ? sprintf("%.2f", $resHour->{precip}) + 0 : undef;
         $precipitation{rainLow}     = undef;
         $precipitation{snowHigh}    = undef;  # not available from WeatherFlow hourly
         $precipitation{snowLow}     = undef;
         $precipitation{duration}    = undef;
-        $precipitation{type}        = "none";  # not available from WeatherFlow hourly
+        $precipitation{type}        = defined $resHour->{precip_type} ? $resHour->{precip_type} : undef;
 
         # weather codes
         my %weatherCode;
-        my ($loxoneCode, $w4lCode) = weatherflow_to_lox($h->{icon});
-        $weatherCode{loxone}      = $loxoneCode;
-        $weatherCode{weather4lox} = $w4lCode;
-        $weatherCode{description} = $h->{conditions};
-        $weatherCode{metar}       = getMetarCode($w4lCode);
+        my ($loxoneCode, $w4lCode) = weatherflow_to_lox($resHour->{icon});
+        $weatherCode{loxone}       = $loxoneCode;
+        $weatherCode{weather4lox}  = $w4lCode;
+        $weatherCode{description}  = $resHour->{conditions};
+        $weatherCode{metar}        = getMetarCode($w4lCode);
 
         # moon
         my %moon;
-        my ($moonphase, $moonillum, $moonage) = (Astro::MoonPhase::phase($h->{time}))[0,1,2];
+        my ($moonphase, $moonillum, $moonage) = (Astro::MoonPhase::phase($resHour->{time}))[0,1,2];
         $moon{age}       = sprintf("%.2f", $moonage) + 0;
         $moon{percent}   = sprintf("%.2f", $moonillum * 100) + 0;
         $moon{phase}     = sprintf("%.2f", $moonphase * 100) + 0;
@@ -515,18 +516,18 @@ if ( $hourly ) {
             hour           => $hour,
             time           => \%time,
             temperature    => \%temperature,
-            humidity       => defined $h->{relative_humidity} ? $h->{relative_humidity} + 0 : undef,
+            humidity       => defined $resHour->{relative_humidity} ? $resHour->{relative_humidity} + 0 : undef,
             wind           => \%wind,
-            pressure       => defined $h->{sea_level_pressure} ? sprintf("%.0f", $h->{sea_level_pressure}) + 0 : undef,
+            pressure       => defined $resHour->{station_pressure} ? sprintf("%.0f", $resHour->{station_pressure}) + 0 : undef,
             dewpoint       => undef,       # not available from WeatherFlow hourly
             visibility     => undef,       # not available from WeatherFlow hourly
             solarRadiation => undef,       # not available from WeatherFlow hourly
-            uvIndex        => defined $h->{uv} ? sprintf("%.1f", $h->{uv}) + 0 : undef,
+            uvIndex        => defined $resHour->{uv} ? sprintf("%.1f", $resHour->{uv}) + 0 : undef,
             precipitation  => \%precipitation,
             weatherCode    => \%weatherCode,
             cloudCover     => undef,       # not available from WeatherFlow hourly
             moon           => \%moon,
-            isNight        => wfIsNight($h->{icon}),
+            isNight        => wfIsNight($resHour->{icon}),
         };
         $hour++;
     }
@@ -535,11 +536,11 @@ if ( $hourly ) {
     my $weatherKey = "hourlyforecast";
     my $envelope = {
         refresh     => $refresh,
-        generatedAt => $generatedAt->iso8601(),
+        generatedAt => $generatedAt,
         location    => $location,
         $grabberKey => {
             filename      => "$lbplogdir/$weatherKey.json",
-            generatedAt   => $generatedAt->iso8601(),
+            generatedAt   => $generatedAt,
             grabberLabel  => $grabberLabel,
             grabberScript => $grabberFile,
             schemaVersion => "v1.0",

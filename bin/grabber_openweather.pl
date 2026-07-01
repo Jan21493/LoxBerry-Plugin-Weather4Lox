@@ -33,7 +33,6 @@ use File::Basename qw(basename);
 use Getopt::Long;
 use Time::Piece;
 use HTTP::Request;
-use DateTime;
 #use Astro::MoonPhase;
 use utf8;
 use Encode qw(encode_utf8);
@@ -56,6 +55,7 @@ my $stationid       = "lat=" . $pcfg->param("SERVER.COORDLAT") . "&lon=" . $pcfg
 my $city            = $pcfg->param("SERVER.CITY");
 my $country         = $pcfg->param("SERVER.COUNTRY");
 my $refresh         = $pcfg->param("SERVER.CRON") // 60;    # default to 60 if not set in config, otherwise to default weather service refresh time, normally set by command line option --interval from fetch.pl
+my $maskKeys     = $pcfg->param("SERVER.MASKKEYS");
 
 # names for JSON
 my $grabberFile     = basename(__FILE__);
@@ -93,7 +93,7 @@ my $verbose = '';
 my $current = '';
 my $daily = '';
 my $hourly = '';
-my $maskKeys = 1;
+
 GetOptions ('verbose'  => \$verbose,
             'interval=i' => \$refresh,
             'quiet'    => sub { $verbose = 0 },
@@ -111,12 +111,11 @@ if ($verbose) {
 LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
-requireOrLogdie('DateTime::Format::ISO8601');
 requireOrLogdie('Astro::MoonPhase');
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();
-LOGDEB "Using timezone: $timezone, current local system time is " . DateTime->now( time_zone => $timezone )->iso8601();
+LOGDEB "Using timezone: $timezone, current local system time is " . localtime->datetime;
 
 # Get weather data from openweathermap.org (API request) for current conditions
 my $results = apiCall(
@@ -124,7 +123,7 @@ my $results = apiCall(
     maskkeys => $maskKeys,
     keyparam => 'appid',
     # apikey => $apiKey,      # Key is not included in output JSON, so no masking needed here
-    info => "for Location $city (current, daily and hourly weather data)",
+    info => "for location $city (current, daily and hourly weather data)",
 );
 
 my $t;
@@ -482,7 +481,15 @@ if ($timezone ne $timezoneFromApi) {
 
 # date/time from API response
 my $currentEpoch = getValue($results, 'current', 'dt');
-my $dtCurrent = DateTime->from_epoch( epoch => $currentEpoch, time_zone => $timezoneFromApi );
+
+my ($tzShort, $tzOffset);
+{
+    local $ENV{TZ} = $timezoneFromApi;
+    POSIX::tzset();     # set timezone for strftime
+    $tzShort  = POSIX::strftime('%Z', localtime($currentEpoch));
+    $tzOffset = POSIX::strftime('%z', localtime($currentEpoch));
+}
+POSIX::tzset();     # reset timezone to system timezone
 
 # add location information once
 my $location = {
@@ -493,8 +500,8 @@ my $location = {
     latitude     => getFormatted('%.3f', $results, 'lat'),                               # latitude
     longitude    => getFormatted('%.3f', $results, 'lon'),                               # longitude
     timezone     => $timezoneFromApi,                                                    # timezone string (e.g. "Europe/Berlin"), from API response
-    tzShort      => $dtCurrent->strftime('%Z'),                                          # timezone abbreviation (e.g. "CET")
-    tzOffset     => $dtCurrent->strftime('%z'),                                          # timezone offset (e.g. "+0100")
+    tzShort      => $tzShort,                                                            # timezone abbreviation (e.g. "CET")
+    tzOffset     => $tzOffset,                                                           # timezone offset (e.g. "+0100")
 };
 
 
@@ -507,17 +514,19 @@ if ( $current ) {
     # Build clean record
     my %currentData;
 
-    LOGINF "Reading current weather data from API response into W4L structure at $dtCurrent.";
+    my $dtCurrent = _epochToIso($currentEpoch, $timezone);
+    LOGINF "Reading current weather data from API response into W4L structure. Observation time was $dtCurrent.";
 
     my %time;
-    $time{datetime}  = _epochToIso($currentEpoch, $timezoneFromApi);                                                          # cur_date_des
-    $time{epoch}     = $currentEpoch;                                                                                         # cur_date
+    $time{datetime}  = $dtCurrent;                                                                                            # cur_date_des - is always in local time of Loxberry
+    $time{epoch}     = $currentEpoch;                                                                                         # cur_date     - is always in UNIX epoch time
+
 
     # cur_date_tz_des (e.g. Europe/Berlin), cur_date_tz_des_sh (e.g. "CET"), cur_date_tz (e.g. "+0100") are send in location section 
 
     $currentData{time} = \%time;
 
-    # sunrise and sunset are in local time, e.g. 05:47 and 17:39, they are provided as epoch times in the API response
+    # sunrise and sunset need to be converted to local time, e.g. 05:47 and 17:39, they are provided as epoch times in the API response
     my $sunriseEpoch = getValue($results, 'current', 'sunrise');
     my $sunsetEpoch  = getValue($results, 'current', 'sunset');
     $currentData{sunrise} = getTimeFromEpochFormatted('%H:%M', $timezone, $sunriseEpoch);                                     # cur_sun_r 
@@ -625,14 +634,14 @@ if ( $current ) {
 
     # Build envelope and write JSON to file
     $weatherKey = "current";
-    my $generatedAt = DateTime->now( time_zone => $timezone );
+    my $generatedAt = localtime->datetime;
     my $envelope = {
         location => $location,
         refresh  => $refresh,
-        generatedAt => $generatedAt->iso8601(),
+        generatedAt => $generatedAt,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
-            generatedAt     => $generatedAt->iso8601(),
+            generatedAt     => $generatedAt,
             grabberLabel    => $grabberLabel,
             grabberScript   => $grabberFile,
             schemaVersion   => "v1.0",
@@ -652,7 +661,7 @@ if ( $daily ) {
     my @dailyData;
     my $day = 0;               # used for days, starts with 0 for current day, 1 for next day, etc.
 
-    LOGINF "Reading daily weather data from API response into W4L structure at $dtCurrent.";
+    LOGINF "Reading daily weather data from API response into W4L structure.";
 
     # it is assumed, that the elements are ordered by time (ascending)
     for my $resDay (@{$results->{daily} // []}) {
@@ -755,14 +764,14 @@ if ( $daily ) {
  
     # Build envelope and write JSON to file
     $weatherKey = "dailyforecast";
-    my $generatedAt = DateTime->now( time_zone => $timezone );
+    my $generatedAt = localtime->datetime;
     my $envelope = {
         location => $location,
         refresh  => $refresh,
-        generatedAt => $generatedAt->iso8601(),
+        generatedAt => $generatedAt,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
-            generatedAt     => $generatedAt->iso8601(),
+            generatedAt     => $generatedAt,
             grabberLabel    => $grabberLabel,
             grabberScript   => $grabberFile,
             schemaVersion   => "v1.0",
@@ -785,7 +794,7 @@ if ( $hourly ) {
     my $hourlyData;
     my $hour = 1;                # used for hours, starts with 1 for first forecasted hour, 2 for next hour, etc.
 
-    LOGINF "Reading hourly weather data from API response into W4L structure at $dtCurrent.";
+    LOGINF "Reading hourly weather data from API response into W4L structure.";
 
     # it is assumed, that the elements are ordered by time (ascending)
     for my $resHour (@{$results->{hourly} // []}) {
@@ -1024,14 +1033,14 @@ if ( $hourly ) {
 
     # Build envelope and write JSON to file
     $weatherKey = "hourlyforecast";
-    my $generatedAt = DateTime->now( time_zone => $timezone );
+    my $generatedAt = localtime->datetime;
     my $envelope = {
         location => $location,
         refresh  => $refresh,
-        generatedAt => $generatedAt->iso8601(),
+        generatedAt => $generatedAt,
         $grabberKey => {
             filename        => "$lbplogdir/$weatherKey.json",
-            generatedAt     => $generatedAt->iso8601(),
+            generatedAt     => $generatedAt,
             grabberLabel    => $grabberLabel,
             grabberScript   => $grabberFile,
             schemaVersion   => "v1.0",
