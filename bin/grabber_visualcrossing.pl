@@ -31,6 +31,7 @@ use JSON::PP;
 use File::Copy;
 use Getopt::Long;
 use Time::Piece;
+use Time::Seconds;
 
 require "$lbpbindir/grabber_utils.pl";
 
@@ -48,7 +49,6 @@ my $lang         = $pcfg->param("SERVER.LANG");
 my $stationid    = $pcfg->param("SERVER.COORDLAT") . "," . $pcfg->param("SERVER.COORDLONG");
 my $city         = $pcfg->param("SERVER.CITY");
 my $country      = $pcfg->param("SERVER.COUNTRY");
-my $maskKeys     = $pcfg->param("SERVER.MASKKEYS");
 
 # Grabber metadata for JSON envelope
 my $grabberKey   = "visualcrossing";
@@ -72,6 +72,7 @@ my $current = '';
 my $daily = '';
 my $hourly = '';
 my $observations = '';
+my $maskkeys = 1; # optional
 my $incremental = '';
 
 GetOptions ('verbose' => \$verbose,
@@ -82,7 +83,7 @@ GetOptions ('verbose' => \$verbose,
             'hourly' => \$hourly,
             'observations' => \$observations,
             'incremental' => \$incremental,
-			'maskkeys' => \$maskKeys,
+			'maskkeys' => \$maskkeys,
 			);
 
 if ($verbose) {
@@ -102,9 +103,9 @@ LOGDEB "Using timezone: $timezone, current local system time is " . localtime->d
 # Get data from www.visualcrossing.com (API request) for current conditions, daily and hourly forecasts
 my $results = apiCall(
 	url => "$url/$stationid?unitGroup=metric&lang=$lang&iconSet=icons2&include=days,hours,current&key=$apikey&contentType=json",
-	maskkeys => $maskKeys,
+	maskkeys => $maskkeys,
 	keyparam => 'key',
-	info => "for location $stationid (current, daily, and hourly weather data)",
+	info => "for Location $stationid (Current, Daily, and Hourly Weather Data)",
 );
 
 # API documentation: https://www.visualcrossing.com/resources/documentation/weather-api/timeline-weather-api/
@@ -203,11 +204,11 @@ my $generatedAt = localtime->datetime;
 my ($tzShort, $tzOffset);
 {
     local $ENV{TZ} = $timezoneFromApi;
-    POSIX::tzset();     # change to timezone from API
+    POSIX::tzset();
     $tzShort  = POSIX::strftime('%Z', localtime($currentEpoch));
     $tzOffset = POSIX::strftime('%z', localtime($currentEpoch));
+    POSIX::tzset();
 }
-POSIX::tzset();     # change back to system timezone
 
 $city    = Encode::decode("UTF-8", $city)    if defined $city;
 $country = Encode::decode("UTF-8", $country) if defined $country;
@@ -238,21 +239,19 @@ if ($observations) {
 if ( $current ) {
 
     my $cur = $results->{currentConditions};
-    my $currentEpoch = $cur->{datetimeEpoch};
 
-    my $dtCurrent = _epochToIso($currentEpoch, $timezone);
-    LOGINF "Reading current weather data from API response into W4L structure. Observation time was $dtCurrent.";
+    LOGINF "Reading current weather data from API response into W4L structure.";
 
     # time
     my %time;
-    $time{datetime}  = $dtCurrent;                                                                 # cur_date_des - is always in local time of Loxberry
-    $time{epoch}     = $currentEpoch;                                                              # cur_date     - is always in UNIX epoch time
+    $time{datetime} = _epochToIso($cur->{datetimeEpoch}, $timezoneFromApi);
+    $time{epoch}    = $cur->{datetimeEpoch};
 
     # cur_date_tz_des (e.g. Europe/Berlin), cur_date_tz_des_sh (e.g. "CET"), cur_date_tz (e.g. "+0100") are send in location section 
 
     # sunrise / sunset in epoch time, convert to local time of location and format as HH:MM
     my $sunriseEpoch = getValue($cur, 'sunriseEpoch');
-    my $sunsetEpoch  = getValue($cur, 'sunsetEpoch');
+    my $sunsetEpoch = getValue($cur, 'sunsetEpoch');
 
     # temperature
     my %temperature;
@@ -599,7 +598,7 @@ if ( $observations ) {
     # Get data from www.visualcrossing.com (API request) for observations
     my $results = apiCall(
         url => "$url/$stationid/last3days?unitGroup=metric&lang=$lang&iconSet=icons2&include=obs,days,hours,current&key=$apikey&contentType=json",
-        maskkeys => $maskKeys,
+        maskkeys => $maskkeys,
         keyparam => 'key',
         info => "for Location $stationid (Observations for the last 3 days)",
     );

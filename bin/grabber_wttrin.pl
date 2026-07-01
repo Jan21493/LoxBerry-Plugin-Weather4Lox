@@ -158,7 +158,7 @@ sub wttr_to_lox {
 # Get weather data from WTTR.in (API request)
 my $results = apiCall(
 	url => "$url/$stationid?lang=$lang&M&3&format=j1",
-	info => "for location $stationid (current, daily, and hourly weather data)",
+	info => "for Location $stationid (Current, Daily, and Hourly Weather Data)",
 );
 
 ##########################################################################
@@ -185,10 +185,19 @@ if (!$obs_local_time_str) {
 
 my $generatedAt = _epochToIso(time(), $timezone);
 
+# Timezone short and offset via POSIX
+my ($tzShort, $tzOffset);
+{
+    local $ENV{TZ} = $timezone;
+    POSIX::tzset();
+    $tzShort  = POSIX::strftime('%Z', localtime($currentEpoch));
+    $tzOffset = POSIX::strftime('%z', localtime($currentEpoch));
+    POSIX::tzset();
+}
+
 my $city    = Encode::decode("UTF-8", $results->{nearest_area}[0]->{areaName}[0]->{value});
 my $country = Encode::decode("UTF-8", $results->{nearest_area}[0]->{country}[0]->{value});
 
-# add location information once, timezone and timezone abbreviation are retrieved from localtime() and not from API response
 my $location = {
     city        => $city,
     country     => $country,
@@ -197,8 +206,8 @@ my $location = {
     latitude    => defined $lat ? $lat + 0 : undef,
     longitude   => defined $lon ? $lon + 0 : undef,
     timezone    => $timezone,
-    tzShort     => localtime->strftime('%Z'),
-    tzOffset    => localtime->strftime('%z'),
+    tzOffset    => $tzOffset,
+    tzShort     => $tzShort,
 };
 
 ##########################################################################
@@ -209,13 +218,12 @@ if ( $current ) {
 
     my $cur = $results->{current_condition}[0];
 
-    my $dtCurrent = _epochToIso($currentEpoch, $timezone);
-    LOGINF "Reading current weather data from API response into W4L structure. Observation time was $dtCurrent.";
+    LOGINF "Reading current weather data from API response into W4L structure.";
 
     # time
     my %time;
-    $time{datetime}  = $dtCurrent;                 # cur_date_des - is always in local time of Loxberry
-    $time{epoch}     = $currentEpoch;              # cur_date     - is always in UNIX epoch time
+    $time{datetime} = _epochToIso($currentEpoch, $timezone);
+    $time{epoch}    = $currentEpoch;
 
     # cur_date_tz_des (e.g. Europe/Berlin), cur_date_tz_des_sh (e.g. "CET"), cur_date_tz (e.g. "+0100") are send in location section 
 

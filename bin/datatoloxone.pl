@@ -26,7 +26,7 @@ use LoxBerry::IO;
 use LoxBerry::Log;
 use Getopt::Long;
 use IO::Socket; # For sending UDP packages
-use Time::Piece;
+use Time::HiRes;
 use Net::MQTT::Simple;
 #use Data::Dumper;
 use Config::Simple;
@@ -1044,9 +1044,7 @@ sub sendUDP {
         );
         $sock->send($sendUDPqueue);
         LOGOK "Sent weather data via UDP to " . $miniservers{$msno}{Name} . ". is done.";
-
-        # add 10 milliseconds waiting time to avoid flooding the miniserver with UDP packets
-        select(undef, undef, undef, 0.01);
+        Time::HiRes::usleep (10000); # 10 Milliseconds
     }
     $sendUDPqueue = "";
     return();

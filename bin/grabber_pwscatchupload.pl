@@ -78,11 +78,9 @@ if ($verbose) {
 LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
 LOGDEB "This is $0 Version $version";
 
-requireOrLogdie('DateTime::Format::ISO8601');
-
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();
-LOGDEB "Using timezone: $timezone, current local system time is " . DateTime->now( time_zone => $timezone )->iso8601();
+LOGDEB "Using timezone: $timezone, current local system time is " . _epochToIso(time(), $timezone);
 
 LOGINF "Reading data from $file";
 my $json = LoxBerry::System::read_file("$file");
@@ -134,10 +132,10 @@ $cur->{dewpoint}        = getFormatted('%.1f', $resCurrent, 'cur_dp');          
 $cur->{solarRadiation}  = getFormatted('%.0f', $resCurrent, 'cur_sr');              # cur_sr - solar radiation (W/m2)
 
 # Add grabber metadata
-my $generatedAt = DateTime->now( time_zone => $timezone );
+my $generatedAt = _epochToIso(time(), $timezone);
 $envelope->{$grabberKey} = {
     filename        => "$lbplogdir/$weatherKey.json",
-    generatedAt     => $generatedAt->iso8601(),
+    generatedAt     => $generatedAt,
     grabberLabel    => $grabberLabel,
     grabberScript   => $grabberFile,
     schemaVersion   => "v1.0",
@@ -148,7 +146,7 @@ if ($refresh < $envelope->{refresh}) {
     LOGINF "Reducing refresh interval for $weatherKey weather data from $envelope->{refresh} to $refresh minutes.";
     $envelope->{refresh} = $refresh;
 }
-$envelope->{generatedAt} = $generatedAt->iso8601();
+$envelope->{generatedAt} = $generatedAt;
 
 # Write JSON back to file
 writeJsonFile($lbplogdir, $weatherKey, $envelope);
