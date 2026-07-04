@@ -212,7 +212,7 @@ my $curDateLoxEpoch = toLoxEpoch($midnightEpoch);
 my $doLog = 1; # log the first data set in detail, but not all subsequent ones to avoid log flooding
 
 # sending to Loxone Miniserver via MQTT, HTML webpage and UDP with logging of each value
-sendToLox($toMS, $doLog, "cur_date", toLoxEpoch($epoch));                                          # Loxone epoch (1.1.2009, MEZ), e.g. 542934004
+sendToLox($toMS, $doLog, "cur_date", toLoxEpoch($epoch));                                          # Loxone epoch (1.1.2009), e.g. 542934004
 sendToLox($toMS, $doLog, "cur_date_des", $cur->{time}{datetime});                                  # was RFC822, now ISO 8601, e.g. Mon, 16 Mar 2026 23:00:04 +0100
 sendToLox($toMS, $doLog, "cur_date_tz_des_sh", $location->{timezone});                             # IANA timezone name, e.g. Europe/Berlin
 sendToLox($toMS, $doLog, "cur_date_tz_des", $location->{tzShort});                                 # Time Zone Abbreviation, e.g. CET
@@ -318,7 +318,7 @@ foreach my $dfcEntry (@$dfc) {
 
     # sending to Loxone Miniserver via MQTT, HTML webpage and UDP with logging of first day (today) in detail
     sendToLox($toMS, $doLog, "dfc${per}_per", $per); # period starting with 0 for today, 1 for tomorrow, ...
-    sendToLox($toMS, $doLog, "dfc${per}_date", toLoxEpoch($dfcEntry->{time}{epoch}));    # Loxone epoch (1.1.2009, MEZ), e.g. 542934004
+    sendToLox($toMS, $doLog, "dfc${per}_date", toLoxEpoch($dfcEntry->{time}{epoch}));    # Loxone epoch (1.1.2009), e.g. 542934004
     sendToLox($toMS, $doLog, "dfc${per}_day", encode_utf8(sprintf("%02d", $dfcDate->mday)));
     sendToLox($toMS, $doLog, "dfc${per}_month", encode_utf8(sprintf("%02d", $dfcDate->mon)));
     sendToLox($toMS, $doLog, "dfc${per}_monthn", encode_utf8($langData->{theme}{months}[$dfcDate->mon - 1] // $dfcDate->strftime('%B')));
@@ -974,7 +974,6 @@ if ($emu) {
 }
 
 # Finish
-LOGOK "We are done. Good bye.";
 exit;
 
 
@@ -1133,5 +1132,6 @@ sub mqttconnect
 
 END
 {
-  LOGEND;
+    LOGOK "We are done. Good bye.";
+    LOGEND;
 }

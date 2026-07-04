@@ -238,8 +238,8 @@ if ($observations) {
 if ( $current ) {
 
     my $cur = $results->{currentConditions};
-    my $currentEpoch = $cur->{datetimeEpoch};
 
+    my $currentEpoch = $cur->{datetimeEpoch};
     my $dtCurrent = _epochToIso($currentEpoch, $timezone);
     LOGINF "Reading current weather data from API response into W4L structure. Observation time was $dtCurrent.";
 
@@ -367,9 +367,16 @@ if ( $daily ) {
     for my $resDay ( @{$results->{days}} ) {
 
         # time
+        my $dayEpoch = $resDay->{datetimeEpoch};
+        my $dtDay = _epochToIso($dayEpoch, $timezone);           # ISO 8601 date string in local time, e.g. 2026-03-13T02:00:00+01:00
+
         my %time;
-        $time{datetime} = _epochToIso($resDay->{datetimeEpoch}, $timezoneFromApi);
-        $time{epoch}    = $resDay->{datetimeEpoch};
+        $time{datetime} = $dtDay;
+        $time{epoch}    = $dayEpoch;
+
+        if ($day < 3) {
+            LOGDEB "Adding daily forecast (dfc${day}_...) for $dtDay (epoch: $dayEpoch).";
+        } 
 
         # sunrise / sunset in epoch time, convert to local time of location and format as HH:MM
         my $sunriseEpoch = getValue($resDay, 'sunriseEpoch');
@@ -452,6 +459,8 @@ if ( $daily ) {
         $day++;
     }
 
+    LOGDEB "Adding additional daily forecasts without detailed logging ... " . $day . " daily forecasts were added.";
+
     # Build envelope and write JSON to file
     $weatherKey = "dailyforecast";
     $envelope = {
@@ -480,7 +489,9 @@ if ( $hourly ) {
     my @hourlyData;
     my $hour = 1;               # used for hours, starts with 1 for first forecasted hour, 2 for next hour, etc.
 
-    LOGINF "Reading hourly weather data from API response into W4L structure.";
+    my $nowEpoch = time();
+
+    LOGINF "Reading hourly weather data from API response into W4L structure. Starting from current time " . _epochToIso($nowEpoch, $timezone) . " (epoch: $nowEpoch).";
 
     for my $resDay ( @{$results->{days}} ) {
 
@@ -490,22 +501,22 @@ if ( $hourly ) {
 
         for my $resHour ( @{$resDay->{hours}} ) {
 
-            # Skip past hours (hourly forecast contains also data for current day from observations)
+            # Skip observations (hourly data also contains weather observations for current day in addition to forecast hours)
             my $source = getValue($resHour, 'source');
-            next if $source eq "obs"; # skip past hours, only use forecast hours
-            
-            # Skip past hours (hourly forecast contains also data for current day, subtract one hour margin)
-            # my $now = DateTime->now( time_zone => $timezone );
-            # $now->subtract( minutes => 55 );
-            my $hourEpoch = getValue($resHour, 'datetimeEpoch');
-            # my $hfctime = localtime($hourEpoch);
+            next if $source eq "obs";
 
-            # LOGDEB "Checking hourly forecast hour: $hourEpoch ($hfctime) against current time: " . $now->epoch . " ($now), skipping if forecast hour is in the past. ($hfctime->epoch > $now->epoch)";
-            # next if $now->epoch > $hfctime->epoch;
+            # Skip past hours (based on epoch time of the forecast hour and current epoch time)
+            my $hourEpoch = getValue($resHour, 'datetimeEpoch');
+            next if $hourEpoch <= $nowEpoch;
+            my $dtHour = _epochToIso($hourEpoch, $timezone);
+
+            if ($hour < 10) {
+                LOGDEB "Adding hourly forecast (hfc${hour}_...) for $dtHour (epoch: $hourEpoch).";
+            } 
  
             # time
             my %time;
-            $time{datetime} = _epochToIso($hourEpoch, $timezoneFromApi);
+            $time{datetime} = $dtHour;
             $time{epoch}    = $hourEpoch;
 
             # temperature
@@ -570,6 +581,8 @@ if ( $hourly ) {
             $hour++;
         }
     }
+    $hour--;
+    LOGDEB "Adding additional hourly forecasts without detailed logging ... $hour hourly forecasts were added.";
 
     # Build envelope and write JSON to file
     $weatherKey = "hourlyforecast";

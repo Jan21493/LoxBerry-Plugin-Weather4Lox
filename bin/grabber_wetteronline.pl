@@ -713,7 +713,7 @@ if ( $current ) {
 if ( $daily ) {
   
     my @dailyData;
-    my $dtResult;
+    my $dayEpoch;
     my $results;
     my $day = 0;               # used for days, starts with 0 for current day, 1 for next day, etc.
 
@@ -725,8 +725,13 @@ if ( $daily ) {
         # values with additional calculations needs to be done before hash is assigned
 
         # time
-        $dtResult = _parseIso8601(getValue($results, 'date'));   # ISO date from API in UTC, e.g. 2026-03-13T23:00:00+00:00
-        
+        $dayEpoch = _parseIso8601(getValue($results, 'date'));   # ISO date from API in UTC, e.g. 2026-03-13T23:00:00+00:00
+        my $dtDay = _epochToIso($dayEpoch, $timezone);           # ISO 8601 date string in local time, e.g. 2026-03-13T02:00:00+01:00
+
+        if ($day < 3) {
+            LOGDEB "Adding daily forecast (dfc${day}_...) for $dtDay (epoch: $dayEpoch).";
+        }
+
         # wind
         my $windDirAvg = getFormatted('%.0f', $results, 'wind', 'direction'); 
 
@@ -741,7 +746,7 @@ if ( $daily ) {
         }
 
         # astro data - get moon infos for specific time of data set (translated to epoch time)
-        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = Astro::MoonPhase::phase($dtResult);
+        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = Astro::MoonPhase::phase($dayEpoch);
 
         # Calculating min, max values from dayparts
         # humidity (min, max)
@@ -810,8 +815,8 @@ if ( $daily ) {
             day            => $day,                                              # dfc<X>_per, counter of day
             time => {
                 # date       => getValue($results, 'date'),                      # original timestamp from API
-                datetime     => _epochToIso($dtResult, $timezone),        # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
-                epoch        => $dtResult,                                # dfc<X>_date       - UNIX timestamp
+                datetime     => _epochToIso($dayEpoch, $timezone),        # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
+                epoch        => $dayEpoch,                                # dfc<X>_date       - UNIX timestamp
                 # wdayName   => $wdayname,                                       # name of day of week, e.g. Saturday  - TODO: verify if useful, client may calculate name as well
                 # wdayShort  => $wdayshort,                                      # short name of day of week, e.g. Sa (two chars)
                 # monthName  => $monthname,                                      # name of month, e.g. March
@@ -886,6 +891,8 @@ if ( $daily ) {
         $day++;
     }
  
+    LOGDEB "Adding additional daily forecasts without detailed logging ... " . $day . " daily forecasts were added.";
+
     # Build envelope and write JSON to file
     $weatherKey = "dailyforecast";
     my $generatedAt = localtime->datetime;
@@ -913,7 +920,7 @@ if ( $daily ) {
 if ( $hourly ) {
 
     my @hourlyData;
-    my $dtResult;
+    my $hourEpoch;
     my $results;
     my $hour = 1;                # used for hours, starts with 1 for first forecasted hour, 2 for next hour, etc.
 
@@ -925,7 +932,12 @@ if ( $hourly ) {
         # values with additional calculations needs to be done before hash is assigned
 
         # time
-        $dtResult = _parseIso8601(getValue($results, 'date'));   # ISO date from API in UTC, e.g. 2026-03-13T23:00:00+00:00
+        $hourEpoch = _parseIso8601(getValue($results, 'date'));   # get epoch - API provides ISO date in UTC, e.g. 2026-03-13T23:00:00+00:00
+        my $dtHour = _epochToIso($hourEpoch, $timezone);          # ISO 8601 date string in local time, e.g. 2026-03-13T02:00:00+01:00
+
+        if ($hour < 10) {
+            LOGDEB "Adding hourly forecast (hfc${hour}_...) for $dtHour (epoch: $hourEpoch).";
+        }
 
         # wind
         my $windDir     = getFormatted('%.0f', $results, 'wind', 'direction'); 
@@ -941,7 +953,7 @@ if ( $hourly ) {
         }
 
         # astro data - get moon infos for specific time of data set (translated to epoch time)
-        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = Astro::MoonPhase::phase($dtResult);
+        my ( $moonphase, $moonillum, $moonage, $moondist, $moonang, $sundist, $sunang ) = Astro::MoonPhase::phase($hourEpoch);
 
         # Get sunrise and sunset time from daily data, needed for isNighttime calculation
         my $isNighttime = undef; # default to day (undef)
@@ -950,8 +962,8 @@ if ( $hourly ) {
             if (substr(getValue($dailyresults, 'date'), 0, 10) eq substr(getValue($results, 'date'), 0, 10)) {
                 # we found the matching daily data for the current hourly data, now we can check the dayparts for precipitation type
 
-                if (_strftimeInTz('%H:%M', $dtResult, $timezone) lt getTimeFormatted('%H:%M', $timezone, $dailyresults, 'sun', 'rise') || 
-                    _strftimeInTz('%H:%M', $dtResult, $timezone) gt getTimeFormatted('%H:%M', $timezone, $dailyresults, 'sun', 'set')) {
+                if (_strftimeInTz('%H:%M', $hourEpoch, $timezone) lt getTimeFormatted('%H:%M', $timezone, $dailyresults, 'sun', 'rise') || 
+                    _strftimeInTz('%H:%M', $hourEpoch, $timezone) gt getTimeFormatted('%H:%M', $timezone, $dailyresults, 'sun', 'set')) {
                     $isNighttime = 1;
                     last; # break loop if we found the matching day and determined it is nighttime
                 }
@@ -962,8 +974,8 @@ if ( $hourly ) {
             hour           => $hour,                                             # hfc<X>_per, counter of day
             time => {
                 # date       => getValue($results, 'date'),                      # original timestamp from API
-                datetime     => _epochToIso($dtResult, $timezone),        # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
-                epoch        => $dtResult,                                # hfc<X>_date       - UNIX timestamp
+                datetime     => $dtHour,                                         # ISO 8601 date string in local time (e.g. "2026-03-13T02:00:00+01:00")
+                epoch        => $hourEpoch,                                      # hfc<X>_date       - UNIX timestamp
             },
             temperature => {
                 air            => getFormatted('%.1f', $results, 'temperature', 'air'),         # hfc<X>_tt        - hourly max temperature (°C)
@@ -1011,6 +1023,8 @@ if ( $hourly ) {
         };
         $hour++;
     }
+    LOGDEB "Adding additional hourly forecasts without detailed logging ... " . ($hour - 1) ." hourly forecasts were added.";
+    LOGDEB "Calculating addtional hourly forcasts by interpolating data from daily parts (6 hour intervals) ...";
 
 	# WetterOnline only offers 32h hourly forecast, the rest is retriveved by interpolating the daily forecast data.
 
@@ -1144,15 +1158,17 @@ if ( $hourly ) {
     my $snow_high_i = Math::Function::Interpolator::Linear->new(points => \%snow_cm_high);
 	my $pop_i       = Math::Function::Interpolator::Linear->new(points => \%pop_pct);
 
-	# 4. Step: Create hourly data for all hours starting from '$dtResult' (time stamp from the last hourly entry) + 1h
+	# 4. Step: Create hourly data for all hours starting from '$hourEpoch' (time stamp from the last hourly entry) + 1h
     #          up to last available entry in dpEpochs, '$hour' still counts the entry
 
 	# Get latest time stamp 
 	my $end_epoch_time = $dpEpochs[-1];
 
-	# increase time '$dtResult' by 1 hour for next entry
-	$dtResult += 3600;
-	my $epochTime = $dtResult;
+	# increase time '$hourEpoch' by 1 hour for next entry
+	$hourEpoch += 3600;
+	my $epochTime = $hourEpoch;
+
+    my $interpolatedCount = 0;
 
     # only save 5 days of hourly data to reduce loading times
 	while ($epochTime <= $end_epoch_time && !$skipInterpolation && $hour < 121) {
@@ -1168,7 +1184,13 @@ if ( $hourly ) {
 		}
 
         # calculate epoch time from last entry + 1h
-		$epochTime = $dtResult;
+		$epochTime = $hourEpoch;
+        my $dtHour = _epochToIso($hourEpoch, $timezone);          # ISO 8601 date string in local time, e.g. 2026-03-13T02:00:00+01:00
+
+        if ($interpolatedCount < 10) {
+            LOGDEB "Adding hourly forecast (hfc${hour}_...) for $dtHour (epoch: $hourEpoch) from interpolation.";
+        }
+        $interpolatedCount++;
 
         # Mapping: Wetteronline Symbol => [Loxone code, Weather4Lox code, description]
         my ($loxoneCode, $w4lCode, $description);
@@ -1189,11 +1211,11 @@ if ( $hourly ) {
         my $isNighttime = undef; # default to day (undef)
 
         for my $dailyResults (@{$resDaily}) {
-            if (substr(getValue($dailyResults, 'date'), 0, 10) eq _strftimeInTz('%Y-%m-%d', $dtResult, $timezone)) {
+            if (substr(getValue($dailyResults, 'date'), 0, 10) eq _strftimeInTz('%Y-%m-%d', $hourEpoch, $timezone)) {
                 # we found the matching daily data for the current hourly data, now we can check the dayparts for precipitation type
 
-                if (_strftimeInTz('%H:%M', $dtResult, $timezone) lt getTimeFormatted('%H:%M', $timezone, $dailyResults, 'sun', 'rise') || 
-                    _strftimeInTz('%H:%M', $dtResult, $timezone) gt getTimeFormatted('%H:%M', $timezone, $dailyResults, 'sun', 'set')) {
+                if (_strftimeInTz('%H:%M', $hourEpoch, $timezone) lt getTimeFormatted('%H:%M', $timezone, $dailyResults, 'sun', 'rise') || 
+                    _strftimeInTz('%H:%M', $hourEpoch, $timezone) gt getTimeFormatted('%H:%M', $timezone, $dailyResults, 'sun', 'set')) {
                     $isNighttime = 1;
                     last; # break loop if we found the matching day and determined it is nighttime
                 }
@@ -1251,9 +1273,10 @@ if ( $hourly ) {
             cloudCover       => skyConditionFromWoCode($sym),                           # hfc<X>_sky       - cloud/sky cover (percentage from 0 to 100)
             isNight          => $isNighttime,                                           # get nighttime information from sunrise / sunset
         };
-        $dtResult += 3600;
+        $hourEpoch += 3600;
         $hour++;
     }
+    LOGDEB "Adding additional hourly forecasts without detailed logging ... " . $interpolatedCount ." hourly forecasts were added by interpolating data from daily parts (6 hour intervals) for a total of " . ($hour - 1) . " hours.";
 
     # Build envelope and write JSON to file
     $weatherKey = "hourlyforecast";

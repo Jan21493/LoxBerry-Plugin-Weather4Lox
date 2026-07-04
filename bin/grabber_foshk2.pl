@@ -45,7 +45,7 @@ my $version = LoxBerry::System::pluginversion();
 
 # params from config
 my $pcfg        = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
-my $url         = $pcfg->param("FOSHK.URL");
+my $url         = "JSON?units=m?status";
 my $server      = $pcfg->param("FOSHK.SERVER");
 my $port        = $pcfg->param("FOSHK.PORT");
 
@@ -87,7 +87,7 @@ LOGDEB "Using timezone: $timezone, current local system time is " . _epochToIso(
 # Get data from FOSHK Plugin Server for current conditions
 my $results = apiCall(
 	url => "http://$server\:$port/$url",
-	info => "from $grabberLabel (OLD API) at $server\:$port (Current Weather Data)",
+	info => "from $grabberLabel (NEW API via /JSON) at $server\:$port (Current Weather Data)",
 );
 
 # Read existing current.json envelope
@@ -97,11 +97,7 @@ my $cur = $envelope->{$weatherKey} // {};
 
 LOGDEB "Adding $grabberLabel data to $weatherKey weather data (existing values for same keys will be overwritten).";
 
-# Shorthand for FOSHK observations
-my $obs   = $results->{observations}->[0];
-my $obs_m = $obs->{metric} // {};
-
-my $currentEpoch = $obs->{epoch} + 3600;                                       # Bug in FOSHK Plugin: epoch is in UTC, but time was one hour behind.
+my $currentEpoch = toUnixEpoch(getValue($results, 'time'));                    # FOSHK plugin provides Loxone epoch time with this API call
 my $dtCurrent = _epochToIso($currentEpoch, $timezone);
 LOGINF "Observation time was $dtCurrent (epoch: $currentEpoch)";
 
@@ -110,41 +106,51 @@ $cur->{time}{datetime}   = $dtCurrent;                                         #
 $cur->{time}{epoch}      = $currentEpoch;                                      # cur_date_des - is always in local time of Loxberry
 
 # real (air) temperature, feels like / wind chill
-my $temp      = getFormatted('%.1f', $obs, 'metric', 'temp');
-my $windChill = getFormatted('%.1f', $obs, 'metric', 'windChill');
-
+my $temp      = getFormatted('%.1f', $results, 'tempc');
 $cur->{temperature}{air}       = $temp;                                        # cur_tt  - air temperature (°C)
+
+# feels like temperature
+my $feelsLike = getFormatted('%.1f', $results, 'feelslikec');
+if (defined $feelsLike && defined $temp && abs($feelsLike - $temp) > 0.1 || !defined $cur->{temperature}{feelsLike}) {
+    $cur->{temperature}{feelsLike} = $feelsLike;                               # cur_tt_fl - feels like temperature (°C)
+}
+
 # Windchill is only relevant if it differs significantly from the actual temperature
+my $windChill = getFormatted('%.1f', $results, 'windchillc');
 if (defined $windChill && defined $temp && abs($windChill - $temp) > 0.1 || !defined $cur->{temperature}{windChill}) {
     $cur->{temperature}{windChill} = $windChill;                               # cur_w_ch / cur_tt_fl - wind chill (°C)
 }
 
+# Heat index is only relevant if it differs significantly from the actual temperature
+my $heatIndex = getFormatted('%.1f', $results, 'heatindexc');
+if (defined $heatIndex && defined $temp && abs($heatIndex - $temp) > 0.1 || !defined $cur->{temperature}{heatIndex}) {
+    $cur->{temperature}{heatIndex} = $heatIndex;                               # cur_hi - heat index (°C)
+}
+
 # wind data
-my $windDir = getFormatted('%.0f', $obs, 'winddir');
+my $windDir = getFormatted('%.0f', $results, 'winddir');
 $cur->{wind} = {
     direction  => $windDir,                                                    # cur_w_dir    - wind direction (degree)
     cardinal   => getWindDirCardinal($windDir),                                # to calculate cur_w_dirdes - wind direction description from (N, NE, E, SE, S, SW, W, NW)
-    speed      => getFormatted('%.2f', $obs, 'metric', 'windSpeed'),           # cur_w_sp     - wind speed (km/h)
-    gust       => getFormatted('%.2f', $obs, 'metric', 'windGust'),            # cur_w_gu     - wind gust (km/h)
+    speed      => getFormatted('%.2f', $results, 'windspeedkmh'),              # cur_w_sp     - wind speed (km/h)
+    gust       => getFormatted('%.2f', $results, 'windgustkmh'),               # cur_w_gu     - wind gust (km/h)
 };
 
 # other weather data
-$cur->{humidity}        = getFormatted('%.1f', $obs, 'humidity');              # cur_hu  - humidity (%)
-$cur->{pressure}        = getFormatted('%.0f', $obs, 'metric', 'pressure');    # cur_pr  - air pressure (hPa)
-$cur->{dewpoint}        = getFormatted('%.1f', $obs, 'metric', 'dewpt');       # cur_dp  - dew point (°C)
+$cur->{humidity}        = getFormatted('%.1f', $results, 'humidity');          # cur_hu  - humidity (%)
+$cur->{pressure}        = getFormatted('%.0f', $results, 'baromrelhpa');       # cur_pr  - air pressure (hPa)
+$cur->{dewpoint}        = getFormatted('%.1f', $results, 'dewptc');            # cur_dp  - dew point (°C)
 
 # Solar radiation: FOSHKplugin >= V0.06 uses lowercase, older uses camelCase
-$cur->{solarRadiation}  = getFormatted('%.0f', $obs, 'solarradiation')
-                       // getFormatted('%.0f', $obs, 'solarRadiation');        # cur_sr  - solar radiation (W/m²)
+$cur->{solarRadiation}  = getFormatted('%.0f', $results, 'solarradiation');    # cur_sr  - solar radiation (W/m²)
 
 # UV index: FOSHKplugin >= V0.05 uses uppercase, older uses lowercase
-$cur->{uvIndex}         = getFormatted('%.1f', $obs, 'UV')
-                       // getFormatted('%.1f', $obs, 'uv');                    # cur_uvi - UV index
+$cur->{uvIndex}         = getFormatted('%.1f', $results, 'uv');                # cur_uvi - UV index
 
 # precipitation
 my %precipitation = %{ $cur->{precipitation} // {} };
-$precipitation{rainToday} = getFormatted('%.2f', $obs, 'metric', 'precipTotal');   # cur_prec_today - today precipitation (mm)
-$precipitation{rain1hr}   = getFormatted('%.2f', $obs, 'metric', 'precipRate');    # cur_prec_1hr   - 1h precipitation rate (mm)
+$precipitation{rainToday} = getFormatted('%.2f', $results, 'drain_piezomm');   # cur_prec_today - today precipitation (mm)
+$precipitation{rain1hr}   = getFormatted('%.2f', $results, 'hrain_piezomm');    # cur_prec_1hr   - 1h precipitation rate (mm)
 $cur->{precipitation} = \%precipitation;
 
 # Add grabber metadata

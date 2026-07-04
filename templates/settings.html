@@ -23,19 +23,16 @@
                                             <div class="form-group">
                                                 <table class="formtable" border="0" width="100%" cellpadding="10">
                                                     <tr>
-                                                        <td colspan=3 width="75%">
+                                                        <td colspan=4 width="75%">
                                                             <h2><TMPL_VAR SETTINGS.LABEL_RETRIEVE_DATA></h2>
                                                             <font size="-1"><i><TMPL_VAR SETTINGS.HINT_RETRIEVE_DATA></i></font>
-                                                        </td>
-                                                        <td align="right">
-                                                            &nbsp;
                                                         </td>
                                                     </tr>
                                                     <tr>
                                                         <td width="25%">
                                                             <label id="labelweatherserviceobs"><TMPL_VAR SETTINGS.LABEL_FETCH_WEATHER_SERVICE_OBS></label>
                                                         </td>
-                                                        <td colspan="4">
+                                                        <td>
                                                             <table border="0" width="100%"><tr>
                                                                 <td width="10%">
                                                                     <TMPL_VAR FETCHOBS>
@@ -48,6 +45,8 @@
                                                                 </td>
                                                             </tr></table>
                                                         </td>
+                                                        <td align="right">&nbsp;</td>
+                                                        <td align="right">&nbsp;</td>
                                                     </tr>
                                                     <tr>
                                                         <td width="25%">
@@ -71,11 +70,10 @@
                                                         </td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan=3 width="75%">
+                                                        <td colspan=4 width="75%">
                                                             <h2><TMPL_VAR SETTINGS.LABEL_SECTION_GENERAL_SETTINGS></h2>
                                                             <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_GENERAL_SETTINGS></i></font>
                                                         </td>
-                                                        <td align="right">&nbsp;</td>
                                                     </tr>
                                                     <tr>
                                                         <td width="25%">
@@ -169,11 +167,10 @@
                                                         </td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan=3 width="75%">
+                                                        <td colspan=4 width="75%">
                                                             <h2><TMPL_VAR SETTINGS.LABEL_SECTION_STANDARD_WEATHER></h2>
                                                             <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_STANDARD_WEATHER></i></font>
                                                         </td>
-                                                        <td align="right">&nbsp;</td>
                                                     </tr>
                                                     <tr>
                                                         <td width="25%">
@@ -214,11 +211,10 @@
                                                         </td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan=3 width="75%">
+                                                        <td colspan=4 width="75%">
                                                             <h2><TMPL_VAR SETTINGS.LABEL_SECTION_WEATHER_OBSERVATIONS></h2>
                                                             <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_WEATHER_OBSERVATIONS></i></font>
                                                         </td>
-                                                        <td align="right">&nbsp;</td>
                                                     </tr>
                                                     <tr>
                                                         <td width="25%">
@@ -350,65 +346,6 @@
                                                     </tr>
                                                     <tr>
                                                         <td width="25%">
-                                                            <label id="labelfoshkgrabber"><TMPL_VAR SETTINGS.LABEL_FOSHKGRABBER></label>
-                                                        </td>
-                                                        <td width="50%">
-                                                            <table border="0" width="100%">
-                                                            <tr>
-                                                                <td width="10%"><TMPL_VAR FOSHKGRABBER></td>
-                                                                <td width="10%" align="right"><label id="labelfoshkserver" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_FOSHKSERVER></label></td>
-                                                                <td width="35%"><input id="foshkserver" name="foshkserver" type="text" data-validation-rule="special:hostname_or_ipaddr" class="textfield" value="<TMPL_VAR FOSHK.SERVER>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_FOSHKSERVER>"></td>
-                                                                <td width="10%" align="right"><label id="labelfoshkport" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_FOSHKPORT></label></td>
-                                                                <td width="35%"><input id="foshkport" name="foshkport" type="text" data-validation-rule="special:port" class="textfield" value="<TMPL_VAR FOSHK.PORT>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_FOSHKPORT>">
-                                                                </td>
-                                                            </tr>
-                                                            </table>
-                                                        </td>
-                                                        <td width="5%">
-                                                            &nbsp;
-                                                        </td>
-                                                        <td width="20%">
-                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_FOSHKGRABBER></font>
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td width="25%">
-                                                            <label id="labelpwscatchuploadgrabber"><TMPL_VAR SETTINGS.LABEL_PWSCATCHUPLOADGRABBER></label>
-                                                        </td>
-                                                        <td width="50%">
-                                                            <TMPL_VAR PWSCATCHUPLOADGRABBER>
-                                                        </td>
-                                                        </td>
-                                                        <td width="5%">
-                                                            &nbsp;
-                                                        </td>
-                                                        <td width="20%">
-                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_PWSCATCHUPLOADGRABBER></font>
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td width="25%">
-                                                            <label id="labelloxgrabber"><TMPL_VAR SETTINGS.LABEL_LOXGRABBER></label>
-                                                        </td>
-                                                        <td width="50%">
-                                                             <table border="0" width="100%">
-                                                            <tr>
-                                                                <td width="10%"><TMPL_VAR LOXGRABBER></td>
-                                                                <td width="10%" align="right"><label id="labelloxprefix" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_LOXPREFIX></label></td>
-                                                                <td width="80%"><input id="loxprefix" name="loxprefix" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR LOX.PREFIX>" placeholder="<TMPL_VAR SETTINGS.PLACEHOLDER_LOXPREFIX>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_LOXPREFIX>"></td>
-                                                                 </td>
-                                                            </tr>
-                                                            </table>
-                                                        </td>
-                                                        <td width="5%">
-                                                            &nbsp;
-                                                        </td>
-                                                        <td width="20%">
-                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_LOXGRABBER></font>
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td width="25%">
                                                             <label id="labelauto"><TMPL_VAR SETTINGS.LABEL_FETCH_DATA_LOCAL></label>
                                                         </td>
                                                         <td width="50%">
@@ -421,7 +358,48 @@
                                                             <font size="-1"><TMPL_VAR SETTINGS.HINT_LOCAL_ACCOUNT></font>
                                                         </td>
                                                     </tr>
-
+                                                    <tr>
+                                                        <td width="25%"><label id="labelfoshkgrabber"><TMPL_VAR SETTINGS.LABEL_FOSHKGRABBER></label></td>
+                                                        <td width="50%">
+                                                            <table border="0" width="100%">
+                                                                <tr>
+                                                                    <td width="10%"><TMPL_VAR FOSHKGRABBER></td>
+                                                                    <td width="5%">&nbsp;</td>
+                                                                    <td width="5%" align="right"><label id="labelfoshkserver" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_FOSHKSERVER></label></td>
+                                                                    <td width="40%"><input id="foshkserver" name="foshkserver" type="text" data-validation-rule="special:hostname_or_ipaddr" class="textfield" value="<TMPL_VAR FOSHK.SERVER>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_FOSHKSERVER>"></td>
+                                                                    <td width="10%" align="right"><label id="labelfoshkport" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_FOSHKPORT></label></td>
+                                                                    <td width="20%"><input id="foshkport" name="foshkport" type="text" data-validation-rule="special:port" class="textfield" value="<TMPL_VAR FOSHK.PORT>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_FOSHKPORT>"></td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td width="10%"><TMPL_VAR FOSHKNEWAPI></td>
+                                                                    <td width="5%">&nbsp;</td>    
+                                                                    <td colspan=4><label id="labelfoshknewapi"><font size="-1"><TMPL_VAR SETTINGS.HINT_FOSHKNEWAPI></font></label></td>
+                                                                </tr>
+                                                            </table>
+                                                        </td>
+                                                        <td width="5%">&nbsp;</td>
+                                                        <td width="20%"><font size="-1"><TMPL_VAR SETTINGS.HINT_FOSHKGRABBER></font></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%"><label id="labelpwscatchuploadgrabber"><TMPL_VAR SETTINGS.LABEL_PWSCATCHUPLOADGRABBER></label></td>
+                                                        <td width="50%"><TMPL_VAR PWSCATCHUPLOADGRABBER></td>
+                                                        <td width="5%">&nbsp;</td>
+                                                        <td width="20%"><font size="-1"><TMPL_VAR SETTINGS.HINT_PWSCATCHUPLOADGRABBER></font></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%"><label id="labelloxgrabber"><TMPL_VAR SETTINGS.LABEL_LOXGRABBER></label></td>
+                                                        <td width="50%">
+                                                            <table border="0" width="100%">
+                                                                <tr>
+                                                                    <td width="10%"><TMPL_VAR LOXGRABBER></td>
+                                                                    <td width="10%" align="right"><label id="labelloxprefix" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_LOXPREFIX></label></td>
+                                                                    <td width="80%"><input id="loxprefix" name="loxprefix" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR LOX.PREFIX>" placeholder="<TMPL_VAR SETTINGS.PLACEHOLDER_LOXPREFIX>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_LOXPREFIX>"></td>
+                                                                </tr>
+                                                            </table>
+                                                        </td>
+                                                        <td width="5%">&nbsp;</td>
+                                                        <td width="20%"><font size="-1"><TMPL_VAR SETTINGS.HINT_LOXGRABBER></font></td>
+                                                    </tr>
                                                 </table>
                                             </div>
 
@@ -721,6 +699,7 @@
     $('select[name=maskkeys]').attr('data-role','flipswitch');
     $('select[name=wugrabber]').attr('data-role','flipswitch');
     $('select[name=foshkgrabber]').attr('data-role','flipswitch');
+    $('select[name=foshknewapi]').attr('data-role','flipswitch');
     $('select[name=pwscatchuploadgrabber]').attr('data-role','flipswitch');
     $('select[name=openmeteoairqualitygrabber]').attr('data-role','flipswitch');
     $('select[name=usealternatedfc]').attr('data-role','flipswitch');
@@ -822,6 +801,8 @@
             $('#foshkserver').removeClass('ui-disabled');
             $('#labelfoshkport').removeClass('ui-disabled');
             $('#foshkport').removeClass('ui-disabled');
+            $('#labelfoshknewapi').removeClass('ui-disabled');
+            $('#foshknewapi').flipswitch('enable');
             addToValidation('#foshkserver');
             addToValidation('#foshkport');
         }, off: function() {
@@ -829,6 +810,8 @@
             $('#foshkserver').addClass('ui-disabled');
             $('#labelfoshkport').addClass('ui-disabled');
             $('#foshkport').addClass('ui-disabled');
+            $('#labelfoshknewapi').addClass('ui-disabled');
+            $('#foshknewapi').flipswitch('disable');
             removeFromValidation('#foshkserver');
             removeFromValidation('#foshkport');
         } },
@@ -1017,6 +1000,8 @@
             $('#foshkserver').addClass('ui-disabled');
             $('#labelfoshkport').addClass('ui-disabled');
             $('#foshkport').addClass('ui-disabled');
+            $('#labelfoshknewapi').addClass('ui-disabled');
+            $('#foshknewapi').flipswitch('disable');
         }
         if ($("select[name=openmeteoairqualitygrabber]").val() === "0") {
             $('.pollen-row').hide();
@@ -1212,6 +1197,8 @@
             $('#foshkserver').removeClass('ui-disabled');
             $('#labelfoshkport').removeClass('ui-disabled');
             $('#foshkport').removeClass('ui-disabled');
+            $('#labelfoshknewapi').removeClass('ui-disabled');
+            $('#foshknewapi').flipswitch('enable');
             addToValidation('#foshkserver');
             addToValidation('#foshkport');
         } else {
@@ -1219,6 +1206,8 @@
             $('#foshkserver').addClass('ui-disabled');
             $('#labelfoshkport').addClass('ui-disabled');
             $('#foshkport').addClass('ui-disabled');
+            $('#labelfoshknewapi').addClass('ui-disabled');
+            $('#foshknewapi').flipswitch('disable');
             removeFromValidation('#foshkserver');
             removeFromValidation('#foshkport');
         }

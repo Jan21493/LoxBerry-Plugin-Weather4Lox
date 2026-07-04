@@ -50,10 +50,7 @@ my $usealternatedfc = $pcfg->param("SERVER.USEALTERNATEDFC");
 my $usealternatehfc = $pcfg->param("SERVER.USEALTERNATEHFC");
 
 # Local / own weather station
-my $use_local = $pcfg->param('SERVER.WUGRABBER') || 
-				$pcfg->param('SERVER.FOSHKGRABBER') || 
-				$pcfg->param('SERVER.PWSCATCHUPLOADGRABBER') ||
-				$pcfg->param('SERVER.LOXGRABBER');
+my $use_local = $pcfg->param('SERVER.WUGRABBER');
 my $cron_local = $pcfg->param("SERVER.CRON_LOCAL");
 if (!$cron_local || $cron_local eq "0") {
 	$cron_local = $cron; # Set to default weather service if not defined or 0
@@ -66,14 +63,10 @@ if (!$cron_airquality || $cron_airquality eq "0") {
 	$cron_airquality = $cron; # Set to default weather service if not defined or 0
 }
 
-my $use_local = $pcfg->param('SERVER.WUGRABBER') || 
-				$pcfg->param('SERVER.FOSHKGRABBER') || 
+# Own weather stations
+my $use_own   = $pcfg->param('SERVER.FOSHKGRABBER') || 
 				$pcfg->param('SERVER.PWSCATCHUPLOADGRABBER') ||
 				$pcfg->param('SERVER.LOXGRABBER');
-my $cron_local = $pcfg->param("SERVER.CRON_LOCAL");
-if (!$cron_local || $cron_local eq "0") {
-	$cron_local = $cron; # Set to default weather service if not defined or 0
-}
 
 # Commandline options
 my $verbose = '';
@@ -141,13 +134,20 @@ if ($use_airquality) {
 }
 
 if ($use_local) {
-	LOGDEB "Calculate interval for own weather station / local service: $timestamp_minute_round_down / $cron_local = " . ($timestamp_minute_round_down / $cron_local);
+	LOGDEB "Calculate interval for local weather stations: $timestamp_minute_round_down / $cron_local = " . ($timestamp_minute_round_down / $cron_local);
 	if ( $timestamp_minute_round_down % $cron_local == 0 ){
-		LOGINF "Fetch interval ($cron_local) for own weather station / local service reached";
+		LOGINF "Fetch interval ($cron_local) for local weather stations reached";
 		$command_opt .= ' --local'
 	} else {
-		LOGINF "Fetch interval ($cron_local) for own weather station / local service NOT reached";
+		LOGINF "Fetch interval ($cron_local) for local weather stations NOT reached";
 	}
+} else {
+	LOGDEB "Local weather stations are disabled. Skipping.";
+}
+
+if ($use_own) {
+	LOGDEB "Own weather stations are updated once per minute, so no interval calculation is needed.";
+	$command_opt .= ' --own'
 } else {
 	LOGDEB "Own weather station / local service is disabled. Skipping.";
 }

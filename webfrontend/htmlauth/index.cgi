@@ -411,6 +411,21 @@ if ($R::form eq "1" || !$R::form) {
     );
     $template->param( FOSHKGRABBER => $foshkgrabber );
 
+    # FOSHKNewAPI
+    @values = ('0', '1' );
+    %labels = (
+        '0' => $L{'SETTINGS.LABEL_OFF'},
+        '1' => $L{'SETTINGS.LABEL_ON'},
+    );
+    my $foshknewapi = $cgi->popup_menu(
+        -name    => 'foshknewapi',
+        -id      => 'foshknewapi',
+        -values  => \@values,
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.FOSHKNEWAPI'),
+    );
+    $template->param( FOSHKNEWAPI => $foshknewapi );
+
     # PWSCatchUploadGrabber
     @values = ('0', '1' );
     %labels = (

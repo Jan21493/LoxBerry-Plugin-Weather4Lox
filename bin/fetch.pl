@@ -57,6 +57,7 @@ my $default = '';
 my $alternate = '';
 my $airquality = '';
 my $local = '';
+my $own = '';
 my $interval = 60; # default interval for refresh in minutes
 my $includeObs = '';
 
@@ -71,6 +72,7 @@ GetOptions ('verbose' => \$verbose,
             'alternate' => \$alternate,
             'airquality' => \$airquality,
             'local' => \$local,
+            'own' => \$own,
             'maskkeys' => \$maskkeys,
             'interval=i' => \$interval,
             'includeobs' => \$includeObs,
@@ -212,24 +214,39 @@ if( !$cronjob || ( $cronjob && $airquality) ) {
 
 # execute when fetch.pl is called directly or with cronjob and local flag
 if( !$cronjob || ( $cronjob && $local ) ) {
-    LOGINF "Fetch current weather data from local or own weather station ...";
+    LOGINF "Fetch current weather data from local weather stations ...";
 
     $interval = $pcfg->param("SERVER.CRON_LOCAL") || $interval;
 
     # Grab some data from Wunderground
     if ( $pcfg->param("SERVER.WUGRABBER") ) {
-        LOGINF "Starting Grabber grabber_wu.pl $verbose_opt --interval $interval";
+        LOGINF "Starting Grabber grabber_wu_pws.pl $verbose_opt --interval $interval";
         $log->close;
-        system ("$lbpbindir/grabber_wu.pl $verbose_opt --interval $interval");
+        system ("$lbpbindir/grabber_wu_pws.pl $verbose_opt --interval $interval");
         $log->open;
     }
+}
+
+# execute when fetch.pl is called directly or with cronjob and own flag
+if( !$cronjob || ( $cronjob && $own ) ) {
+    LOGINF "Fetch current weather data from own weather stations ...";
+
+    $interval = 1; # own weather stations are updated once per minute, so no interval calculation is needed
 
     # Grab some data from FOSHKplugin
     if ( $pcfg->param("SERVER.FOSHKGRABBER") ) {
-        LOGINF "Starting Grabber grabber_foshk.pl $verbose_opt --interval $interval";
-        $log->close;
-        system ("$lbpbindir/grabber_foshk.pl $verbose_opt --interval $interval");
-        $log->open;
+        my $foshknewapi = $pcfg->param("SERVER.FOSHKNEWAPI");
+        if ($foshknewapi) {
+            LOGINF "Starting Grabber grabber_foshk2.pl (NEW API!) $verbose_opt --interval $interval";
+            $log->close;
+            system ("$lbpbindir/grabber_foshk2.pl $verbose_opt --interval $interval");
+            $log->open;
+        } else {
+            LOGINF "Starting Grabber grabber_foshk.pl (OLD API) $verbose_opt --interval $interval";
+            $log->close;
+            system ("$lbpbindir/grabber_foshk.pl $verbose_opt --interval $interval");
+            $log->open;
+        }
     }
 
     # Grab some data from PWSCatchUpload

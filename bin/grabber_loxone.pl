@@ -79,7 +79,9 @@ LOGDEB "This is $0 Version $version";
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();
-LOGDEB "Using timezone: $timezone, current local system time is " . _epochToIso(time(), $timezone);
+my $currentEpoch = time();
+my $dtCurrent = _epochToIso($currentEpoch, $timezone);
+LOGDEB "Using timezone: $timezone, current local system time is $dtCurrent.";
 
 LOGINF "Fetching weather data from Loxone Miniserver";
 
@@ -146,6 +148,12 @@ sub loxVal {
 	LOGDEB "Found Loxone parameter $key, value '$v'";
 	return $v + 0;
 }
+
+LOGINF "Observation time is current time $dtCurrent (epoch: $currentEpoch)";
+
+# time
+$cur->{time}{datetime}   = $dtCurrent;                                                          # cur_date     - is always in UNIX epoch time
+$cur->{time}{epoch}      = $currentEpoch;                                                             # cur_date_des - is always in local time of Loxberry
 
 # temperature
 my $tempAir = loxVal("${prefix}_cur_tt", '%.1f');               # cur_tt  - air temperature (°C)

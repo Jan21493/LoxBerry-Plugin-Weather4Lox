@@ -590,7 +590,7 @@ sub timeToSec {
 }
 
 ##########################################################################
-# Converts time to Loxone epoch time (seconds since 01.01.1970)
+# Converts time from Unix epoch to Loxone epoch time (seconds since 01.01.2009)
 # Parameter:
 #   time:      numeric unix epoch timestamp
 
@@ -600,13 +600,38 @@ sub toLoxEpoch {
     # All call sites pass numeric epoch values
     return undef unless defined $dtInput && $dtInput =~ /^\d+$/;
 
+    # see below for discussion about Loxone epoch "zero point"
+
+    my $loxone_ref = 1230764400 - 3600;
+    return $dtInput - $loxone_ref;
+}
+
+##########################################################################
+# Converts time from Loxone epoch to Unix epoch time (seconds since 01.01.1970)
+# Parameter:
+#   time:      numeric Loxone epoch timestamp
+
+sub toUnixEpoch {
+    my ($loxInput) = @_;
+
+    # All call sites pass numeric epoch values
+    return undef unless defined $loxInput && $loxInput =~ /^\d+$/;
+
     # see https://www.loxforum.com/forum/german/software-konfiguration-programm-und-visualisierung/451911-arbeitsweise-der-neueren-zähler?p=452490#post452490
     # for discussion about Loxone epoch "zero point"
     # Base: January 1, 2009, 00:00:00 UTC
     # time reference is Kollerschlag time (MEZ/UTC+1) according to findings, not UTC!
 
-    my $loxone_ref = 1230764400;
-    return $dtInput - $loxone_ref;
+    # constant needs to be investigagted futher. Testing was don in July (daylight saving time) with Loxone Miniserver in CET (UTC+1) timezone.
+    # The following sources were used to determine the correct offset:
+    #  - time stamps in statistic files, see Loxone forum discussion (link above)
+    #  - time stamps in Loxone log messages to Loxone debug monitor (UDP port 7777), see GitHub
+    #  - time stamps from Loxone Miniserver (pico c - getcurrenttime(); )
+    #
+    # I also found code with constant 1230768000
+
+    my $loxone_ref = 1230764400 - 3600; 
+    return $loxInput + $loxone_ref;
 }
 
 ##########################################################################

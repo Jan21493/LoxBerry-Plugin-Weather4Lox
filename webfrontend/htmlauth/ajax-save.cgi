@@ -235,6 +235,7 @@ eval {
     $cfg->param("SERVER.WUGRABBER", $R->{wugrabber} // "");
     $cfg->param("SERVER.LOXGRABBER", $R->{loxgrabber} // "");
     $cfg->param("SERVER.FOSHKGRABBER", $R->{foshkgrabber} // "");
+    $cfg->param("SERVER.FOSHKNEWAPI", $R->{foshknewapi} // "");
     $cfg->param("SERVER.OPENMETEOAIRQUALITYGRABBER", $R->{openmeteoairqualitygrabber} // "");
 
     $cfg->param("SERVER.USEALTERNATEDFC", $R->{usealternatedfc} // "");
