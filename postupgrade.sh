@@ -105,85 +105,123 @@ if [ -d "/tmp/${ARGV1}_upgrade/config/${ARGV3}" ] && \
 fi
 
 # ── Step 3: RAM disk space guard before restoring log files ─────────────────
-# $PLOG lives on a zram RAM disk.  A full disk causes cp to fail and, under
-# set -e, would abort the script.  We check available space, clean up stale
-# log files in stages if needed, and protect the cp so ENOSPC is non-fatal.
+# Strategy:
+#   1. Measure the size of the log backup that is about to be restored.
+#   2. Measure free space currently available on the RAM disk.
+#   3. Predict free space after restore: free_after = avail - restore_size.
+#   4. If free_after would drop below 20 MiB, delete old log files from THIS
+#      plugin's log directory only (never touch other plugins' files).
+#      Live data files (*.json, *.html, *.txt) are always excluded from
+#      cleanup because they are actively served and must not be deleted.
+#   5. Two cleanup stages: files older than 7 days first, then > 1 day.
+#   6. If headroom is still insufficient after both stages, skip the restore
+#      with a WARNING rather than risking ENOSPC under set -e.
 #
-# Thresholds (KiB):
-#   AVAIL < 20 MiB (20480 KiB) → INFO   + remove plugin logs > 7 days old
-#   AVAIL < 10 MiB (10240 KiB) → WARNING + remove all plugin logs > 1 day old
-#   AVAIL <  2 MiB  (2048 KiB) → CRITICAL: staged cleanup; skip restore if still low
-LOG_FS="${ARGV5}/log/plugins"
-AVAIL_KB=""
-if [ -d "$LOG_FS" ]; then
-    AVAIL_KB=$(df -k "$LOG_FS" 2>/dev/null | awk 'NR==2 {print $4}') || true
-fi
+# Headroom margin: 20 MiB (20480 KiB) - ensures the RAM disk does not
+# become critically full immediately after the restore completes.
 
-THRESH_INFO=20480   # 20 MiB in KiB
-THRESH_WARN=10240   # 10 MiB in KiB
-THRESH_CRIT=2048    #  2 MiB in KiB
+HEADROOM_KB=20480   # 20 MiB safety margin to keep free after restore
+
+LOG_BACKUP_DIR="/tmp/${ARGV1}_upgrade/log/${ARGV3}"
+LOG_DEST_DIR="${ARGV5}/log/plugins/${ARGV3}"
+
 SKIP_LOG_RESTORE=0
+RESTORE_KB=0
+AVAIL_KB=0
 
-if [[ "$AVAIL_KB" =~ ^[0-9]+$ ]]; then
-    if [ "$AVAIL_KB" -lt "$THRESH_CRIT" ]; then
-        echo "<ERROR> Log RAM disk critically low: ${AVAIL_KB} KiB free. Cleaning up log files..."
-        # Stage 1: remove log files older than 7 days
-        FIND_RC=0
-        find "$LOG_FS" -type f -mtime +7 -delete 2>/dev/null || FIND_RC=$?
-        [ "$FIND_RC" -ne 0 ] && echo "<WARNING> Cleanup of logs older than 7 days encountered errors (rc=${FIND_RC})"
-        AVAIL_KB=$(df -k "$LOG_FS" 2>/dev/null | awk 'NR==2 {print $4}') || true
-        # If df fails here use 0 (conservative: assume space is still critical)
-        [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
-        echo "<INFO> Available space after removing logs older than 7 days: ${AVAIL_KB} KiB"
-        if [ "$AVAIL_KB" -lt "$THRESH_CRIT" ]; then
-            # Stage 2: remove log files older than 1 day
+if [ -d "$LOG_BACKUP_DIR" ] && [ "$(ls -A "$LOG_BACKUP_DIR"/)" ]; then
+    # Measure the size of the backup to be restored (in KiB)
+    RESTORE_KB=$(du -sk "$LOG_BACKUP_DIR" 2>/dev/null | awk '{print $1}') || true
+    [[ "$RESTORE_KB" =~ ^[0-9]+$ ]] || RESTORE_KB=0
+    echo "<INFO> Log backup size to restore: ${RESTORE_KB} KiB"
+
+    # Measure free space on the RAM disk filesystem
+    # Use LOG_DEST_DIR if it exists, fall back to parent directory for df
+    DF_TARGET="$LOG_DEST_DIR"
+    [ -d "$DF_TARGET" ] || DF_TARGET="${ARGV5}/log/plugins"
+    [ -d "$DF_TARGET" ] || DF_TARGET="${ARGV5}/log"
+    AVAIL_KB=$(df -k "$DF_TARGET" 2>/dev/null | awk 'NR==2 {print $4}') || true
+    [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
+    echo "<INFO> RAM disk free space: ${AVAIL_KB} KiB"
+
+    # Predict free space remaining after restore
+    FREE_AFTER_KB=$(( AVAIL_KB - RESTORE_KB ))
+    echo "<INFO> Predicted free space after restore: ${FREE_AFTER_KB} KiB (headroom required: ${HEADROOM_KB} KiB)"
+
+    if [ "$FREE_AFTER_KB" -lt "$HEADROOM_KB" ]; then
+        echo "<WARNING> Restore would leave less than 20 MiB free on log RAM disk. Cleaning old log files from this plugin only..."
+
+        # Live data files that must never be deleted - they are actively served
+        # by the web frontend and written by the grabber. Removing them would
+        # break the plugin until the next grabber run.
+        LIVE_DATA_EXCLUDES=(
+            -not -name "current.json"
+            -not -name "dailyforecast.json"
+            -not -name "hourlyforecast.json"
+            -not -name "webpage.html"
+            -not -name "webpage.map.html"
+            -not -name "webpage.dfc.html"
+            -not -name "webpage.hfc.html"
+            -not -name "weatherdata.html"
+            -not -name "index.txt"
+        )
+
+        # Stage 1: remove log files older than 7 days (own plugin dir only)
+        if [ -d "$LOG_DEST_DIR" ]; then
             FIND_RC=0
-            find "$LOG_FS" -type f -mtime +1 -delete 2>/dev/null || FIND_RC=$?
-            [ "$FIND_RC" -ne 0 ] && echo "<WARNING> Cleanup of logs older than 1 day encountered errors (rc=${FIND_RC})"
-            AVAIL_KB=$(df -k "$LOG_FS" 2>/dev/null | awk 'NR==2 {print $4}') || true
-            [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
-            echo "<INFO> Available space after removing logs older than 1 day: ${AVAIL_KB} KiB"
+            find "$LOG_DEST_DIR" -type f -mtime +7 "${LIVE_DATA_EXCLUDES[@]}" -delete 2>/dev/null || FIND_RC=$?
+            [ "$FIND_RC" -ne 0 ] && echo "<WARNING> Stage-1 cleanup (>7 days) encountered errors (rc=${FIND_RC})"
         fi
-        if [ "$AVAIL_KB" -lt "$THRESH_CRIT" ]; then
-            echo "<ERROR> Log RAM disk still critically low (${AVAIL_KB} KiB free). Log file restore will be skipped to prevent upgrade failure."
+
+        # Re-measure free space after stage 1
+        AVAIL_KB=$(df -k "$DF_TARGET" 2>/dev/null | awk 'NR==2 {print $4}') || true
+        [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
+        FREE_AFTER_KB=$(( AVAIL_KB - RESTORE_KB ))
+        echo "<INFO> Predicted free space after stage-1 cleanup: ${FREE_AFTER_KB} KiB"
+
+        if [ "$FREE_AFTER_KB" -lt "$HEADROOM_KB" ]; then
+            # Stage 2: remove log files older than 1 day (own plugin dir only)
+            if [ -d "$LOG_DEST_DIR" ]; then
+                FIND_RC=0
+                find "$LOG_DEST_DIR" -type f -mtime +1 "${LIVE_DATA_EXCLUDES[@]}" -delete 2>/dev/null || FIND_RC=$?
+                [ "$FIND_RC" -ne 0 ] && echo "<WARNING> Stage-2 cleanup (>1 day) encountered errors (rc=${FIND_RC})"
+            fi
+
+            # Re-measure free space after stage 2
+            AVAIL_KB=$(df -k "$DF_TARGET" 2>/dev/null | awk 'NR==2 {print $4}') || true
+            [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
+            FREE_AFTER_KB=$(( AVAIL_KB - RESTORE_KB ))
+            echo "<INFO> Predicted free space after stage-2 cleanup: ${FREE_AFTER_KB} KiB"
+        fi
+
+        if [ "$FREE_AFTER_KB" -lt "$HEADROOM_KB" ]; then
+            # Still not enough headroom even after cleaning all own log files.
+            # If the disk is full because of other plugins, that is LoxBerry's
+            # responsibility to handle - this plugin must not touch foreign files.
+            echo "<WARNING> Log RAM disk does not have enough headroom for restore even after cleaning this plugin's old log files (${FREE_AFTER_KB} KiB would remain, ${HEADROOM_KB} KiB required). Log file restore will be skipped. This may indicate the RAM disk is full due to other plugins - check disk usage manually."
             SKIP_LOG_RESTORE=1
         fi
-    elif [ "$AVAIL_KB" -lt "$THRESH_WARN" ]; then
-        echo "<WARNING> Log RAM disk very low: ${AVAIL_KB} KiB free (< 10 MiB). Cleaning log files older than 1 day..."
-        FIND_RC=0
-        find "$LOG_FS" -type f -mtime +1 -delete 2>/dev/null || FIND_RC=$?
-        [ "$FIND_RC" -ne 0 ] && echo "<WARNING> Cleanup of logs older than 1 day encountered errors (rc=${FIND_RC})"
-        AVAIL_KB=$(df -k "$LOG_FS" 2>/dev/null | awk 'NR==2 {print $4}') || true
-        [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
-        echo "<INFO> Available space after cleanup: ${AVAIL_KB} KiB"
-    elif [ "$AVAIL_KB" -lt "$THRESH_INFO" ]; then
-        echo "<INFO> Log RAM disk low: ${AVAIL_KB} KiB free (< 20 MiB). Cleaning log files older than 7 days..."
-        FIND_RC=0
-        find "$LOG_FS" -type f -mtime +7 -delete 2>/dev/null || FIND_RC=$?
-        [ "$FIND_RC" -ne 0 ] && echo "<WARNING> Cleanup of logs older than 7 days encountered errors (rc=${FIND_RC})"
-        AVAIL_KB=$(df -k "$LOG_FS" 2>/dev/null | awk 'NR==2 {print $4}') || true
-        [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
-        echo "<INFO> Available space after cleanup: ${AVAIL_KB} KiB"
     fi
 else
-    echo "<WARNING> Could not determine available space on log disk (${LOG_FS}). Proceeding with caution."
+    echo "<INFO> No log backup found to restore, skipping space check."
+    SKIP_LOG_RESTORE=1
 fi
 
 # ── Step 4: Restore log files (non-critical: on RAM disk, protected from set -e)
 echo "<INFO> Copy back existing log files"
-if [ "$SKIP_LOG_RESTORE" -eq 0 ] && \
-   [ -d "/tmp/${ARGV1}_upgrade/log/${ARGV3}" ] && \
-   [ "$(ls -A /tmp/${ARGV1}_upgrade/log/${ARGV3}/)" ]; then
+if [ "$SKIP_LOG_RESTORE" -eq 0 ]; then
     set +e
-    cp -p -v -r /tmp/${ARGV1}_upgrade/log/${ARGV3}/* \
-        "${ARGV5}/log/plugins/${ARGV3}/"
+    cp -p -v -r "${LOG_BACKUP_DIR}/"* \
+        "${LOG_DEST_DIR}/"
     CP_LOG_EXIT=$?
     set -e
     if [ "$CP_LOG_EXIT" -ne 0 ]; then
         echo "<WARNING> Some log files could not be restored (log RAM disk may be full). Continuing upgrade."
+    else
+        echo "<OK> Log files restored successfully."
     fi
-elif [ "$SKIP_LOG_RESTORE" -eq 1 ]; then
-    echo "<WARNING> Log file restore skipped: log RAM disk was critically low even after cleanup."
+elif [ -d "$LOG_BACKUP_DIR" ] && [ "$(ls -A "$LOG_BACKUP_DIR"/)" ]; then
+    echo "<WARNING> Log file restore skipped: insufficient RAM disk headroom even after cleanup."
 fi
 
 echo "<INFO> Copy back custom theme files"
