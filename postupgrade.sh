@@ -75,7 +75,23 @@ echo "<INFO> Plugin Config folder is: $PCONFIG"
 #   echo "<OK> Restored user config from backup"
 # fi
 
-# Guard each copy with a directory existence check:
+# ── Step 1: Recreate the critical cronjob symlink FIRST ─────────────────────
+# The grabber scheduler depends entirely on this symlink.  It MUST be restored
+# before any fallible operations so that a subsequent failure (e.g. ENOSPC on
+# the log RAM disk) cannot leave the plugin permanently dead.
+echo "<INFO> Recreate cronjob for fetching data from Weather Services"
+# Remove existing symlink first (in case it points to a stale target)
+rm -f "$ARGV5/system/cron/cron.01min/$ARGV3"
+ln -s "$ARGV5/bin/plugins/$ARGV3/cronjob.pl" "$ARGV5/system/cron/cron.01min/$ARGV3"
+# Verify the symlink was actually created
+if [ -L "$ARGV5/system/cron/cron.01min/$ARGV3" ]; then
+    echo "<OK> Cronjob symlink created: $ARGV5/system/cron/cron.01min/$ARGV3"
+else
+    echo "<ERROR> Failed to create cronjob symlink: $ARGV5/system/cron/cron.01min/$ARGV3"
+    exit 1
+fi
+
+# ── Step 2: Restore config files (persistent storage, no space concerns) ────
 echo "<INFO> Copy back existing config files"
 if [ -d "/tmp/${ARGV1}_upgrade/config/${ARGV3}" ] && \
    [ "$(ls -A /tmp/${ARGV1}_upgrade/config/${ARGV3}/)" ]; then
@@ -83,11 +99,74 @@ if [ -d "/tmp/${ARGV1}_upgrade/config/${ARGV3}" ] && \
         "${ARGV5}/config/plugins/${ARGV3}/"
 fi
 
+# ── Step 3: RAM disk space guard before restoring log files ─────────────────
+# $PLOG lives on a zram RAM disk.  A full disk causes cp to fail and, under
+# set -e, would abort the script.  We check available space, clean up stale
+# log files in stages if needed, and protect the cp so ENOSPC is non-fatal.
+#
+# Thresholds (KiB):
+#   AVAIL < 20 MiB (20480 KiB) → INFO   + remove plugin logs > 7 days old
+#   AVAIL < 10 MiB (10240 KiB) → WARNING + remove all plugin logs > 1 day old
+#   AVAIL <  2 MiB  (2048 KiB) → CRITICAL: staged cleanup; skip restore if still low
+LOG_FS="${ARGV5}/log/plugins"
+AVAIL_KB=$(df -k "$LOG_FS" 2>/dev/null | awk 'NR==2 {print $4}') || true
+
+THRESH_INFO=20480   # 20 MiB in KiB
+THRESH_WARN=10240   # 10 MiB in KiB
+THRESH_CRIT=2048    #  2 MiB in KiB
+SKIP_LOG_RESTORE=0
+
+if [[ "$AVAIL_KB" =~ ^[0-9]+$ ]]; then
+    if [ "$AVAIL_KB" -lt "$THRESH_CRIT" ]; then
+        echo "<WARNING> Log RAM disk critically low: ${AVAIL_KB} KiB free. Cleaning up log files..."
+        # Stage 1: remove log files older than 7 days
+        find "$LOG_FS" -type f -mtime +7 -delete 2>/dev/null || true
+        AVAIL_KB=$(df -k "$LOG_FS" 2>/dev/null | awk 'NR==2 {print $4}') || true
+        [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
+        echo "<INFO> Available space after removing logs older than 7 days: ${AVAIL_KB} KiB"
+        if [ "$AVAIL_KB" -lt "$THRESH_CRIT" ]; then
+            # Stage 2: remove log files older than 1 day
+            find "$LOG_FS" -type f -mtime +1 -delete 2>/dev/null || true
+            AVAIL_KB=$(df -k "$LOG_FS" 2>/dev/null | awk 'NR==2 {print $4}') || true
+            [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
+            echo "<INFO> Available space after removing logs older than 1 day: ${AVAIL_KB} KiB"
+        fi
+        if [ "$AVAIL_KB" -lt "$THRESH_CRIT" ]; then
+            echo "<ERROR> Log RAM disk still critically low (${AVAIL_KB} KiB free). Log file restore will be skipped to prevent upgrade failure."
+            SKIP_LOG_RESTORE=1
+        fi
+    elif [ "$AVAIL_KB" -lt "$THRESH_WARN" ]; then
+        echo "<WARNING> Log RAM disk very low: ${AVAIL_KB} KiB free (< 10 MiB). Cleaning log files older than 1 day..."
+        find "$LOG_FS" -type f -mtime +1 -delete 2>/dev/null || true
+        AVAIL_KB=$(df -k "$LOG_FS" 2>/dev/null | awk 'NR==2 {print $4}') || true
+        [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
+        echo "<INFO> Available space after cleanup: ${AVAIL_KB} KiB"
+    elif [ "$AVAIL_KB" -lt "$THRESH_INFO" ]; then
+        echo "<INFO> Log RAM disk low: ${AVAIL_KB} KiB free (< 20 MiB). Cleaning log files older than 7 days..."
+        find "$LOG_FS" -type f -mtime +7 -delete 2>/dev/null || true
+        AVAIL_KB=$(df -k "$LOG_FS" 2>/dev/null | awk 'NR==2 {print $4}') || true
+        [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
+        echo "<INFO> Available space after cleanup: ${AVAIL_KB} KiB"
+    fi
+else
+    echo "<WARNING> Could not determine available space on log disk (${LOG_FS}). Proceeding with caution."
+fi
+
+# ── Step 4: Restore log files (non-critical: on RAM disk, protected from set -e)
 echo "<INFO> Copy back existing log files"
-if [ -d "/tmp/${ARGV1}_upgrade/log/${ARGV3}" ] && \
+if [ "$SKIP_LOG_RESTORE" -eq 0 ] && \
+   [ -d "/tmp/${ARGV1}_upgrade/log/${ARGV3}" ] && \
    [ "$(ls -A /tmp/${ARGV1}_upgrade/log/${ARGV3}/)" ]; then
+    set +e
     cp -p -v -r /tmp/${ARGV1}_upgrade/log/${ARGV3}/* \
         "${ARGV5}/log/plugins/${ARGV3}/"
+    CP_LOG_EXIT=$?
+    set -e
+    if [ "$CP_LOG_EXIT" -ne 0 ]; then
+        echo "<WARNING> Some log files could not be restored (log RAM disk may be full). Continuing upgrade."
+    fi
+elif [ "$SKIP_LOG_RESTORE" -eq 1 ]; then
+    echo "<WARNING> Log file restore skipped: log RAM disk was critically low even after cleanup."
 fi
 
 echo "<INFO> Copy back custom theme files"
@@ -99,11 +178,6 @@ fi
 
 echo "<INFO> Remove temporary folders"
 rm -r /tmp/${ARGV1}_upgrade
-
-echo "<INFO> Recreate cronjob for fetching data from Weather Services"
-# Remove existing cronjob symlink - just in case. This is automatically done by installation script. To be verified with Loxberry core developers if this is really needed.
-rm -f $ARGV5/system/cron/cron.01min/$ARGV3
-ln -s $ARGV5/bin/plugins/$ARGV3/cronjob.pl $ARGV5/system/cron/cron.01min/$ARGV3
 
 # Read config, explicitly export/set LBHOMEDIR from ARGV5 as a fallback:
 LBHOMEDIR="${LBHOMEDIR:-$ARGV5}"
