@@ -80,14 +80,19 @@ echo "<INFO> Plugin Config folder is: $PCONFIG"
 # before any fallible operations so that a subsequent failure (e.g. ENOSPC on
 # the log RAM disk) cannot leave the plugin permanently dead.
 echo "<INFO> Recreate cronjob for fetching data from Weather Services"
+CRON_DIR="$ARGV5/system/cron/cron.01min"
+if [ ! -d "$CRON_DIR" ]; then
+    echo "<ERROR> Cron directory not found: $CRON_DIR"
+    exit 1
+fi
 # Remove existing symlink first (in case it points to a stale target)
-rm -f "$ARGV5/system/cron/cron.01min/$ARGV3"
-ln -s "$ARGV5/bin/plugins/$ARGV3/cronjob.pl" "$ARGV5/system/cron/cron.01min/$ARGV3"
+rm -f "$CRON_DIR/$ARGV3"
+ln -s "$ARGV5/bin/plugins/$ARGV3/cronjob.pl" "$CRON_DIR/$ARGV3"
 # Verify the symlink was actually created
-if [ -L "$ARGV5/system/cron/cron.01min/$ARGV3" ]; then
-    echo "<OK> Cronjob symlink created: $ARGV5/system/cron/cron.01min/$ARGV3"
+if [ -L "$CRON_DIR/$ARGV3" ]; then
+    echo "<OK> Cronjob symlink created: $CRON_DIR/$ARGV3"
 else
-    echo "<ERROR> Failed to create cronjob symlink: $ARGV5/system/cron/cron.01min/$ARGV3"
+    echo "<ERROR> Failed to create cronjob symlink: $CRON_DIR/$ARGV3"
     exit 1
 fi
 
@@ -109,7 +114,10 @@ fi
 #   AVAIL < 10 MiB (10240 KiB) → WARNING + remove all plugin logs > 1 day old
 #   AVAIL <  2 MiB  (2048 KiB) → CRITICAL: staged cleanup; skip restore if still low
 LOG_FS="${ARGV5}/log/plugins"
-AVAIL_KB=$(df -k "$LOG_FS" 2>/dev/null | awk 'NR==2 {print $4}') || true
+AVAIL_KB=""
+if [ -d "$LOG_FS" ]; then
+    AVAIL_KB=$(df -k "$LOG_FS" 2>/dev/null | awk 'NR==2 {print $4}') || true
+fi
 
 THRESH_INFO=20480   # 20 MiB in KiB
 THRESH_WARN=10240   # 10 MiB in KiB
@@ -118,15 +126,20 @@ SKIP_LOG_RESTORE=0
 
 if [[ "$AVAIL_KB" =~ ^[0-9]+$ ]]; then
     if [ "$AVAIL_KB" -lt "$THRESH_CRIT" ]; then
-        echo "<WARNING> Log RAM disk critically low: ${AVAIL_KB} KiB free. Cleaning up log files..."
+        echo "<ERROR> Log RAM disk critically low: ${AVAIL_KB} KiB free. Cleaning up log files..."
         # Stage 1: remove log files older than 7 days
-        find "$LOG_FS" -type f -mtime +7 -delete 2>/dev/null || true
+        FIND_RC=0
+        find "$LOG_FS" -type f -mtime +7 -delete 2>/dev/null || FIND_RC=$?
+        [ "$FIND_RC" -ne 0 ] && echo "<WARNING> Cleanup of logs older than 7 days encountered errors (rc=${FIND_RC})"
         AVAIL_KB=$(df -k "$LOG_FS" 2>/dev/null | awk 'NR==2 {print $4}') || true
+        # If df fails here use 0 (conservative: assume space is still critical)
         [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
         echo "<INFO> Available space after removing logs older than 7 days: ${AVAIL_KB} KiB"
         if [ "$AVAIL_KB" -lt "$THRESH_CRIT" ]; then
             # Stage 2: remove log files older than 1 day
-            find "$LOG_FS" -type f -mtime +1 -delete 2>/dev/null || true
+            FIND_RC=0
+            find "$LOG_FS" -type f -mtime +1 -delete 2>/dev/null || FIND_RC=$?
+            [ "$FIND_RC" -ne 0 ] && echo "<WARNING> Cleanup of logs older than 1 day encountered errors (rc=${FIND_RC})"
             AVAIL_KB=$(df -k "$LOG_FS" 2>/dev/null | awk 'NR==2 {print $4}') || true
             [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
             echo "<INFO> Available space after removing logs older than 1 day: ${AVAIL_KB} KiB"
@@ -137,13 +150,17 @@ if [[ "$AVAIL_KB" =~ ^[0-9]+$ ]]; then
         fi
     elif [ "$AVAIL_KB" -lt "$THRESH_WARN" ]; then
         echo "<WARNING> Log RAM disk very low: ${AVAIL_KB} KiB free (< 10 MiB). Cleaning log files older than 1 day..."
-        find "$LOG_FS" -type f -mtime +1 -delete 2>/dev/null || true
+        FIND_RC=0
+        find "$LOG_FS" -type f -mtime +1 -delete 2>/dev/null || FIND_RC=$?
+        [ "$FIND_RC" -ne 0 ] && echo "<WARNING> Cleanup of logs older than 1 day encountered errors (rc=${FIND_RC})"
         AVAIL_KB=$(df -k "$LOG_FS" 2>/dev/null | awk 'NR==2 {print $4}') || true
         [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
         echo "<INFO> Available space after cleanup: ${AVAIL_KB} KiB"
     elif [ "$AVAIL_KB" -lt "$THRESH_INFO" ]; then
         echo "<INFO> Log RAM disk low: ${AVAIL_KB} KiB free (< 20 MiB). Cleaning log files older than 7 days..."
-        find "$LOG_FS" -type f -mtime +7 -delete 2>/dev/null || true
+        FIND_RC=0
+        find "$LOG_FS" -type f -mtime +7 -delete 2>/dev/null || FIND_RC=$?
+        [ "$FIND_RC" -ne 0 ] && echo "<WARNING> Cleanup of logs older than 7 days encountered errors (rc=${FIND_RC})"
         AVAIL_KB=$(df -k "$LOG_FS" 2>/dev/null | awk 'NR==2 {print $4}') || true
         [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
         echo "<INFO> Available space after cleanup: ${AVAIL_KB} KiB"
