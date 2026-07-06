@@ -75,7 +75,28 @@ echo "<INFO> Plugin Config folder is: $PCONFIG"
 #   echo "<OK> Restored user config from backup"
 # fi
 
-# Guard each copy with a directory existence check:
+# ── Step 1: Recreate the critical cronjob symlink FIRST ─────────────────────
+# The grabber scheduler depends entirely on this symlink.  It MUST be restored
+# before any fallible operations so that a subsequent failure (e.g. ENOSPC on
+# the log RAM disk) cannot leave the plugin permanently dead.
+echo "<INFO> Recreate cronjob for fetching data from Weather Services"
+CRON_DIR="$ARGV5/system/cron/cron.01min"
+if [ ! -d "$CRON_DIR" ]; then
+    echo "<ERROR> Cron directory not found: $CRON_DIR"
+    exit 1
+fi
+# Remove existing symlink first (in case it points to a stale target)
+rm -f "$CRON_DIR/$ARGV3"
+ln -s "$ARGV5/bin/plugins/$ARGV3/cronjob.pl" "$CRON_DIR/$ARGV3"
+# Verify the symlink was actually created
+if [ -L "$CRON_DIR/$ARGV3" ]; then
+    echo "<OK> Cronjob symlink created: $CRON_DIR/$ARGV3"
+else
+    echo "<ERROR> Failed to create cronjob symlink: $CRON_DIR/$ARGV3"
+    exit 1
+fi
+
+# ── Step 2: Restore config files (persistent storage, no space concerns) ────
 echo "<INFO> Copy back existing config files"
 if [ -d "/tmp/${ARGV1}_upgrade/config/${ARGV3}" ] && \
    [ "$(ls -A /tmp/${ARGV1}_upgrade/config/${ARGV3}/)" ]; then
@@ -83,11 +104,124 @@ if [ -d "/tmp/${ARGV1}_upgrade/config/${ARGV3}" ] && \
         "${ARGV5}/config/plugins/${ARGV3}/"
 fi
 
+# ── Step 3: RAM disk space guard before restoring log files ─────────────────
+# Strategy:
+#   1. Measure the size of the log backup that is about to be restored.
+#   2. Measure free space currently available on the RAM disk.
+#   3. Predict free space after restore: free_after = avail - restore_size.
+#   4. If free_after would drop below 20 MiB, delete old log files from THIS
+#      plugin's log directory only (never touch other plugins' files).
+#      Live data files (*.json, *.html, *.txt) are always excluded from
+#      cleanup because they are actively served and must not be deleted.
+#   5. Two cleanup stages: files older than 7 days first, then > 1 day.
+#   6. If headroom is still insufficient after both stages, skip the restore
+#      with a WARNING rather than risking ENOSPC under set -e.
+#
+# Headroom margin: 20 MiB (20480 KiB) - ensures the RAM disk does not
+# become critically full immediately after the restore completes.
+
+HEADROOM_KB=20480   # 20 MiB safety margin to keep free after restore
+
+LOG_BACKUP_DIR="/tmp/${ARGV1}_upgrade/log/${ARGV3}"
+LOG_DEST_DIR="${ARGV5}/log/plugins/${ARGV3}"
+
+SKIP_LOG_RESTORE=0
+RESTORE_KB=0
+AVAIL_KB=0
+
+if [ -d "$LOG_BACKUP_DIR" ] && [ "$(ls -A "$LOG_BACKUP_DIR"/)" ]; then
+    # Measure the size of the backup to be restored (in KiB)
+    RESTORE_KB=$(du -sk "$LOG_BACKUP_DIR" 2>/dev/null | awk '{print $1}') || true
+    [[ "$RESTORE_KB" =~ ^[0-9]+$ ]] || RESTORE_KB=0
+    echo "<INFO> Log backup size to restore: ${RESTORE_KB} KiB"
+
+    # Measure free space on the RAM disk filesystem
+    # Use LOG_DEST_DIR if it exists, fall back to parent directory for df
+    DF_TARGET="$LOG_DEST_DIR"
+    [ -d "$DF_TARGET" ] || DF_TARGET="${ARGV5}/log/plugins"
+    [ -d "$DF_TARGET" ] || DF_TARGET="${ARGV5}/log"
+    AVAIL_KB=$(df -k "$DF_TARGET" 2>/dev/null | awk 'NR==2 {print $4}') || true
+    [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
+    echo "<INFO> RAM disk free space: ${AVAIL_KB} KiB"
+
+    # Predict free space remaining after restore
+    FREE_AFTER_KB=$(( AVAIL_KB - RESTORE_KB ))
+    echo "<INFO> Predicted free space after restore: ${FREE_AFTER_KB} KiB (headroom required: ${HEADROOM_KB} KiB)"
+
+    if [ "$FREE_AFTER_KB" -lt "$HEADROOM_KB" ]; then
+        echo "<WARNING> Restore would leave less than 20 MiB free on log RAM disk. Cleaning old log files from this plugin only..."
+
+        # Live data files that must never be deleted - they are actively served
+        # by the web frontend and written by the grabber. Removing them would
+        # break the plugin until the next grabber run.
+        LIVE_DATA_EXCLUDES=(
+            -not -name "current.json"
+            -not -name "dailyforecast.json"
+            -not -name "hourlyforecast.json"
+            -not -name "webpage.html"
+            -not -name "webpage.map.html"
+            -not -name "webpage.dfc.html"
+            -not -name "webpage.hfc.html"
+            -not -name "weatherdata.html"
+            -not -name "index.txt"
+        )
+
+        # Stage 1: remove log files older than 7 days (own plugin dir only)
+        if [ -d "$LOG_DEST_DIR" ]; then
+            FIND_RC=0
+            find "$LOG_DEST_DIR" -type f -mtime +7 "${LIVE_DATA_EXCLUDES[@]}" -delete 2>/dev/null || FIND_RC=$?
+            [ "$FIND_RC" -ne 0 ] && echo "<WARNING> Stage-1 cleanup (>7 days) encountered errors (rc=${FIND_RC})"
+        fi
+
+        # Re-measure free space after stage 1
+        AVAIL_KB=$(df -k "$DF_TARGET" 2>/dev/null | awk 'NR==2 {print $4}') || true
+        [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
+        FREE_AFTER_KB=$(( AVAIL_KB - RESTORE_KB ))
+        echo "<INFO> Predicted free space after stage-1 cleanup: ${FREE_AFTER_KB} KiB"
+
+        if [ "$FREE_AFTER_KB" -lt "$HEADROOM_KB" ]; then
+            # Stage 2: remove log files older than 1 day (own plugin dir only)
+            if [ -d "$LOG_DEST_DIR" ]; then
+                FIND_RC=0
+                find "$LOG_DEST_DIR" -type f -mtime +1 "${LIVE_DATA_EXCLUDES[@]}" -delete 2>/dev/null || FIND_RC=$?
+                [ "$FIND_RC" -ne 0 ] && echo "<WARNING> Stage-2 cleanup (>1 day) encountered errors (rc=${FIND_RC})"
+            fi
+
+            # Re-measure free space after stage 2
+            AVAIL_KB=$(df -k "$DF_TARGET" 2>/dev/null | awk 'NR==2 {print $4}') || true
+            [[ "$AVAIL_KB" =~ ^[0-9]+$ ]] || AVAIL_KB=0
+            FREE_AFTER_KB=$(( AVAIL_KB - RESTORE_KB ))
+            echo "<INFO> Predicted free space after stage-2 cleanup: ${FREE_AFTER_KB} KiB"
+        fi
+
+        if [ "$FREE_AFTER_KB" -lt "$HEADROOM_KB" ]; then
+            # Still not enough headroom even after cleaning all own log files.
+            # If the disk is full because of other plugins, that is LoxBerry's
+            # responsibility to handle - this plugin must not touch foreign files.
+            echo "<WARNING> Log RAM disk does not have enough headroom for restore even after cleaning this plugin's old log files (${FREE_AFTER_KB} KiB would remain, ${HEADROOM_KB} KiB required). Log file restore will be skipped. This may indicate the RAM disk is full due to other plugins - check disk usage manually."
+            SKIP_LOG_RESTORE=1
+        fi
+    fi
+else
+    echo "<INFO> No log backup found to restore, skipping space check."
+    SKIP_LOG_RESTORE=1
+fi
+
+# ── Step 4: Restore log files (non-critical: on RAM disk, protected from set -e)
 echo "<INFO> Copy back existing log files"
-if [ -d "/tmp/${ARGV1}_upgrade/log/${ARGV3}" ] && \
-   [ "$(ls -A /tmp/${ARGV1}_upgrade/log/${ARGV3}/)" ]; then
-    cp -p -v -r /tmp/${ARGV1}_upgrade/log/${ARGV3}/* \
-        "${ARGV5}/log/plugins/${ARGV3}/"
+if [ "$SKIP_LOG_RESTORE" -eq 0 ]; then
+    set +e
+    cp -p -v -r "${LOG_BACKUP_DIR}/"* \
+        "${LOG_DEST_DIR}/"
+    CP_LOG_EXIT=$?
+    set -e
+    if [ "$CP_LOG_EXIT" -ne 0 ]; then
+        echo "<WARNING> Some log files could not be restored (log RAM disk may be full). Continuing upgrade."
+    else
+        echo "<OK> Log files restored successfully."
+    fi
+elif [ -d "$LOG_BACKUP_DIR" ] && [ "$(ls -A "$LOG_BACKUP_DIR"/)" ]; then
+    echo "<WARNING> Log file restore skipped: insufficient RAM disk headroom even after cleanup."
 fi
 
 echo "<INFO> Copy back custom theme files"
@@ -99,11 +233,6 @@ fi
 
 echo "<INFO> Remove temporary folders"
 rm -r /tmp/${ARGV1}_upgrade
-
-echo "<INFO> Recreate cronjob for fetching data from Weather Services"
-# Remove existing cronjob symlink - just in case. This is automatically done by installation script. To be verified with Loxberry core developers if this is really needed.
-rm -f $ARGV5/system/cron/cron.01min/$ARGV3
-ln -s $ARGV5/bin/plugins/$ARGV3/cronjob.pl $ARGV5/system/cron/cron.01min/$ARGV3
 
 # Read config, explicitly export/set LBHOMEDIR from ARGV5 as a fallback:
 LBHOMEDIR="${LBHOMEDIR:-$ARGV5}"
