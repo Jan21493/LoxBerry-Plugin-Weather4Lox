@@ -160,7 +160,9 @@ if [ -d "$LOG_SRC_DIR" ]; then
     if [ "$LOG_WINDOW_DAYS" -eq 5 ]; then
         while IFS= read -r -d '' logfile; do
             rel="${logfile#$LOG_SRC_DIR/}"
-            destdir="$LOG_BACKUP_DIR/$(dirname "$rel")"
+            reldir="$(dirname "$rel")"
+            [ "$reldir" = "." ] && reldir=""
+            destdir="$LOG_BACKUP_DIR${reldir:+/$reldir}"
             mkdir -p "$destdir"
             cp -p -v "$logfile" "$destdir/"
             LOG_COUNT=$((LOG_COUNT + 1))
@@ -168,7 +170,9 @@ if [ -d "$LOG_SRC_DIR" ]; then
     elif [ "$LOG_WINDOW_DAYS" -eq 1 ]; then
         while IFS= read -r -d '' logfile; do
             rel="${logfile#$LOG_SRC_DIR/}"
-            destdir="$LOG_BACKUP_DIR/$(dirname "$rel")"
+            reldir="$(dirname "$rel")"
+            [ "$reldir" = "." ] && reldir=""
+            destdir="$LOG_BACKUP_DIR${reldir:+/$reldir}"
             mkdir -p "$destdir"
             cp -p -v "$logfile" "$destdir/"
             LOG_COUNT=$((LOG_COUNT + 1))
