@@ -860,9 +860,10 @@ if ($R::form eq "1" || !$R::form) {
     $template->param( WTTRINLANG => $wttrinweatherlang );
 
     # Central language selector (used by all services)
-    @values = ('de', 'en', 'da', 'el', 'es', 'fa', 'fr', 'hi', 'hu', 'id', 'it', 'lt', 'nl', 'pl', 'ro', 'ru', 'th', 'tr', 'uk', 'vi');
+    @values = ('cz', 'de', 'en', 'da', 'el', 'es', 'fa', 'fr', 'hi', 'hu', 'id', 'it', 'lt', 'nl', 'pl', 'ro', 'ru', 'th', 'tr', 'uk', 'vi');
     %labels = (
-        'da' => 'Danish',
+        'cz' => 'Czech',
+    	'da' => 'Danish',
         'de' => 'German',
         'el' => 'Greek',
         'en' => 'English',
@@ -1120,9 +1121,10 @@ if ($R::form eq "1" || !$R::form) {
     $template->param( ICONSET => $iconset );
 
     # Theme LANG
-    @values = ('at', 'nl', 'en', 'de', 'es' );
+    @values = ('at', 'cz', 'nl', 'en', 'de', 'es' );
     %labels = (
         'at' => "Austrian",
+        'cz' => "Czech",
         'nl' => "Dutch",
         'en' => "English",
         'de' => "German",
