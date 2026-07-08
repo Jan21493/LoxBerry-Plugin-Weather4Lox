@@ -50,6 +50,7 @@ my $version = LoxBerry::System::pluginversion();
 my $pcfg             = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $city             = $pcfg->param("WETTERONLINE.STATIONID");
 my $maskKeys     = $pcfg->param("SERVER.MASKKEYS");
+my $lang         = langToLocale( $pcfg->param("SERVER.LANG") );
 
 # names for JSON 
 my $grabberFile     = basename(__FILE__);
@@ -173,7 +174,7 @@ if ($gid) {
 # Get weather data from wetteronline.de (API request) for current conditions
 my $resCurrent = apiCall(
     url => "$urlCurrentRaw$apiKeyCurrent&grid_longitude=$long&grid_latitude=$lat&location_id=$gid&astro_longitude=$long" .
-        "&astro_latitude=$lat&latitude=$lat&longitude=$long&timezone=$timezone&language=de-DE&timeformat=HH:mm&windunit=kmh" .
+        "&astro_latitude=$lat&latitude=$lat&longitude=$long&timezone=$timezone&language=$lang&timeformat=HH:mm&windunit=kmh" .
         "&system_of_measurement=metric&altitude=$altitude",
     # maskkeys => $maskKeys,    # no masking needed here as there are no secret API keys
     # keyparam => 'appid',
