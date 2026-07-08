@@ -709,7 +709,7 @@ if ($R::form eq "1" || !$R::form) {
     $template->param( CRON_OBS => $cronobs );
 
     # OpenWeather Language
-    @values = ('af', 'ar', 'az', 'bg', 'ca', 'cz', 'da', 'de', 'el', 'en', 'es', 'eu', 'fa', 'fi', 'fr', 'gl', 'he', 'hi', 'hr', 'hu', 'id', 'it', 'ja', 'kr', 'la', 'lt', 'mk', 'no', 'nl', 'pl', 'pt', 'pt_br', 'ro', 'ru', 'se', 'sk', 'sl', 'sr', 'th', 'tr', 'uk', 'vi', 'zh_cn', 'zh_tw', 'zu');
+    @values = ('af', 'ar', 'az', 'bg', 'ca', 'cs', 'da', 'de', 'el', 'en', 'es', 'eu', 'fa', 'fi', 'fr', 'gl', 'he', 'hi', 'hr', 'hu', 'id', 'it', 'ja', 'kr', 'la', 'lt', 'mk', 'no', 'nl', 'pl', 'pt', 'pt_br', 'ro', 'ru', 'se', 'sk', 'sl', 'sr', 'th', 'tr', 'uk', 'vi', 'zh_cn', 'zh_tw', 'zu');
 
     %labels = (
         'af' => 'Africaans',
@@ -718,7 +718,7 @@ if ($R::form eq "1" || !$R::form) {
         'bg' => 'Bulgarian',
         'ca' => 'Catalan',
         'ca' => 'Catalan',
-        'cz' => 'Czech',
+        'cs' => 'Czech',
         'da' => 'Danish',
         'de' => 'German',
         'el' => 'Greek',
@@ -860,9 +860,9 @@ if ($R::form eq "1" || !$R::form) {
     $template->param( WTTRINLANG => $wttrinweatherlang );
 
     # Central language selector (used by all services)
-    @values = ('cz', 'de', 'en', 'da', 'el', 'es', 'fa', 'fr', 'hi', 'hu', 'id', 'it', 'lt', 'nl', 'pl', 'ro', 'ru', 'th', 'tr', 'uk', 'vi');
+    @values = ('cs', 'de', 'en', 'da', 'el', 'es', 'fa', 'fr', 'hi', 'hu', 'id', 'it', 'lt', 'nl', 'pl', 'ro', 'ru', 'th', 'tr', 'uk', 'vi');
     %labels = (
-        'cz' => 'Czech',
+        'cs' => 'Czech',
     	'da' => 'Danish',
         'de' => 'German',
         'el' => 'Greek',
@@ -1121,10 +1121,10 @@ if ($R::form eq "1" || !$R::form) {
     $template->param( ICONSET => $iconset );
 
     # Theme LANG
-    @values = ('at', 'cz', 'nl', 'en', 'de', 'es' );
+    @values = ('at', 'cs', 'nl', 'en', 'de', 'es' );
     %labels = (
         'at' => "Austrian",
-        'cz' => "Czech",
+        'cs' => "Czech",
         'nl' => "Dutch",
         'en' => "English",
         'de' => "German",

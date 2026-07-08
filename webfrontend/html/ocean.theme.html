@@ -379,7 +379,7 @@
 <script>
 // ===== CONFIGURATION =====
 var JSON_BASE = './';
-var SUPPORTED_LANGS = ['cz', 'de', 'en', 'es', 'nl', 'sk'];
+var SUPPORTED_LANGS = ['cs', 'de', 'en', 'es', 'nl', 'sk'];
 // Max accepted weather data age: 12 hours
 var MAX_DATA_AGE_MS = 12 * 60 * 60 * 1000;
 
@@ -393,7 +393,7 @@ function getUrlParam(name) {
 var ICONSET = getUrlParam('iconset') || 'naturalistic';
 var currentLang = (function() {
   var p = getUrlParam('lang');
-  return (p && SUPPORTED_LANGS.indexOf(p) !== -1) ? p : 'de';
+  return (p && SUPPORTED_LANGS.indexOf(p) !== -1) ? p : 'en';
 })();
 
 // Global state

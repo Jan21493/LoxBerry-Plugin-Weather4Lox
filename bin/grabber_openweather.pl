@@ -50,7 +50,7 @@ my $version = LoxBerry::System::pluginversion();
 my $pcfg            = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $url             = $pcfg->param("OPENWEATHER.URL");
 my $apikey          = $pcfg->param("OPENWEATHER.APIKEY");
-my $lang            = $pcfg->param("SERVER.LANG");
+my $lang            = isoToCountry($pcfg->param("SERVER.LANG"));
 my $stationid       = "lat=" . $pcfg->param("SERVER.COORDLAT") . "&lon=" . $pcfg->param("SERVER.COORDLONG");
 my $city            = $pcfg->param("SERVER.CITY");
 my $country         = $pcfg->param("SERVER.COUNTRY");

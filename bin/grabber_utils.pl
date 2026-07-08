@@ -1091,30 +1091,30 @@ sub readJsonFile {
 }
 
 ##########################################################################
-# Maps the plugin's internal language code to an ISO 639-1 language code.
+# Maps the plugin's language code (ISO 639-1) to language code.
 # The plugin uses the non-standard code 'cz' for Czech; the ISO 639-1 code
 # is 'cs'. All other internal codes are assumed to already be valid ISO 639-1.
 # Parameter:
-#   $lang:  internal language code (e.g. 'cz', 'de', 'en')
-# Returns:
 #   ISO 639-1 language code string (e.g. 'cs', 'de', 'en')
+# Returns:
+#   $country:  country code (e.g. 'cz', 'de', 'en')
 
-sub langToISO639_1 {
-    my ($lang) = @_;
-    return 'en' unless defined $lang && $lang ne '';
+sub isoToCountry {
+    my ($isoCode) = @_;
+    return 'en' unless defined $isoCode && $isoCode ne '';
 
     my %map = (
-        'cz' => 'cs',   # Czech: plugin uses 'cz', ISO 639-1 is 'cs'
+        'cs' => 'cz',   # Czech: plugin uses 'cs', OpenWeather 'cz'
     );
 
-    return $map{$lang} // $lang;
+    return $map{$isoCode} // $isoCode;
 }
 
 ##########################################################################
 # Maps the plugin's internal language code to a BCP 47 locale string
 # suitable for use in service API requests (e.g. 'de-DE', 'cs-CZ').
 # Parameter:
-#   $lang:  internal language code (e.g. 'cz', 'de', 'en')
+#   $lang:  ISO 639-1 language code (e.g. 'cs', 'de', 'en')
 # Returns:
 #   BCP 47 locale string (e.g. 'cs-CZ', 'de-DE', 'en-US')
 
@@ -1123,7 +1123,7 @@ sub langToLocale {
     return 'en-US' unless defined $lang && $lang ne '';
 
     my %map = (
-        'cz' => 'cs-CZ',
+        'cs' => 'cs-CZ',
         'da' => 'da-DK',
         'de' => 'de-DE',
         'el' => 'el-GR',

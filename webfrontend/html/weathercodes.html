@@ -390,7 +390,7 @@
   <div class="control-group">
     <label id="lbl-lang">Language:</label>
     <select id="lang-select">
-      <option value="cz">Čeština</option>
+      <option value="cs">Čeština</option>
       <option value="en">English</option>
       <option value="de">Deutsch</option>
       <option value="nl">Nederlands</option>
@@ -630,7 +630,7 @@ let urlSize = null;
 // ---------------------------------------------------------------------------
 
 async function loadLang(langCode) {
-  const supported = ['cz', 'en', 'de', 'nl', 'es', 'sk'];
+  const supported = ['cs', 'en', 'de', 'nl', 'es', 'sk'];
   const code = supported.includes(langCode) ? langCode : 'en';
   try {
     const resp = await fetch(pluginBase + '/lang-' + code + '.json');
