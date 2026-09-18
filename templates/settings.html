@@ -1618,11 +1618,12 @@
                                             // DFC: checkbox names are dfc1..dfc8, but data prefixes are dfc0..dfc7 (day offset)
                                             $('input[name^="dfc"]:checked').each(function() {
                                                 var n = parseInt($(this).attr('name').replace('dfc', ''), 10) - 1;
-                                                parts.push('dfc' + n + '_');
+                                                parts.push('dfc' + n + ($('#mqttstructured').val() === '1' ? '/' : '_'));
                                             });
                                             // HFC and NXH: checkbox names match data prefixes directly
-                                            $('input[name^="hfc"]:checked').each(function() { parts.push($(this).attr('name') + '_'); });
-                                            $('input[name^="nxh"]:checked').each(function() { parts.push($(this).attr('name') + '_'); });
+                                            // Suffix is '/' when structured MQTT topics are enabled, otherwise '_'
+                                            $('input[name^="hfc"]:checked').each(function() { parts.push($(this).attr('name') + ($('#mqttstructured').val() === '1' ? '/' : '_')); });
+                                            $('input[name^="nxh"]:checked').each(function() { parts.push($(this).attr('name') + ($('#mqttstructured').val() === '1' ? '/' : '_')); });
 
                                             var $el = $('#sendparams');
                                             $el.val(parts.join(', '));
@@ -1638,8 +1639,8 @@
                                             // Initialize send-params summary on page load based on server-rendered state
                                             updateSendParams();
 
-                                            // Update summary on every DFC/HFC/NXH checkbox change
-                                            $(document).on('change', 'input[name^="dfc"], input[name^="hfc"], input[name^="nxh"]', function() {
+                                            // Update summary on every DFC/HFC/NXH checkbox change, and when the structured-topics switch is toggled
+                                            $(document).on('change', 'input[name^="dfc"], input[name^="hfc"], input[name^="nxh"], #mqttstructured', function() {
                                                 updateSendParams();
                                             });
                                         });
