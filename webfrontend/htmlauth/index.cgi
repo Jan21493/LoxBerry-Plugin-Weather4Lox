@@ -154,6 +154,7 @@ if ($R::saveformdata2) {
     $cfg->param("SERVER.UDPPORT", "$R::udpport");
     $cfg->param("SERVER.MSNO", "$R::msno");
     $cfg->param("SERVER.TOPIC", "$R::mqtttopic");
+    $cfg->param("SERVER.MQTTSTRUCTURED", "$R::mqttstructured");
 
     $cfg->save();
 
@@ -930,6 +931,16 @@ if ($R::form eq "1" || !$R::form) {
         -default => $cfg->param('SERVER.SENDUDP'),
     );
     $template->param( SENDUDP => $sendudp );
+
+    # MQTT structured topics
+    my $mqttstructured = $cgi->popup_menu(
+        -name    => 'mqttstructured',
+        -id      => 'mqttstructured',
+        -values  => \@values,
+        -labels  => \%labels,
+        -default => defined $cfg->param('SERVER.MQTTSTRUCTURED') ? $cfg->param('SERVER.MQTTSTRUCTURED') : 1,
+    );
+    $template->param( MQTTSTRUCTURED => $mqttstructured );
 
     # DFC
     my $dfc;
