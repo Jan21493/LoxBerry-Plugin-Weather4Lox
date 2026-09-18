@@ -62,6 +62,11 @@ our $stdTheme         = $pcfg->param("WEB.THEME");
 our $stdIconSet       = $pcfg->param("WEB.ICONSET");
 our $stdMode          = $pcfg->param("WEB.MODE") // "system";
 our $topic            = $pcfg->param("SERVER.TOPIC") // "w4lx";
+# Structured MQTT topics: publish e.g. "cur/moon/h" instead of "cur_moon_h".
+# The MQTT Gateway converts "/" back to "_" when building the Miniserver
+# Virtual Input name, so the MS input names stay identical ("cur_moon_h").
+# Default is on (1); set SERVER.MQTTSTRUCTURED=0 for the legacy flat topics.
+our $mqttStructured   = defined $pcfg->param("SERVER.MQTTSTRUCTURED") ? $pcfg->param("SERVER.MQTTSTRUCTURED") : 1;
 our $sendMQTT         = 0;
 our $mqtt;
 our $data;
@@ -1071,11 +1076,20 @@ sub sendMQTT {
     if ($sendMQTT) {
         eval {
             $name =~ s/\+/\_\_/g;
+            # Build the MQTT topic. In structured mode the underscores of the
+            # value name become topic levels ("cur_moon_h" -> "cur/moon/h") so
+            # that cur/hfcX/dfcX/nxhX appear as expandable branches in the
+            # broker/MQTT Gateway. The Gateway maps "/" back to "_", keeping the
+            # Miniserver Virtual Input name unchanged ("<topic>_cur_moon_h").
+            my $mtopic = $name;
+            if ($mqttStructured) {
+                $mtopic =~ s#_#/#g;
+            }
             # Log data if defined (reduce loggin amount)
             if (defined $doLog && $doLog) {
-                LOGINF "Publishing value to MQTT: " . $topic . "/" . $name . " " . $value;
+                LOGINF "Publishing value to MQTT: " . $topic . "/" . $mtopic . " " . $value;
             }
-            $mqtt->retain($topic . "/" . $name, $value);
+            $mqtt->retain($topic . "/" . $mtopic, $value);
         };
         if ($@) {
             my $error = $@ || 'Unknown failure';

@@ -1482,6 +1482,22 @@
                                                         </td>
                                                     </tr>
                                                     <tr>
+                                                        <td width="25%">
+                                                            <label id="labelmqttstructured"><TMPL_VAR SETTINGS.LABEL_MQTTSTRUCTURED></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <fieldset>
+                                                                <TMPL_VAR MQTTSTRUCTURED>
+                                                            </fieldset>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_MQTTSTRUCTURED></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
                                                         <td colspan=3 width="75%">
                                                             <h3><TMPL_VAR SETTINGS.LABEL_UDPCONNECTION></h3>
                                                             <font size="-1"><i><TMPL_VAR SETTINGS.HINT_SECTION_UDP></i></font>
@@ -1602,11 +1618,12 @@
                                             // DFC: checkbox names are dfc1..dfc8, but data prefixes are dfc0..dfc7 (day offset)
                                             $('input[name^="dfc"]:checked').each(function() {
                                                 var n = parseInt($(this).attr('name').replace('dfc', ''), 10) - 1;
-                                                parts.push('dfc' + n + '_');
+                                                parts.push('dfc' + n + ($('#mqttstructured').val() === '1' ? '/' : '_'));
                                             });
                                             // HFC and NXH: checkbox names match data prefixes directly
-                                            $('input[name^="hfc"]:checked').each(function() { parts.push($(this).attr('name') + '_'); });
-                                            $('input[name^="nxh"]:checked').each(function() { parts.push($(this).attr('name') + '_'); });
+                                            // Suffix is '/' when structured MQTT topics are enabled, otherwise '_'
+                                            $('input[name^="hfc"]:checked').each(function() { parts.push($(this).attr('name') + ($('#mqttstructured').val() === '1' ? '/' : '_')); });
+                                            $('input[name^="nxh"]:checked').each(function() { parts.push($(this).attr('name') + ($('#mqttstructured').val() === '1' ? '/' : '_')); });
 
                                             var $el = $('#sendparams');
                                             $el.val(parts.join(', '));
@@ -1622,14 +1639,15 @@
                                             // Initialize send-params summary on page load based on server-rendered state
                                             updateSendParams();
 
-                                            // Update summary on every DFC/HFC/NXH checkbox change
-                                            $(document).on('change', 'input[name^="dfc"], input[name^="hfc"], input[name^="nxh"]', function() {
+                                            // Update summary on every DFC/HFC/NXH checkbox change, and when the structured-topics switch is toggled
+                                            $(document).on('change', 'input[name^="dfc"], input[name^="hfc"], input[name^="nxh"], #mqttstructured', function() {
                                                 updateSendParams();
                                             });
                                         });
 
                                         // Add some attributes PERL::CGI doesn't provide
                                         $('#sendudp').attr('data-role','flipswitch');
+                                        $('#mqttstructured').attr('data-role','flipswitch');
                                     </script>
 </TMPL_IF>
 <TMPL_IF FORM3>
