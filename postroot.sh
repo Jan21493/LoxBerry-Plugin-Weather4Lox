@@ -121,6 +121,11 @@ run_cpanm() {
 run_cpanm "Installing Perl Module Math::Function::Interpolator" cpanm Math::Function::Interpolator
 
 # Installing Perl Module for almost all grabbers that require moon phase calculations.
+# NOTE: A pure-Perl copy of this module is also bundled under bin/lib/Astro/MoonPhase.pm
+# and used as a fallback (see grabber_utils.pl) if this system-wide install is missing,
+# e.g. because it disappeared from @INC after a Perl upgrade (see issue #63). This
+# cpanm install is still attempted so a system-wide, potentially more current version
+# is preferred when available, but a failure here no longer breaks the grabbers.
 run_cpanm "Installing Perl Module Astro::MoonPhase" cpanm Astro::MoonPhase
 
 run_cmd "Reconfigure Timezone - just to make sure..." dpkg-reconfigure -f noninteractive tzdata
