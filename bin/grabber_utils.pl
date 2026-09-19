@@ -31,6 +31,21 @@ use Time::Piece;
 my $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
 
 ##########################################################################
+# Fallback for modules that have no Debian package and are therefore
+# installed via cpanm (see postroot.sh), e.g. Astro::MoonPhase and
+# Math::Function::Interpolator. cpanm installs those below a
+# Perl-version-specific path (/usr/local/share/perl/<version>/ or, for
+# compiled/XS dependencies such as Number::Closest::XS, an equivalent
+# architecture-specific path), which silently disappears from @INC after a
+# Perl upgrade (e.g. during a Debian release upgrade) until the plugin is
+# reinstalled - even though nothing about the plugin changed. That used to
+# freeze all weather data without any warning.
+# A vendored, pure-Perl copy of each affected module is shipped in bin/lib as
+# a last-resort fallback. It is appended (not prepended) to @INC, so an
+# existing, loadable system-wide installation always takes precedence.
+push @INC, "$lbpbindir/lib" if defined $lbpbindir && !grep { $_ eq "$lbpbindir/lib" } @INC;
+
+##########################################################################
 # Special Modules (with error handling in case of missing modules)
 # 
 # These modules should have been installed during installation of plugin

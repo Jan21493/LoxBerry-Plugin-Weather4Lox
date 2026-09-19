@@ -105,6 +105,35 @@ if ($maskkeys) {
 } 
 LOGINF "Weather4Lox Fetch - masking API keys is " . ($maskkeys ? "enabled" : "disabled") . ", include observations is " . ($includeObs ? "enabled" : "disabled") . ".";
 
+##########################################################################
+# Run a grabber (or datatoloxone.pl) as an external process and log a clear
+# error if it failed. Without this check, a grabber crash (e.g. exit code 2
+# from requireOrLogdie because of a missing Perl module after a Perl
+# upgrade) went unnoticed: the fetch log just ended with "TASK FINISHED"
+# while Loxone kept receiving stale weather data for weeks - see
+# https://github.com/Jan21493/LoxBerry-Plugin-Weather4Lox/issues/63
+##########################################################################
+sub run_grabber {
+    my ($cmd, $label) = @_;
+
+    $log->close;
+    system ($cmd);
+    my $rc = $?;
+    $log->open;
+
+    if ($rc == -1) {
+        LOGCRIT "Failed to execute $label: $!";
+        return 0;
+    } elsif ($rc & 127) {
+        LOGCRIT "$label was terminated by signal " . ($rc & 127) . ".";
+        return 0;
+    } elsif (($rc >> 8) != 0) {
+        LOGCRIT "$label exited with error code " . ($rc >> 8) . " - weather data may not have been updated. Check the $label log for details.";
+        return 0;
+    }
+    return 1;
+}
+
 # execute when fetch.pl is called directly or with cronjob and default flag
 if( !$cronjob || ( $cronjob && $default ) ){
     LOGINF "Fetch default weather data ...";
@@ -122,13 +151,11 @@ if( !$cronjob || ( $cronjob && $default ) ){
 
     if (-e "$lbpbindir/grabber_$service.pl") {
         LOGINF "Starting Grabber grabber_$service.pl $service_opt $verbose_opt $maskkeys_opt";
-        $log->close;
-        system ("$lbpbindir/grabber_$service.pl $service_opt $verbose_opt $maskkeys_opt");
+        run_grabber("$lbpbindir/grabber_$service.pl $service_opt $verbose_opt $maskkeys_opt", "grabber_$service.pl");
     } else {
         LOGCRIT "Cannot find grabber script for service $service.";
         exit (1);
     }
-    $log->open;
 }
 
 # execute when fetch.pl is called directly or with cronjob and alternate flag
@@ -145,8 +172,7 @@ if( !$cronjob || ( $cronjob && $alternate ) ){
     if ( $servicedfc && $servicedfc eq $servicehfc ) {
         if (-e "$lbpbindir/grabber_$servicedfc.pl") {
             LOGINF "Starting Grabber grabber_$servicedfc.pl --daily --hourly $verbose_opt $maskkeys_opt --interval $interval";
-            $log->close;
-            system ("$lbpbindir/grabber_$servicedfc.pl --daily --hourly $verbose_opt $maskkeys_opt --interval $interval");
+            run_grabber("$lbpbindir/grabber_$servicedfc.pl --daily --hourly $verbose_opt $maskkeys_opt --interval $interval", "grabber_$servicedfc.pl");
         } else {
             LOGCRIT "Cannot find grabber script for service $servicedfc.";
             exit (1);
@@ -154,26 +180,22 @@ if( !$cronjob || ( $cronjob && $alternate ) ){
     } elsif ( $servicedfc && $servicedfc ne $servicehfc ) {
         if (-e "$lbpbindir/grabber_$servicedfc.pl") {
             LOGINF "Starting Grabber grabber_$servicedfc.pl --daily $verbose_opt $maskkeys_opt --interval $interval";
-            $log->close;
-            system ("$lbpbindir/grabber_$servicedfc.pl --daily $verbose_opt $maskkeys_opt --interval $interval");
+            run_grabber("$lbpbindir/grabber_$servicedfc.pl --daily $verbose_opt $maskkeys_opt --interval $interval", "grabber_$servicedfc.pl");
         } else {
             LOGCRIT "Cannot find grabber script for service $servicedfc.";
             exit (1);
         }
     }
-    $log->open;
 
     if ( $servicehfc && $servicehfc ne $servicedfc ) {
         if (-e "$lbpbindir/grabber_$servicehfc.pl") {
             LOGINF "Starting Grabber grabber_$servicehfc.pl --hourly $verbose_opt $maskkeys_opt --interval $interval";
-            $log->close;
-            system ("$lbpbindir/grabber_$servicehfc.pl --hourly $verbose_opt $maskkeys_opt --interval $interval");
+            run_grabber("$lbpbindir/grabber_$servicehfc.pl --hourly $verbose_opt $maskkeys_opt --interval $interval", "grabber_$servicehfc.pl");
         } else {
             LOGCRIT "Cannot find grabber script for service $servicehfc.";
             exit (1);
         }
     }
-    $log->open;
 }
 # only execute when fetch.pl is called with includeObs flag, either directly or with cronjob
 # reason: observations are quite expensive, so flag is needed to avoid running it with every manual fetch
@@ -184,13 +206,11 @@ if( $includeObs ) {
 
     if (-e "$lbpbindir/grabber_$serviceobs.pl") {
         LOGINF "Starting Grabber grabber_$serviceobs.pl $service_opt $verbose_opt $maskkeys_opt";
-        $log->close;
-        system ("$lbpbindir/grabber_$serviceobs.pl $service_opt $verbose_opt $maskkeys_opt");
+        run_grabber("$lbpbindir/grabber_$serviceobs.pl $service_opt $verbose_opt $maskkeys_opt", "grabber_$serviceobs.pl");
     } else {
         LOGCRIT "Cannot find grabber script for service $serviceobs.";
         exit (1);
     }
-    $log->open;
 }
 
 # execute when fetch.pl is called directly or with cronjob and default or alternate flag
@@ -206,9 +226,7 @@ if( !$cronjob || ( $cronjob && $airquality) ) {
     # Grab air quality / pollen data from Open-Meteo
     if ( $pcfg->param("SERVER.OPENMETEOAIRQUALITYGRABBER") ) {
         LOGINF "Starting Grabber grabber_openmeteo_airquality.pl $verbose_opt --interval $interval";
-        $log->close;
-        system ("$lbpbindir/grabber_openmeteo_airquality.pl $verbose_opt --interval $interval");
-        $log->open;
+        run_grabber("$lbpbindir/grabber_openmeteo_airquality.pl $verbose_opt --interval $interval", "grabber_openmeteo_airquality.pl");
     }
 }
 
@@ -221,9 +239,7 @@ if( !$cronjob || ( $cronjob && $local ) ) {
     # Grab some data from Wunderground
     if ( $pcfg->param("SERVER.WUGRABBER") ) {
         LOGINF "Starting Grabber grabber_wu_pws.pl $verbose_opt --interval $interval";
-        $log->close;
-        system ("$lbpbindir/grabber_wu_pws.pl $verbose_opt --interval $interval");
-        $log->open;
+        run_grabber("$lbpbindir/grabber_wu_pws.pl $verbose_opt --interval $interval", "grabber_wu_pws.pl");
     }
 }
 
@@ -238,39 +254,29 @@ if( !$cronjob || ( $cronjob && $own ) ) {
         my $foshknewapi = $pcfg->param("SERVER.FOSHKNEWAPI");
         if ($foshknewapi) {
             LOGINF "Starting Grabber grabber_foshk2.pl (NEW API!) $verbose_opt --interval $interval";
-            $log->close;
-            system ("$lbpbindir/grabber_foshk2.pl $verbose_opt --interval $interval");
-            $log->open;
+            run_grabber("$lbpbindir/grabber_foshk2.pl $verbose_opt --interval $interval", "grabber_foshk2.pl");
         } else {
             LOGINF "Starting Grabber grabber_foshk.pl (OLD API) $verbose_opt --interval $interval";
-            $log->close;
-            system ("$lbpbindir/grabber_foshk.pl $verbose_opt --interval $interval");
-            $log->open;
+            run_grabber("$lbpbindir/grabber_foshk.pl $verbose_opt --interval $interval", "grabber_foshk.pl");
         }
     }
 
     # Grab some data from PWSCatchUpload
     if ( $pcfg->param("SERVER.PWSCATCHUPLOADGRABBER") ) {
         LOGINF "Starting Grabber grabber_pwscatchupload.pl $verbose_opt --interval $interval";
-        $log->close;
-        system ("$lbpbindir/grabber_pwscatchupload.pl $verbose_opt --interval $interval");
-        $log->open;
+        run_grabber("$lbpbindir/grabber_pwscatchupload.pl $verbose_opt --interval $interval", "grabber_pwscatchupload.pl");
     }
 
     # Grab some data from Loxone Miniserver
     if ( $pcfg->param("SERVER.LOXGRABBER") ) {
         LOGINF "Starting Grabber grabber_loxone.pl $verbose_opt --interval $interval";
-        $log->close;
-        system ("$lbpbindir/grabber_loxone.pl $verbose_opt --interval $interval");
-        $log->open;
+        run_grabber("$lbpbindir/grabber_loxone.pl $verbose_opt --interval $interval", "grabber_loxone.pl");
     }
 }
 
 # Data to Loxone
 LOGINF "Starting script datatoloxone.pl $verbose_opt $maskkeys_opt";
-$log->close;
-system ("$lbpbindir/datatoloxone.pl $verbose_opt  $maskkeys_opt");
-$log->open;
+run_grabber("$lbpbindir/datatoloxone.pl $verbose_opt  $maskkeys_opt", "datatoloxone.pl");
 
 exit;
 

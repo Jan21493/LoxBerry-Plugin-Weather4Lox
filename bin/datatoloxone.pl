@@ -172,6 +172,25 @@ my $envelope = readJsonFile($lbplogdir, $weatherKey);
 my $cur = $envelope->{$weatherKey} // {};
 my $location = $envelope->{location} // {};
 
+# Detect stale data: if a grabber fails repeatedly (e.g. because a Perl module
+# is missing after a system upgrade, see issue #63), current.json simply stops
+# being updated while this script keeps forwarding the last known values to
+# Loxone without any indication that they are outdated. Warn loudly instead,
+# using the file's modification time (set whenever a grabber last successfully
+# wrote the file) as the age of the data.
+my $curDataAgeMinutes;
+if (my @curStat = stat("$lbplogdir/current.json")) {
+    $curDataAgeMinutes = int((time() - $curStat[9]) / 60);
+}
+my $staleThresholdMinutes = 3 * ($pcfg->param("SERVER.CRON") || 60);
+my $curIsStale = (defined($curDataAgeMinutes) && $curDataAgeMinutes > $staleThresholdMinutes) ? 1 : 0;
+if ($curIsStale) {
+    LOGCRIT "Current weather data has not been updated for $curDataAgeMinutes minutes (last successful update: " .
+        ($envelope->{generatedAt} // 'unknown') . "), more than 3x the configured refresh interval ($staleThresholdMinutes min). " .
+        "A grabber may be failing repeatedly (e.g. a missing Perl module after a system/Perl upgrade) - check the grabber logs for details. " .
+        "Loxone is still receiving the last known values.";
+}
+
 $weatherKey = "dailyforecast";
 $envelope = readJsonFile($lbplogdir, $weatherKey);
 my $dfc = $envelope->{$weatherKey} // [];
@@ -229,6 +248,8 @@ sendToLox($toMS, $doLog, "cur" . $mqttsep . "date_des", $cur->{time}{datetime});
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "date_tz_des_sh", $location->{timezone});                             # IANA timezone name, e.g. Europe/Berlin
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "date_tz_des", $location->{tzShort});                                 # Time Zone Abbreviation, e.g. CET
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "date_tz", $location->{tzOffset});                                    # Numeric timezone offset, e.g. +0100
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "data_age", $curDataAgeMinutes // 0);                                  # minutes since current.json was last successfully updated by a grabber
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "stale", $curIsStale);                                                # 1 if data age exceeds 3x the refresh interval, e.g. a grabber is failing repeatedly
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "day", encode_utf8(sprintf("%02d", $curDate->mday)));
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "month", encode_utf8(sprintf("%02d", $curDate->mon)));
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "year", encode_utf8($curDate->year));
