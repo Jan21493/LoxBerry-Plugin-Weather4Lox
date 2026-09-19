@@ -61,12 +61,19 @@ our $emu              = $pcfg->param("SERVER.EMU");
 our $stdTheme         = $pcfg->param("WEB.THEME");
 our $stdIconSet       = $pcfg->param("WEB.ICONSET");
 our $stdMode          = $pcfg->param("WEB.MODE") // "system";
-our $topic            = $pcfg->param("SERVER.TOPIC") // "w4lx";
-# Structured MQTT topics: publish e.g. "cur/moon/h" instead of "cur_moon_h".
-# The MQTT Gateway converts "/" back to "_" when building the Miniserver
-# Virtual Input name, so the MS input names stay identical ("cur_moon_h").
-# Default is on (1); set SERVER.MQTTSTRUCTURED=0 for the legacy flat topics.
+our $topic            = $pcfg->param("SERVER.TOPIC") // "w4l";
+
+# Structured MQTT topics: publish e.g. "cur/moon_h" instead of "cur_moon_h" so
+# that cur/hfcX/dfcX/nxhX appear as expandable branches in the broker/MQTT Gateway.
+# The MQTT Gateway converts "/" back to "_" when building the Miniserver Virtual Input name.
+# Default is on (1)
 our $mqttStructured   = defined $pcfg->param("SERVER.MQTTSTRUCTURED") ? $pcfg->param("SERVER.MQTTSTRUCTURED") : 1;
+our $mqttsep;
+if ($mqttStructured) {
+    $mqttsep = "/";
+} else {
+    $mqttsep = "_";
+}
 our $sendMQTT         = 0;
 our $mqtt;
 our $data;
@@ -217,52 +224,52 @@ my $curDateLoxEpoch = toLoxEpoch($midnightEpoch);
 my $doLog = 1; # log the first data set in detail, but not all subsequent ones to avoid log flooding
 
 # sending to Loxone Miniserver via MQTT, HTML webpage and UDP with logging of each value
-sendToLox($toMS, $doLog, "cur_date", toLoxEpoch($epoch));                                          # Loxone epoch (1.1.2009), e.g. 542934004
-sendToLox($toMS, $doLog, "cur_date_des", $cur->{time}{datetime});                                  # was RFC822, now ISO 8601, e.g. Mon, 16 Mar 2026 23:00:04 +0100
-sendToLox($toMS, $doLog, "cur_date_tz_des_sh", $location->{timezone});                             # IANA timezone name, e.g. Europe/Berlin
-sendToLox($toMS, $doLog, "cur_date_tz_des", $location->{tzShort});                                 # Time Zone Abbreviation, e.g. CET
-sendToLox($toMS, $doLog, "cur_date_tz", $location->{tzOffset});                                    # Numeric timezone offset, e.g. +0100
-sendToLox($toMS, $doLog, "cur_day", encode_utf8(sprintf("%02d", $curDate->mday)));
-sendToLox($toMS, $doLog, "cur_month", encode_utf8(sprintf("%02d", $curDate->mon)));
-sendToLox($toMS, $doLog, "cur_year", encode_utf8($curDate->year));
-sendToLox($toMS, $doLog, "cur_hour", encode_utf8(sprintf("%02d", $curDate->hour)));
-sendToLox($toMS, $doLog, "cur_min", encode_utf8(sprintf("%02d", $curDate->min)));
-sendToLox($toMS, $doLog, "cur_loc_n", encode_utf8($location->{city}));
-sendToLox($toMS, $doLog, "cur_loc_c", encode_utf8($location->{country}));
-sendToLox($toMS, $doLog, "cur_loc_ccode", encode_utf8($location->{countryCode}));
-sendToLox($toMS, $doLog, "cur_loc_lat", $location->{latitude});
-sendToLox($toMS, $doLog, "cur_loc_long", $location->{longitude});
-sendToLox($toMS, $doLog, "cur_loc_el", $location->{elevation});
-sendToLox($toMS, $doLog, "cur_tt", !$metric ? $cur->{temperature}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{temperature}{air});
-sendToLox($toMS, $doLog, "cur_tt_fl", !$metric ? $cur->{temperature}{feelsLike}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{temperature}{feelsLike});
-sendToLox($toMS, $doLog, "cur_hu", $cur->{humidity});
-sendToLox($toMS, $doLog, "cur_w_dirdes", encode_utf8($langData->{wind_directions}{getWindDirCardinal($cur->{wind}{direction})} // '-'));
-sendToLox($toMS, $doLog, "cur_w_dir", $cur->{wind}{direction});
-sendToLox($toMS, $doLog, "cur_w_sp", !$metric ? $cur->{wind}{speed}*KMH_TO_MPH : $cur->{wind}{speed});
-sendToLox($toMS, $doLog, "cur_w_gu", !$metric ? $cur->{wind}{gust}*KMH_TO_MPH : $cur->{wind}{gust});
-sendToLox($toMS, $doLog, "cur_w_ch", !$metric ? $cur->{temperature}{windChill}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{temperature}{windChill});
-sendToLox($toMS, $doLog, "cur_pr", !$metric ? $cur->{pressure}*HPA_TO_INHG : $cur->{pressure});
-sendToLox($toMS, $doLog, "cur_dp", !$metric ? $cur->{dewpoint}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{dewpoint});
-sendToLox($toMS, $doLog, "cur_vis", !$metric ? $cur->{visibility}*KMH_TO_MPH : $cur->{visibility});
-sendToLox($toMS, $doLog, "cur_sr", $cur->{solarRadiation});
-sendToLox($toMS, $doLog, "cur_hi", !$metric ? $cur->{temperature}{heatIndex}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{temperature}{heatIndex});
-sendToLox($toMS, $doLog, "cur_uvi", $cur->{uvIndex});
-sendToLox($toMS, $doLog, "cur_pop", $cur->{precipitation}{probability});
-sendToLox($toMS, $doLog, "cur_prec_today", !$metric ? $cur->{precipitation}{rainToday}*MM_TO_INCH : $cur->{precipitation}{rainToday});
-sendToLox($toMS, $doLog, "cur_prec_1hr", !$metric ? $cur->{precipitation}{rain1hr}*MM_TO_INCH : $cur->{precipitation}{rain1hr});
-sendToLox($toMS, $doLog, "cur_snow", !$metric ? $cur->{precipitation}{snowToday}*CM_TO_INCH : $cur->{precipitation}{snowToday});
-sendToLox($toMS, $doLog, "cur_we_icon", $cur->{weatherCode}{weather4lox});
-sendToLox($toMS, $doLog, "cur_we_code", w4l_to_oldW4lCode($cur->{weatherCode}{weather4lox}));
-sendToLox($toMS, $doLog, "cur_we_code_lox", $cur->{weatherCode}{loxone});
-sendToLox($toMS, $doLog, "cur_we_des", encode_utf8($langData->{weather_descriptions}{$cur->{weatherCode}{weather4lox}} // '-'));
-sendToLox($toMS, $doLog, "cur_moon_p", $cur->{moon}{percent});
-sendToLox($toMS, $doLog, "cur_moon_a", $cur->{moon}{age});
-sendToLox($toMS, $doLog, "cur_moon_ph", $cur->{moon}{phase});
-sendToLox($toMS, $doLog, "cur_moon_h", $cur->{moon}{direction});
-sendToLox($toMS, $doLog, "cur_sun_r", $curDateLoxEpoch + timeToSec($cur->{sunrise}));
-sendToLox($toMS, $doLog, "cur_sun_s", $curDateLoxEpoch + timeToSec($cur->{sunset}));
-sendToLox($toMS, $doLog, "cur_ozone", $cur->{airQuality}{ozone});
-sendToLox($toMS, $doLog, "cur_sky", $cur->{cloudCover});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "date", toLoxEpoch($epoch));                                          # Loxone epoch (1.1.2009), e.g. 542934004
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "date_des", $cur->{time}{datetime});                                  # was RFC822, now ISO 8601, e.g. Mon, 16 Mar 2026 23:00:04 +0100
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "date_tz_des_sh", $location->{timezone});                             # IANA timezone name, e.g. Europe/Berlin
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "date_tz_des", $location->{tzShort});                                 # Time Zone Abbreviation, e.g. CET
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "date_tz", $location->{tzOffset});                                    # Numeric timezone offset, e.g. +0100
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "day", encode_utf8(sprintf("%02d", $curDate->mday)));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "month", encode_utf8(sprintf("%02d", $curDate->mon)));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "year", encode_utf8($curDate->year));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "hour", encode_utf8(sprintf("%02d", $curDate->hour)));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "min", encode_utf8(sprintf("%02d", $curDate->min)));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "loc" . $mqttsep . "n", encode_utf8($location->{city}));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "loc" . $mqttsep . "c", encode_utf8($location->{country}));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "loc" . $mqttsep . "ccode", encode_utf8($location->{countryCode}));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "loc" . $mqttsep . "lat", $location->{latitude});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "loc" . $mqttsep . "long", $location->{longitude});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "loc" . $mqttsep . "el", $location->{elevation});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "tt", !$metric ? $cur->{temperature}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{temperature}{air});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "tt_fl", !$metric ? $cur->{temperature}{feelsLike}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{temperature}{feelsLike});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "hu", $cur->{humidity});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "w_dirdes", encode_utf8($langData->{wind_directions}{getWindDirCardinal($cur->{wind}{direction})} // '-'));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "w_dir", $cur->{wind}{direction});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "w_sp", !$metric ? $cur->{wind}{speed}*KMH_TO_MPH : $cur->{wind}{speed});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "w_gu", !$metric ? $cur->{wind}{gust}*KMH_TO_MPH : $cur->{wind}{gust});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "w_ch", !$metric ? $cur->{temperature}{windChill}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{temperature}{windChill});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "pr", !$metric ? $cur->{pressure}*HPA_TO_INHG : $cur->{pressure});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "dp", !$metric ? $cur->{dewpoint}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{dewpoint});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "vis", !$metric ? $cur->{visibility}*KMH_TO_MPH : $cur->{visibility});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "sr", $cur->{solarRadiation});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "hi", !$metric ? $cur->{temperature}{heatIndex}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{temperature}{heatIndex});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "uvi", $cur->{uvIndex});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "pop", $cur->{precipitation}{probability});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "prec_today", !$metric ? $cur->{precipitation}{rainToday}*MM_TO_INCH : $cur->{precipitation}{rainToday});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "prec_1hr", !$metric ? $cur->{precipitation}{rain1hr}*MM_TO_INCH : $cur->{precipitation}{rain1hr});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "snow", !$metric ? $cur->{precipitation}{snowToday}*CM_TO_INCH : $cur->{precipitation}{snowToday});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "we_icon", $cur->{weatherCode}{weather4lox});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "we_code", w4l_to_oldW4lCode($cur->{weatherCode}{weather4lox}));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "we_code_lox", $cur->{weatherCode}{loxone});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "we_des", encode_utf8($langData->{weather_descriptions}{$cur->{weatherCode}{weather4lox}} // '-'));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "moon_p", $cur->{moon}{percent});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "moon_a", $cur->{moon}{age});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "moon_ph", $cur->{moon}{phase});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "moon_h", $cur->{moon}{direction});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "sun_r", $curDateLoxEpoch + timeToSec($cur->{sunrise}));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "sun_s", $curDateLoxEpoch + timeToSec($cur->{sunset}));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "ozone", $cur->{airQuality}{ozone});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "sky", $cur->{cloudCover});
 
 # Use night icons between sunset and sunrise
 my $curSec = timeToSec($curDate->hour . ":" . $curDate->min);
@@ -288,9 +295,9 @@ if ($curSec < $sunriseSec || $curSec > $sunsetSec) {
 # but need to be in hh:mm format on theme web page
 { 
     no strict 'refs';
-    ${"cur_sun_r"} = $cur->{sunrise};
-    ${"cur_sun_s"} = $cur->{sunset};
-    ${"cur_we_icon"} = $iconName . "." . ($iconMapping->{format} // 'no_format');
+    ${"cur" . $mqttsep . "sun_r"} = $cur->{sunrise};
+    ${"cur" . $mqttsep . "sun_s"} = $cur->{sunset};
+    ${"cur" . $mqttsep . "we_icon"} = $iconName . "." . ($iconMapping->{format} // 'no_format');
 }
 
 #
@@ -322,46 +329,46 @@ foreach my $dfcEntry (@$dfc) {
     my $dfcDate_LoxoneEpoch = toLoxEpoch($dfcDate_midnightEpoch);
 
     # sending to Loxone Miniserver via MQTT, HTML webpage and UDP with logging of first day (today) in detail
-    sendToLox($toMS, $doLog, "dfc${per}_per", $per); # period starting with 0 for today, 1 for tomorrow, ...
-    sendToLox($toMS, $doLog, "dfc${per}_date", toLoxEpoch($dfcEntry->{time}{epoch}));    # Loxone epoch (1.1.2009), e.g. 542934004
-    sendToLox($toMS, $doLog, "dfc${per}_day", encode_utf8(sprintf("%02d", $dfcDate->mday)));
-    sendToLox($toMS, $doLog, "dfc${per}_month", encode_utf8(sprintf("%02d", $dfcDate->mon)));
-    sendToLox($toMS, $doLog, "dfc${per}_monthn", encode_utf8($langData->{theme}{months}[$dfcDate->mon - 1] // $dfcDate->strftime('%B')));
-    sendToLox($toMS, $doLog, "dfc${per}_monthn_sh", encode_utf8($langData->{theme}{months_short}[$dfcDate->mon - 1] // $dfcDate->strftime('%b')));
-    sendToLox($toMS, $doLog, "dfc${per}_year", encode_utf8($dfcDate->year));
-    sendToLox($toMS, $doLog, "dfc${per}_hour", encode_utf8(sprintf("%02d", $dfcDate->hour)));
-    sendToLox($toMS, $doLog, "dfc${per}_min", encode_utf8(sprintf("%02d", $dfcDate->min)));
-    sendToLox($toMS, $doLog, "dfc${per}_wday", encode_utf8($langData->{theme}{weekdays}[$dfcDate->wday - 1] // $dfcDate->strftime('%A')));
-    sendToLox($toMS, $doLog, "dfc${per}_wday_sh", encode_utf8($langData->{theme}{weekdays_short}[$dfcDate->wday - 1] // $dfcDate->strftime('%a')));
-    sendToLox($toMS, $doLog, "dfc${per}_tt_h", !$metric ? $dfcEntry->{temperature}{max}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{temperature}{max}{air});
-    sendToLox($toMS, $doLog, "dfc${per}_tt_l", !$metric ? $dfcEntry->{temperature}{min}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{temperature}{min}{air});
-    sendToLox($toMS, $doLog, "dfc${per}_pop", $dfcEntry->{precipitation}{probability});
-    sendToLox($toMS, $doLog, "dfc${per}_prec", !$metric ? $dfcEntry->{precipitation}{rainHigh}*MM_TO_INCH : $dfcEntry->{precipitation}{rainHigh});
-    sendToLox($toMS, $doLog, "dfc${per}_snow", !$metric ? $dfcEntry->{precipitation}{snowHigh}*CM_TO_INCH : $dfcEntry->{precipitation}{snowHigh});
-    sendToLox($toMS, $doLog, "dfc${per}_w_sp_h", !$metric ? $dfcEntry->{wind}{max}{speed}*KMH_TO_MPH : $dfcEntry->{wind}{max}{speed});
-    sendToLox($toMS, $doLog, "dfc${per}_w_gu_h", !$metric ? $dfcEntry->{wind}{max}{gust}*KMH_TO_MPH : $dfcEntry->{wind}{max}{gust});
-    sendToLox($toMS, $doLog, "dfc${per}_w_dirdes_h", encode_utf8($langData->{wind_directions}{getWindDirCardinal($dfcEntry->{wind}{max}{direction}) // ''} // '-')); 
-    sendToLox($toMS, $doLog, "dfc${per}_w_dir_h", $dfcEntry->{wind}{max}{direction});
-    sendToLox($toMS, $doLog, "dfc${per}_w_sp_a", !$metric ? $dfcEntry->{wind}{avg}{speed}*KMH_TO_MPH : $dfcEntry->{wind}{avg}{speed});
-    sendToLox($toMS, $doLog, "dfc${per}_w_gu_a", !$metric ? $dfcEntry->{wind}{avg}{gust}*KMH_TO_MPH : $dfcEntry->{wind}{avg}{gust});
-    sendToLox($toMS, $doLog, "dfc${per}_w_dirdes_a", encode_utf8($langData->{wind_directions}{getWindDirCardinal($dfcEntry->{wind}{avg}{direction}) // ''} // '-')); 
-    sendToLox($toMS, $doLog, "dfc${per}_w_dir_a", $dfcEntry->{wind}{avg}{direction});
-    sendToLox($toMS, $doLog, "dfc${per}_hu_a", $dfcEntry->{humidity}{avg});
-    sendToLox($toMS, $doLog, "dfc${per}_hu_h", $dfcEntry->{humidity}{max});
-    sendToLox($toMS, $doLog, "dfc${per}_hu_l", $dfcEntry->{humidity}{min});
-    sendToLox($toMS, $doLog, "dfc${per}_we_code", w4l_to_oldW4lCode($dfcEntry->{weatherCode}{weather4lox}));
-    sendToLox($toMS, $doLog, "dfc${per}_we_code_lox", $dfcEntry->{weatherCode}{loxone});
-    sendToLox($toMS, $doLog, "dfc${per}_we_des", encode_utf8($langData->{weather_descriptions}{$dfcEntry->{weatherCode}{weather4lox}} // '-'));
-    sendToLox($toMS, $doLog, "dfc${per}_ozone", _jval($dfcEntry->{airQuality}{ozone}));
-    sendToLox($toMS, $doLog, "dfc${per}_moon_p", $dfcEntry->{moon}{percent});
-    sendToLox($toMS, $doLog, "dfc${per}_dp", !$metric ? $dfcEntry->{dewpoint}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{dewpoint});
-    sendToLox($toMS, $doLog, "dfc${per}_pr", !$metric ? $dfcEntry->{pressure}*HPA_TO_INHG : $dfcEntry->{pressure});
-    sendToLox($toMS, $doLog, "dfc${per}_uvi", $dfcEntry->{uvIndex});
-    sendToLox($toMS, $doLog, "dfc${per}_vis", !$metric ? $dfcEntry->{visibility}*KMH_TO_MPH : $dfcEntry->{visibility});
-    sendToLox($toMS, $doLog, "dfc${per}_moon_a", $dfcEntry->{moon}{age});
-    sendToLox($toMS, $doLog, "dfc${per}_moon_ph", $dfcEntry->{moon}{phase});
-    sendToLox($toMS, $doLog, "dfc${per}_sun_r", $dfcDate_LoxoneEpoch + timeToSec($dfcEntry->{sunrise}));
-    sendToLox($toMS, $doLog, "dfc${per}_sun_s", $dfcDate_LoxoneEpoch + timeToSec($dfcEntry->{sunset}));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."per", $per); # period starting with 0 for today, 1 for tomorrow, ...
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."date", toLoxEpoch($dfcEntry->{time}{epoch}));    # Loxone epoch (1.1.2009), e.g. 542934004
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."day", encode_utf8(sprintf("%02d", $dfcDate->mday)));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."month", encode_utf8(sprintf("%02d", $dfcDate->mon)));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."monthn", encode_utf8($langData->{theme}{months}[$dfcDate->mon - 1] // $dfcDate->strftime('%B')));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."monthn_sh", encode_utf8($langData->{theme}{months_short}[$dfcDate->mon - 1] // $dfcDate->strftime('%b')));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."year", encode_utf8($dfcDate->year));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."hour", encode_utf8(sprintf("%02d", $dfcDate->hour)));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."min", encode_utf8(sprintf("%02d", $dfcDate->min)));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."wday", encode_utf8($langData->{theme}{weekdays}[$dfcDate->wday - 1] // $dfcDate->strftime('%A')));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."wday_sh", encode_utf8($langData->{theme}{weekdays_short}[$dfcDate->wday - 1] // $dfcDate->strftime('%a')));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."tt_h", !$metric ? $dfcEntry->{temperature}{max}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{temperature}{max}{air});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."tt_l", !$metric ? $dfcEntry->{temperature}{min}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{temperature}{min}{air});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."pop", $dfcEntry->{precipitation}{probability});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."prec", !$metric ? $dfcEntry->{precipitation}{rainHigh}*MM_TO_INCH : $dfcEntry->{precipitation}{rainHigh});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."snow", !$metric ? $dfcEntry->{precipitation}{snowHigh}*CM_TO_INCH : $dfcEntry->{precipitation}{snowHigh});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_sp_h", !$metric ? $dfcEntry->{wind}{max}{speed}*KMH_TO_MPH : $dfcEntry->{wind}{max}{speed});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_gu_h", !$metric ? $dfcEntry->{wind}{max}{gust}*KMH_TO_MPH : $dfcEntry->{wind}{max}{gust});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_dirdes_h", encode_utf8($langData->{wind_directions}{getWindDirCardinal($dfcEntry->{wind}{max}{direction}) // ''} // '-')); 
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_dir_h", $dfcEntry->{wind}{max}{direction});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_sp_a", !$metric ? $dfcEntry->{wind}{avg}{speed}*KMH_TO_MPH : $dfcEntry->{wind}{avg}{speed});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_gu_a", !$metric ? $dfcEntry->{wind}{avg}{gust}*KMH_TO_MPH : $dfcEntry->{wind}{avg}{gust});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_dirdes_a", encode_utf8($langData->{wind_directions}{getWindDirCardinal($dfcEntry->{wind}{avg}{direction}) // ''} // '-')); 
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_dir_a", $dfcEntry->{wind}{avg}{direction});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."hu_a", $dfcEntry->{humidity}{avg});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."hu_h", $dfcEntry->{humidity}{max});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."hu_l", $dfcEntry->{humidity}{min});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."we_code", w4l_to_oldW4lCode($dfcEntry->{weatherCode}{weather4lox}));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."we_code_lox", $dfcEntry->{weatherCode}{loxone});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."we_des", encode_utf8($langData->{weather_descriptions}{$dfcEntry->{weatherCode}{weather4lox}} // '-'));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."ozone", _jval($dfcEntry->{airQuality}{ozone}));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."moon_p", $dfcEntry->{moon}{percent});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."dp", !$metric ? $dfcEntry->{dewpoint}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{dewpoint});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."pr", !$metric ? $dfcEntry->{pressure}*HPA_TO_INHG : $dfcEntry->{pressure});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."uvi", $dfcEntry->{uvIndex});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."vis", !$metric ? $dfcEntry->{visibility}*KMH_TO_MPH : $dfcEntry->{visibility});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."moon_a", $dfcEntry->{moon}{age});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."moon_ph", $dfcEntry->{moon}{phase});
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."sun_r", $dfcDate_LoxoneEpoch + timeToSec($dfcEntry->{sunrise}));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."sun_s", $dfcDate_LoxoneEpoch + timeToSec($dfcEntry->{sunset}));
 
     my $iconName = $iconMapping->{icons}{$dfcEntry->{weatherCode}{weather4lox}}{"iconDay"};
 
@@ -369,9 +376,9 @@ foreach my $dfcEntry (@$dfc) {
     # but need to be in hh:mm format on theme web page
     { 
         no strict 'refs';
-        ${"dfc${per}_sun_r"} = $dfcEntry->{sunrise};
-        ${"dfc${per}_sun_s"} = $dfcEntry->{sunset};
-        ${"dfc${per}_we_icon"} = $iconName . "." . ($iconMapping->{format} // 'no_format');
+        ${"dfc${per}".$mqttsep."sun_r"} = $dfcEntry->{sunrise};
+        ${"dfc${per}".$mqttsep."sun_s"} = $dfcEntry->{sunset};
+        ${"dfc${per}".$mqttsep."we_icon"} = $iconName . "." . ($iconMapping->{format} // 'no_format');
     }
         
     $doLog = 0;
@@ -402,43 +409,43 @@ foreach my $hfcEntry (@$hfc) {
     my $hfc_date = _epochToTimePiece($hfcEntry->{time}{epoch}, $timezone);
 
     # sending to Loxone Miniserver via MQTT, HTML webpage and UDP with logging of first hour in detail
-    sendToLox($toMS, $doLog, "hfc${per}_per", $per);
-    sendToLox($toMS, $doLog, "hfc${per}_date", toLoxEpoch($hfcEntry->{time}{epoch}));
-    sendToLox($toMS, $doLog, "hfc${per}_day", encode_utf8(sprintf("%02d", $hfc_date->mday)));
-    sendToLox($toMS, $doLog, "hfc${per}_month", encode_utf8(sprintf("%02d", $hfc_date->mon)));
-    sendToLox($toMS, $doLog, "hfc${per}_monthn", encode_utf8($langData->{theme}{months}[$hfc_date->mon - 1] // $hfc_date->strftime('%B')));
-    sendToLox($toMS, $doLog, "hfc${per}_monthn_sh", encode_utf8($langData->{theme}{months_short}[$hfc_date->mon - 1] // $hfc_date->strftime('%b')));
-    sendToLox($toMS, $doLog, "hfc${per}_year", encode_utf8($hfc_date->year));
-    sendToLox($toMS, $doLog, "hfc${per}_hour", encode_utf8(sprintf("%02d", $hfc_date->hour)));
-    sendToLox($toMS, $doLog, "hfc${per}_min", encode_utf8(sprintf("%02d", $hfc_date->min)));
-    sendToLox($toMS, $doLog, "hfc${per}_wday", encode_utf8($langData->{theme}{weekdays}[$hfc_date->wday - 1] // $hfc_date->strftime('%A')));
-    sendToLox($toMS, $doLog, "hfc${per}_wday_sh", encode_utf8($langData->{theme}{weekdays_short}[$hfc_date->wday - 1] // $hfc_date->strftime('%a')));
-    sendToLox($toMS, $doLog, "hfc${per}_tt", !$metric ? $hfcEntry->{temperature}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{air});
-    sendToLox($toMS, $doLog, "hfc${per}_tt_fl", !$metric ? $hfcEntry->{temperature}{feelsLike}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{feelsLike});
-    sendToLox($toMS, $doLog, "hfc${per}_pop", $hfcEntry->{precipitation}{probability});
-    sendToLox($toMS, $doLog, "hfc${per}_prec", !$metric ? $hfcEntry->{precipitation}{rainHigh}*MM_TO_INCH : $hfcEntry->{precipitation}{rainHigh});
-    sendToLox($toMS, $doLog, "hfc${per}_snow", !$metric ? $hfcEntry->{precipitation}{snowHigh}*CM_TO_INCH : $hfcEntry->{precipitation}{snowHigh});
-    sendToLox($toMS, $doLog, "hfc${per}_w_sp", !$metric ? $hfcEntry->{wind}{speed}*KMH_TO_MPH : $hfcEntry->{wind}{speed});
-    sendToLox($toMS, $doLog, "hfc${per}_w_gu", !$metric ? $hfcEntry->{wind}{gust}*KMH_TO_MPH : $hfcEntry->{wind}{gust});
-    sendToLox($toMS, $doLog, "hfc${per}_w_ch", !$metric ? $hfcEntry->{temperature}{feelsLike}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{feelsLike});
-    sendToLox($toMS, $doLog, "hfc${per}_w_dirdes", encode_utf8($langData->{wind_directions}{getWindDirCardinal($hfcEntry->{wind}{direction})} // '-'));
-    sendToLox($toMS, $doLog, "hfc${per}_w_dir", $hfcEntry->{wind}{direction});
-    sendToLox($toMS, $doLog, "hfc${per}_hu", $hfcEntry->{humidity});
-    sendToLox($toMS, $doLog, "hfc${per}_we_code", w4l_to_oldW4lCode($hfcEntry->{weatherCode}{weather4lox}));
-    sendToLox($toMS, $doLog, "hfc${per}_we_code_lox", $hfcEntry->{weatherCode}{loxone});
-    sendToLox($toMS, $doLog, "hfc${per}_we_des", encode_utf8($langData->{weather_descriptions}{$hfcEntry->{weatherCode}{weather4lox}} // '-'));
-    sendToLox($toMS, $doLog, "hfc${per}_ozone", _jval($hfcEntry->{airQuality}{ozone}));
-    sendToLox($toMS, $doLog, "hfc${per}_moon_p", $hfcEntry->{moon}{percent});
-    sendToLox($toMS, $doLog, "hfc${per}_dp", !$metric ? $hfcEntry->{dewpoint}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{dewpoint});
-    sendToLox($toMS, $doLog, "hfc${per}_pr", !$metric ? $hfcEntry->{pressure}*HPA_TO_INHG : $hfcEntry->{pressure});
-    sendToLox($toMS, $doLog, "hfc${per}_uvi", $hfcEntry->{uvIndex});
-    sendToLox($toMS, $doLog, "hfc${per}_vis", !$metric ? $hfcEntry->{visibility}*KMH_TO_MPH : $hfcEntry->{visibility});
-    sendToLox($toMS, $doLog, "hfc${per}_moon_a", $hfcEntry->{moon}{age});
-    sendToLox($toMS, $doLog, "hfc${per}_moon_ph", $hfcEntry->{moon}{phase});
-    sendToLox($toMS, $doLog, "hfc${per}_sr", $hfcEntry->{solarRadiation});
-    sendToLox($toMS, $doLog, "hfc${per}_hi", !$metric ? $hfcEntry->{temperature}{heatIndex}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{heatIndex});
-    sendToLox($toMS, $doLog, "hfc${per}_sky", $hfcEntry->{cloudCover});
-    sendToLox($toMS, $doLog, "hfc${per}_sky_des",encode_utf8($langData->{weather_descriptions}{$hfcEntry->{weatherCode}{weather4lox}} // '-'));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."per", $per);
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."date", toLoxEpoch($hfcEntry->{time}{epoch}));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."day", encode_utf8(sprintf("%02d", $hfc_date->mday)));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."month", encode_utf8(sprintf("%02d", $hfc_date->mon)));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."monthn", encode_utf8($langData->{theme}{months}[$hfc_date->mon - 1] // $hfc_date->strftime('%B')));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."monthn_sh", encode_utf8($langData->{theme}{months_short}[$hfc_date->mon - 1] // $hfc_date->strftime('%b')));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."year", encode_utf8($hfc_date->year));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."hour", encode_utf8(sprintf("%02d", $hfc_date->hour)));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."min", encode_utf8(sprintf("%02d", $hfc_date->min)));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."wday", encode_utf8($langData->{theme}{weekdays}[$hfc_date->wday - 1] // $hfc_date->strftime('%A')));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."wday_sh", encode_utf8($langData->{theme}{weekdays_short}[$hfc_date->wday - 1] // $hfc_date->strftime('%a')));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."tt", !$metric ? $hfcEntry->{temperature}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{air});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."tt_fl", !$metric ? $hfcEntry->{temperature}{feelsLike}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{feelsLike});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."pop", $hfcEntry->{precipitation}{probability});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."prec", !$metric ? $hfcEntry->{precipitation}{rainHigh}*MM_TO_INCH : $hfcEntry->{precipitation}{rainHigh});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."snow", !$metric ? $hfcEntry->{precipitation}{snowHigh}*CM_TO_INCH : $hfcEntry->{precipitation}{snowHigh});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."w_sp", !$metric ? $hfcEntry->{wind}{speed}*KMH_TO_MPH : $hfcEntry->{wind}{speed});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."w_gu", !$metric ? $hfcEntry->{wind}{gust}*KMH_TO_MPH : $hfcEntry->{wind}{gust});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."w_ch", !$metric ? $hfcEntry->{temperature}{feelsLike}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{feelsLike});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."w_dirdes", encode_utf8($langData->{wind_directions}{getWindDirCardinal($hfcEntry->{wind}{direction})} // '-'));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."w_dir", $hfcEntry->{wind}{direction});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."hu", $hfcEntry->{humidity});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."we_code", w4l_to_oldW4lCode($hfcEntry->{weatherCode}{weather4lox}));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."we_code_lox", $hfcEntry->{weatherCode}{loxone});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."we_des", encode_utf8($langData->{weather_descriptions}{$hfcEntry->{weatherCode}{weather4lox}} // '-'));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."ozone", _jval($hfcEntry->{airQuality}{ozone}));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."moon_p", $hfcEntry->{moon}{percent});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."dp", !$metric ? $hfcEntry->{dewpoint}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{dewpoint});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."pr", !$metric ? $hfcEntry->{pressure}*HPA_TO_INHG : $hfcEntry->{pressure});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."uvi", $hfcEntry->{uvIndex});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."vis", !$metric ? $hfcEntry->{visibility}*KMH_TO_MPH : $hfcEntry->{visibility});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."moon_a", $hfcEntry->{moon}{age});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."moon_ph", $hfcEntry->{moon}{phase});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."sr", $hfcEntry->{solarRadiation});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."hi", !$metric ? $hfcEntry->{temperature}{heatIndex}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{heatIndex});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."sky", $hfcEntry->{cloudCover});
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."sky_des",encode_utf8($langData->{weather_descriptions}{$hfcEntry->{weatherCode}{weather4lox}} // '-'));
 
     # Use night icons between sunset and sunrise on webpage
     my $iconName;
@@ -458,7 +465,7 @@ foreach my $hfcEntry (@$hfc) {
 
     { 
         no strict 'refs';
-        ${"hfc${per}_we_icon"} = $iconName . "." . ($iconMapping->{format} // 'no_format');
+        ${"hfc${per}".$mqttsep."we_icon"} = $iconName . "." . ($iconMapping->{format} // 'no_format');
     }
     
     $doLog = 0;
@@ -537,14 +544,14 @@ for my $p (@periods) {
 
     LOGINF "Aggregating hourly forecasts (sum, min or max - depending on the parameter) for next $p hours (nxh${p})". ($toMS ? " and sending data to MS (as configured)." : ", but not sending data to MS (as configured).");
 
-    sendToLox($toMS, $doLog, "nxh${p}_prec", !$metric ? sprintf("%.2f", $var{prec}{$p}*MM_TO_INCH) : sprintf("%.2f", $var{prec}{$p}));
-    sendToLox($toMS, $doLog, "nxh${p}_snow", !$metric ? sprintf("%.2f", $var{snow}{$p}*CM_TO_INCH) : sprintf("%.2f", $var{snow}{$p}));
-    sendToLox($toMS, $doLog, "nxh${p}_sr", sprintf("%.0f", $var{sr}{$p}));
-    sendToLox($toMS, $doLog, "nxh${p}_ttmin", !$metric ? sprintf("%.1f", $var{ttmin}{$p}*C_TO_F_FACTOR+C_TO_F_OFFSET) : sprintf("%.1f", $var{ttmin}{$p}));
-    sendToLox($toMS, $doLog, "nxh${p}_ttmax", !$metric ? sprintf("%.1f", $var{ttmax}{$p}*C_TO_F_FACTOR+C_TO_F_OFFSET) : sprintf("%.1f", $var{ttmax}{$p}));
-    sendToLox($toMS, $doLog, "nxh${p}_ttmean", !$metric ? sprintf("%.1f", mean(@{ $var{ttmean}{$p} })*C_TO_F_FACTOR+C_TO_F_OFFSET) : sprintf("%.1f", mean(@{ $var{ttmean}{$p} })));
-    sendToLox($toMS, $doLog, "nxh${p}_popmin", sprintf("%.0f", $var{popmin}{$p}));
-    sendToLox($toMS, $doLog, "nxh${p}_popmax", sprintf("%.0f", $var{popmax}{$p}));
+    sendToLox($toMS, $doLog, "nxh${p}".$mqttsep."prec", !$metric ? sprintf("%.2f", $var{prec}{$p}*MM_TO_INCH) : sprintf("%.2f", $var{prec}{$p}));
+    sendToLox($toMS, $doLog, "nxh${p}".$mqttsep."snow", !$metric ? sprintf("%.2f", $var{snow}{$p}*CM_TO_INCH) : sprintf("%.2f", $var{snow}{$p}));
+    sendToLox($toMS, $doLog, "nxh${p}".$mqttsep."sr", sprintf("%.0f", $var{sr}{$p}));
+    sendToLox($toMS, $doLog, "nxh${p}".$mqttsep."ttmin", !$metric ? sprintf("%.1f", $var{ttmin}{$p}*C_TO_F_FACTOR+C_TO_F_OFFSET) : sprintf("%.1f", $var{ttmin}{$p}));
+    sendToLox($toMS, $doLog, "nxh${p}".$mqttsep."ttmax", !$metric ? sprintf("%.1f", $var{ttmax}{$p}*C_TO_F_FACTOR+C_TO_F_OFFSET) : sprintf("%.1f", $var{ttmax}{$p}));
+    sendToLox($toMS, $doLog, "nxh${p}".$mqttsep."ttmean", !$metric ? sprintf("%.1f", mean(@{ $var{ttmean}{$p} })*C_TO_F_FACTOR+C_TO_F_OFFSET) : sprintf("%.1f", mean(@{ $var{ttmean}{$p} })));
+    sendToLox($toMS, $doLog, "nxh${p}".$mqttsep."popmin", sprintf("%.0f", $var{popmin}{$p}));
+    sendToLox($toMS, $doLog, "nxh${p}".$mqttsep."popmax", sprintf("%.0f", $var{popmax}{$p}));
     $doLog = 0;
 }
 
@@ -882,7 +889,7 @@ if ($emu) {
     my $snow_fraction = $rain_1hr_mm > 0 ? $snow_1hr_cm / $precip_1hr : ($snow_1hr_cm > 0 ? 1 : 0);   # Snow fraction in precipitation in %
     my $precip_prob = $cur->{precipitation}{probability} // 0;
 
-    open(F,">$lbplogdir/index.txt") or LOGERR "Cannot open $lbplogdir/index.txt for writing: $!";
+    open(F,">$lbplogdir/index.txt.tmp") or LOGERR "Cannot open $lbplogdir/index.txt.tmp for writing: $!";
     flock(F,2);
     # Write header with meta data and location (semicolon separated, in the order expected by Loxone)
     print F "<mb_metadata>\n";
@@ -926,7 +933,7 @@ if ($emu) {
 
     $i = 0;
 
-    open(F,">>$lbplogdir/index.txt") or LOGERR "Cannot open $lbplogdir/index.txt for appending: $!";
+    open(F,">>$lbplogdir/index.txt.tmp") or LOGERR "Cannot open $lbplogdir/index.txt.tmp for appending: $!";
     flock(F,2);
 
     foreach my $hfcEntry (@$hfc) {
@@ -974,6 +981,7 @@ if ($emu) {
 
     #flock(F,8);
     close(F);
+    rename("$lbplogdir/index.txt.tmp", "$lbplogdir/index.txt") or LOGERR "Cannot rename $lbplogdir/index.txt.tmp to $lbplogdir/index.txt: $!";
 
     LOGOK "Files for Cloud Weather Emulator created successfully.";
 }
@@ -1022,8 +1030,11 @@ sub sendToLox {
 
     # Add weather data to queue to send them later via UDP to Loxone
     if ($sendUDP) {
-        $sendUDPqueue .= "$name\@$value; ";
-        LOGINF "Adding value to UDP send queue        $name\@$value";
+        # Replace slashes back to underscores for the UDP name
+        my $udpname = $name;
+        $udpname =~ s/\//\_/g;
+        $sendUDPqueue .= "$udpname\@$value; ";
+        LOGINF "Adding value to UDP send queue        $udpname\@$value";
     }
 
     return();
@@ -1067,7 +1078,7 @@ sub _jval {
 # Send data to Loxone via MQTT
 # Parameter:
 #   doLog:     if set to 1, data will be logged, otherwise not
-#   name:      name of value (e.g. "current_temperature")
+#   name:      name of value (e.g. "cur/temperature")
 #   value:     value to send (e.g. "20.5")
 
 sub sendMQTT {
@@ -1075,20 +1086,14 @@ sub sendMQTT {
 
     if ($sendMQTT) {
         eval {
-            $name =~ s/\+/\_\_/g;
-            # Build the MQTT topic. In structured mode the underscores of the
-            # value name become topic levels ("cur_moon_h" -> "cur/moon/h") so
-            # that cur/hfcX/dfcX/nxhX appear as expandable branches in the
-            # broker/MQTT Gateway. The Gateway maps "/" back to "_", keeping the
-            # Miniserver Virtual Input name unchanged ("<topic>_cur_moon_h").
+            # Replace plus signs with double underscores to avoid issues in MQTT topics
             my $mtopic = $name;
-            if ($mqttStructured) {
-                $mtopic =~ s#_#/#g;
-            }
+            $mtopic =~ s/\+/\_\_/g;
             # Log data if defined (reduce loggin amount)
             if (defined $doLog && $doLog) {
                 LOGINF "Publishing value to MQTT: " . $topic . "/" . $mtopic . " " . $value;
             }
+            # Send the topic and value to the MQTT broker as a retained message
             $mqtt->retain($topic . "/" . $mtopic, $value);
         };
         if ($@) {
