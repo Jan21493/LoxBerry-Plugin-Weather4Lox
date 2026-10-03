@@ -90,24 +90,57 @@ LOGDEB "This is $0 Version $version";
 my $timezone = _systemTimezone();
 LOGDEB "Using timezone: $timezone, current local system time is " . _epochToIso(time(), $timezone);
 
+# Use the API key cached in the config. Only if there is none or the API call
+# fails with it, the key is read again from the WU website and cached.
+my $apikey = $pcfg->param("WUNDERGROUND.APIKEY") // '';
+$apikey = '' if ref $apikey;
+my $resCurrent;
 
-my $apikey = apiCall(
-    url => "$urlGetKeyRaw",
-    # maskkeys => $maskkeys,    # no masking needed here as there are no secret API keys
-    # keyparam => 'appid',
-    # apikey => $apikey, 
-    info => "for PWS station ID $stationid (getting API key only)",
-    match => qr/.*apiKey=([0-9a-z]*)\&.*/s,
-);
+if ($apikey ne '') {
+    LOGINF "Using cached API key from config.";
+    $resCurrent = fetchCurrent($apikey, 1);
+    if (!defined $resCurrent) {
+        LOGWARN "API call with cached API key failed - reading API key again from WU website.";
+    }
+}
 
-# Get data from Wunderground Server (API request) for current conditions
-my $resCurrent = apiCall(
-    url => "$wuurl?apiKey=$apikey&stationId=$stationid&format=json&units=m&numericPrecision=decimal",
-    # maskkeys => $maskkeys, # no masking needed here, because key was retrieved from public web page 
-    # keyparam => 'apiKey',
-    # apikey => $apikey,
-    info => "for PWS station ID $stationid (current weather observation data)",
-);
+if (!defined $resCurrent) {
+    $apikey = apiCall(
+        url => "$urlGetKeyRaw",
+        # no masking needed here as there are no secret API keys
+        info => "for PWS station ID $stationid (getting API key only)",
+        match => qr/.*?apiKey=([0-9A-Za-z]*)[&].*/s,
+    );
+
+    $resCurrent = fetchCurrent($apikey, 0);
+
+    # Cache key in config only after it worked
+    if ($apikey ne ($pcfg->param("WUNDERGROUND.APIKEY") // '')) {
+        $pcfg->param("WUNDERGROUND.APIKEY", $apikey);
+        if ($pcfg->save()) {
+            LOGINF "Cached new API key in config.";
+        } else {
+            LOGWARN "Could not save API key to config: " . Config::Simple->error();
+        }
+    }
+}
+
+# Get data from Wunderground Server (API request) for current conditions.
+# If $failok is set, undef is returned on any error (incl. missing observation data).
+sub fetchCurrent {
+    my ($key, $failok) = @_;
+    my $res = apiCall(
+        url => "$wuurl?apiKey=$key&stationId=$stationid&format=json&units=m&numericPrecision=decimal",
+        # no masking needed here, because key was retrieved from public web page
+        info => "for PWS station ID $stationid (current weather observation data)",
+        failok => $failok,
+    );
+    if ($failok && !defined getValue($res, 'observations', 0, 'epoch')) {
+        LOGWARN "No observation data in API response." if defined $res;
+        return undef;
+    }
+    return $res;
+}
 
 # read JSON file for current conditions get basic weather data
 my $weatherKey = "current";
