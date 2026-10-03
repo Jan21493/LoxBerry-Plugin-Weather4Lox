@@ -87,7 +87,7 @@ LOGDEB "Using timezone: $timezone, current local system time is " . _epochToIso(
 # Get data from FOSHK Plugin Server for current conditions
 my $results = apiCall(
 	url => "http://$server\:$port/$url",
-	info => "from $grabberLabel (NEW API via /JSON) at $server\:$port (Current Weather Data)",
+	info => "from $grabberLabel (current weather in native format) at $server\:$port",
 );
 
 # Read existing current.json envelope
@@ -97,9 +97,14 @@ my $cur = $envelope->{$weatherKey} // {};
 
 LOGDEB "Adding $grabberLabel data to $weatherKey weather data (existing values for same keys will be overwritten).";
 
-my $currentEpoch = toUnixEpoch(getValue($results, 'time'));                    # FOSHK plugin provides Loxone epoch time with this API call
+my $currentEpoch = getValue($results, 'loxtime');                              # FOSHK plugin provides Loxone epoch time with this API call
+if (!defined $currentEpoch) {
+    $currentEpoch = lox2epoch($currentEpoch);
+    LOGWARN "Could not get Loxone epoch time from FOSHK plugin results, using current system time instead.";
+    $currentEpoch = time();
+}
 my $dtCurrent = _epochToIso($currentEpoch, $timezone);
-LOGINF "Observation time was $dtCurrent (epoch: $currentEpoch)";
+LOGINF "Local observation time was $dtCurrent (epoch: $currentEpoch)";
 
 # time
 $cur->{time}{datetime}   = $dtCurrent;                                         # cur_date     - is always in UNIX epoch time
@@ -107,6 +112,7 @@ $cur->{time}{epoch}      = $currentEpoch;                                      #
 
 # real (air) temperature, feels like / wind chill
 my $temp      = getFormatted('%.1f', $results, 'tempc');
+LOGDEB "Adding/overwriting temperature/air with $temp degrees Celsius.";
 $cur->{temperature}{air}       = $temp;                                        # cur_tt  - air temperature (°C)
 
 # feels like temperature
@@ -118,39 +124,83 @@ if (defined $feelsLike && defined $temp && abs($feelsLike - $temp) > 0.1 || !def
 # Windchill is only relevant if it differs significantly from the actual temperature
 my $windChill = getFormatted('%.1f', $results, 'windchillc');
 if (defined $windChill && defined $temp && abs($windChill - $temp) > 0.1 || !defined $cur->{temperature}{windChill}) {
+    LOGDEB "Adding/overwriting temperature/windChill with $windChill degrees Celsius.";
     $cur->{temperature}{windChill} = $windChill;                               # cur_w_ch / cur_tt_fl - wind chill (°C)
 }
 
 # Heat index is only relevant if it differs significantly from the actual temperature
 my $heatIndex = getFormatted('%.1f', $results, 'heatindexc');
 if (defined $heatIndex && defined $temp && abs($heatIndex - $temp) > 0.1 || !defined $cur->{temperature}{heatIndex}) {
+    LOGDEB "Adding/overwriting temperature/heatIndex with $heatIndex degrees Celsius.";
     $cur->{temperature}{heatIndex} = $heatIndex;                               # cur_hi - heat index (°C)
 }
 
 # wind data
 my $windDir = getFormatted('%.0f', $results, 'winddir');
+my $windSpeed = getFormatted('%.2f', $results, 'windspeedkmh');
+my $windGust = getFormatted('%.2f', $results, 'windgustkmh');
 $cur->{wind} = {
     direction  => $windDir,                                                    # cur_w_dir    - wind direction (degree)
     cardinal   => getWindDirCardinal($windDir),                                # to calculate cur_w_dirdes - wind direction description from (N, NE, E, SE, S, SW, W, NW)
-    speed      => getFormatted('%.2f', $results, 'windspeedkmh'),              # cur_w_sp     - wind speed (km/h)
-    gust       => getFormatted('%.2f', $results, 'windgustkmh'),               # cur_w_gu     - wind gust (km/h)
+    speed      => $windSpeed,                                                  # cur_w_sp     - wind speed (km/h)
 };
+LOGDEB "Adding/overwriting wind/direction=$windDir, wind/speed=$windSpeed, wind/cardinal=" . getWindDirCardinal($windDir);
 
-# other weather data
-$cur->{humidity}        = getFormatted('%.1f', $results, 'humidity');          # cur_hu  - humidity (%)
-$cur->{pressure}        = getFormatted('%.0f', $results, 'baromrelhpa');       # cur_pr  - air pressure (hPa)
-$cur->{dewpoint}        = getFormatted('%.1f', $results, 'dewptc');            # cur_dp  - dew point (°C)
+# wind gust may not be provided at all times
+if (defined $windGust) {
+    LOGDEB "Adding/overwriting wind/gust with $windGust km/h.";
+    $cur->{wind}{gust} = $windGust;                                            # cur_w_gu     - wind gust (km/h)
+}
+
+# other weather data - only set if defined, otherwise we might overwrite existing valid data with undefined values
+my $humidity = getFormatted('%.1f', $results, 'humidity');
+if (defined $humidity) {
+    LOGDEB "Adding/overwriting humidity with $humidity %.";
+    $cur->{humidity} = $humidity;                                              # cur_hu  - humidity (%)
+}
+
+my $pressure = getFormatted('%.0f', $results, 'baromrelhpa');
+if (defined $pressure) {
+    LOGDEB "Adding/overwriting pressure with $pressure hPa.";
+    $cur->{pressure} = $pressure;                                            # cur_pr  - air pressure (hPa)
+}
+
+my $dewpoint = getFormatted('%.1f', $results, 'dewptc');
+if (defined $dewpoint) {
+    LOGDEB "Adding/overwriting dewpoint with $dewpoint degrees Celsius.";
+    $cur->{dewpoint} = $dewpoint;                                            # cur_dp  - dew point (°C)
+}
 
 # Solar radiation: FOSHKplugin >= V0.06 uses lowercase, older uses camelCase
-$cur->{solarRadiation}  = getFormatted('%.0f', $results, 'solarradiation');    # cur_sr  - solar radiation (W/m²)
+my $solarRadiation = getFormatted('%.0f', $results, 'solarradiation');
+if (defined $solarRadiation) {
+    LOGDEB "Adding/overwriting solar radiation with $solarRadiation W/m2.";
+    $cur->{solarRadiation} = $solarRadiation;                                  # cur_sr  - solar radiation (W/m²)
+}
 
 # UV index: FOSHKplugin >= V0.05 uses uppercase, older uses lowercase
-$cur->{uvIndex}         = getFormatted('%.1f', $results, 'uv');                # cur_uvi - UV index
+my $uvIndex = getFormatted('%.1f', $results, 'UV')
+           // getFormatted('%.1f', $results, 'uv');                            # cur_uvi - UV index
+if (defined $uvIndex) {
+    LOGDEB "Adding/overwriting UV index with $uvIndex.";
+    $cur->{uvIndex} = $uvIndex;
+}
 
 # precipitation
 my %precipitation = %{ $cur->{precipitation} // {} };
-$precipitation{rainToday} = getFormatted('%.2f', $results, 'drain_piezomm');   # cur_prec_today - today precipitation (mm)
-$precipitation{rain1hr}   = getFormatted('%.2f', $results, 'hrain_piezomm');    # cur_prec_1hr   - 1h precipitation rate (mm)
+
+my $rainToday = getFormatted('%.2f', $results, 'dailyrainmm');                 # cur_prec_today - today precipitation (mm)
+if (defined $rainToday) {
+    LOGDEB "Adding/overwriting today's precipitation with $rainToday mm.";
+    $precipitation{rainToday} = $rainToday;
+}
+
+my$rain1hr   = getFormatted('%.2f', $results, 'hourlyrainmm');                 # cur_prec_1hr   - 1h precipitation rate (mm)
+if (defined $rain1hr) {
+    LOGDEB "Adding/overwriting 1-hour precipitation with $rain1hr mm.";
+    $precipitation{rain1hr}   = $rain1hr;
+}
+
 $cur->{precipitation} = \%precipitation;
 
 # Add grabber metadata

@@ -62,6 +62,7 @@ our $stdTheme         = $pcfg->param("WEB.THEME");
 our $stdIconSet       = $pcfg->param("WEB.ICONSET");
 our $stdMode          = $pcfg->param("WEB.MODE") // "system";
 our $topic            = $pcfg->param("SERVER.TOPIC") // "w4l";
+my $maskKeys          = $pcfg->param("SERVER.MASKKEYS") // 1;
 
 # Structured MQTT topics: publish e.g. "cur/moon_h" instead of "cur_moon_h" so
 # that cur/hfcX/dfcX/nxhX appear as expandable branches in the broker/MQTT Gateway.
@@ -101,7 +102,6 @@ my $log = LoxBerry::Log->new (
 
 # Commandline options
 my $verbose = '';
-my $maskKeys = 1;
 
 GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 },

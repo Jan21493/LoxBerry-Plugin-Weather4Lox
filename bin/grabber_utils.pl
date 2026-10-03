@@ -31,21 +31,6 @@ use Time::Piece;
 my $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
 
 ##########################################################################
-# Fallback for modules that have no Debian package and are therefore
-# installed via cpanm (see postroot.sh), e.g. Astro::MoonPhase and
-# Math::Function::Interpolator. cpanm installs those below a
-# Perl-version-specific path (/usr/local/share/perl/<version>/ or, for
-# compiled/XS dependencies such as Number::Closest::XS, an equivalent
-# architecture-specific path), which silently disappears from @INC after a
-# Perl upgrade (e.g. during a Debian release upgrade) until the plugin is
-# reinstalled - even though nothing about the plugin changed. That used to
-# freeze all weather data without any warning.
-# A vendored, pure-Perl copy of each affected module is shipped in bin/lib as
-# a last-resort fallback. It is appended (not prepended) to @INC, so an
-# existing, loadable system-wide installation always takes precedence.
-push @INC, "$lbpbindir/lib" if defined $lbpbindir && !grep { $_ eq "$lbpbindir/lib" } @INC;
-
-##########################################################################
 # Special Modules (with error handling in case of missing modules)
 # 
 # These modules should have been installed during installation of plugin
@@ -121,6 +106,7 @@ sub apiCall {
     my $apikey   = $p{apikey}    // '';          # optional, used to mask the key if it appears in the URL path or the response 
     my $info     = $p{info}      // 'API call';  # optional, used for logging message to specify what data is being fetched (e.g. "current weather", "daily forecast", etc.)
     my $match    = $p{match}     // '';          # optional, return matched part of response only
+    my $failok   = $p{failok}    // 0;           # optional, default: 0 (exit on errors); if set, log a warning and return undef on errors instead
 
     # mask key in URL to avoid leaking it in the dump if requested by the grabber (default)
     my $urlmasked;
@@ -145,6 +131,10 @@ sub apiCall {
     my $urlstatuscode = substr($urlstatus,0,3);
 
     if ($urlstatuscode ne "200") {
+        if ($failok) {
+            LOGWARN "Failed to fetch data for $info! Status: $urlstatus.";
+            return undef;
+        }
         LOGCRIT "Failed to fetch data for $info!";
         LOGCRIT "Status: $urlstatus. Please check your API key and the service availability!";
         exit 2;
@@ -160,13 +150,30 @@ sub apiCall {
 
             return $content;
         } else {
+            if ($failok) {
+                LOGWARN "Failed to extract data for $info using match pattern: $match.";
+                return undef;
+            }
             LOGCRIT "Failed to extract data for $info using match pattern: $match. Check Station name.";
+            LOGDEB("Response content was:\n" . htmlspecialchars($content));
+            LOGDEB("-" x 80);
             die "Quit fetching data.";
         }
     } 
     # JSON response is expected, so check if it can be decoded
     # decoded_content() returned a Perl character string —> encode to raw UTF-8 bytes -> decode_json()
-    my $decodedJson = decode_json($content);
+    my $decodedJson;
+    if ($failok) {
+        $decodedJson = eval { decode_json($content) };
+        if (!defined $decodedJson) {
+            my $err = $@ || 'empty response';
+            chomp $err;
+            LOGWARN "Failed to decode JSON response for $info: $err";
+            return undef;
+        }
+    } else {
+        $decodedJson = decode_json($content);
+    }
 
     my $body    = '';
     # my $json_obj = JSON->new->pretty->canonical;

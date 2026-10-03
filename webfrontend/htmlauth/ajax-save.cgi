@@ -186,7 +186,7 @@ eval {
 
         my ($apikey, $wu_err) = verifyApiCall(
             url   => $dashURL,
-            match => qr/.*apiKey=([0-9a-z]*)\&.*/s
+            match => qr/.*?apiKey=([0-9A-Za-z]*)[&]/s
         );
 
         if ($wu_err) {
