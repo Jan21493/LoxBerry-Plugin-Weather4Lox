@@ -242,10 +242,10 @@
     .drow-rainProb { font-size: 0.75rem; color: var(--sky); text-align: center; }
     .drow-rainProb i { width: 14px; height: 14px; flex-shrink: 0; }
     .drow-temps { display: flex; align-items: center; gap: 6px; }
-    .drow-lo { color: var(--sky); font-weight: 500; min-width: 30px; text-align: right; font-size: 0.85rem; }
-    .drow-hi { color: var(--amber); font-weight: 500; min-width: 30px; font-size: 0.85rem; }
+    .drow-lo { font-weight: 500; min-width: 30px; text-align: right; font-size: 0.85rem; }
+    .drow-hi { font-weight: 500; min-width: 30px; font-size: 0.85rem; }
     .drow-bar { flex: 1; height: 5px; border-radius: 3px; background: var(--temp-bar-bg); position: relative; overflow: hidden; }
-    .drow-fill { position: absolute; top: 0; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--sky), var(--amber)); }
+    .drow-fill { position: absolute; top: 0; height: 100%; border-radius: 3px; }
     .drow { cursor: pointer; transition: all 0.2s; }
     .drow:hover { border-color: var(--border-hover); }
     .drow-detail { display: none; grid-column: 1 / -1; padding: 12px 0 4px; border-top: 1px solid var(--border); margin-top: 8px; }
@@ -1357,6 +1357,20 @@ function renderHourStrip(containerId, dataArray) {
   }
 }
 
+function temperatureColor(temp) {
+  var minTemp = -10;
+  var maxTemp = 30;
+  var gamma = 0.8; // stretches the color range for better visual distinction in typical temp ranges
+
+  if (temp == null || isNaN(temp)) return 'hsl(0,80%,55%)';
+
+  temp = Math.max(minTemp, Math.min(maxTemp, temp));
+  var t = (temp - minTemp) / (maxTemp - minTemp);
+  t = Math.pow(t, gamma);
+
+  return 'hsl(' + Math.round(255 - t * 255) + ',80%,55%)';
+}
+
 // ===== RENDER DAILY =====
 function renderDaily(containerId, dataArray) {
   var container = document.getElementById(containerId);
@@ -1386,7 +1400,7 @@ function renderDaily(containerId, dataArray) {
                               '<i data-lucide="umbrella" style="width:14px;height:14px;"></i>' +
                               '<span>' + d.rainProb + '%</span>' +
                             '</div>' : '<div class="drow-rainProb"></div>') +
-      '<div class="drow-temps"><span class="drow-lo mono">' + Math.round(d.low) + '&deg;C</span><div class="drow-bar"><div class="drow-fill" id="bar' + i + '"></div></div><span class="drow-hi mono">' + Math.round(d.high) + '&deg;C</span></div>' +
+      '<div class="drow-temps"><span class="drow-lo mono" style="color:' + temperatureColor(d.low) + '">' + Math.round(d.low) + '&deg;C</span><div class="drow-bar"><div class="drow-fill" id="bar' + i + '"></div></div><span class="drow-hi mono" style="color:' + temperatureColor(d.high) + '">' + Math.round(d.high) + '&deg;C</span></div>' +
       detailHtml;
     (function(r, idx) {
       r.onclick = function() {
@@ -1425,6 +1439,7 @@ function renderDaily(containerId, dataArray) {
     if (!b) continue;
     b.style.left = ((dataArray[i].low - mn) / rng * 100) + '%';
     b.style.width = Math.max(4, (dataArray[i].high - dataArray[i].low) / rng * 100) + '%';
+    b.style.background = 'linear-gradient(90deg, ' + temperatureColor(dataArray[i].low) + ', ' + temperatureColor(dataArray[i].high) + ')';
   }
 }
 
@@ -1793,28 +1808,6 @@ function renderTempChart(svgId, dataArray) {
     return yBot - ((temp - minT) / range) * chartH;
   }
 
-  function hueForY(y) {
-    var t = 1 - ((y - yTop) / (yBot - yTop));
-    t = Math.max(0, Math.min(1, t));
-    return Math.round(200 - t * 160);
-  }
-
-  function hueForTemp(temp) {
-    var minTemp = -10;
-    var maxTemp = 30;
-    var gamma = 0.8; // stretches the color range for better visual distinction in typical temp ranges
-
-    if (temp == null || isNaN(temp)) return 0;
-
-    if (temp < minTemp) temp = minTemp;
-    if (temp > maxTemp) temp = maxTemp;
-    var t = (temp - minTemp) / (maxTemp - minTemp);
-    t = Math.max(0, Math.min(1, t));
-    t = Math.pow(t, gamma);
-
-    return Math.round(255 - t * 255);
-  }
-
   // --- Y grid + labels ---
   var yAxis = '';
   var ySteps = Math.max(2, Math.min(5, Math.ceil(range)));
@@ -1858,11 +1851,9 @@ function renderTempChart(svgId, dataArray) {
     var slot = slots[d];
     if (slot.point) {
       var dotY = yPos(slot.temp);
-      var hue = hueForY(dotY);
-      var hue = hueForTemp(slot.temp);
       dots += '<circle class="chart-dot" cx="' + xPos(d) + '" cy="' + dotY + '" r="4" ' +
               'fill="url(#dotG-'+svgId+')" stroke="rgba(255,255,255,0.2)" stroke-width="1" ' +
-              'data-hour="' + d + '" style="cursor:pointer"><set attributeName="fill" to="hsl('+hue+',80%,55%)"/></circle>';
+              'data-hour="' + d + '" style="cursor:pointer"><set attributeName="fill" to="' + temperatureColor(slot.temp) + '"/></circle>';
     }
   }
 
@@ -1872,10 +1863,7 @@ function renderTempChart(svgId, dataArray) {
     var slot = slots[d];
     var pct = ((d - firstKnownIdx) / Math.max(1, slots.length - firstKnownIdx) * 100).toFixed(1);
     if (slot.point) {
-      var pointY = yPos(slot.temp);
-      //var hue = hueForY(pointY, yTop, yBot);
-      var hue = hueForTemp(slot.temp);
-      lineStops += '<stop offset="'+pct+'%" stop-color="hsl('+hue+',80%,55%)"/>';
+      lineStops += '<stop offset="'+pct+'%" stop-color="' + temperatureColor(slot.temp) + '"/>';
     } 
   }
 
