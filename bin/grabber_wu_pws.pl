@@ -106,10 +106,11 @@ if ($apikey ne '') {
 
 if (!defined $resCurrent) {
     $apikey = apiCall(
-        url => "$urlGetKeyRaw",
+        url      => "$urlGetKeyRaw",
         # no masking needed here as there are no secret API keys
-        info => "for PWS station ID $stationid (getting API key only)",
-        match => qr/.*?apiKey=([0-9A-Za-z]*)[&].*/s,
+        info     => "for PWS station ID $stationid (getting API key only)",
+        match    => qr/.*?apiKey=([0-9A-Za-z]*)[&].*/s,
+        altmatch => qr/"API_KEY"\s*:\s*"([0-9A-Za-z]+)"/s,
     );
 
     $resCurrent = fetchCurrent($apikey, 0);

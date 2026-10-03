@@ -106,6 +106,7 @@ sub apiCall {
     my $apikey   = $p{apikey}    // '';          # optional, used to mask the key if it appears in the URL path or the response 
     my $info     = $p{info}      // 'API call';  # optional, used for logging message to specify what data is being fetched (e.g. "current weather", "daily forecast", etc.)
     my $match    = $p{match}     // '';          # optional, return matched part of response only
+    my $altmatch = $p{altmatch} // '';           # optional, alternative match pattern if the primary match fails
     my $failok   = $p{failok}    // 0;           # optional, default: 0 (exit on errors); if set, log a warning and return undef on errors instead
 
     # mask key in URL to avoid leaking it in the dump if requested by the grabber (default)
@@ -144,22 +145,42 @@ sub apiCall {
 
     # do regular expression match (if match is defined) and return matched part only, used e.g. by WetterOnline to retrieve API keys, station ID and geo coordinates
     if (defined $match && length $match) {
+        my $matched_text;
+        
+        # Match primary pattern first
         if ($content =~ $match) {
-            $content = $1; # return only the matched part of the response
-            LOGDEB("Extracted data using match pattern: $match");
+            $matched_text = $1;
+            LOGDEB("Extracted data using primary match pattern: $match");
+        } 
+        # Try alternative pattern if provided and primary match failed
+        elsif (defined $altmatch && length $altmatch) {
+            LOGDEB("Primary match pattern failed. Trying alternative pattern: $altmatch");
+            if ($content =~ $altmatch) {
+                $matched_text = $1;
+                LOGDEB("Extracted data using alternative match pattern: $altmatch");
+            }
+        }
 
+        # Evaluate whether one of the two patterns was successful
+        if (defined $matched_text) {
+            $content = $matched_text; # return only the matched part of the response
             return $content;
         } else {
+            # Kombinierte Fehlermeldung für das Logging erzeugen
+            my $errPattern = $match;
+            $errPattern .= " or $altmatch" if (defined $altmatch && length $altmatch);
+            
             if ($failok) {
-                LOGWARN "Failed to extract data for $info using match pattern: $match.";
+                LOGWARN "Failed to extract data for $info using match pattern: $errPattern.";
                 return undef;
             }
-            LOGCRIT "Failed to extract data for $info using match pattern: $match. Check Station name.";
-            LOGDEB("Response content was:\n" . htmlspecialchars($content));
+            LOGCRIT "Failed to extract data for $info using match pattern: $errPattern. Check Station name.";
+            LOGCRIT "Turn on debug level to see the full response content and send the full log file to plugin developer!";
+            LOGDEB("Response content was:\n" . $content);
             LOGDEB("-" x 80);
             die "Quit fetching data.";
         }
-    } 
+    }
     # JSON response is expected, so check if it can be decoded
     # decoded_content() returned a Perl character string —> encode to raw UTF-8 bytes -> decode_json()
     my $decodedJson;

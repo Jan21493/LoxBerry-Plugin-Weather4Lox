@@ -184,9 +184,11 @@ eval {
         my $dashURL   = "https://www.wunderground.com/dashboard/pws/$stationid";
         push @checks, " - 1. Checking Wunderground Dashboard: $dashURL";
 
+        # Attempt to retrieve Wunderground API key from dashboard page. Different content format detected in Oct 2026, so try both possible patterns.
         my ($apikey, $wu_err) = verifyApiCall(
             url   => $dashURL,
-            match => qr/.*?apiKey=([0-9A-Za-z]*)[&]/s
+            match => qr/.*?apiKey=([0-9A-Za-z]*)[&]/s,
+            altmatch => qr/"API_KEY"\s*:\s*"([0-9A-Za-z]+)"/s
         );
 
         if ($wu_err) {
@@ -321,6 +323,7 @@ sub verifyApiCall {
     my (%p)          = @_;
     my $url          = $p{url}   // '';
     my $matchPattern = $p{match} // '';
+    my $altPattern   = $p{altmatch} // '';
     my @path         = @{ $p{path} // [] };
 
     my $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
@@ -350,16 +353,34 @@ sub verifyApiCall {
     # do regular expression match (if match is defined)
     if (defined $matchPattern && length $matchPattern) {
         push @checks, " - Searching for pattern match in response: $matchPattern";
+
+
+        # First attempt with the primary match pattern
         if ($content =~ $matchPattern) {
             $match = $1;
+        } 
+        # Second attempt with the alternative pattern (if provided and primary failed)
+        elsif (defined $altPattern && length $altPattern) {
+            push @checks, " - Primary match failed. Trying alternative pattern: $altPattern";
+            if ($content =~ $altPattern) {
+                $match = $1;
+            }
+        }
+
+        # Evaluation whether one of the patterns was successful
+        if (defined $match) {
             # fix unquoted keys in JSON-like string (used by WetterOnline)
             $match =~ s/([{,]\s*)"?(\w+)"?\s*:/$1"$2":/g;
 
             my $is_json = 0;
-            eval {
-                $decodedJson = $json->decode($match);
-                $is_json = 1;
-            };
+            # Only attempt to parse as JSON if it looks like a JSON object (starts with '{')
+            if ($match =~ /^\s*\{/) {
+                eval {
+                    $decodedJson = $json->decode($match);
+                    $is_json = 1;
+                };
+            }
+            
             if ($is_json) {
                 push @checks, " - Found match in response (JSON), continuing...";
             } else {
@@ -368,7 +389,7 @@ sub verifyApiCall {
                 return ($match, undef);
             }
         } else {
-            return (undef, "Match NOT found in response for regex. URL: $url");
+            return (undef, "Match NOT found in response for regex. URL: $url, content format may have changed -> report error to plugin developer!");
         }
     } else {
         $decodedJson = $json->decode("$content");

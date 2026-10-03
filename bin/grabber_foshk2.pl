@@ -45,7 +45,7 @@ my $version = LoxBerry::System::pluginversion();
 
 # params from config
 my $pcfg        = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
-my $url         = "JSON?units=m?status";
+my $url         = "JSON?units=m&status&apiKey=MMM&stationId=FOSHKplugin";
 my $server      = $pcfg->param("FOSHK.SERVER");
 my $port        = $pcfg->param("FOSHK.PORT");
 
@@ -87,7 +87,7 @@ LOGDEB "Using timezone: $timezone, current local system time is " . _epochToIso(
 # Get data from FOSHK Plugin Server for current conditions
 my $results = apiCall(
 	url => "http://$server\:$port/$url",
-	info => "from $grabberLabel (current weather in native format) at $server\:$port",
+	info => "from $grabberLabel (current weather in NATIVE format) at $server\:$port",
 );
 
 # Read existing current.json envelope
@@ -99,12 +99,13 @@ LOGDEB "Adding $grabberLabel data to $weatherKey weather data (existing values f
 
 my $currentEpoch = getValue($results, 'loxtime');                              # FOSHK plugin provides Loxone epoch time with this API call
 if (!defined $currentEpoch) {
-    $currentEpoch = lox2epoch($currentEpoch);
     LOGWARN "Could not get Loxone epoch time from FOSHK plugin results, using current system time instead.";
     $currentEpoch = time();
+} else {
+    $currentEpoch = lox2epoch($currentEpoch);
 }
 my $dtCurrent = _epochToIso($currentEpoch, $timezone);
-LOGINF "Local observation time was $dtCurrent (epoch: $currentEpoch)";
+LOGINF "Local observation time was " . $dtCurrent . " (epoch: $currentEpoch)";
 
 # time
 $cur->{time}{datetime}   = $dtCurrent;                                         # cur_date     - is always in UNIX epoch time
