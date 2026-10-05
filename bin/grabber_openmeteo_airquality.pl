@@ -38,6 +38,7 @@ use utf8;
 use Encode qw(encode_utf8);
 
 require "$lbpbindir/grabber_utils.pl";
+require "$lbpbindir/weather4lox_log.pl";
 
 ##########################################################################
 # Read Settings
@@ -57,7 +58,7 @@ my $grabberKey      = "openmeteo_airquality";              # name in JSONs
 my $refresh         = $pcfg->param("SERVER.CRON") // 60;
 
 # Create a logging object
-my $log = LoxBerry::Log->new (
+my %logOptions = (
 	package => 'weather4lox',
 	name => "$grabberLabel",
 	logdir => "$lbplogdir",
@@ -70,13 +71,14 @@ GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 },
             );
 
+my $log = startWeatherLog(%logOptions, verbose => $verbose,
+    message => "Weather4Lox $grabberLabel GRABBER process started");
 if ($verbose) {
 	$log->stdout(1);
 	$log->loglevel(7);
 }
 
-LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
-LOGDEB "This is $0 Version $version";
+LOGOK "START OF: $0, Version $version";
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();
@@ -512,6 +514,6 @@ exit;
 
 END
 {
-	LOGOK "Done";
-	LOGEND;
+	LOGOK "Done" if $log;
+	LOGOK "END OF: $0. We are done. Good bye." if $log;
 }

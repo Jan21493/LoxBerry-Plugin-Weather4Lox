@@ -34,6 +34,7 @@ use Getopt::Long;
 use Time::Piece;
 
 require "$lbpbindir/grabber_utils.pl";
+require "$lbpbindir/weather4lox_log.pl";
 
 ##########################################################################
 # Read Settings
@@ -61,7 +62,7 @@ my $refresh         = $pcfg->param("SERVER.CRON") // 60;
 my %L = LoxBerry::System::readlanguage("language.ini");
 
 # Create a logging object
-my $log = LoxBerry::Log->new (
+my %logOptions = (
 	package => 'weather4lox',
 	name => 'grabber_weatherflow',
 	logdir => "$lbplogdir",
@@ -81,13 +82,14 @@ GetOptions ('verbose' => \$verbose,
             'maskkeys' => \$maskKeys,
             );
 
+my $log = startWeatherLog(%logOptions, verbose => $verbose,
+    message => "Weather4Lox $grabberLabel GRABBER process started");
 if ($verbose) {
 	$log->stdout(1);
 	$log->loglevel(7);
 }
 
-LOGSTART "Weather4Lox $grabberLabel GRABBER process started";
-LOGDEB "This is $0 Version $version";
+LOGOK "START OF: $0, Version $version";
 
 requireOrLogdie('Astro::MoonPhase');
 
@@ -559,5 +561,5 @@ exit;
 
 END
 {
-	LOGEND;
+	LOGOK "END OF: $0. We are done. Good bye." if $log;
 }

@@ -48,9 +48,43 @@ PACKAGE=$pluginname
 NAME="Emulator"
 LOGDIR=$LBPLOG/$pluginname
 
-LOGSTART "Cloud emulator $ACTION"
+# Reuse the Perl rotation helper while keeping the Bash logging functions.
+# The emulator always uses a daily file, including verbose/debug runs.
+LOG_BRIDGE="$(dirname "$0")/weather4lox_log_bridge.pl"
+if ! LOG_SESSION=$(perl "$LOG_BRIDGE" start "$LOGDIR" "Cloud emulator $ACTION" "$VERBOSE"); then
+    echo "Cannot initialize cloud emulator log" >&2
+    exit 1
+fi
+IFS=$'\t' read -r LOGFILE LOGLEVEL DBKEY STATUS VERSION <<< "$LOG_SESSION"
+LOGS=1
+ACTIVELOG=1
+ARRLOGS["1.name"]=$NAME
+ARRLOGS["1.package"]=$PACKAGE
+ARRLOGS["1.logdir"]=$LOGDIR
+ARRLOGS["1.append"]=1
+ARRLOGS["1.filename"]=$LOGFILE
+ARRLOGS["1.loglevel"]=$LOGLEVEL
+ARRLOGS["1.dbkey"]=$DBKEY
+ARRLOGS["1.status"]=$STATUS
+ARRLOGS["1.fileid"]=200
+ARRLOGS["1.addtime"]=1
+if [ "$VERBOSE" -eq 1 ]; then ARRLOGS["1.stderr"]=1; fi
+exec 200>>"$LOGFILE" || exit 1
 
-LOGFILE="${ARRLOGS["$ACTIVELOG.filename"]}"
+# Persist the session status without closing the daily log on every invocation.
+function FINISH_LOG {
+    local result=$?
+    LOGOK "END OF: $0. We are done. Good bye."
+    if ! perl "$LOG_BRIDGE" status "$LOGFILE" "${ARRLOGS["1.status"]}"; then
+        echo "Cannot save cloud emulator log status" >&2
+        result=1
+    fi
+    trap - EXIT
+    exit "$result"
+}
+trap FINISH_LOG EXIT
+
+LOGOK "START OF: $0, Version $VERSION"
 LOGDEB "Log file for this session: $LOGFILE, setting ownership to loxberry:loxberry"
 chown loxberry:loxberry "$LOGFILE" 2>&1 | PIPE_TO_LOG
 # ─────────────────────────────────────────────────────────────────────────────
@@ -76,7 +110,7 @@ LOGOK "Loxone weather cloud emulator script started ..."
 OWNIP=$(perl $LBHOMEDIR/bin/plugins/$pluginname/ownip.pl 2>&1)
 if [ -z "$OWNIP" ]; then
     LOGERR "Cannot figure out a valid IP address. Giving up."
-    LOGEND "Cloud Emulator failed"
+    LOGERR "Cloud Emulator failed"
     exit 1
 fi
 LOGDEB "Own IP address of Loxberry: $OWNIP"
@@ -85,7 +119,7 @@ LOGDEB "Own IP address of Loxberry: $OWNIP"
 ping -c1 $OWNIP 2>&1 | PIPE_TO_LOG
 if [ $? -ne 0 ]; then
     LOGERR "Cannot reach my own IP address $OWNIP. Giving up."
-    LOGEND "Cloud Emulator failed"
+    LOGERR "Cloud Emulator failed"
     exit 1
 fi
 
@@ -179,7 +213,6 @@ case "$ACTION" in
     fi
 
     LOGOK "Loxone Cloud emulator script finished - emulator is enabled."
-    LOGEND
     exit 0
   ;;
 
@@ -250,13 +283,11 @@ case "$ACTION" in
     fi
 
     LOGOK "Loxone Cloud emulator script finished - emulator is disabled."
-    LOGEND
     exit 0
   ;;
 
   *)
     LOGERR "Usage: $0 [enable|disable] [--verbose]"
-    LOGEND
     exit 3
   ;;
 

@@ -34,6 +34,7 @@ use JSON::PP ();
 use utf8;
 use Encode qw(encode_utf8);
 use POSIX qw(setlocale LC_NUMERIC mktime);
+require "$lbpbindir/weather4lox_log.pl";
 
 use constant MM_TO_INCH    => 0.0393700787;  # millimetres to inches
 use constant CM_TO_INCH    => 0.393700787;   # centimetres to inches
@@ -92,7 +93,7 @@ my $scriptKey      = "datatoloxone";          # name in JSONs
 our $lang = lblanguage();
 
 # Create a logging object
-my $log = LoxBerry::Log->new (
+my %logOptions = (
     package => 'weather4lox',
     name => "$scriptLabel",
     logdir => "$lbplogdir",
@@ -110,13 +111,14 @@ GetOptions ('verbose' => \$verbose,
 
 # Due to a bug in the Logging routine, set the loglevel fix to 3
 #$log->loglevel(3);
+my $log = startWeatherLog(%logOptions, verbose => $verbose,
+    message => "Weather4Lox $scriptLabel process started");
 if ($verbose) {
         $log->stdout(1);
         $log->loglevel(7);
 }
 
-LOGSTART "Weather4Lox $scriptLabel process started";
-LOGDEB "This is $0 Version $version";
+LOGOK "START OF: $0, Version $version";
 
 require "$lbpbindir/grabber_utils.pl";
 
@@ -1172,6 +1174,5 @@ sub mqttconnect
 
 END
 {
-    LOGOK "We are done. Good bye.";
-    LOGEND;
+    LOGOK "END OF: $0. We are done. Good bye." if $log;
 }
