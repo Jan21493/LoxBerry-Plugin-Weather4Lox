@@ -31,7 +31,7 @@ sub startWeatherLog {
     my $package = $options{package} // 'weather4lox';
     my $now = $options{now} // time();
     my $plugin = LoxBerry::System::plugindata($package);
-    my $level = $options{verbose} ? 7 : ($plugin->{PLUGINDB_LOGLEVEL} // 7);
+    my $level = $options{verbose} ? 7 : ($plugin->{PLUGINDB_LOGLEVEL} // 3);
     my $period = strftime(
         !$options{daily} && $level == 7 ? '%Y-%m-%d_%H' : '%Y-%m-%d',
         localtime($now)

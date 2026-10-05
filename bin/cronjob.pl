@@ -165,6 +165,5 @@ exit;
 
 END
 {
-	LOGOK "Done" if $log;
 	LOGOK "END OF: $0. We are done. Good bye." if $log;
 }

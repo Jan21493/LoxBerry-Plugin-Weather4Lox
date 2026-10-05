@@ -90,6 +90,12 @@ for my $configured (0 .. 6) {
     finish_run($log);
 }
 
+$level = undef;
+$log = start_log('Default level', $morning);
+like($log->filename, qr{/2026-10-04_Default level\.log$},
+    'missing configured log level defaults to daily logging');
+finish_run($log);
+
 $level = 7;
 $log = start_log('OpenWeather', $morning);
 my $hourly_file = $log->filename;
