@@ -27,6 +27,7 @@ use warnings;
 use LoxBerry::System;
 use LoxBerry::Log;
 use Getopt::Long;
+require "$lbpbindir/weather4lox_log.pl";
 
 ##########################################################################
 # Read Settings
@@ -79,7 +80,7 @@ GetOptions ('verbose' => \$verbose,
             );
 
 # Create a logging object
-my $log = LoxBerry::Log->new (
+my %logOptions = (
     package => 'weather4lox',
     name => 'fetch',
     logdir => "$lbplogdir",
@@ -90,14 +91,15 @@ my $log = LoxBerry::Log->new (
 # Due to a bug in the Logging routine, set the loglevel fix to 3
 #$log->loglevel(3);
 my $verbose_opt = '';
+my $log = startWeatherLog(%logOptions, verbose => $verbose,
+    message => "Weather4Lox FETCH process");
 if ($verbose) {
     $log->stdout(1);
     $log->loglevel(7);
     $verbose_opt = "--verbose";
 }
 
-LOGSTART "Weather4Lox FETCH process";
-LOGDEB "This is $0 Version $version";
+LOGOK "START OF: $0, Version $version";
 
 my $maskkeys_opt = '';
 if ($maskkeys) {
@@ -282,6 +284,6 @@ exit;
 
 END
 {
-    LOGOK "Done";
-    LOGEND;
+    LOGOK "Done" if $log;
+    LOGOK "END OF: $0. We are done. Good bye." if $log;
 }

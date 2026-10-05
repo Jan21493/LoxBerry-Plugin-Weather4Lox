@@ -29,6 +29,7 @@ use warnings;
 use LoxBerry::System;
 use LoxBerry::Log;
 use Getopt::Long;
+require "$lbpbindir/weather4lox_log.pl";
 
 ##########################################################################
 # Read Settings
@@ -75,7 +76,7 @@ GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 });
 
 # Create a logging object
-my $log = LoxBerry::Log->new (
+my %logOptions = (
 	package => 'weather4lox',
 	name => 'cronjob',
 	logdir => "$lbplogdir",
@@ -86,14 +87,15 @@ my $log = LoxBerry::Log->new (
 # Due to a bug in the Logging routine, set the loglevel fix to 3
 #$log->loglevel(3);
 my $verbose_opt;
+my $log = startWeatherLog(%logOptions, verbose => $verbose,
+    message => "Weather4Lox CRONJOB process");
 if ($verbose) {
 	$log->stdout(1);
 	$log->loglevel(7);
 	$verbose_opt = "-v";
 }
 
-LOGSTART "Weather4Lox CRONJOB process";
-LOGDEB "This is $0 Version $version";
+LOGOK "START OF: $0, Version $version";
 
 # calculate time
 my $timestamp = time();
@@ -163,6 +165,5 @@ exit;
 
 END
 {
-	LOGOK "Done";
-	LOGEND;
+	LOGOK "END OF: $0. We are done. Good bye." if $log;
 }
