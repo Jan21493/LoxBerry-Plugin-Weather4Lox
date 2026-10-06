@@ -1092,9 +1092,10 @@ sub writeJsonFile {
 # Parameter:
 #   weatherKey:        'current' | 'dailyforecast' | 'hourlyforecast'
 #   filepath:           directory for file
+#   decoder:            optional configured JSON decoder (defaults to JSON::PP)
 
 sub readJsonFile {
-    my ($filepath, $weatherKey) = @_;
+    my ($filepath, $weatherKey, $decoder) = @_;
 
     my $filename = "$filepath/$weatherKey.json";
 
@@ -1122,7 +1123,7 @@ sub readJsonFile {
     # JSON-Deserialisierung    
     my $data;
     eval {
-        $data = JSON::PP->new->utf8->decode($jsonText);
+        $data = ($decoder // JSON::PP->new->utf8)->decode($jsonText);
     };
     if ($@) {
         LOGWARN "Failed to decode JSON from $filename: $@";

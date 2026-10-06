@@ -19,3 +19,14 @@ LoxBerry's log retention settings are unchanged.
 On a LoxBerry with the plugin installed, run `prove -v tests/log_rotation.t` from
 this repository to check rotation against the installed logging SDK. The tests
 use temporary log files and a separate log database.
+
+`datatoloxone.pl` decodes input files with JSON::XS (provided by
+`libjson-xs-perl`), preserving JSON::PP boolean values. Other grabbers keep their
+existing decoder. The HTML weather database is written through one buffered
+handle to `weatherdata.html.tmp` and atomically published as `weatherdata.html`
+after a successful close. A separate writer lock serializes overlapping runs,
+so readers continue to see the previous complete file during generation.
+On a LoxBerry with current weather JSON files, `prove tests/datatoloxone_output.t`
+checks decoder compatibility, complete output publication, and write failure
+handling using temporary output files and a mocked MQTT connection (no live
+MQTT or UDP sends).
