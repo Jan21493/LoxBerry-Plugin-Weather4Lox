@@ -52,7 +52,7 @@ my $port        = $pcfg->param("FOSHK.PORT");
 
 # names for JSON
 my $grabberFile     = basename(__FILE__);
-my $grabberLabel    = "FOSHK Weather Station";
+my $grabberLabel    = "FOSHK Weather Station NATIVE format";
 my $grabberKey      = "foshk";              # name in JSONs
 my $refresh         = 60;
 
@@ -74,13 +74,13 @@ GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 });
 
 my $log = startWeatherLog(%logOptions, verbose => $verbose,
-    message => "Weather4Lox $grabberLabel GRABBER process started");
+    message => "GRABBER process to retrieve weather data from the FOSHK Plugin Server in NATIVE format");
 if ($verbose) {
 	$log->stdout(1);
 	$log->loglevel(7);
 }
 
-LOGOK "START OF: $0, Version $version";
+LOGOK "-------------------- START OF: $0, Version $version --------------------";
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();

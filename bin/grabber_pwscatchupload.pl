@@ -50,7 +50,7 @@ my $file = "/dev/shm/pwscatchupload_w4l.json";
 
 # names for JSON
 my $grabberFile     = basename(__FILE__);
-my $grabberLabel    = "PWS WU Upload Catcher";
+my $grabberLabel    = "WU PWS Upload Catcher";
 my $grabberKey      = "pwscatchupload";
 my $refresh         = 60;
 
@@ -72,13 +72,13 @@ GetOptions ('verbose' => \$verbose,
             'quiet'   => sub { $verbose = 0 });
 
 my $log = startWeatherLog(%logOptions, verbose => $verbose,
-    message => "Weather4Lox $grabberLabel GRABBER process started");
+    message => "GRABBER process to catch weather data from WU PWS upload");
 if ($verbose) {
 	$log->stdout(1);
 	$log->loglevel(7);
 }
 
-LOGOK "START OF: $0, Version $version";
+LOGOK "-------------------- START OF: $0, Version $version --------------------";
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();

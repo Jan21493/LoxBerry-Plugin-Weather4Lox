@@ -84,22 +84,18 @@ my %logOptions = (
     package => 'weather4lox',
     name => 'fetch',
     logdir => "$lbplogdir",
-#   filename => "$lbplogdir/weather4lox.log",
-#   append => 1,
 );
 
-# Due to a bug in the Logging routine, set the loglevel fix to 3
-#$log->loglevel(3);
 my $verbose_opt = '';
-my $log = startWeatherLog(%logOptions, verbose => $verbose,
-    message => "Weather4Lox FETCH process");
+my $log = startWeatherLog(%logOptions, verbose => $verbose, 
+    message => "FETCH process to retrieve weather data from configured grabbers and send it to Loxone");
 if ($verbose) {
     $log->stdout(1);
     $log->loglevel(7);
     $verbose_opt = "--verbose";
 }
 
-LOGOK "START OF: $0, Version $version";
+LOGOK "-------------------- START OF: $0, Version $version --------------------";
 
 my $maskkeys_opt = '';
 if ($maskkeys) {
@@ -255,10 +251,10 @@ if( !$cronjob || ( $cronjob && $own ) ) {
     if ( $pcfg->param("SERVER.FOSHKGRABBER") ) {
         my $foshknewapi = $pcfg->param("SERVER.FOSHKNEWAPI");
         if ($foshknewapi) {
-            LOGINF "Starting Grabber grabber_foshk2.pl (NEW API!) $verbose_opt --interval $interval";
+            LOGINF "Starting Grabber grabber_foshk2.pl (NATIVE format) $verbose_opt --interval $interval";
             run_grabber("$lbpbindir/grabber_foshk2.pl $verbose_opt --interval $interval", "grabber_foshk2.pl");
         } else {
-            LOGINF "Starting Grabber grabber_foshk.pl (OLD API) $verbose_opt --interval $interval";
+            LOGINF "Starting Grabber grabber_foshk.pl (WU-format) $verbose_opt --interval $interval";
             run_grabber("$lbpbindir/grabber_foshk.pl $verbose_opt --interval $interval", "grabber_foshk.pl");
         }
     }

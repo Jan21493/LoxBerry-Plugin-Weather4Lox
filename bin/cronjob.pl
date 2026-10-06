@@ -80,22 +80,18 @@ my %logOptions = (
 	package => 'weather4lox',
 	name => 'cronjob',
 	logdir => "$lbplogdir",
-#	filename => "$lbplogdir/cronjob.log",
-#	append => 1,
 );
 
-# Due to a bug in the Logging routine, set the loglevel fix to 3
-#$log->loglevel(3);
 my $verbose_opt;
-my $log = startWeatherLog(%logOptions, verbose => $verbose,
-    message => "Weather4Lox CRONJOB process");
+my $log = startWeatherLog(%logOptions, verbose => $verbose, 
+	message => "CRONJOB process to start fetch process with configured weather data grabbers at their intervals");
 if ($verbose) {
 	$log->stdout(1);
 	$log->loglevel(7);
 	$verbose_opt = "-v";
 }
 
-LOGOK "START OF: $0, Version $version";
+LOGOK "-------------------- START OF: $0, Version $version --------------------";
 
 # calculate time
 my $timestamp = time();
@@ -166,4 +162,5 @@ exit;
 END
 {
 	LOGOK "END OF: $0. We are done. Good bye." if $log;
+	LOGOK "============================================================" if $log;
 }

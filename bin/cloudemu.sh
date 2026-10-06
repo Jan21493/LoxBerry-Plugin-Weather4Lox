@@ -51,10 +51,11 @@ LOGDIR=$LBPLOG/$pluginname
 # Reuse the Perl rotation helper while keeping the Bash logging functions.
 # The emulator always uses a daily file, including verbose/debug runs.
 LOG_BRIDGE="$(dirname "$0")/weather4lox_log_bridge.pl"
-if ! LOG_SESSION=$(perl "$LOG_BRIDGE" start "$LOGDIR" "Cloud emulator $ACTION" "$VERBOSE"); then
+if ! LOG_SESSION=$(perl "$LOG_BRIDGE" start "$LOGDIR" "Loxone weather cloud emulator actions (request/enable/disable/status)" "$VERBOSE"); then
     echo "Cannot initialize cloud emulator log" >&2
     exit 1
 fi
+
 IFS=$'\t' read -r LOGFILE LOGLEVEL DBKEY STATUS VERSION <<< "$LOG_SESSION"
 LOGS=1
 ACTIVELOG=1
@@ -84,7 +85,9 @@ function FINISH_LOG {
 }
 trap FINISH_LOG EXIT
 
-LOGOK "START OF: $0, Version $VERSION"
+LOGOK "-------------------- START OF: $0, Version $VERSION --------------------"
+LOGINF "Cloud Emulator $ACTION started ..."
+
 LOGDEB "Log file for this session: $LOGFILE, setting ownership to loxberry:loxberry"
 chown loxberry:loxberry "$LOGFILE" 2>&1 | PIPE_TO_LOG
 # ─────────────────────────────────────────────────────────────────────────────

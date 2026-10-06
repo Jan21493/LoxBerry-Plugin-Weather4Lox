@@ -63,7 +63,7 @@ my %L = LoxBerry::System::readlanguage("language.ini");
 # Create a logging object
 my %logOptions = (
 	package => 'weather4lox',
-	name => 'grabber_visualcrossing',
+	name => 'Visual Crossing',
 	logdir => "$lbplogdir",
 );
 
@@ -87,13 +87,13 @@ GetOptions ('verbose' => \$verbose,
 			);
 
 my $log = startWeatherLog(%logOptions, verbose => $verbose,
-    message => "Weather4Lox GRABBER_VISUALCROSSING process started");
+    message => "GRABBER process to retrieve weather data from Visual Crossing");
 if ($verbose) {
 	$log->stdout(1);
 	$log->loglevel(7);
 }
 
-LOGOK "START OF: $0, Version $version";
+LOGOK "-------------------- START OF: $0, Version $version --------------------";
 
 requireOrLogdie('Astro::MoonPhase');
 

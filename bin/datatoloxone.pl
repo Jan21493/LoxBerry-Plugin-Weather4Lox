@@ -97,8 +97,6 @@ my %logOptions = (
     package => 'weather4lox',
     name => "$scriptLabel",
     logdir => "$lbplogdir",
-    #filename => "$lbplogdir/weather4lox.log",
-    #append => 1,
 );
 
 # Commandline options
@@ -109,16 +107,14 @@ GetOptions ('verbose' => \$verbose,
             'maskkeys' => \$maskKeys,
             );
 
-# Due to a bug in the Logging routine, set the loglevel fix to 3
-#$log->loglevel(3);
-my $log = startWeatherLog(%logOptions, verbose => $verbose,
-    message => "Weather4Lox $scriptLabel process started");
+my $log = startWeatherLog(%logOptions, verbose => $verbose, 
+    message => "Process to send weather data to Loxone via MQTT, UDP; create HTML page with weather data and file for emulator");
 if ($verbose) {
         $log->stdout(1);
         $log->loglevel(7);
 }
 
-LOGOK "START OF: $0, Version $version";
+LOGOK "-------------------- START OF: $0, Version $version --------------------";
 
 require "$lbpbindir/grabber_utils.pl";
 

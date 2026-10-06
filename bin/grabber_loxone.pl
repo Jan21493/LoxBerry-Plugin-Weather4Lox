@@ -70,14 +70,14 @@ GetOptions ('verbose' => \$verbose,
             'interval=i' => \$refresh,
             'quiet'   => sub { $verbose = 0 });
 
-my $log = startWeatherLog(%logOptions, verbose => $verbose,
-    message => "Weather4Lox $grabberLabel GRABBER process started");
+my $log = startWeatherLog(%logOptions, verbose => $verbose, 
+	message => "GRABBER process to retrieve weather data from the Loxone Miniserver");
 if ($verbose) {
 	$log->stdout(1);
 	$log->loglevel(7);
 }
 
-LOGOK "START OF: $0, Version $version";
+LOGOK "-------------------- START OF: $0, Version $version --------------------";
 
 # all values in current, daily, and hourly JSONs are in local time, so proper time zone information is important
 my $timezone = _systemTimezone();

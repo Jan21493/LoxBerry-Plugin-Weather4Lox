@@ -78,8 +78,7 @@ sub startWeatherLog {
     my $log = weatherLogObject(%args);
     $log->default;
     if (!$exists) {
-        $log->LOGSTART($options{message} . ', starting from ' .
-            strftime('%Y-%m-%d %H:%M:%S', localtime($now)));
+        $log->LOGSTART($options{message});
     }
 
     seek($lock, 0, SEEK_SET) or die "Cannot update log rotation state for $name: $!\n";

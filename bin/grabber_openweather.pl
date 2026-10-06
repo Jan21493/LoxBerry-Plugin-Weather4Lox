@@ -105,13 +105,13 @@ GetOptions ('verbose'  => \$verbose,
             );
 
 my $log = startWeatherLog(%logOptions, verbose => $verbose,
-    message => "Weather4Lox $grabberLabel GRABBER process started");
+    message => "GRABBER process to retrieve weather data from OpenWeather");
 if ($verbose) {
     $log->stdout(1);
     $log->loglevel(7);
 }
 
-LOGOK "START OF: $0, Version $version";
+LOGOK "-------------------- START OF: $0, Version $version --------------------";
 
 requireOrLogdie('Astro::MoonPhase');
 
