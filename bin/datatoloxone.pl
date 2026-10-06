@@ -31,6 +31,8 @@ use Net::MQTT::Simple;
 #use Data::Dumper;
 use Config::Simple;
 use JSON::PP ();
+use JSON::XS ();
+use Fcntl qw(:flock);
 use utf8;
 use Encode qw(encode_utf8);
 use POSIX qw(setlocale LC_NUMERIC mktime);
@@ -143,16 +145,25 @@ my %L = LoxBerry::System::readlanguage("language.ini");
 
 # weather code descriptions are stored in a separate language file, because they are needed in the theme for the weather codes list.
 
-my $langData = readJsonFile("$lbhomedir/webfrontend/html/plugins/$lbpplugindir", "lang-$lang") // {};
+my $jsonDecoder = JSON::XS->new->utf8->boolean_values(JSON::PP::false, JSON::PP::true);
+my $langData = readJsonFile("$lbhomedir/webfrontend/html/plugins/$lbpplugindir", "lang-$lang", $jsonDecoder) // {};
 
 # Create new HTML page with all weather data
-open(F,">$lbplogdir/weatherdata.html") or LOGERR "Cannot open $lbplogdir/weatherdata.html for writing: $!";
-flock(F,2);
-binmode F, ':encoding(UTF-8)';
-print F "<!DOCTYPE HTML>\n<html>\n<head>\n";
-print F "<meta http-equiv='Content-Type' content='text/html; charset=utf-8'>\n</head>\n<body>";
+my $weatherDataFile = "$lbplogdir/weatherdata.html";
+my $weatherDataTemp = "$weatherDataFile.tmp";
+# Keep the writer lock separate from the file that is atomically replaced.
+open(my $weatherDataLock, '>>', "$weatherDataFile.lock")
+    or weatherDataError("Cannot open $weatherDataFile.lock: $!");
+flock($weatherDataLock, LOCK_EX) or weatherDataError("Cannot lock $weatherDataFile.lock: $!");
+open(my $weatherDataHandle, '>', $weatherDataTemp)
+    or weatherDataError("Cannot open $weatherDataTemp for writing: $!");
+binmode($weatherDataHandle, ':encoding(UTF-8)')
+    or weatherDataError("Cannot set UTF-8 encoding for $weatherDataTemp: $!");
+print {$weatherDataHandle} "<!DOCTYPE HTML>\n<html>\n<head>\n"
+    or weatherDataError("Cannot write $weatherDataTemp: $!");
+print {$weatherDataHandle} "<meta http-equiv='Content-Type' content='text/html; charset=utf-8'>\n</head>\n<body>"
+    or weatherDataError("Cannot write $weatherDataTemp: $!");
 #flock(F,8);
-close(F);
 
 
 # MQTT
@@ -166,7 +177,7 @@ LOGINF "Loading JSON data files ...";
 
 # read JSON file with current conditions, daily and hourly forecasts
 my $weatherKey = "current";
-my $envelope = readJsonFile($lbplogdir, $weatherKey);
+my $envelope = readJsonFile($lbplogdir, $weatherKey, $jsonDecoder);
 my $cur = $envelope->{$weatherKey} // {};
 my $location = $envelope->{location} // {};
 
@@ -190,14 +201,14 @@ if ($curIsStale) {
 }
 
 $weatherKey = "dailyforecast";
-$envelope = readJsonFile($lbplogdir, $weatherKey);
+$envelope = readJsonFile($lbplogdir, $weatherKey, $jsonDecoder);
 my $dfc = $envelope->{$weatherKey} // [];
 
 $weatherKey = "hourlyforecast";
-$envelope = readJsonFile($lbplogdir, $weatherKey);
+$envelope = readJsonFile($lbplogdir, $weatherKey, $jsonDecoder);
 my $hfc = $envelope->{$weatherKey} // [];
 
-my $iconMapping = readJsonFile("$lbphtmldir/icons/$stdIconSet", "icon_mapping") // {};
+my $iconMapping = readJsonFile("$lbphtmldir/icons/$stdIconSet", "icon_mapping", $jsonDecoder) // {};
 
 LOGOK "JSON data files loaded successfully.";
 
@@ -582,12 +593,13 @@ if ($sendUDP) {
 }
 
 # Close HTML database
-open(F,">>$lbplogdir/weatherdata.html") or LOGERR "Cannot open $lbplogdir/weatherdata.html for appending: $!";
-flock(F,2);
-binmode F, ':encoding(UTF-8)';
-print F "</body>\n</html>";
+print {$weatherDataHandle} "</body>\n</html>"
+    or weatherDataError("Cannot write $weatherDataTemp: $!");
 #flock(F,8);
-close(F);
+close($weatherDataHandle) or weatherDataError("Cannot close $weatherDataTemp: $!");
+rename($weatherDataTemp, $weatherDataFile)
+    or weatherDataError("Cannot rename $weatherDataTemp to $weatherDataFile: $!");
+close($weatherDataLock) or weatherDataError("Cannot release $weatherDataFile.lock: $!");
 
 #
 # Create Webpages for themes and fill them with the current data. 
@@ -1008,6 +1020,11 @@ if ($emu) {
 # Finish
 exit;
 
+sub weatherDataError {
+    my ($message) = @_;
+    LOGCRIT $message;
+    die "$message\n";
+}
 
 ##########################################################################
 # Send data to Loxone (HTML, MQTT, UDP)
@@ -1035,12 +1052,9 @@ sub sendToLox {
     }
 
     # Add weather data to HTML webpage
-    open(F,">>$lbplogdir/weatherdata.html") or do { LOGERR "Cannot open $lbplogdir/weatherdata.html for appending: $!"; return; };
-    flock(F,2);
-        binmode F, ':encoding(UTF-8)';
-        print F "$name\@$value<br>\n";
+    print {$weatherDataHandle} "$name\@$value<br>\n"
+        or weatherDataError("Cannot write $weatherDataTemp: $!");
     #flock(F,8);
-    close(F);
 
     return if !$toMS; # only send to miniserver if $toMS is set to 1, otherwise only create variables for themes
 
