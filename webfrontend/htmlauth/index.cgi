@@ -1047,7 +1047,7 @@ if ($R::form eq "1" || !$R::form) {
     my @theme_files;
     if (opendir(my $dh, $lbphtmldir)) {
         @theme_files = sort grep {
-            /\.theme\.html$/ && -f "$lbphtmldir/$_"
+            /^[^.].*theme\.html$/ && -f "$lbphtmldir/$_"
         } readdir($dh);
         closedir($dh);
 
