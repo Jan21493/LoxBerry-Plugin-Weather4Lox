@@ -40,7 +40,7 @@ class WeatherThemesTest(unittest.TestCase):
                     if name == "coastal" and "// ===== BOOT =====" in before:
                         script = (ROOT / "templates/themes/coastal.js").read_text()
                         before = before.replace("// ===== BOOT =====", script + "\n// ===== BOOT =====", 1)
-                    if name == "coastal":
+                    if theme["layout"] == "desert":
                         if "  heroIcon.src = src;" in before:
                             before = before.replace("  heroIcon.src = src;", "  heroIcon.src = src;\n  document.querySelector('.hero').classList.toggle('is-night', !!e.isNight);", 1)
                         if "    card.setAttribute('data-idx', i);" in before:
@@ -124,12 +124,21 @@ class WeatherThemesTest(unittest.TestCase):
         self.assertIn('.coastal-hour-rail[data-active-tab="morgen"]', coastal_css)
         self.assertIn(".hcard-time { grid-column: 1; grid-row: 1;", coastal_css)
         self.assertIn(".hcard-temp { grid-column: 2; grid-row: 1;", coastal_css)
-        self.assertIn(".hcard-rainProb { grid-column: 2; grid-row: 2;", coastal_css)
+        self.assertIn(".hcard-rainProb {\n    grid-column: 2; grid-row: 2; flex-direction: row;", coastal_css)
         coastal = BUILDER.render(BUILDER.THEMES["coastal"])
         self.assertIn("window.matchMedia('(orientation: landscape)')", coastal)
         self.assertIn("entry.anchor.after(entry.wrap)", coastal)
         self.assertIn("landscape.addEventListener('change', syncLayout)", coastal)
         self.assertIn("new MutationObserver(syncTab)", coastal)
+
+    def test_desert_night_backgrounds(self):
+        desert = BUILDER.render(BUILDER.THEMES["desert"])
+        self.assertIn("classList.toggle('is-night', !!e.isNight)", desert)
+        self.assertIn("classList.toggle('is-night', !!dataArray[i].isNight)", desert)
+        self.assertIn(".hero.accent-bg.is-night, .hero.accent-bg.is-night:hover", desert)
+        self.assertIn("html.light .hero.accent-bg.is-night", desert)
+        self.assertIn("html.light .hcard.is-night:not(.selected)", desert)
+        self.assertIn("html.light .hcard.is-night.selected", desert)
 
     def test_daily_details_are_shared(self):
         original = (ROOT / "webfrontend/html/ocean.theme.html").read_text()

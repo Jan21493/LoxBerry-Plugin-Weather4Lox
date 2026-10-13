@@ -44,7 +44,8 @@
   new ResizeObserver(function() {
     syncReadingEdges();
     var ratio = Number(getComputedStyle(hero).getPropertyValue('--weather-aspect')) || 1;
-    var moveInside = window.innerWidth < 750 ||
+    var moveInside = window.matchMedia('(orientation: landscape)').matches ||
+      window.innerWidth < 750 ||
       hero.getBoundingClientRect().width / ratio * 0.7 >= 500;
     if (hero.classList.contains('hero-with-wind') === moveInside) return;
     hero.classList.toggle('hero-with-wind', moveInside);

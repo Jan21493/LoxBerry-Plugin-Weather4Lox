@@ -89,6 +89,21 @@ def palette(theme):
 .hero-icon-box { background: none; }
 *, *::before, *::after { animation: none !important; transition: none !important; }
 """)
+    if theme["title"] == "Desert Sand":
+        rules.append("""
+.hero.accent-bg, .hero.accent-bg:hover { background: linear-gradient(135deg, #514231, #65513b); }
+.hero.accent-bg.is-night, .hero.accent-bg.is-night:hover { background: linear-gradient(135deg, #302920, #403429); }
+.hcard:not(.selected) { background: #4b3e30; }
+.hcard.is-night:not(.selected) { background: #302920; }
+.hcard.selected { background: linear-gradient(135deg, #705839, #5e4b34); }
+.hcard.is-night.selected { background: linear-gradient(135deg, #493a29, #3c3024); }
+html.light .hero.accent-bg, html.light .hero.accent-bg:hover { background: linear-gradient(135deg, #f2e2c9, #ead4b3); }
+html.light .hero.accent-bg.is-night, html.light .hero.accent-bg.is-night:hover { background: linear-gradient(135deg, #c6ae8d, #d2bc9e); }
+html.light .hcard:not(.selected) { background: #fff8ec; }
+html.light .hcard.is-night:not(.selected) { background: #deceb7; }
+html.light .hcard.selected { background: linear-gradient(135deg, #efd6af, #f5e4cb); }
+html.light .hcard.is-night.selected { background: linear-gradient(135deg, #c7ac84, #d6bd99); }
+""")
     return "\n".join(rules)
 
 
@@ -244,7 +259,8 @@ def render(theme):
     if theme.get("style") == "coastal":
         script = (ROOT / "templates/themes/coastal.js").read_text()
         source = replace_once(source, "// ===== BOOT =====", script + "\n// ===== BOOT =====")
-        source = coastal_night_logic(source)
+    if theme["layout"] == "desert":
+        source = night_logic(source)
     # Native buttons retain the existing click handlers and add keyboard activation.
     source = replace_once(source, "var card = document.createElement('div');", "var card = document.createElement('button');\n    card.type = 'button';")
     source = replace_once(source, "var row = document.createElement('div');", """var row = document.createElement('div');
@@ -264,7 +280,7 @@ def render(theme):
     return source
 
 
-def coastal_night_logic(source):
+def night_logic(source):
     source = replace_once(
         source, "  heroIcon.src = src;",
         "  heroIcon.src = src;\n  document.querySelector('.hero').classList.toggle('is-night', !!e.isNight);",

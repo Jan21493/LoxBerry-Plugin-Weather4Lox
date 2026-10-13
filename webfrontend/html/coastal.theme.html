@@ -727,7 +727,7 @@ html.light .hcard.is-night.selected { background: linear-gradient(135deg, #a8c9d
   .hero { padding-bottom: 110px; }
   .hero.hero-with-wind { padding-bottom: 240px; }
 }
-@media (width < 750px) {
+@media (width < 750px), (orientation: landscape) and (max-width: 1000px) {
   .hero { --reading-width: min(55%, 155px); padding-top: 12px; }
   .hero-row > div:first-child { padding: 8px; border-radius: 12px; }
   .hero-temp { font-size: clamp(1.8rem, 7vw, 2.5rem); }
@@ -767,7 +767,7 @@ html.light .hcard.is-night.selected { background: linear-gradient(135deg, #a8c9d
     touch-action: pan-y; padding: 4px;
   }
   .coastal-hour-rail .hcard {
-    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
     grid-template-rows: auto auto; align-items: center; gap: 4px 8px;
     width: 100%; min-width: 0; min-height: 112px; flex-shrink: 0;
     padding: 12px 8px;
@@ -775,7 +775,10 @@ html.light .hcard.is-night.selected { background: linear-gradient(135deg, #a8c9d
   .coastal-hour-rail .hcard-time { grid-column: 1; grid-row: 1; margin: 0; }
   .coastal-hour-rail .hcard-icon { grid-column: 1; grid-row: 2; margin: 0 auto; width: 48px; height: 48px; }
   .coastal-hour-rail .hcard-temp { grid-column: 2; grid-row: 1; }
-  .coastal-hour-rail .hcard-rainProb { grid-column: 2; grid-row: 2; flex-direction: column; gap: 2px; }
+  .coastal-hour-rail .hcard-rainProb {
+    grid-column: 2; grid-row: 2; flex-direction: row; gap: 4px;
+    font-size: clamp(0.65rem, 1.1vw, 0.95rem);
+  }
 }
 
   </style>
@@ -2529,7 +2532,8 @@ function hideEmptyStats() {
   new ResizeObserver(function() {
     syncReadingEdges();
     var ratio = Number(getComputedStyle(hero).getPropertyValue('--weather-aspect')) || 1;
-    var moveInside = window.innerWidth < 750 ||
+    var moveInside = window.matchMedia('(orientation: landscape)').matches ||
+      window.innerWidth < 750 ||
       hero.getBoundingClientRect().width / ratio * 0.7 >= 500;
     if (hero.classList.contains('hero-with-wind') === moveInside) return;
     hero.classList.toggle('hero-with-wind', moveInside);

@@ -441,6 +441,20 @@ html.light {
   --orange: #b94e0a;
   --rose: #c32748;
 }
+
+.hero.accent-bg, .hero.accent-bg:hover { background: linear-gradient(135deg, #514231, #65513b); }
+.hero.accent-bg.is-night, .hero.accent-bg.is-night:hover { background: linear-gradient(135deg, #302920, #403429); }
+.hcard:not(.selected) { background: #4b3e30; }
+.hcard.is-night:not(.selected) { background: #302920; }
+.hcard.selected { background: linear-gradient(135deg, #705839, #5e4b34); }
+.hcard.is-night.selected { background: linear-gradient(135deg, #493a29, #3c3024); }
+html.light .hero.accent-bg, html.light .hero.accent-bg:hover { background: linear-gradient(135deg, #f2e2c9, #ead4b3); }
+html.light .hero.accent-bg.is-night, html.light .hero.accent-bg.is-night:hover { background: linear-gradient(135deg, #c6ae8d, #d2bc9e); }
+html.light .hcard:not(.selected) { background: #fff8ec; }
+html.light .hcard.is-night:not(.selected) { background: #deceb7; }
+html.light .hcard.selected { background: linear-gradient(135deg, #efd6af, #f5e4cb); }
+html.light .hcard.is-night.selected { background: linear-gradient(135deg, #c7ac84, #d6bd99); }
+
 /* Shared tablet-first overrides; weather rendering remains in Deep Ocean. */
 body { padding: clamp(12px, 2vw, 24px); }
 .page { max-width: 1280px; min-width: 0; }
@@ -1134,6 +1148,7 @@ function shouldFlipIcon(e) {
 function updateHeroIcon(e, src) {
   var heroIcon = document.getElementById('heroIcon');
   heroIcon.src = src;
+  document.querySelector('.hero').classList.toggle('is-night', !!e.isNight);
   heroIcon.classList.toggle('flipped', shouldFlipIcon(e));
 }
 
@@ -1557,6 +1572,7 @@ function renderHourStrip(containerId, dataArray) {
     var card = document.createElement('button');
     card.type = 'button';
     card.className = 'hcard glass';
+    card.classList.toggle('is-night', !!dataArray[i].isNight);
     card.setAttribute('data-idx', i);
     (function(el, arr) {
       el.onclick = function() { selectHour(el, arr); };

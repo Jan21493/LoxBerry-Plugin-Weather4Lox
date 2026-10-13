@@ -73,9 +73,13 @@ matching the precipitation and pressure cards.
 In landscape orientation, Desert Sand stacks precipitation, pressure, and wind
 beside the hero in a one-third-width column. Coastal Sky instead places today's
 or tomorrow's hourly cards in that column, with vertical scrolling and the same
-height as the hero. Each card groups time and icon on the left, and temperature,
-precipitation probability, and millimeters on the right. Portrait orientation
+height as the hero. Wind always stays inside Coastal's hero in landscape,
+with compact reading panels on displays up to 1000 CSS pixels wide.
+Each card groups time and icon on the left, and temperature above precipitation
+probability and millimeters (on one line) on the right. Portrait orientation
 retains the horizontal hourly strip; changing orientation preserves selection.
+Desert Sand uses lighter day and darker night backgrounds for the hero and
+hourly cards in both appearance modes, following each entry's `isNight` value.
 In all five weather themes (including Deep Ocean), the X-day view hides the
 additional cards below the forecast. Expanded days include dew point, visibility
 (in kilometers, matching the grabber output), cloud cover, and pressure alongside
