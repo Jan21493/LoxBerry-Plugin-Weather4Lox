@@ -584,15 +584,23 @@ button:focus-visible, .drow:focus-visible { outline: 3px solid var(--ui-accent);
   .side-stats { grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(3, minmax(0, 1fr)); }
   .side-stats .wind-card { grid-column: auto; }
 }
+.hero.desert-wind-inside {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  grid-template-rows: auto auto;
+  column-gap: 0;
+  align-items: center;
+}
+.hero.desert-wind-inside .hero-row { display: contents; }
+.hero.desert-wind-inside .hero-row > div:first-child { grid-column: 1; grid-row: 1; align-self: end; }
+.hero.desert-wind-inside .hero-icon-box {
+  grid-column: 2; grid-row: 1 / 3;
+  width: 100%; height: auto; aspect-ratio: 1; margin: 0;
+}
 .hero.desert-wind-inside .wind-card {
-  margin-top: 16px;
-  width: min(100%, 380px);
-  background: transparent;
-  border: 0;
-  border-top: 1px solid var(--border);
-  border-radius: 0;
-  box-shadow: none;
-  padding: 12px 0 0;
+  grid-column: 1; grid-row: 2; align-self: start;
+  width: 100%; margin-top: 16px; padding: 0;
+  background: transparent; border: 0; border-radius: 0; box-shadow: none;
 }
 .side-stats.desert-wind-moved { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 

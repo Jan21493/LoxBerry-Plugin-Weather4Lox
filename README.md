@@ -81,7 +81,9 @@ retains the horizontal hourly strip; changing orientation preserves selection.
 Desert Sand uses lighter day and darker night backgrounds for the hero and
 hourly cards in both appearance modes, following each entry's `isNight` value.
 In portrait orientation wider than 700 CSS pixels, Desert Sand moves the wind
-card into the hero below the weather readings; precipitation and pressure stay
+card into the hero below the weather readings, without a border. Readings and
+wind use about three fifths of the hero width; the enlarged weather icon uses
+the remaining two fifths at a square height. Precipitation and pressure stay
 side by side below. Narrower portrait and all landscape layouts keep wind with
 the other statistics.
 In landscape orientation, Graphite Focus stacks its three side statistics to
