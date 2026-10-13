@@ -33,3 +33,7 @@
   .cur-layout { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
   .side-stats { grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(3, minmax(0, 1fr)); }
 }
+.hero-row { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: center; }
+.hero-row > .hero-icon-box { width: 100%; height: auto; aspect-ratio: 1; margin: 0; }
+.side-stats .graphite-wind-card { grid-column: 1 / -1; }
+.graphite-wind-card .hero-wind-group { margin-top: 0 !important; align-items: center !important; }

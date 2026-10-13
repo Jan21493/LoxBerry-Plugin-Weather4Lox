@@ -95,7 +95,10 @@ extra-statistics row returns in portrait orientation.
 Graphite Focus and Arctic Light use day/night backgrounds for the hero and
 hourly cards in both orientations. Light mode retains its existing daytime
 card color and darkens nighttime cards; dark mode retains its nighttime card
-color and lightens daytime cards. Selecting an hour changes only its accent
+color and lightens daytime cards.
+Graphite Focus splits its hero into about three fifths for readings and wind
+and two fifths for an enlarged square weather icon. In portrait orientation at
+600 CSS pixels or narrower, wind becomes the first full-width card below the hero. Selecting an hour changes only its accent
 border, not its day/night background, including on hover.
 In all five weather themes (including Deep Ocean), the X-day view hides the
 additional cards below the forecast. Expanded days include dew point, visibility
@@ -131,7 +134,7 @@ or restart is required. For example, open
 The committed standalone HTML files are generated from `ocean.theme.html`,
 the palettes/layout transformations in `bin/build_weather_themes.py`,
 `templates/themes/tablet.css`, and the individual `arctic.css`, `desert.css`,
-and `graphite.css` stylesheets plus `coastal.css`, `coastal.js`, `desert.js`, and `display.js` in the same directory.
+and `graphite.css` stylesheets plus `coastal.css`, `coastal.js`, `desert.js`, `graphite.js`, and `display.js` in the same directory.
 Do not edit generated files directly.
 After changing the source, run `python3 bin/build_weather_themes.py`.
 Run `python3 bin/build_weather_themes.py --check` to check reproducibility and

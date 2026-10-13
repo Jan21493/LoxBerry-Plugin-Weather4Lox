@@ -39,6 +39,7 @@ THEMES = {
     },
     "graphite": {
         "layout": "graphite",
+        "script": "graphite",
         "title": "Graphite Focus",
         "dark": ("#151719", "#151719", "#22262a", "#2b3035", "#fafafa", "#d0d4d8", "#b6bfc7", "#85c9fa"),
         "light": ("#f1f2f3", "#f1f2f3", "#ffffff", "#f6f7f8", "#171b1f", "#414b55", "#56616c", "#176b9c"),

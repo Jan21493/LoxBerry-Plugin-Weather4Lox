@@ -149,6 +149,13 @@ class WeatherThemesTest(unittest.TestCase):
         self.assertIn("anchor.after(wind)", desert)
         self.assertNotIn("setupDesertWind", coastal)
 
+    def test_graphite_wind_and_icon_layout(self):
+        graphite = BUILDER.render(BUILDER.THEMES["graphite"])
+        self.assertIn("grid-template-columns: minmax(0, 3fr) minmax(0, 2fr)", graphite)
+        self.assertIn("(orientation: portrait) and (max-width: 600px)", graphite)
+        self.assertIn("side.prepend(windCard)", graphite)
+        self.assertIn("anchor.after(wind)", graphite)
+
     def test_arctic_graphite_period_backgrounds(self):
         for name in ("arctic", "graphite"):
             rendered = BUILDER.render(BUILDER.THEMES[name])
