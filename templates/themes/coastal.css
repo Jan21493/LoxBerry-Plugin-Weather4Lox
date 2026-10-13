@@ -1,0 +1,178 @@
+/* The existing live icon fills the hero, retaining icon-set and moon handling. */
+:root {
+  --hero-from: #246d88;
+  --hero-to: #369ab0;
+  --hero-overlay: rgba(14,38,51,0.38);
+}
+html.light {
+  --hero-from: #63bbd7;
+  --hero-to: #a3dae6;
+  --hero-overlay: rgba(248,253,255,0.40);
+  --bg-card: #d9eaf1;
+  --bg-card-hover: #cee3ed;
+}
+.hero.is-night { --hero-from: #16394e; --hero-to: #245369; }
+html.light .hero.is-night { --hero-from: #37627e; --hero-to: #668aa5; }
+html.light .hero.is-night .hero-row > div:first-child {
+  --hero-overlay: rgba(236,246,252,0.56);
+}
+.hcard.is-night:not(.selected) { background: #1d3948; }
+html.light .hcard.is-night:not(.selected) { background: #bdd2df; }
+.hcard.is-night.selected { background: linear-gradient(135deg, #285a70, #234858); }
+html.light .hcard.is-night.selected { background: linear-gradient(135deg, #a8c9da, #bad5e1); }
+.hero { --reading-width: clamp(190px, 25%, 240px); }
+.hero, .hero:hover {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: calc(var(--weather-aspect, 1) / 0.7);
+  min-height: var(--coastal-min-height, 0px);
+  background: linear-gradient(125deg, var(--hero-from), var(--hero-to));
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.hero-row { width: 100%; justify-content: flex-end; }
+.hero-row > div:first-child {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 var(--reading-width);
+  width: var(--reading-width);
+  aspect-ratio: var(--weather-aspect, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--hero-overlay);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  text-align: right;
+}
+.hero .hero-icon-box {
+  position: absolute;
+  inset: 0 20% 0 10%;
+  z-index: 0;
+  width: 70%;
+  height: 100%;
+  aspect-ratio: auto;
+  margin: 0;
+  pointer-events: none;
+}
+.hero .hero-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+.hero-temp { font-size: clamp(2.6rem, 5vw, 4.2rem); }
+.hero-temp sup { font-size: 1.9rem; }
+.hero-desc { font-size: 1.2rem; line-height: 1.4; }
+#heroContext { font-size: 0.9rem !important; }
+#heroFeelsLike { font-size: 1rem !important; line-height: 1.4; }
+.wind-card #heroWind, .wind-card #heroGust { font-size: 1.2rem !important; }
+.hero-inline-stats .stat:not(.wind-card) {
+  flex-direction: row-reverse;
+  align-items: center;
+}
+.hero-inline-stats .stat:not(.wind-card) .stat-content { text-align: right; }
+@media (max-width: 700px) {
+  .hero { padding: 16px; }
+  .hero { --reading-width: min(58%, 170px); }
+  .hero-row > div:first-child { padding: 10px; }
+  .hero-temp { font-size: clamp(2.1rem, 8vw, 2.8rem); }
+  .hero-temp sup { font-size: 1.3rem; }
+  .hero-desc, .wind-card #heroWind, .wind-card #heroGust { font-size: 1rem !important; }
+  #heroContext { font-size: 0.8rem !important; }
+  #heroFeelsLike { font-size: 0.9rem !important; }
+}
+@media (max-width: 430px) {
+  .hero { --reading-width: min(65%, 170px); }
+}
+.hero { padding-bottom: 110px; }
+.hero.hero-with-wind { padding-bottom: 210px; }
+.hero-inline-stats {
+  position: absolute;
+  z-index: 1;
+  bottom: 24px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+.hero-inline-stats .stat { background: var(--hero-overlay); }
+.hero-inline-stats .stat {
+  width: var(--inset-reading-width, var(--reading-width));
+  flex: 0 0 auto;
+  align-self: flex-end;
+  margin-left: auto;
+  margin-right: 0;
+}
+.hero-inline-stats .stat, .side-stats .wind-card {
+  height: 72px;
+  min-height: 72px;
+  padding: 8px 12px;
+}
+.wind-card #heroWindMessage { gap: 2px; }
+.wind-card #heroWind, .wind-card #heroGust {
+  font-size: 0.95rem !important;
+  line-height: 1.25;
+  margin-top: 0 !important;
+}
+.hero-inline-stats .wind-card { justify-self: end; flex-direction: row; align-items: center; }
+.hero-inline-stats .wind-card #heroWindMessage { align-items: flex-end; text-align: right; }
+.hero-inline-stats .wind-card #heroWind,
+.hero-inline-stats .wind-card #heroGust {
+  font-size: 1.2rem !important;
+  line-height: 1.2;
+}
+@media (max-width: 430px) {
+  .wind-card #heroWind, .wind-card #heroGust { font-size: 0.85rem !important; line-height: 1.2; }
+}
+@media (max-width: 700px) {
+  .hero-inline-stats .wind-card #heroWind,
+  .hero-inline-stats .wind-card #heroGust { font-size: 1rem !important; }
+}
+.hero-inline-stats .wind-card { width: calc(2 * var(--inset-reading-width, 150px)); max-width: 100%; }
+.wind-card .hero-wind-group { flex-direction: row-reverse; }
+.side-stats.hero-stats-moved { display: none; }
+.hero-inline-stats[hidden] { display: none; }
+.side-stats.hero-stats-moved { grid-template-columns: minmax(0, 1fr); }
+.side-stats { grid-template-columns: minmax(0, 1fr); }
+.hero-inline-stats .wind-card { grid-column: auto; }
+@media (750px <= width <= 900px) {
+  .hero-inline-stats #statPrecip { font-size: 1rem; white-space: nowrap; }
+}
+@media (max-width: 700px) {
+  .side-stats .wind-card { grid-column: 1 / -1; width: 100%; }
+  .hero-inline-stats { left: 16px; right: 16px; bottom: 16px; grid-template-columns: minmax(0, 1fr); }
+  .hero { padding-bottom: 110px; }
+  .hero.hero-with-wind { padding-bottom: 240px; }
+}
+@media (width < 750px) {
+  .hero { --reading-width: min(55%, 155px); padding-top: 12px; }
+  .hero-row > div:first-child { padding: 8px; border-radius: 12px; }
+  .hero-temp { font-size: clamp(1.8rem, 7vw, 2.5rem); }
+  .hero-temp sup { font-size: 1.1rem; }
+  #heroContext { font-size: 0.7rem !important; }
+  #heroFeelsLike { font-size: 0.8rem !important; }
+  .hero-desc { font-size: 0.9rem !important; line-height: 1.3; }
+  .hero-inline-stats { gap: 8px; bottom: 12px; }
+  .hero-inline-stats .stat { height: 60px; min-height: 60px; padding: 6px 8px; }
+  .hero-inline-stats .stat-label { font-size: 0.65rem; }
+  .hero-inline-stats .stat-val { font-size: 1rem; }
+  .hero-inline-stats .stat-icon svg, .hero-inline-stats #heroWindIcon svg { width: 24px; height: 24px; }
+  .hero-inline-stats .wind-card #heroWind,
+  .hero-inline-stats .wind-card #heroGust { font-size: 0.9rem !important; line-height: 1.2; }
+  .hero-inline-stats .wind-card .hero-wind-group { margin-top: 0 !important; }
+}
+@media (width < 430px) {
+  .hero-inline-stats .wind-card { padding-top: 4px; padding-bottom: 4px; }
+  .hero-inline-stats .wind-card #heroWind,
+  .hero-inline-stats .wind-card #heroGust { font-size: 0.85rem !important; }
+}

@@ -1,0 +1,44 @@
+/* A single airy weather panel with integrated measurements. */
+* { font-family: 'Nunito Sans', system-ui, sans-serif; }
+.mono { font-family: inherit; }
+.hero-icon-box { background: none; border-radius: 0; width: clamp(180px, 26vw, 280px); }
+.hero-icon { width: 100%; height: 100%; }
+.cur-layout { grid-template-columns: minmax(0, 1fr); }
+.hero { background: var(--bg-card); }
+.hero-temp { font-weight: 400; }
+.head-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.head-stats .glass {
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+  border-radius: 0;
+}
+.head-stats .stat, .head-stats .extra {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 10px 4px;
+}
+.head-stats .stat-val { font-size: 1.3rem; }
+.head-stats .stat-label { font-size: 0.8rem; text-transform: none; letter-spacing: 0; }
+.head-stats .stat-icon svg { width: 28px; height: 28px; }
+.extra-row { grid-template-columns: minmax(0, 1fr); max-width: 280px; }
+@media (max-width: 700px) {
+  .hero-icon-box { width: clamp(112px, 32vw, 200px); }
+  .head-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+  .head-stats .stat-val { font-size: 1.15rem; }
+  .head-stats .stat-label { font-size: 0.75rem; }
+  .head-stats .stat-icon svg { width: 22px; height: 22px; }
+}
+@media (max-width: 360px) {
+  .hero-row { flex-wrap: wrap; }
+  .hero-icon-box { margin-left: auto; }
+  .head-stats .stat, .head-stats .extra { flex-direction: column; align-items: flex-start; }
+}

@@ -1,0 +1,31 @@
+/* Larger, instrument-like readings for the wall tablet. */
+#heroFeelsLike, #heroWindMessage, #heroWind, #heroGust {
+  font-size: 1.15rem !important;
+  line-height: 1.55;
+}
+#heroWindIcon svg { width: 44px; height: 44px; }
+.hero-wind-group { flex-wrap: nowrap; align-items: flex-start !important; }
+#heroWindIcon { flex: 0 0 44px; }
+#heroWindMessage { flex: 1; flex-direction: column; gap: 4px; }
+.hero-icon-box { width: clamp(112px, 17vw, 184px); }
+.hero-icon { width: 90%; height: 90%; }
+.hcard { min-width: 108px; min-height: 148px; padding: 16px 12px; }
+.hcard-time { font-size: 1rem; }
+.hcard-icon { width: 44px; height: 44px; margin-bottom: 8px; }
+.hcard-temp { font-size: 1.5rem; }
+.hcard-rainProb { font-size: 0.95rem; }
+.side-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cur-layout { grid-template-columns: minmax(0, 1fr); }
+.side-stats .stat { flex-direction: row; align-items: center; }
+@media (700px < width < 900px) {
+  .extra-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .hero-icon-box { width: clamp(88px, 25vw, 136px); }
+  .hcard { min-width: 100px; }
+  .side-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 360px) {
+  .hero-row { flex-wrap: wrap; }
+  .hero-icon-box { margin-left: auto; }
+}

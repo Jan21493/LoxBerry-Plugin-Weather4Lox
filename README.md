@@ -20,6 +20,98 @@ On a LoxBerry with the plugin installed, run `prove -v tests/log_rotation.t` fro
 this repository to check rotation against the installed logging SDK. The tests
 use temporary log files and a separate log database.
 
+## Tablet weather themes
+
+Alongside Deep Ocean, four tablet-first themes use the same weather data,
+translations, icon sets, refresh intervals, and forecast interactions:
+
+| File | Theme | Appearance |
+| --- | --- | --- |
+| `arctic.theme.html` | Arctic Light | Ice-white/petrol or cool slate; Nunito Sans, an unframed weather icon, and six measurements integrated into the main panel. Cloud cover follows the weather description; no separate cloud, dew point, or visibility card. |
+| `forest.theme.html` | Desert Sand | Warm sand accents (`#d8b889`) with pale beige (`#eadbc4`) companions and warm brown dark surfaces; unframed weather icon and a separate wind card beside precipitation and pressure, including direction, speed, gusts, and the wind symbol. Enlarged hourly cards show precipitation probability and millimeters side by side. |
+| `coastal.theme.html` | Coastal Sky | Desert Sand's layout in warm, vivid blues. The hero follows the live weather icon's aspect ratio, with compact right-aligned readings on a transparent light/dark panel. Precipitation always stays inside; wind moves inside at a hero height of 500 CSS pixels or more and otherwise spans the full width below. Pressure is in the extra statistics. |
+
+Coastal's temperature panel shares the hero's aspect ratio. Its inset precipitation
+card has the same width and right alignment; wind uses twice that width (capped
+at the available space). The hero and hourly cards darken for
+`isNight` independently of appearance mode; light-mode statistics and unselected
+hourly cards use slightly darker blue surfaces.
+Coastal's main readings use larger typography. Inset precipitation remains a
+horizontal text/icon card with right-aligned text and the symbol on the right
+at every breakpoint; wind likewise places its symbol to the right and its
+text matches the weather description's 1.2rem size.
+The Coastal background icon occupies 70% of the hero width, leaving 10% on the
+left and 20% on the right. Hero height is reduced proportionally to 70% of the
+original icon-ratio height; the temperature panel retains the icon's proportions.
+On small displays, compact reading panels and a content-based minimum hero
+height prevent clipping. Wind and precipitation use compact 72-pixel cards with matching heights,
+whether wind is inside or below the hero. Wind typography and spacing are
+compact enough to accommodate wrapped text.
+Below 750 CSS pixels, wind stays inside the hero regardless of its height.
+Reading panels and typography become more compact, with 60-pixel precipitation
+and wind cards, while retaining the temperature panel's aspect ratio and the
+matching precipitation width.
+Inside the hero, wind text is right-aligned and matches the weather description
+size (1.2rem, or 1rem on small displays); the card remains right-aligned.
+The hero reserves the inset cards' measured height plus a 20-pixel gap, so
+temperature, precipitation, and wind panels do not overlap on tablets.
+| `graphite.theme.html` | Graphite Focus | Neutral, high-contrast cards without glass effects or animations; enlarged feels-like/wind readings, weather symbol, and hourly summaries. Wind text stays to the right of its symbol and wraps as needed. |
+
+All support `?mode=auto&iconset=naturalistic&lang=de`, just like Deep Ocean.
+All four precipitation readings show millimeters and probability together;
+missing values are displayed as `--`, not silently interpreted as zero.
+The existing `forest` theme key and URL remain unchanged for compatibility;
+the theme selection and browser title display Desert Sand.
+Arctic and Desert Sand use larger main weather symbols and show hourly temperatures
+to one decimal place. Arctic orders its integrated measurements as sunrise,
+sunset, precipitation, pressure, humidity, and UV index. Desert Sand uses 64-pixel
+hourly symbols and a wind card without a redundant heading. Graphite groups
+humidity with precipitation and pressure above the hourly forecast.
+Graphite's and Desert Sand's extra statistics use three columns above 700 and below 900 CSS pixels,
+two columns at 700 pixels or less, and four columns at 900 pixels or more.
+Desert Sand places the windsock to the left of the wind text, vertically centered,
+matching the precipitation and pressure cards.
+In all five weather themes (including Deep Ocean), the X-day view hides the
+additional cards below the forecast. Expanded days include dew point, visibility
+(in kilometers, matching the grabber output), cloud cover, and pressure alongside
+the existing values. Each parameter has a weather icon and a localized label
+(including "Luftfeuchtigkeit" in German). The detail grid adapts its column count
+to the available width. Unknown dew point, visibility, and cloud cover are shown
+as `--` rather than borrowing current conditions.
+Sunrise and sunset follow the active today/tomorrow tab, including background
+data refreshes. If tomorrow's daily data is unavailable, its times remain `--:--`
+instead of reverting to today's values.
+Daily wind, sunrise, and sunset details reuse the symbols from the today/tomorrow
+cards rather than a separate icon set.
+Wind symbols use the same per-period rule everywhere: red strong-wind windsock
+at wind speeds of at least 30 km/h or gusts of at least 40 km/h, otherwise the
+normal windsock. Daily symbols use that day's wind and gusts, not the selected hour.
+Temperature charts render 12-pixel axis labels at the actual container width,
+reserving wider left/right margins. Temperature ticks use one decimal place
+when the displayed temperature spread is below 5 degrees (integer ticks otherwise).
+Phone charts label every sixth hour; wider charts label every third hour.
+`mode=light` and `mode=dark` force an appearance; absent/auto mode follows the
+browser's color preference. Portrait tablets stack the main weather card above
+the statistics; wide tablets and desktops place them side by side. Phones use
+two-column statistics and a swipeable hourly forecast. Controls have at least
+44-pixel touch targets and support keyboard activation.
+
+The plugin automatically discovers these files in its theme selection.
+Deploy the generated HTML files to
+`/opt/loxberry/webfrontend/html/plugins/weather4lox/`; no configuration change
+or restart is required. For example, open
+`http://loxberry/plugins/weather4lox/arctic.theme.html?mode=light&iconset=naturalistic&lang=de`.
+
+The committed standalone HTML files are generated from `ocean.theme.html`,
+the palettes/layout transformations in `bin/build_weather_themes.py`,
+`templates/themes/tablet.css`, and the individual `arctic.css`, `forest.css`,
+and `graphite.css` stylesheets plus `coastal.css` and `display.js` in the same directory.
+Do not edit generated files directly.
+After changing the source, run `python3 bin/build_weather_themes.py`.
+Run `python3 bin/build_weather_themes.py --check` to check reproducibility and
+`python3 -m unittest discover -s tests -p 'test_weather_themes.py'` for the
+theme regression checks. Deep Ocean itself remains unchanged.
+
 `datatoloxone.pl` decodes input files with JSON::XS (provided by
 `libjson-xs-perl`), preserving JSON::PP boolean values. Other grabbers keep their
 existing decoder. The HTML weather database is written through one buffered
