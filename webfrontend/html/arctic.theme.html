@@ -559,8 +559,8 @@ button:focus-visible, .drow:focus-visible { outline: 3px solid var(--ui-accent);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
-  margin-top: 6px;
-  padding-top: 6px;
+  margin-top: 10px;
+  padding-top: 12px;
   border-top: 1px solid var(--border);
 }
 .head-stats .glass {
@@ -573,12 +573,13 @@ button:focus-visible, .drow:focus-visible { outline: 3px solid var(--ui-accent);
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 5px 4px;
+  padding: 2px 4px;
 }
 .head-stats .stat-val { font-size: 1.3rem; }
 .head-stats .stat-label { font-size: 0.8rem; text-transform: none; letter-spacing: 0; }
 .head-stats .stat-icon svg { width: 28px; height: 28px; }
 .extra-row { grid-template-columns: minmax(0, 1fr); max-width: 280px; }
+.chart-title .precip-toggle { min-height: 32px; padding: 2px 8px; }
 @media (max-width: 700px) {
   .hero-icon-box { width: clamp(112px, 32vw, 200px); }
   .head-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
