@@ -176,3 +176,31 @@ html.light .hcard.is-night.selected { background: linear-gradient(135deg, #a8c9d
   .hero-inline-stats .wind-card #heroWind,
   .hero-inline-stats .wind-card #heroGust { font-size: 0.85rem !important; }
 }
+@media (orientation: landscape) {
+  .cur-layout { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  .cur-layout > .hero { grid-column: 1; grid-row: 1; }
+  .cur-layout > .side-stats { grid-column: 1; grid-row: 2; grid-template-rows: auto; }
+  .coastal-hour-rail { grid-column: 2; grid-row: 1; position: relative; min-width: 0; min-height: 0; }
+  .coastal-hour-rail .hour-strip-wrap {
+    position: absolute; inset: 0; margin: 0; padding: 0;
+    display: none; flex-direction: column; min-height: 0;
+  }
+  .coastal-hour-rail[data-active-tab="heute"] .coastal-hours-heute,
+  .coastal-hour-rail[data-active-tab="morgen"] .coastal-hours-morgen { display: flex; }
+  .coastal-hour-rail .hour-strip-title { flex-shrink: 0; }
+  .coastal-hour-rail .hour-strip {
+    flex: 1; min-height: 0; flex-direction: column;
+    overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+    touch-action: pan-y; padding: 4px;
+  }
+  .coastal-hour-rail .hcard {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto; align-items: center; gap: 4px 8px;
+    width: 100%; min-width: 0; min-height: 112px; flex-shrink: 0;
+    padding: 12px 8px;
+  }
+  .coastal-hour-rail .hcard-time { grid-column: 1; grid-row: 1; margin: 0; }
+  .coastal-hour-rail .hcard-icon { grid-column: 1; grid-row: 2; margin: 0 auto; width: 48px; height: 48px; }
+  .coastal-hour-rail .hcard-temp { grid-column: 2; grid-row: 1; }
+  .coastal-hour-rail .hcard-rainProb { grid-column: 2; grid-row: 2; flex-direction: column; gap: 2px; }
+}

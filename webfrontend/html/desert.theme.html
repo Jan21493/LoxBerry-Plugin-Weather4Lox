@@ -565,6 +565,11 @@ button:focus-visible, .drow:focus-visible { outline: 3px solid var(--ui-accent);
   .hero-row { flex-wrap: wrap; }
   .hero-icon-box { margin-left: auto; }
 }
+@media (orientation: landscape) {
+  .cur-layout { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  .side-stats { grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(3, minmax(0, 1fr)); }
+  .side-stats .wind-card { grid-column: auto; }
+}
 
   </style>
 </head>

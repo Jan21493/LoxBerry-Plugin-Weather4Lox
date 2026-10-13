@@ -113,6 +113,24 @@ class WeatherThemesTest(unittest.TestCase):
         self.assertIn("text-align: right;", coastal)
         self.assertIn("background: var(--hero-overlay);", coastal)
 
+    def test_landscape_layouts(self):
+        desert_css = (ROOT / "templates/themes/desert.css").read_text()
+        coastal_css = (ROOT / "templates/themes/coastal.css").read_text()
+        for css in (desert_css, coastal_css):
+            self.assertIn("@media (orientation: landscape)", css)
+            self.assertIn("grid-template-columns: minmax(0, 2fr) minmax(0, 1fr)", css)
+        self.assertIn("grid-template-rows: repeat(3, minmax(0, 1fr))", desert_css)
+        self.assertIn("overflow-x: hidden; overflow-y: auto", coastal_css)
+        self.assertIn('.coastal-hour-rail[data-active-tab="morgen"]', coastal_css)
+        self.assertIn(".hcard-time { grid-column: 1; grid-row: 1;", coastal_css)
+        self.assertIn(".hcard-temp { grid-column: 2; grid-row: 1;", coastal_css)
+        self.assertIn(".hcard-rainProb { grid-column: 2; grid-row: 2;", coastal_css)
+        coastal = BUILDER.render(BUILDER.THEMES["coastal"])
+        self.assertIn("window.matchMedia('(orientation: landscape)')", coastal)
+        self.assertIn("entry.anchor.after(entry.wrap)", coastal)
+        self.assertIn("landscape.addEventListener('change', syncLayout)", coastal)
+        self.assertIn("new MutationObserver(syncTab)", coastal)
+
     def test_daily_details_are_shared(self):
         original = (ROOT / "webfrontend/html/ocean.theme.html").read_text()
         for content in [original] + [BUILDER.render(theme) for theme in BUILDER.THEMES.values()]:

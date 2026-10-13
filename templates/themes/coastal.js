@@ -54,3 +54,64 @@
     syncReadingHeights();
   }).observe(hero);
 })();
+
+(function setupCoastalHours() {
+  var layout = document.querySelector('.cur-layout');
+  var rail = document.createElement('div');
+  rail.className = 'coastal-hour-rail';
+  var landscape = window.matchMedia('(orientation: landscape)');
+  var entries = ['heute', 'morgen'].map(function(tab) {
+    var panel = document.getElementById('panel-' + tab);
+    var wrap = panel.querySelector('.hour-strip-wrap');
+    var anchor = document.createComment('coastal hours position');
+    wrap.before(anchor);
+    wrap.classList.add('coastal-hours-' + tab);
+    return { panel: panel, wrap: wrap, anchor: anchor };
+  });
+  function syncTab() {
+    var active = document.querySelector('.tab-panel.active');
+    rail.dataset.activeTab = active ? active.id.replace('panel-', '') : '';
+  }
+  function syncLayout() {
+    if (landscape.matches) {
+      layout.appendChild(rail);
+      entries.forEach(function(entry) { rail.appendChild(entry.wrap); });
+    } else {
+      entries.forEach(function(entry) { entry.anchor.after(entry.wrap); });
+      rail.remove();
+    }
+    syncTab();
+  }
+  var observer = new MutationObserver(syncTab);
+  entries.forEach(function(entry) {
+    observer.observe(entry.panel, { attributes: true, attributeFilter: ['class'] });
+    var strip = entry.wrap.querySelector('.hour-strip');
+    strip.addEventListener('wheel', function(event) {
+      if (landscape.matches) event.stopImmediatePropagation();
+    }, { capture: true, passive: true });
+    strip.addEventListener('mousedown', function(event) {
+      if (!landscape.matches || event.button !== 0) return;
+      event.stopImmediatePropagation();
+      event.preventDefault();
+      dragStrip = strip;
+      dragStart = event.clientY;
+      scrollStart = strip.scrollTop;
+      dragged = false;
+    }, true);
+    strip.addEventListener('click', function(event) {
+      if (dragged) {
+        event.stopImmediatePropagation();
+        dragged = false;
+      }
+    }, true);
+  });
+  var dragStrip = null, dragStart = 0, scrollStart = 0, dragged = false;
+  document.addEventListener('mousemove', function(event) {
+    if (!dragStrip) return;
+    if (Math.abs(event.clientY - dragStart) > 5) dragged = true;
+    if (dragged) dragStrip.scrollTop = scrollStart - (event.clientY - dragStart);
+  });
+  document.addEventListener('mouseup', function() { dragStrip = null; });
+  landscape.addEventListener('change', syncLayout);
+  syncLayout();
+})();
