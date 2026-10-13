@@ -28,7 +28,7 @@ translations, icon sets, refresh intervals, and forecast interactions:
 | File | Theme | Appearance |
 | --- | --- | --- |
 | `arctic.theme.html` | Arctic Light | Ice-white/petrol or cool slate; Nunito Sans, an unframed weather icon, and six measurements integrated into the main panel. Cloud cover follows the weather description; no separate cloud, dew point, or visibility card. |
-| `forest.theme.html` | Desert Sand | Warm sand accents (`#d8b889`) with pale beige (`#eadbc4`) companions and warm brown dark surfaces; unframed weather icon and a separate wind card beside precipitation and pressure, including direction, speed, gusts, and the wind symbol. Enlarged hourly cards show precipitation probability and millimeters side by side. |
+| `desert.theme.html` | Desert Sand | Warm sand accents (`#d8b889`) with pale beige (`#eadbc4`) companions and warm brown dark surfaces; unframed weather icon and a separate wind card beside precipitation and pressure, including direction, speed, gusts, and the wind symbol. Enlarged hourly cards show precipitation probability and millimeters side by side. |
 | `coastal.theme.html` | Coastal Sky | Desert Sand's layout in warm, vivid blues. The hero follows the live weather icon's aspect ratio, with compact right-aligned readings on a transparent light/dark panel. Precipitation always stays inside; wind moves inside at a hero height of 500 CSS pixels or more and otherwise spans the full width below. Pressure is in the extra statistics. |
 
 Coastal's temperature panel shares the hero's aspect ratio. Its inset precipitation
@@ -60,8 +60,7 @@ temperature, precipitation, and wind panels do not overlap on tablets.
 All support `?mode=auto&iconset=naturalistic&lang=de`, just like Deep Ocean.
 All four precipitation readings show millimeters and probability together;
 missing values are displayed as `--`, not silently interpreted as zero.
-The existing `forest` theme key and URL remain unchanged for compatibility;
-the theme selection and browser title display Desert Sand.
+Desert Sand uses the `desert` theme key and `desert.theme.html` URL.
 Arctic and Desert Sand use larger main weather symbols and show hourly temperatures
 to one decimal place. Arctic orders its integrated measurements as sunrise,
 sunset, precipitation, pressure, humidity, and UV index. Desert Sand uses 64-pixel
@@ -104,7 +103,7 @@ or restart is required. For example, open
 
 The committed standalone HTML files are generated from `ocean.theme.html`,
 the palettes/layout transformations in `bin/build_weather_themes.py`,
-`templates/themes/tablet.css`, and the individual `arctic.css`, `forest.css`,
+`templates/themes/tablet.css`, and the individual `arctic.css`, `desert.css`,
 and `graphite.css` stylesheets plus `coastal.css` and `display.js` in the same directory.
 Do not edit generated files directly.
 After changing the source, run `python3 bin/build_weather_themes.py`.

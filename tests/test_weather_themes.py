@@ -10,6 +10,16 @@ SPEC.loader.exec_module(BUILDER)
 
 
 class WeatherThemesTest(unittest.TestCase):
+    def test_theme_names(self):
+        original = (ROOT / "webfrontend/html/ocean.theme.html").read_text()
+        self.assertIn('name="title" content="Deep Ocean"', original)
+        self.assertIn("<title>Weather4Lox -- Deep Ocean</title>", original)
+        self.assertIn("desert", BUILDER.THEMES)
+        self.assertEqual(BUILDER.THEMES["coastal"]["layout"], "desert")
+        self.assertTrue((ROOT / "templates/themes/desert.css").is_file())
+        self.assertFalse((ROOT / "templates/themes/forest.css").exists())
+        self.assertFalse((ROOT / "webfrontend/html/forest.theme.html").exists())
+
     def test_generated_files_are_current(self):
         for name, theme in BUILDER.THEMES.items():
             with self.subTest(theme=name):
@@ -74,14 +84,14 @@ class WeatherThemesTest(unittest.TestCase):
         positions = [head_stats.index(f'id="{stat_id}"') for stat_id in
                      ("statSunrise", "statSunset", "statPrecip", "statPressure", "statHumidity", "statUVI")]
         self.assertEqual(positions, sorted(positions))
-        forest = BUILDER.render(BUILDER.THEMES["forest"])
-        self.assertNotIn('id="heroWind"', BUILDER.div_with_opening(forest, '<div class="glass hero accent-bg">'))
-        wind_card = BUILDER.div_with_opening(forest, '<div class="glass stat wind-card">')
+        desert = BUILDER.render(BUILDER.THEMES["desert"])
+        self.assertNotIn('id="heroWind"', BUILDER.div_with_opening(desert, '<div class="glass hero accent-bg">'))
+        wind_card = BUILDER.div_with_opening(desert, '<div class="glass stat wind-card">')
         for wind_id in ("heroWind", "heroGust", "heroWindIcon"):
             self.assertIn(f'id="{wind_id}"', wind_card)
         self.assertNotIn('data-i18n="theme.wind"', wind_card)
-        self.assertIn("""(d.rainAmount != null ? d.rainAmount : '--') + ' mm</span>""", forest)
-        for rendered in (arctic, forest):
+        self.assertIn("""(d.rainAmount != null ? d.rainAmount : '--') + ' mm</span>""", desert)
+        for rendered in (arctic, desert):
             self.assertIn("""'<div class="hcard-temp">' + (d.temp != null ? d.temp.toFixed(1) : '--')""", rendered)
         graphite = BUILDER.render(BUILDER.THEMES["graphite"])
         self.assertIn('id="statHumidity"', BUILDER.div_with_opening(graphite, '<div class="side-stats">'))
