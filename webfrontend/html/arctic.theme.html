@@ -441,6 +441,17 @@ html.light {
   --orange: #b94e0a;
   --rose: #c32748;
 }
+
+:root { --period-day: #2a4352; --period-night: var(--bg-card); }
+html.light { --period-day: var(--bg-card); --period-night: #dce7ee; }
+.hero.accent-bg, .hero.accent-bg:hover,
+.hcard.glass, .hcard.glass:hover,
+.hcard.glass.selected, .hcard.glass.selected:hover { background: var(--period-day); }
+.hero.accent-bg.is-night, .hero.accent-bg.is-night:hover,
+.hcard.glass.is-night, .hcard.glass.is-night:hover,
+.hcard.glass.is-night.selected, .hcard.glass.is-night.selected:hover { background: var(--period-night); }
+.hcard.glass.selected, .hcard.glass.selected:hover { border-color: var(--ui-accent); }
+
 /* Shared tablet-first overrides; weather rendering remains in Deep Ocean. */
 body { padding: clamp(12px, 2vw, 24px); }
 .page { max-width: 1280px; min-width: 0; }
@@ -1155,6 +1166,7 @@ function shouldFlipIcon(e) {
 function updateHeroIcon(e, src) {
   var heroIcon = document.getElementById('heroIcon');
   heroIcon.src = src;
+  document.querySelector('.hero').classList.toggle('is-night', !!e.isNight);
   heroIcon.classList.toggle('flipped', shouldFlipIcon(e));
 }
 
@@ -1555,6 +1567,7 @@ function renderHourStrip(containerId, dataArray) {
     var card = document.createElement('button');
     card.type = 'button';
     card.className = 'hcard glass';
+    card.classList.toggle('is-night', !!dataArray[i].isNight);
     card.setAttribute('data-idx', i);
     (function(el, arr) {
       el.onclick = function() { selectHour(el, arr); };

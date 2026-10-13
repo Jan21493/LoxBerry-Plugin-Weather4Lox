@@ -104,6 +104,22 @@ html.light .hcard.is-night:not(.selected) { background: #deceb7; }
 html.light .hcard.selected { background: linear-gradient(135deg, #efd6af, #f5e4cb); }
 html.light .hcard.is-night.selected { background: linear-gradient(135deg, #c7ac84, #d6bd99); }
 """)
+    if theme["layout"] in ("arctic", "graphite"):
+        day_dark, night_light = (
+            ("#2a4352", "#dce7ee") if theme["layout"] == "arctic"
+            else ("#30353a", "#e1e4e7")
+        )
+        rules.append(f"""
+:root {{ --period-day: {day_dark}; --period-night: var(--bg-card); }}
+html.light {{ --period-day: var(--bg-card); --period-night: {night_light}; }}
+.hero.accent-bg, .hero.accent-bg:hover,
+.hcard.glass, .hcard.glass:hover,
+.hcard.glass.selected, .hcard.glass.selected:hover {{ background: var(--period-day); }}
+.hero.accent-bg.is-night, .hero.accent-bg.is-night:hover,
+.hcard.glass.is-night, .hcard.glass.is-night:hover,
+.hcard.glass.is-night.selected, .hcard.glass.is-night.selected:hover {{ background: var(--period-night); }}
+.hcard.glass.selected, .hcard.glass.selected:hover {{ border-color: var(--ui-accent); }}
+""")
     return "\n".join(rules)
 
 
@@ -271,7 +287,7 @@ def render(theme):
     if theme.get("style") == "coastal":
         script = (ROOT / "templates/themes/coastal.js").read_text()
         source = replace_once(source, "// ===== BOOT =====", script + "\n// ===== BOOT =====")
-    if theme["layout"] == "desert":
+    if theme["layout"] in ("arctic", "desert", "graphite"):
         source = night_logic(source)
     # Native buttons retain the existing click handlers and add keyboard activation.
     source = replace_once(source, "var card = document.createElement('div');", "var card = document.createElement('button');\n    card.type = 'button';")

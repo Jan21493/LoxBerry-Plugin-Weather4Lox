@@ -86,6 +86,11 @@ a two-column, three-row grid to the right of the weather readings and icon,
 separated by a vertical line. Deep Ocean splits the main area equally between
 the hero and a three-by-three grid containing all nine statistics; the separate
 extra-statistics row returns in portrait orientation.
+Graphite Focus and Arctic Light use day/night backgrounds for the hero and
+hourly cards in both orientations. Light mode retains its existing daytime
+card color and darkens nighttime cards; dark mode retains its nighttime card
+color and lightens daytime cards. Selecting an hour changes only its accent
+border, not its day/night background, including on hover.
 In all five weather themes (including Deep Ocean), the X-day view hides the
 additional cards below the forecast. Expanded days include dew point, visibility
 (in kilometers, matching the grabber output), cloud cover, and pressure alongside

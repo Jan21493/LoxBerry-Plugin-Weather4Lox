@@ -41,7 +41,7 @@ class WeatherThemesTest(unittest.TestCase):
                     if name == "coastal" and "// ===== BOOT =====" in before:
                         script = (ROOT / "templates/themes/coastal.js").read_text()
                         before = before.replace("// ===== BOOT =====", script + "\n// ===== BOOT =====", 1)
-                    if theme["layout"] == "desert":
+                    if theme["layout"] in ("arctic", "desert", "graphite"):
                         if "  heroIcon.src = src;" in before:
                             before = before.replace("  heroIcon.src = src;", "  heroIcon.src = src;\n  document.querySelector('.hero').classList.toggle('is-night', !!e.isNight);", 1)
                         if "    card.setAttribute('data-idx', i);" in before:
@@ -140,6 +140,16 @@ class WeatherThemesTest(unittest.TestCase):
         self.assertIn("html.light .hero.accent-bg.is-night", desert)
         self.assertIn("html.light .hcard.is-night:not(.selected)", desert)
         self.assertIn("html.light .hcard.is-night.selected", desert)
+
+    def test_arctic_graphite_period_backgrounds(self):
+        for name in ("arctic", "graphite"):
+            rendered = BUILDER.render(BUILDER.THEMES[name])
+            self.assertIn("classList.toggle('is-night', !!e.isNight)", rendered)
+            self.assertIn("classList.toggle('is-night', !!dataArray[i].isNight)", rendered)
+            self.assertIn("--period-night: var(--bg-card)", rendered)
+            self.assertIn("--period-day: var(--bg-card)", rendered)
+            self.assertIn(".hcard.glass.selected:hover { background: var(--period-day); }", rendered)
+            self.assertIn(".hcard.glass.is-night.selected:hover { background: var(--period-night); }", rendered)
 
     def test_remaining_landscape_layouts(self):
         ocean = (ROOT / "webfrontend/html/ocean.theme.html").read_text()
