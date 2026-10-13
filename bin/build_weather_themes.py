@@ -225,8 +225,20 @@ def display_logic(source, layout):
     return source
 
 
+def without_ocean_landscape(source):
+    for start, end in (
+        ("    /* ===== OCEAN LANDSCAPE CSS ===== */", "    /* ===== END OCEAN LANDSCAPE CSS ===== */\n"),
+        ("// ===== OCEAN LANDSCAPE SCRIPT =====", "// ===== END OCEAN LANDSCAPE SCRIPT =====\n"),
+    ):
+        block_start = source.index(start)
+        block_end = source.index(end, block_start) + len(end)
+        source = source[:block_start] + source[block_end:]
+    return source
+
+
 def render(theme):
     source = (ROOT / "webfrontend/html/ocean.theme.html").read_text()
+    source = without_ocean_landscape(source)
     css = (ROOT / "templates/themes/tablet.css").read_text()
     css += "\n" + (ROOT / f"templates/themes/{theme['layout']}.css").read_text()
     if theme.get("style"):

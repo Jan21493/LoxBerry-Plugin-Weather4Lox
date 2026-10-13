@@ -580,6 +580,17 @@ button:focus-visible, .drow:focus-visible { outline: 3px solid var(--ui-accent);
   .hero-icon-box { margin-left: auto; }
   .head-stats .stat, .head-stats .extra { flex-direction: column; align-items: flex-start; }
 }
+@media (orientation: landscape) {
+  .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: center; }
+  .hero-row { min-width: 0; gap: 12px; }
+  .hero-icon-box { width: clamp(88px, 14vw, 180px); }
+  .head-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    margin-top: 0; padding-top: 0; padding-left: 20px;
+    border-top: 0; border-left: 1px solid var(--border);
+  }
+}
 
   </style>
 </head>

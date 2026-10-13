@@ -29,6 +29,7 @@ class WeatherThemesTest(unittest.TestCase):
 
     def test_data_logic_and_parameters_are_preserved(self):
         original = (ROOT / "webfrontend/html/ocean.theme.html").read_text()
+        original = BUILDER.without_ocean_landscape(original)
         original_scripts = re.findall(r"<script>(.*?)</script>", original, re.S)
         for name, theme in BUILDER.THEMES.items():
             with self.subTest(theme=name):
@@ -139,6 +140,20 @@ class WeatherThemesTest(unittest.TestCase):
         self.assertIn("html.light .hero.accent-bg.is-night", desert)
         self.assertIn("html.light .hcard.is-night:not(.selected)", desert)
         self.assertIn("html.light .hcard.is-night.selected", desert)
+
+    def test_remaining_landscape_layouts(self):
+        ocean = (ROOT / "webfrontend/html/ocean.theme.html").read_text()
+        self.assertIn("html.ocean-landscape .cur-layout", ocean)
+        self.assertIn("(landscape.matches ? side : extra).appendChild(card)", ocean)
+        self.assertIn("extra.hidden = landscape.matches", ocean)
+        arctic = BUILDER.render(BUILDER.THEMES["arctic"])
+        graphite = BUILDER.render(BUILDER.THEMES["graphite"])
+        self.assertIn("border-left: 1px solid var(--border)", arctic)
+        self.assertIn("grid-template-rows: repeat(3, minmax(0, 1fr))", arctic)
+        self.assertIn("grid-template-rows: repeat(3, minmax(0, 1fr))", graphite)
+        for theme in BUILDER.THEMES.values():
+            self.assertNotIn("setupOceanLandscape", BUILDER.render(theme))
+            self.assertNotIn("html.ocean-landscape", BUILDER.render(theme))
 
     def test_daily_details_are_shared(self):
         original = (ROOT / "webfrontend/html/ocean.theme.html").read_text()

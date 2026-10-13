@@ -137,6 +137,25 @@
     .tab-panel.active { display: block; }
     .tab-panel.fade-in { opacity: 1; transition: opacity 0.3s ease; }
 
+    /* ===== OCEAN LANDSCAPE CSS ===== */
+    @media (orientation: landscape) {
+      html.ocean-landscape .cur-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+      html.ocean-landscape .side-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-rows: repeat(3, minmax(0, 1fr));
+        align-content: stretch;
+      }
+      html.ocean-landscape .side-stats > .glass {
+        display: flex; flex-direction: column; align-items: flex-start;
+        min-width: 0; padding: 12px; gap: 6px;
+      }
+      html.ocean-landscape .side-stats .stat-label { overflow-wrap: anywhere; }
+      html.ocean-landscape .side-stats .stat-val { font-size: 1.1rem; overflow-wrap: anywhere; }
+      html.ocean-landscape .side-stats .stat-icon svg { width: 24px; height: 24px; }
+      html.ocean-landscape .hero-row { min-width: 0; gap: 12px; }
+      html.ocean-landscape .hero-icon-box { width: clamp(64px, 12vw, 150px); }
+    }
+    /* ===== END OCEAN LANDSCAPE CSS ===== */
     /* ===== HERO SECTION ===== */
     .hero-section { margin-bottom: 16px; }
     .cur-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
@@ -2066,6 +2085,24 @@ function hideEmptyStats() {
   }
 }
 
+// ===== OCEAN LANDSCAPE SCRIPT =====
+(function setupOceanLandscape() {
+  document.documentElement.classList.add('ocean-landscape');
+  var side = document.querySelector('.side-stats');
+  var extra = document.getElementById('extraStatsRow');
+  var cards = Array.from(extra.children);
+  var landscape = window.matchMedia('(orientation: landscape)');
+  function syncLayout() {
+    cards.forEach(function(card) {
+      (landscape.matches ? side : extra).appendChild(card);
+    });
+    extra.hidden = landscape.matches;
+    extra.style.display = landscape.matches ? 'none' : '';
+  }
+  landscape.addEventListener('change', syncLayout);
+  syncLayout();
+})();
+// ===== END OCEAN LANDSCAPE SCRIPT =====
 // ===== BOOT =====
 var chartResizeObserver = new ResizeObserver(function(entries) {
   entries.forEach(function(entry) {

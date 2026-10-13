@@ -80,6 +80,12 @@ probability and millimeters (on one line) on the right. Portrait orientation
 retains the horizontal hourly strip; changing orientation preserves selection.
 Desert Sand uses lighter day and darker night backgrounds for the hero and
 hourly cards in both appearance modes, following each entry's `isNight` value.
+In landscape orientation, Graphite Focus stacks its three side statistics to
+the right of the hero. Arctic Light places its six integrated measurements in
+a two-column, three-row grid to the right of the weather readings and icon,
+separated by a vertical line. Deep Ocean splits the main area equally between
+the hero and a three-by-three grid containing all nine statistics; the separate
+extra-statistics row returns in portrait orientation.
 In all five weather themes (including Deep Ocean), the X-day view hides the
 additional cards below the forecast. Expanded days include dew point, visibility
 (in kilometers, matching the grabber output), cloud cover, and pressure alongside
