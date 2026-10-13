@@ -1934,7 +1934,7 @@ function renderTempChart(svgId, dataArray) {
   // Render in screen pixels so labels stay legible on phones as well as tablets.
   var W = svg.parentElement.clientWidth;
   if (!W) return;
-  var H = 180;
+  var H = parseFloat(getComputedStyle(svg).getPropertyValue('--chart-height')) || 180;
   var padL = 60;
   var padR = 68;
   var yTop = 28;

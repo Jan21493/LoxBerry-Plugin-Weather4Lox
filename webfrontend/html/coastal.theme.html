@@ -718,6 +718,10 @@ html.light .hcard.is-night.selected { background: linear-gradient(135deg, #a8c9d
 .side-stats.hero-stats-moved { grid-template-columns: minmax(0, 1fr); }
 .side-stats { grid-template-columns: minmax(0, 1fr); }
 .hero-inline-stats .wind-card { grid-column: auto; }
+.chart-wrap svg { --chart-height: 162; }
+.chart-wrap { margin-top: 10px; }
+.chart-title { margin-bottom: 0; }
+.chart-title .precip-toggle { min-height: 32px; padding: 2px 8px; }
 @media (750px <= width <= 900px) {
   .hero-inline-stats #statPrecip { font-size: 1rem; white-space: nowrap; }
 }
@@ -2129,7 +2133,7 @@ function renderTempChart(svgId, dataArray) {
   // Render in screen pixels so labels stay legible on phones as well as tablets.
   var W = svg.parentElement.clientWidth;
   if (!W) return;
-  var H = 180;
+  var H = parseFloat(getComputedStyle(svg).getPropertyValue('--chart-height')) || 180;
   var padL = 60;
   var padR = 68;
   var yTop = 28;
