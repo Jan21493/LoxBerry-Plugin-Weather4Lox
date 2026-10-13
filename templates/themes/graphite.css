@@ -37,3 +37,4 @@
 .hero-row > .hero-icon-box { width: 100%; height: auto; aspect-ratio: 1; margin: 0; }
 .side-stats .graphite-wind-card { grid-column: 1 / -1; }
 .graphite-wind-card .hero-wind-group { margin-top: 0 !important; align-items: center !important; }
+.stat-label.stat-label-tight { letter-spacing: 0; font-size: 0.68rem; }

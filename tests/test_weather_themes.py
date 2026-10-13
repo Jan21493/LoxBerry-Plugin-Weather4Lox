@@ -155,6 +155,8 @@ class WeatherThemesTest(unittest.TestCase):
         self.assertIn("(orientation: portrait) and (max-width: 600px)", graphite)
         self.assertIn("side.prepend(windCard)", graphite)
         self.assertIn("anchor.after(wind)", graphite)
+        self.assertIn("var shortText = 'Luftfeuchte';", graphite)
+        self.assertIn("probe.getBoundingClientRect().width > label.clientWidth", graphite)
 
     def test_arctic_graphite_period_backgrounds(self):
         for name in ("arctic", "graphite"):

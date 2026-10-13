@@ -98,7 +98,9 @@ card color and darkens nighttime cards; dark mode retains its nighttime card
 color and lightens daytime cards.
 Graphite Focus splits its hero into about three fifths for readings and wind
 and two fifths for an enlarged square weather icon. In portrait orientation at
-600 CSS pixels or narrower, wind becomes the first full-width card below the hero. Selecting an hour changes only its accent
+600 CSS pixels or narrower, wind becomes the first full-width card below the hero. If the German humidity
+label cannot fit on one line, it is shortened from "Luftfeuchtigkeit" to
+"Luftfeuchte"; other languages keep their translated label. Selecting an hour changes only its accent
 border, not its day/night background, including on hover.
 In all five weather themes (including Deep Ocean), the X-day view hides the
 additional cards below the forecast. Expanded days include dew point, visibility
