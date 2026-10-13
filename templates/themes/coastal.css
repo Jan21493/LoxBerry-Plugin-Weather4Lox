@@ -27,7 +27,7 @@ html.light .hcard.is-night.selected { background: linear-gradient(135deg, #a8c9d
   overflow: hidden;
   width: 100%;
   min-width: 0;
-  aspect-ratio: calc(var(--weather-aspect, 1) / 0.7);
+  aspect-ratio: calc(var(--weather-aspect, 1) / 0.63);
   min-height: var(--coastal-min-height, 0px);
   background: linear-gradient(125deg, var(--hero-from), var(--hero-to));
   display: flex;
@@ -54,9 +54,9 @@ html.light .hcard.is-night.selected { background: linear-gradient(135deg, #a8c9d
 }
 .hero .hero-icon-box {
   position: absolute;
-  inset: 0 20% 0 10%;
+  inset: 0 27% 0 10%;
   z-index: 0;
-  width: 70%;
+  width: 63%;
   height: 100%;
   aspect-ratio: auto;
   margin: 0;
@@ -209,4 +209,9 @@ html.light .hcard.is-night.selected { background: linear-gradient(135deg, #a8c9d
   .coastal-hour-rail .hcard-rainProb {
     grid-column: 2; grid-row: 2; flex-direction: row; gap: 4px;
   }
+}
+.hero-inline-stats #statPrecip { font-size: 1.1rem; white-space: nowrap; }
+.wind-card .hero-wind-group, .wind-card #heroWindMessage { margin-top: 0 !important; }
+@media (width < 750px), (orientation: landscape) and (max-width: 1000px), (750px <= width <= 900px) {
+  .hero-inline-stats #statPrecip { font-size: 0.9rem; }
 }
