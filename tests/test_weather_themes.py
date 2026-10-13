@@ -38,8 +38,8 @@ class WeatherThemesTest(unittest.TestCase):
                 self.assertEqual(len(scripts), len(original_scripts))
                 for before, after in zip(original_scripts, scripts):
                     before = BUILDER.display_logic(before, theme["layout"])
-                    if name == "coastal" and "// ===== BOOT =====" in before:
-                        script = (ROOT / "templates/themes/coastal.js").read_text()
+                    if theme.get("script") and "// ===== BOOT =====" in before:
+                        script = (ROOT / f"templates/themes/{theme['script']}.js").read_text()
                         before = before.replace("// ===== BOOT =====", script + "\n// ===== BOOT =====", 1)
                     if theme["layout"] in ("arctic", "desert", "graphite"):
                         if "  heroIcon.src = src;" in before:
@@ -140,6 +140,14 @@ class WeatherThemesTest(unittest.TestCase):
         self.assertIn("html.light .hero.accent-bg.is-night", desert)
         self.assertIn("html.light .hcard.is-night:not(.selected)", desert)
         self.assertIn("html.light .hcard.is-night.selected", desert)
+
+    def test_desert_portrait_wind_in_hero(self):
+        desert = BUILDER.render(BUILDER.THEMES["desert"])
+        coastal = BUILDER.render(BUILDER.THEMES["coastal"])
+        self.assertIn("(orientation: portrait) and (min-width: 701px)", desert)
+        self.assertIn("hero.appendChild(wind)", desert)
+        self.assertIn("anchor.after(wind)", desert)
+        self.assertNotIn("setupDesertWind", coastal)
 
     def test_arctic_graphite_period_backgrounds(self):
         for name in ("arctic", "graphite"):

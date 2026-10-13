@@ -80,6 +80,10 @@ probability and millimeters (on one line) on the right. Portrait orientation
 retains the horizontal hourly strip; changing orientation preserves selection.
 Desert Sand uses lighter day and darker night backgrounds for the hero and
 hourly cards in both appearance modes, following each entry's `isNight` value.
+In portrait orientation wider than 700 CSS pixels, Desert Sand moves the wind
+card into the hero below the weather readings; precipitation and pressure stay
+side by side below. Narrower portrait and all landscape layouts keep wind with
+the other statistics.
 In landscape orientation, Graphite Focus stacks its three side statistics to
 the right of the hero. Arctic Light places its six integrated measurements in
 a two-column, three-row grid to the right of the weather readings and icon,
@@ -125,7 +129,7 @@ or restart is required. For example, open
 The committed standalone HTML files are generated from `ocean.theme.html`,
 the palettes/layout transformations in `bin/build_weather_themes.py`,
 `templates/themes/tablet.css`, and the individual `arctic.css`, `desert.css`,
-and `graphite.css` stylesheets plus `coastal.css` and `display.js` in the same directory.
+and `graphite.css` stylesheets plus `coastal.css`, `coastal.js`, `desert.js`, and `display.js` in the same directory.
 Do not edit generated files directly.
 After changing the source, run `python3 bin/build_weather_themes.py`.
 Run `python3 bin/build_weather_themes.py --check` to check reproducibility and

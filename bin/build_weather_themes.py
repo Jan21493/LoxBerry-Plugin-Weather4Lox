@@ -18,6 +18,7 @@ THEMES = {
     },
     "desert": {
         "layout": "desert",
+        "script": "desert",
         "title": "Desert Sand",
         "dark": ("#29241f", "#463a2d", "rgba(65,54,43,0.96)", "#554534", "#fff8ed", "#ead8bd", "#d0bda2", "#d8b889"),
         "light": ("#faf5ec", "#eadbc4", "rgba(255,252,246,0.97)", "#f4ead9", "#382b1e", "#65513b", "#766046", "#876035"),
@@ -28,6 +29,7 @@ THEMES = {
     "coastal": {
         "layout": "desert",
         "style": "coastal",
+        "script": "coastal",
         "title": "Coastal Sky",
         "dark": ("#172d39", "#244451", "#284956", "#315866", "#f5fbfd", "#d3e5ed", "#b5d1de", "#8ad9ec"),
         "light": ("#edf6fa", "#d8edf3", "#f8fcfd", "#e7f4f8", "#163645", "#365969", "#466879", "#126f89"),
@@ -284,8 +286,9 @@ def render(theme):
         extra = div_with_opening(source, '<div class="extra-row" id="extraStatsRow">')
         source = replace_once(source, extra, "")
     source = display_logic(source, theme["layout"])
-    if theme.get("style") == "coastal":
-        script = (ROOT / "templates/themes/coastal.js").read_text()
+    script_name = theme.get("script")
+    if script_name:
+        script = (ROOT / f"templates/themes/{script_name}.js").read_text()
         source = replace_once(source, "// ===== BOOT =====", script + "\n// ===== BOOT =====")
     if theme["layout"] in ("arctic", "desert", "graphite"):
         source = night_logic(source)
