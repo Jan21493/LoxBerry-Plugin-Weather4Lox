@@ -157,6 +157,38 @@ sub wttr_to_lox {
     return @$data; # Returns (Code, Icon)
 }
 
+# wttr.in astronomy times are local 12-hour times, without a date or UTC offset.
+sub sunTime {
+    my ($value, $date, $event) = @_;
+    if (defined $value && $value =~ /^(0?[1-9]|1[0-2]):([0-5][0-9]) (AM|PM)$/) {
+        my ($hour, $minute, $period) = ($1, $2, $3);
+        $hour = $hour % 12 + ($period eq 'PM' ? 12 : 0);
+        return sprintf("%02d:%02d", $hour, $minute);
+    }
+    LOGWARN "Cannot determine $event for $date from wttr.in: " . ($value // 'missing');
+    return undef;
+}
+
+sub isNighttime {
+    my ($datetime, $sunTimes) = @_;
+    my $date = substr($datetime, 0, 10);
+    my $times = $sunTimes->{$date};
+    if (!$times || !defined $times->{sunrise} || !defined $times->{sunset}
+            || $times->{sunrise} eq $times->{sunset}) {
+        LOGWARN "Cannot determine day/night for $datetime: missing or ambiguous sunrise/sunset.";
+        return undef;
+    }
+
+    # Compare local wall-clock times from the same date, including on DST changes.
+    my $time = substr($datetime, 11, 8);
+    my $sunrise = "$times->{sunrise}:00";
+    my $sunset = "$times->{sunset}:00";
+    my $night = $sunrise lt $sunset
+        ? ($time lt $sunrise || $time gt $sunset)
+        : ($time gt $sunset && $time lt $sunrise);
+    return $night ? 1 : undef; # Same day/night representation as the other grabbers.
+}
+
 # Get weather data from WTTR.in (API request)
 my $results = apiCall(
 	url => "$url/$stationid?lang=$lang&M&3&format=j1",
@@ -186,6 +218,15 @@ if (!$obs_local_time_str) {
 }
 
 my $generatedAt = _epochToIso(time(), $timezone);
+
+my %sunTimes;
+for my $resDay (@{$results->{weather}}) {
+    my $date = $resDay->{date};
+    $sunTimes{$date} = {
+        sunrise => sunTime($resDay->{astronomy}[0]{sunrise}, $date, 'sunrise'),
+        sunset  => sunTime($resDay->{astronomy}[0]{sunset}, $date, 'sunset'),
+    };
+}
 
 my $city    = Encode::decode("UTF-8", $results->{nearest_area}[0]->{areaName}[0]->{value});
 my $country = Encode::decode("UTF-8", $results->{nearest_area}[0]->{country}[0]->{value});
@@ -222,15 +263,8 @@ if ( $current ) {
     # cur_date_tz_des (e.g. Europe/Berlin), cur_date_tz_des_sh (e.g. "CET"), cur_date_tz (e.g. "+0100") are send in location section 
 
     # sunrise / sunset from astronomy data
-    my ($sunrise, $sunset);
-    eval {
-        my $sr_t = Time::Piece->strptime($results->{weather}[0]->{astronomy}[0]{sunrise}, "%R %p");
-        $sunrise = sprintf("%02d:%02d", $sr_t->hour, $sr_t->min);
-    };
-    eval {
-        my $ss_t = Time::Piece->strptime($results->{weather}[0]->{astronomy}[0]{sunset}, "%R %p");
-        $sunset = sprintf("%02d:%02d", $ss_t->hour, $ss_t->min);
-    };
+    my $sunTimes = $sunTimes{substr($dtCurrent, 0, 10)} // {};
+    my ($sunrise, $sunset) = @{$sunTimes}{qw(sunrise sunset)};
 
     # temperature
     my %temperature;
@@ -292,7 +326,7 @@ if ( $current ) {
         weatherCode    => \%weatherCode,
         cloudCover     => defined $cur->{cloudcover} ? $cur->{cloudcover} + 0 : undef,
         moon           => \%moon,
-        isNight        => undef,  # wttr.in does not provide day/night info
+        isNight        => isNighttime($dtCurrent, \%sunTimes),
     );
 
     # Build envelope and write JSON to file
@@ -335,15 +369,7 @@ if ( $daily ) {
         $time{epoch}    = $dt->epoch;
 
         # sunrise / sunset from astronomy data
-        my ($sunrise, $sunset);
-        eval {
-            my $sr_t = Time::Piece->strptime($resDay->{astronomy}[0]{sunrise}, "%R %p");
-            $sunrise = sprintf("%02d:%02d", $sr_t->hour, $sr_t->min);
-        };
-        eval {
-            my $ss_t = Time::Piece->strptime($resDay->{astronomy}[0]{sunset}, "%R %p");
-            $sunset = sprintf("%02d:%02d", $ss_t->hour, $ss_t->min);
-        };
+        my ($sunrise, $sunset) = @{$sunTimes{$resDay->{date}}}{qw(sunrise sunset)};
 
         # Aggregate hourly values for min/max/avg calculations
         my @d_pops;
@@ -658,7 +684,7 @@ if ( $hourly ) {
             weatherCode    => \%weatherCode,
             cloudCover     => sprintf("%.0f", $clouds->linear($ep)) + 0,
             moon           => \%moon,
-            isNight        => undef,
+            isNight        => isNighttime($time{datetime}, \%sunTimes),
         };
         $hour++;
     }

@@ -6,6 +6,14 @@ https://github.com/mschlenstedt/LoxBerry-Plugin-Weather4Lox/archive/refs/heads/m
 
 This is a fork for version 4 to fix bugs and keep this version separate from version 5.
 
+The wttr.in grabber derives `isNight` for current conditions and every hourly
+forecast (including interpolated hours) from that date's local sunrise/sunset
+and the entry's local time. As in the OpenWeather and Visual Crossing grabbers,
+night is `1` and daytime is `null`; sunrise and sunset themselves count as day.
+Missing or ambiguous astronomy data leaves `isNight` as `null` with a warning.
+Run `prove -v tests/wttrin_isnight.t` on a LoxBerry with the plugin installed
+to check boundaries, date/timezone handling, and isolated grabber output.
+
 Grabbers, `datatoloxone.pl`, `fetch.pl`, and `cronjob.pl` share one log file per
 existing log group per day. At debug level (including `--verbose`), they use one
 file per group per hour instead. `cloudemu.sh` always uses one daily `Emulator`
