@@ -11,6 +11,31 @@ ROOT = Path(__file__).resolve().parents[1]
 HTML = ROOT / "webfrontend/html"
 
 
+def run_javascript(driver):
+    if shutil.which("node"):
+        driver += "\nrunTests().then(function(n) { console.log(n); }).catch(function(e) { console.error(e); process.exitCode = 1; });"
+        command = ["node"]
+    elif shutil.which("osascript"):
+        # JXA drains Promise jobs between evaluating the script and calling run.
+        driver += """
+var outcome;
+runTests().then(function(n) { outcome = n; }, function(e) { outcome = String(e); });
+function run() {
+    if (typeof outcome !== 'number') throw new Error(outcome || 'Tests did not finish');
+    return String(outcome);
+}
+"""
+        command = ["osascript", "-l", "JavaScript"]
+    else:
+        raise unittest.SkipTest("JavaScript tests require Node.js or macOS JavaScript for Automation")
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".js") as script:
+        script.write(driver)
+        script.flush()
+        result = subprocess.run(command + [script.name], text=True,
+                                capture_output=True, check=True)
+    return int(result.stdout.strip())
+
+
 class ThemeLanguagesTest(unittest.TestCase):
     def test_native_language_names_are_first(self):
         names = {
@@ -29,9 +54,8 @@ class ThemeLanguagesTest(unittest.TestCase):
         program = r"""
 use strict;
 use warnings;
-use JSON::PP qw(decode_json);
-use File::Glob qw(bsd_glob);
 use Encode qw(encode);
+use Weather4Lox::Languages qw(discover_languages);
 package ConfigStub;
 sub param { return $ENV{SELECTED_LANG}; }
 package TemplateStub;
@@ -65,7 +89,8 @@ my $lbphtmldir = $ENV{LANG_DIR};
             for selected, expected in (("pl", "pl"), ("pt-BR", "pt-BR"), ("missing", "en")):
                 with self.subTest(selected=selected):
                     result = subprocess.run(
-                        ["perl", "-e", program], text=True, capture_output=True, check=True,
+                        ["perl", "-I", str(ROOT / "bin/lib"), "-e", program],
+                        text=True, capture_output=True, check=True,
                         env={**os.environ, "LANG_DIR": temp, "SELECTED_LANG": selected},
                     )
                     self.assertEqual(result.stdout.splitlines(), [
@@ -97,28 +122,62 @@ my $lbphtmldir = $ENV{LANG_DIR};
             self.assertIn("loadLanguage()", content[content.index("function loadAllData"):])
         driver = "var themeCases = " + json.dumps(cases) + ";\n"
         driver += (ROOT / "tests/theme_languages.js").read_text()
-        if shutil.which("node"):
-            driver += "\nrunTests().then(function(n) { console.log(n); }).catch(function(e) { console.error(e); process.exitCode = 1; });"
-            command = ["node"]
-        elif shutil.which("osascript"):
-            # JXA drains Promise jobs between evaluating the script and calling run.
-            driver += """
-var outcome;
-runTests().then(function(n) { outcome = n; }, function(e) { outcome = String(e); });
-function run() {
-    if (typeof outcome !== 'number') throw new Error(outcome || 'Tests did not finish');
-    return String(outcome);
-}
-"""
-            command = ["osascript", "-l", "JavaScript"]
-        else:
-            self.skipTest("JavaScript tests require Node.js or macOS JavaScript for Automation")
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".js") as script:
-            script.write(driver)
-            script.flush()
-            result = subprocess.run(command + [script.name], text=True,
-                                    capture_output=True, check=True)
-        self.assertEqual(result.stdout.strip(), str(len(cases) * 9))
+        self.assertEqual(run_javascript(driver), len(cases) * 9)
+
+
+class WeatherCodesLanguagesTest(unittest.TestCase):
+    def test_language_endpoint(self):
+        with tempfile.TemporaryDirectory(prefix="w4l-language-endpoint-") as temp:
+            folder = Path(temp)
+            mock = folder / "LoxBerry"
+            mock.mkdir()
+            (mock / "System.pm").write_text("""
+package LoxBerry::System;
+use Exporter 'import';
+our @EXPORT = qw($lbphtmldir $lbpbindir);
+our $lbphtmldir = $ENV{LANG_DIR};
+our $lbpbindir = $ENV{PLUGIN_BIN};
+1;
+""")
+            (folder / "lang-pl.json").write_text('{"language": "Polski"}')
+            (folder / "lang-cs.json").write_text('{"language": "Čeština"}')
+            (folder / "lang-en.json").write_text('{"language": "English"}')
+            (folder / "lang-xx.json").write_text('{"language": []}')
+            (folder / "lang-fr.json").write_text('{invalid')
+            command = ["perl", "-I", temp, str(HTML / "languages.cgi")]
+            env = {**os.environ, "LANG_DIR": temp, "PLUGIN_BIN": str(ROOT / "bin")}
+            result = subprocess.run(command, env=env, text=True, capture_output=True, check=True)
+            headers, body = result.stdout.split("\n\n", 1)
+            self.assertIn("Content-Type: application/json; charset=utf-8", headers)
+            self.assertIn("Cache-Control: no-store", headers)
+            self.assertEqual(json.loads(body), [
+                {"code": "cs", "language": "Čeština"},
+                {"code": "en", "language": "English"},
+                {"code": "pl", "language": "Polski"},
+            ])
+            self.assertIn("Invalid theme language file", result.stderr)
+            self.assertIn("Missing language name", result.stderr)
+            env["LANG_DIR"] = str(folder / "missing")
+            result = subprocess.run(command, env=env, text=True, capture_output=True, check=True)
+            self.assertIn("Status: 500 Internal Server Error", result.stdout)
+            self.assertEqual(json.loads(result.stdout.split("\n\n", 1)[1]),
+                             {"error": "Cannot list theme languages"})
+            self.assertIn("Cannot list theme languages", result.stderr)
+
+    def test_weathercodes_language_loading(self):
+        content = (HTML / "weathercodes.html").read_text()
+        selector = content.split('<select id="lang-select">', 1)[1].split("</select>", 1)[0]
+        self.assertNotIn("<option", selector)
+        source = content.split("function languageCode(value)", 1)[1].split("\nfunction t(key)", 1)[0]
+        source = "function languageCode(value)" + source
+        driver = "var languageSource = " + json.dumps(source) + ";\n"
+        driver += "var pageScript = " + json.dumps(re.search(r"<script>(.*?)</script>", content, re.S).group(1)) + ";\n"
+        driver += (ROOT / "tests/weathercodes_languages.js").read_text()
+        self.assertEqual(run_javascript(driver), 10)
+        self.assertIn("await loadLanguageOptions();", content)
+        self.assertIn("await loadLang(urlLang);", content)
+        self.assertIn("const urlLang = languageCode(urlParams.get('lang'));", content)
+        self.assertIn("init().catch(showLanguageError);", content)
 
 
 class UpgradeAssetsTest(unittest.TestCase):

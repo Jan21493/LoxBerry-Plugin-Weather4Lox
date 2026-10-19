@@ -48,6 +48,10 @@ these files automatically and display their native language names. The selected
 code is saved in `WEB.LANG`, independently of the LoxBerry UI and weather-service
 languages. New-style themes load the file selected by `?lang=XX` without a fixed
 language list; missing or unreadable files fall back to `lang-en.json`.
+The weather code reference (`weathercodes.html`) uses the same discovery rules
+via `languages.cgi`, displays native names in its language selector, and accepts
+`?lang=XX` with the same English fallback. New language files become available
+without regenerating a list or restarting the plugin.
 Codes use two or three lowercase letters, optionally followed by region/script
 segments separated by `-` or `_` (for example, `pt-BR`).
 

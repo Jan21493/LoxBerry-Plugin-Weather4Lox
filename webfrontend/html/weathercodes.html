@@ -390,12 +390,6 @@
   <div class="control-group">
     <label id="lbl-lang">Language:</label>
     <select id="lang-select">
-      <option value="cs">Čeština</option>
-      <option value="en">English</option>
-      <option value="de">Deutsch</option>
-      <option value="nl">Nederlands</option>
-      <option value="es">Español</option>
-      <option value="sk">Slovenčina</option>
     </select>
   </div>
 </div>
@@ -605,7 +599,7 @@ function syncBackground(rawValue) {
 }
 
 // Extract and sanitize URL parameters
-const urlLang = sanitizeParam((urlParams.get('lang') || 'en').toLowerCase(), 'en');
+const urlLang = languageCode(urlParams.get('lang'));
 const urlIconset = sanitizeParam(urlParams.get('iconset'), 'naturalistic');
 
 // Parse numeric "size" parameter (optional) and clamp/align to step
@@ -629,17 +623,63 @@ let urlSize = null;
 // Load language JSON
 // ---------------------------------------------------------------------------
 
-async function loadLang(langCode) {
-  const supported = ['cs', 'en', 'de', 'nl', 'es', 'sk'];
-  const code = supported.includes(langCode) ? langCode : 'en';
-  try {
-    const resp = await fetch(pluginBase + '/lang-' + code + '.json');
-    if (resp.ok) {
-      lang = await resp.json();
-    }
-  } catch (e) {
-    lang = {};
+function languageCode(value) {
+  return value && /^[a-z]{2,3}(?:[-_][A-Za-z0-9]+)*$/.test(value) ? value : 'en';
+}
+
+function addLanguageOption(code, name) {
+  const select = document.getElementById('lang-select');
+  let option = Array.from(select.options).find(function(item) { return item.value === code; });
+  if (!option) {
+    option = document.createElement('option');
+    option.value = code;
+    select.appendChild(option);
   }
+  option.textContent = name;
+}
+
+async function loadLanguageOptions() {
+  try {
+    const resp = await fetch(pluginBase + '/languages.cgi', { cache: 'no-store' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status + ': ' + resp.url);
+    const languages = await resp.json();
+    if (!Array.isArray(languages)) throw new Error('Invalid language list');
+    languages.forEach(function(item) {
+      if (item && languageCode(item.code) === item.code &&
+          typeof item.language === 'string' && item.language.trim()) {
+        addLanguageOption(item.code, item.language);
+      }
+    });
+  } catch (err) {
+    console.warn('Cannot list languages; loading requested language directly:', err);
+  }
+}
+
+async function loadLang(langCode) {
+  let code = languageCode(langCode);
+  async function readLanguage(code) {
+    const resp = await fetch(pluginBase + '/lang-' + code + '.json');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status + ': ' + resp.url);
+    return resp.json();
+  }
+  let strings;
+  try {
+    strings = await readLanguage(code);
+  } catch (err) {
+    if (code === 'en') throw err;
+    console.warn('Cannot load language ' + code + '; falling back to English:', err);
+    code = 'en';
+    strings = await readLanguage(code);
+  }
+  lang = strings;
+  addLanguageOption(code, strings.language || code);
+  document.getElementById('lang-select').value = code;
+  document.documentElement.lang = code;
+}
+
+function showLanguageError(err) {
+  console.error('Cannot load weather code language:', err);
+  document.getElementById('hdr-subtitle').textContent = 'Could not load language data.';
 }
 
 function t(key) {
@@ -1201,8 +1241,7 @@ async function init() {
   if (!iconsetSel.value) iconsetSel.value = 'naturalistic';
 
   const langSel = document.getElementById('lang-select');
-  langSel.value = urlLang;
-  if (!langSel.value) langSel.value = 'en';
+  await loadLanguageOptions();
 
   // Set background from URL param: either hex color (without leading #)or named option; if invalid/missing → default + select default in dropdown
   syncBackground(urlParams.get('background'));
@@ -1216,7 +1255,7 @@ async function init() {
   }
 
   // Load language
-  await loadLang(langSel.value);
+  await loadLang(urlLang);
   applyTranslations();
 
   // Load icon mapping
@@ -1245,10 +1284,15 @@ async function init() {
   });
 
   langSel.addEventListener('change', async function() {
-    await loadLang(this.value);
-    applyTranslations();
-    syncBackground(document.getElementById('bg-select').value);
-    render();
+    try {
+      await loadLang(this.value);
+      applyTranslations();
+      syncBackground(document.getElementById('bg-select').value);
+      render();
+    } catch (err) {
+      this.value = document.documentElement.lang;
+      showLanguageError(err);
+    }
   });
 
   // Accessibility: close any details rows when window is resized larger than collapse breakpoints
@@ -1265,7 +1309,7 @@ async function init() {
   });
 }
 
-init();
+init().catch(showLanguageError);
 </script>
 </body>
 </html>

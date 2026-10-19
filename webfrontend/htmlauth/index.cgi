@@ -25,8 +25,9 @@ use LWP::UserAgent;
 use JSON qw( decode_json );
 use LoxBerry::System;
 use LoxBerry::Web;
-use File::Glob qw(bsd_glob);
 use Encode qw(encode);
+use lib "$lbpbindir/lib";
+use Weather4Lox::Languages qw(discover_languages);
 
 use strict;
 use warnings;
@@ -1136,25 +1137,9 @@ if ($R::form eq "1" || !$R::form) {
     # Theme LANG
     @values = ();
     %labels = ();
-    for my $lang_file (bsd_glob("$lbphtmldir/lang-*.json")) {
-        next unless -f $lang_file;
-        my ($code) = $lang_file =~ m{/lang-([a-z]{2,3}(?:[-_][A-Za-z0-9]+)*)\.json$};
-        next unless defined $code;
-        open my $fh, '<:raw', $lang_file or die "Cannot read $lang_file: $!";
-        my $contents = do { local $/; <$fh> };
-        close $fh;
-        my $strings = eval { decode_json($contents) };
-        if ($@) {
-            warn "Invalid theme language file $lang_file: $@";
-            next;
-        }
-        if (ref($strings) ne 'HASH' || !defined $strings->{language}
-            || ref($strings->{language}) || $strings->{language} !~ /\S/) {
-            warn "Missing language name in $lang_file\n";
-            next;
-        }
-        push @values, $code;
-        $labels{$code} = encode('UTF-8', $strings->{language});
+    for my $language (@{discover_languages($lbphtmldir)}) {
+        push @values, $language->{code};
+        $labels{$language->{code}} = encode('UTF-8', $language->{language});
     }
     @values = sort @values;
     my $selected_lang = $cfg->param('WEB.LANG') || 'en';
