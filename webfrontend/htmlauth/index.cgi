@@ -26,6 +26,7 @@ use JSON qw( decode_json );
 use LoxBerry::System;
 use LoxBerry::Web;
 use File::Glob qw(bsd_glob);
+use Encode qw(encode);
 
 use strict;
 use warnings;
@@ -1039,9 +1040,9 @@ if ($R::form eq "1" || !$R::form) {
     # Theme
     my @values = ('dark', 'light', 'custom' );
     my %labels = (
-        'dark' => "Dark Theme (Classic)",
-        'light' => "Light Theme (Classic)",
-        'custom' => "Custom Theme (Your Own Classic)",
+        'dark' => "Dark Theme (Classic, veraltet)",
+        'light' => "Light Theme (Classic, veraltet)",
+        'custom' => "Custom Theme (Your Own Classic, veraltet)",
     );
 
     # Find all 'new style' theme files in $lbphtmldir and add them to the list
@@ -1133,21 +1134,36 @@ if ($R::form eq "1" || !$R::form) {
     $template->param( ICONSET => $iconset );
 
     # Theme LANG
-    @values = ('at', 'cs', 'nl', 'en', 'de', 'es' );
-    %labels = (
-        'at' => "Austrian",
-        'cs' => "Czech",
-        'nl' => "Dutch",
-        'en' => "English",
-        'de' => "German",
-        'es' => "Spanish",
-    );
+    @values = ();
+    %labels = ();
+    for my $lang_file (bsd_glob("$lbphtmldir/lang-*.json")) {
+        next unless -f $lang_file;
+        my ($code) = $lang_file =~ m{/lang-([a-z]{2,3}(?:[-_][A-Za-z0-9]+)*)\.json$};
+        next unless defined $code;
+        open my $fh, '<:raw', $lang_file or die "Cannot read $lang_file: $!";
+        my $contents = do { local $/; <$fh> };
+        close $fh;
+        my $strings = eval { decode_json($contents) };
+        if ($@) {
+            warn "Invalid theme language file $lang_file: $@";
+            next;
+        }
+        if (ref($strings) ne 'HASH' || !defined $strings->{language}
+            || ref($strings->{language}) || $strings->{language} !~ /\S/) {
+            warn "Missing language name in $lang_file\n";
+            next;
+        }
+        push @values, $code;
+        $labels{$code} = encode('UTF-8', $strings->{language});
+    }
+    @values = sort @values;
+    my $selected_lang = $cfg->param('WEB.LANG') || 'en';
     my $themelang = $cgi->popup_menu(
         -name    => 'themelang',
         -id      => 'themelang',
         -values  => \@values,
         -labels  => \%labels,
-        -default => $cfg->param('WEB.LANG'),
+        -default => exists $labels{$selected_lang} ? $selected_lang : 'en',
     );
     $template->param( THEMELANG => $themelang );
 
