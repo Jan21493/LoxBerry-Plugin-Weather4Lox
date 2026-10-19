@@ -411,7 +411,6 @@
 <script>
 // ===== CONFIGURATION =====
 var JSON_BASE = './';
-var SUPPORTED_LANGS = ['cs', 'de', 'en', 'es', 'nl', 'sk'];
 // Max accepted weather data age: 12 hours
 var MAX_DATA_AGE_MS = 12 * 60 * 60 * 1000;
 
@@ -425,7 +424,7 @@ function getUrlParam(name) {
 var ICONSET = getUrlParam('iconset') || 'naturalistic';
 var currentLang = (function() {
   var p = getUrlParam('lang');
-  return (p && SUPPORTED_LANGS.indexOf(p) !== -1) ? p : 'en';
+  return (p && /^[a-z]{2,3}(?:[-_][A-Za-z0-9]+)*$/.test(p)) ? p : 'en';
 })();
 
 // Global state
@@ -464,6 +463,18 @@ var selectedDayIdx = -1; // Index of the currently expanded daily row (-1 = none
 function checkOk(response) {
   if (!response.ok) throw new Error('HTTP ' + response.status + ' bei ' + response.url);
   return response;
+}
+
+function loadLanguage() {
+  return fetch(JSON_BASE + 'lang-' + currentLang + '.json')
+    .then(checkOk).then(function(r) { return r.json(); })
+    .catch(function(err) {
+      if (currentLang === 'en') throw err;
+      console.warn('Cannot load language ' + currentLang + '; falling back to English:', err);
+      currentLang = 'en';
+      return fetch(JSON_BASE + 'lang-en.json')
+        .then(checkOk).then(function(r) { return r.json(); });
+    });
 }
 
 /**
@@ -694,7 +705,7 @@ function loadAllData() {
     fetch(JSON_BASE + 'current.json').then(checkOk).then(function(r) { return r.json(); }),
     fetch(JSON_BASE + 'hourlyforecast.json').then(checkOk).then(function(r) { return r.json(); }),
     fetch(JSON_BASE + 'dailyforecast.json').then(checkOk).then(function(r) { return r.json(); }),
-    fetch(JSON_BASE + 'lang-' + currentLang + '.json').then(checkOk).then(function(r) { return r.json(); }),
+    loadLanguage(),
     fetch(JSON_BASE + 'icons/' + ICONSET + '/icon_mapping.json').then(checkOk).then(function(r) { return r.json(); })
   ]).then(function(results) {
     hideLoading();

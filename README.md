@@ -30,6 +30,43 @@ use temporary log files and a separate log database.
 
 ## Tablet weather themes
 
+### Custom themes and languages
+
+Place your own new-style `*.theme.html` files in
+`/opt/loxberry/webfrontend/html/plugins/weather4lox/`. Give them unique filenames
+and a `<meta name="title" content="My theme">` title for the theme selector.
+Updates back up these files and restore only filenames not supplied by the new
+release. Weather4Loxone's shipped themes always take precedence.
+Classic themes are deprecated, will be removed soon, and refresh only at the
+configured interval.
+
+To add a theme language, copy and translate `lang-en.json` in that same directory
+to `lang-XX.json`. Make its first JSON entry `"language": "Native language name"`
+(for example, `"language": "Polski"` for `lang-pl.json`).
+Keep all existing keys, arrays, and placeholders. The website settings discover
+these files automatically and display their native language names. The selected
+code is saved in `WEB.LANG`, independently of the LoxBerry UI and weather-service
+languages. New-style themes load the file selected by `?lang=XX` without a fixed
+language list; missing or unreadable files fall back to `lang-en.json`.
+Codes use two or three lowercase letters, optionally followed by region/script
+segments separated by `-` or `_` (for example, `pt-BR`).
+
+For the plugin's administration UI, add
+`/opt/loxberry/templates/plugins/weather4lox/lang/language_XX.ini` using
+`language_en.ini` as the translation template. LoxBerry's existing
+[`lblanguage` / `readlanguage` implementation](https://github.com/mschlenstedt/Loxberry/blob/master/libs/perllib/LoxBerry/System.pm)
+automatically selects this file when language `XX` is configured in
+`myloxberry.cgi`; missing UI phrases fall back to English. No additional plugin
+language switch is needed.
+
+Updates also back up `lang-*.json` and `language_*.ini`, restoring only files not
+already present in the new release. Each restored additional language file
+produces an installer warning to check for new parameters or changed content.
+Changes to a shipped theme or language filename are **not** preserved over the
+new release's file; use a distinct filename/code for custom versions.
+
+### Included themes
+
 Alongside Deep Ocean, four tablet-first themes use the same weather data,
 translations, icon sets, refresh intervals, and forecast interactions:
 

@@ -208,6 +208,28 @@ else
     echo "<WARNING> Themes directory ${THEMES_DIR} not found; skipping theme backup"
 fi
 
+backup_frontend_files() {
+    local backup_dir=$1
+    shift
+    local file
+    mkdir -p "$backup_dir" || { echo "<ERROR> Cannot create $backup_dir"; exit 2; }
+    for file in "$@"; do
+        [ -f "$file" ] || continue
+        cp -p -v "$file" "$backup_dir/" || {
+            echo "<ERROR> Cannot back up $file"
+            exit 2
+        }
+    done
+}
+
+echo "<INFO> Backing up new-style themes and language files"
+backup_frontend_files "/tmp/${ARGV1}_upgrade/webthemes" \
+    "$ARGV5/webfrontend/html/plugins/$ARGV3/"*.theme.html
+backup_frontend_files "/tmp/${ARGV1}_upgrade/themelanguages" \
+    "$ARGV5/webfrontend/html/plugins/$ARGV3/"lang-*.json
+backup_frontend_files "/tmp/${ARGV1}_upgrade/uilanguages" \
+    "$ARGV5/templates/plugins/$ARGV3/lang/"language_*.ini
+
 echo "<INFO> PREUPGRADE script completed!"
 # Exit with Status 0
 exit 0

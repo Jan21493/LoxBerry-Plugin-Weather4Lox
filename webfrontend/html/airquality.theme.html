@@ -381,9 +381,9 @@
   <!-- ===== TAB NAVIGATION ===== -->
   <div class="glass tab-nav">
     <div class="tabs">
-      <button class="tab active" data-tab="today">Heute</button>
-      <button class="tab" data-tab="tomorrow">Morgen</button>
-      <button class="tab" data-tab="days">Tage</button>
+      <button class="tab active" data-tab="today" data-i18n="theme.tab_today">Heute</button>
+      <button class="tab" data-tab="tomorrow" data-i18n="theme.tab_tomorrow">Morgen</button>
+      <button class="tab" data-tab="days" data-i18n="theme.tab_days">Tage</button>
     </div>
   </div>
 
@@ -523,7 +523,6 @@
 <script>
 // ===== CONFIGURATION =====
 var JSON_BASE = './';
-var SUPPORTED_LANGS = ['cz', 'de', 'en', 'es', 'nl', 'sk'];
 
 // Read a URL query parameter by name
 function getUrlParam(name) {
@@ -533,7 +532,7 @@ function getUrlParam(name) {
 
 var currentLang = (function () {
   var p = getUrlParam('lang');
-  return (p && SUPPORTED_LANGS.indexOf(p) !== -1) ? p : 'de';
+  return (p && /^[a-z]{2,3}(?:[-_][A-Za-z0-9]+)*$/.test(p)) ? p : 'en';
 })();
 
 // ===== POLLEN TYPE DEFINITIONS =====
@@ -617,7 +616,7 @@ function formatHour(datetimeStr) {
 // ===== HELPER: Format an ISO datetime to short weekday + date =====
 function formatDayShort(datetimeStr) {
   if (!datetimeStr) return { day: '--', date: '--' };
-  var weekdays = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  var weekdays = liveData.lang.theme.weekdays_short;
   var d = new Date(datetimeStr);
   var pad2 = function (n) { return n < 10 ? '0' + n : '' + n; };
   return {
@@ -732,12 +731,14 @@ function loadAllData() {
   return Promise.all([
     fetch(JSON_BASE + 'current.json').then(checkOk).then(function (r) { return r.json(); }),
     fetch(JSON_BASE + 'hourlyforecast.json').then(checkOk).then(function (r) { return r.json(); }),
-    fetch(JSON_BASE + 'dailyforecast.json').then(checkOk).then(function (r) { return r.json(); })
+    fetch(JSON_BASE + 'dailyforecast.json').then(checkOk).then(function (r) { return r.json(); }),
+    loadLanguage()
   ]).then(function (results) {
     hideLoading();
     processCurrentEnvelope(results[0]);
     processHourlyEnvelope(results[1]);
     processDailyEnvelope(results[2]);
+    liveData.lang = results[3];
     renderAll();
     return liveData;
   }).catch(function (err) {
@@ -751,6 +752,18 @@ function loadAllData() {
 function checkOk(response) {
   if (!response.ok) throw new Error('HTTP ' + response.status + ': ' + response.url);
   return response;
+}
+
+function loadLanguage() {
+  return fetch(JSON_BASE + 'lang-' + currentLang + '.json')
+    .then(checkOk).then(function(r) { return r.json(); })
+    .catch(function(err) {
+      if (currentLang === 'en') throw err;
+      console.warn('Cannot load language ' + currentLang + '; falling back to English:', err);
+      currentLang = 'en';
+      return fetch(JSON_BASE + 'lang-en.json')
+        .then(checkOk).then(function(r) { return r.json(); });
+    });
 }
 
 // ===== AUTO-REFRESH HELPERS =====
@@ -1189,6 +1202,13 @@ function resetToDefault(panel) {
 
 // ===== MAIN RENDER FUNCTION =====
 function renderAll() {
+  document.documentElement.lang = currentLang;
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var value = el.getAttribute('data-i18n').split('.').reduce(function(strings, key) {
+      return strings && strings[key];
+    }, liveData.lang);
+    if (typeof value === 'string') el.textContent = value;
+  });
   renderHeader();
   renderToday();
   renderTomorrow();

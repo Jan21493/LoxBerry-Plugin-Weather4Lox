@@ -136,6 +136,37 @@ if [ -d "/tmp/${ARGV1}_upgrade/themes" ] && \
         "${ARGV5}/templates/plugins/${ARGV3}/themes/"
 fi
 
+restore_frontend_files() {
+    local dest_dir=$1
+    local language_file=$2
+    shift 2
+    local file name
+    mkdir -p "$dest_dir"
+    for file in "$@"; do
+        [ -f "$file" ] || continue
+        name=$(basename "$file")
+        # Never replace files supplied by the new release, including symlinks.
+        if [ -e "$dest_dir/$name" ] || [ -L "$dest_dir/$name" ]; then
+            continue
+        fi
+        if ! cp -p -v "$file" "$dest_dir/$name"; then
+            echo "<ERROR> Cannot restore $name; backup retained in /tmp/${ARGV1}_upgrade"
+            exit 2
+        fi
+        if [ "$language_file" = yes ]; then
+            echo "<WARNING> WARNUNG: Es wurde eine zusätzliche Sprachdatei ($name) gefunden. Bitte prüfen, ob Parameter ergänzt und Inhalte ggf. angepasst werden müssen."
+        fi
+    done
+}
+
+echo "<INFO> Restore additional new-style themes and language files"
+restore_frontend_files "$ARGV5/webfrontend/html/plugins/$ARGV3" no \
+    "/tmp/${ARGV1}_upgrade/webthemes/"*.theme.html
+restore_frontend_files "$ARGV5/webfrontend/html/plugins/$ARGV3" yes \
+    "/tmp/${ARGV1}_upgrade/themelanguages/"lang-*.json
+restore_frontend_files "$ARGV5/templates/plugins/$ARGV3/lang" yes \
+    "/tmp/${ARGV1}_upgrade/uilanguages/"language_*.ini
+
 echo "<INFO> Remove temporary folders"
 rm -r "/tmp/${ARGV1}_upgrade"
 
