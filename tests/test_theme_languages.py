@@ -182,11 +182,12 @@ class UpgradeAssetsTest(unittest.TestCase):
             with self.subTest(path=path.name):
                 self.assertEqual(path.read_text(), shipped.get(path, content))
         warnings = "\n".join(line for line in result.stdout.splitlines()
-                             if "zusätzliche Sprachdatei" in line)
+                             if "additional language file" in line)
         self.assertIn("lang-pl.json", warnings)
         self.assertIn("language_pl.ini", warnings)
         self.assertNotIn("lang-en.json", warnings)
         self.assertNotIn("language_en.ini", warnings)
+        self.assertNotIn("WARNUNG", warnings)
         self.assertFalse(self.backup.exists())
         self.assertTrue((self.cron / "weather4lox").is_symlink())
 
@@ -197,7 +198,7 @@ class UpgradeAssetsTest(unittest.TestCase):
         (self.html / "mine.theme.html").symlink_to("not-yet-present.theme.html")
         result = self.run_upgrade("postupgrade.sh")
         self.assertTrue((self.html / "mine.theme.html").is_symlink())
-        self.assertNotIn("zusätzliche Sprachdatei", result.stdout)
+        self.assertNotIn("additional language file", result.stdout)
         self.assertFalse(self.backup.exists())
 
 

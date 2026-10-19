@@ -154,7 +154,7 @@ restore_frontend_files() {
             exit 2
         fi
         if [ "$language_file" = yes ]; then
-            echo "<WARNING> WARNUNG: Es wurde eine zusätzliche Sprachdatei ($name) gefunden. Bitte prüfen, ob Parameter ergänzt und Inhalte ggf. angepasst werden müssen."
+            echo "<WARNING> An additional language file ($name) was found. Please check whether parameters need to be added and contents need to be updated."
         fi
     done
 }
