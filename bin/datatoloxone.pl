@@ -161,7 +161,7 @@ binmode($weatherDataHandle, ':encoding(UTF-8)')
     or weatherDataError("Cannot set UTF-8 encoding for $weatherDataTemp: $!");
 print {$weatherDataHandle} "<!DOCTYPE HTML>\n<html>\n<head>\n"
     or weatherDataError("Cannot write $weatherDataTemp: $!");
-print {$weatherDataHandle} "<meta http-equiv='Content-Type' content='text/html; charset=utf-8'>\n</head>\n<body>"
+print {$weatherDataHandle} "<meta charset=\"utf-8\">\n<title>Weather4Loxone weather data</title>\n</head>\n<body>"
     or weatherDataError("Cannot write $weatherDataTemp: $!");
 #flock(F,8);
 
@@ -259,21 +259,21 @@ sendToLox($toMS, $doLog, "cur" . $mqttsep . "date_tz_des", $location->{tzShort})
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "date_tz", $location->{tzOffset});                                    # Numeric timezone offset, e.g. +0100
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "data_age", $curDataAgeMinutes // 0);                                  # minutes since current.json was last successfully updated by a grabber
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "stale", $curIsStale);                                                # 1 if data age exceeds 3x the refresh interval, e.g. a grabber is failing repeatedly
-sendToLox($toMS, $doLog, "cur" . $mqttsep . "day", encode_utf8(sprintf("%02d", $curDate->mday)));
-sendToLox($toMS, $doLog, "cur" . $mqttsep . "month", encode_utf8(sprintf("%02d", $curDate->mon)));
-sendToLox($toMS, $doLog, "cur" . $mqttsep . "year", encode_utf8($curDate->year));
-sendToLox($toMS, $doLog, "cur" . $mqttsep . "hour", encode_utf8(sprintf("%02d", $curDate->hour)));
-sendToLox($toMS, $doLog, "cur" . $mqttsep . "min", encode_utf8(sprintf("%02d", $curDate->min)));
-sendToLox($toMS, $doLog, "cur" . $mqttsep . "loc" . $mqttsep . "n", encode_utf8($location->{city}));
-sendToLox($toMS, $doLog, "cur" . $mqttsep . "loc" . $mqttsep . "c", encode_utf8($location->{country}));
-sendToLox($toMS, $doLog, "cur" . $mqttsep . "loc" . $mqttsep . "ccode", encode_utf8($location->{countryCode}));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "day", sprintf("%02d", $curDate->mday));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "month", sprintf("%02d", $curDate->mon));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "year", $curDate->year);
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "hour", sprintf("%02d", $curDate->hour));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "min", sprintf("%02d", $curDate->min));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "loc" . $mqttsep . "n", $location->{city});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "loc" . $mqttsep . "c", $location->{country});
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "loc" . $mqttsep . "ccode", $location->{countryCode});
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "loc" . $mqttsep . "lat", $location->{latitude});
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "loc" . $mqttsep . "long", $location->{longitude});
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "loc" . $mqttsep . "el", $location->{elevation});
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "tt", !$metric ? $cur->{temperature}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{temperature}{air});
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "tt_fl", !$metric ? $cur->{temperature}{feelsLike}*C_TO_F_FACTOR+C_TO_F_OFFSET : $cur->{temperature}{feelsLike});
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "hu", $cur->{humidity});
-sendToLox($toMS, $doLog, "cur" . $mqttsep . "w_dirdes", encode_utf8($langData->{wind_directions}{getWindDirCardinal($cur->{wind}{direction})} // '-'));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "w_dirdes", $langData->{wind_directions}{getWindDirCardinal($cur->{wind}{direction})} // '-');
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "w_dir", $cur->{wind}{direction});
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "w_sp", !$metric ? $cur->{wind}{speed}*KMH_TO_MPH : $cur->{wind}{speed});
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "w_gu", !$metric ? $cur->{wind}{gust}*KMH_TO_MPH : $cur->{wind}{gust});
@@ -291,7 +291,7 @@ sendToLox($toMS, $doLog, "cur" . $mqttsep . "snow", !$metric ? $cur->{precipitat
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "we_icon", $cur->{weatherCode}{weather4lox});
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "we_code", w4l_to_oldW4lCode($cur->{weatherCode}{weather4lox}));
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "we_code_lox", $cur->{weatherCode}{loxone});
-sendToLox($toMS, $doLog, "cur" . $mqttsep . "we_des", encode_utf8($langData->{weather_descriptions}{$cur->{weatherCode}{weather4lox}} // '-'));
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "we_des", $langData->{weather_descriptions}{$cur->{weatherCode}{weather4lox}} // '-');
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "moon_p", $cur->{moon}{percent});
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "moon_a", $cur->{moon}{age});
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "moon_ph", $cur->{moon}{phase});
@@ -361,15 +361,15 @@ foreach my $dfcEntry (@$dfc) {
     # sending to Loxone Miniserver via MQTT, HTML webpage and UDP with logging of first day (today) in detail
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."per", $per); # period starting with 0 for today, 1 for tomorrow, ...
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."date", toLoxEpoch($dfcEntry->{time}{epoch}));    # Loxone epoch (1.1.2009), e.g. 542934004
-    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."day", encode_utf8(sprintf("%02d", $dfcDate->mday)));
-    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."month", encode_utf8(sprintf("%02d", $dfcDate->mon)));
-    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."monthn", encode_utf8($langData->{theme}{months}[$dfcDate->mon - 1] // $dfcDate->strftime('%B')));
-    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."monthn_sh", encode_utf8($langData->{theme}{months_short}[$dfcDate->mon - 1] // $dfcDate->strftime('%b')));
-    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."year", encode_utf8($dfcDate->year));
-    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."hour", encode_utf8(sprintf("%02d", $dfcDate->hour)));
-    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."min", encode_utf8(sprintf("%02d", $dfcDate->min)));
-    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."wday", encode_utf8($langData->{theme}{weekdays}[$dfcDate->wday - 1] // $dfcDate->strftime('%A')));
-    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."wday_sh", encode_utf8($langData->{theme}{weekdays_short}[$dfcDate->wday - 1] // $dfcDate->strftime('%a')));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."day", sprintf("%02d", $dfcDate->mday));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."month", sprintf("%02d", $dfcDate->mon));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."monthn", $langData->{theme}{months}[$dfcDate->mon - 1] // $dfcDate->strftime('%B'));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."monthn_sh", $langData->{theme}{months_short}[$dfcDate->mon - 1] // $dfcDate->strftime('%b'));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."year", $dfcDate->year);
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."hour", sprintf("%02d", $dfcDate->hour));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."min", sprintf("%02d", $dfcDate->min));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."wday", $langData->{theme}{weekdays}[$dfcDate->wday - 1] // $dfcDate->strftime('%A'));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."wday_sh", $langData->{theme}{weekdays_short}[$dfcDate->wday - 1] // $dfcDate->strftime('%a'));
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."tt_h", !$metric ? $dfcEntry->{temperature}{max}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{temperature}{max}{air});
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."tt_l", !$metric ? $dfcEntry->{temperature}{min}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{temperature}{min}{air});
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."pop", $dfcEntry->{precipitation}{probability});
@@ -377,18 +377,18 @@ foreach my $dfcEntry (@$dfc) {
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."snow", !$metric ? $dfcEntry->{precipitation}{snowHigh}*CM_TO_INCH : $dfcEntry->{precipitation}{snowHigh});
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_sp_h", !$metric ? $dfcEntry->{wind}{max}{speed}*KMH_TO_MPH : $dfcEntry->{wind}{max}{speed});
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_gu_h", !$metric ? $dfcEntry->{wind}{max}{gust}*KMH_TO_MPH : $dfcEntry->{wind}{max}{gust});
-    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_dirdes_h", encode_utf8($langData->{wind_directions}{getWindDirCardinal($dfcEntry->{wind}{max}{direction}) // ''} // '-')); 
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_dirdes_h", $langData->{wind_directions}{getWindDirCardinal($dfcEntry->{wind}{max}{direction}) // ''} // '-');
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_dir_h", $dfcEntry->{wind}{max}{direction});
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_sp_a", !$metric ? $dfcEntry->{wind}{avg}{speed}*KMH_TO_MPH : $dfcEntry->{wind}{avg}{speed});
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_gu_a", !$metric ? $dfcEntry->{wind}{avg}{gust}*KMH_TO_MPH : $dfcEntry->{wind}{avg}{gust});
-    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_dirdes_a", encode_utf8($langData->{wind_directions}{getWindDirCardinal($dfcEntry->{wind}{avg}{direction}) // ''} // '-')); 
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_dirdes_a", $langData->{wind_directions}{getWindDirCardinal($dfcEntry->{wind}{avg}{direction}) // ''} // '-');
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."w_dir_a", $dfcEntry->{wind}{avg}{direction});
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."hu_a", $dfcEntry->{humidity}{avg});
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."hu_h", $dfcEntry->{humidity}{max});
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."hu_l", $dfcEntry->{humidity}{min});
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."we_code", w4l_to_oldW4lCode($dfcEntry->{weatherCode}{weather4lox}));
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."we_code_lox", $dfcEntry->{weatherCode}{loxone});
-    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."we_des", encode_utf8($langData->{weather_descriptions}{$dfcEntry->{weatherCode}{weather4lox}} // '-'));
+    sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."we_des", $langData->{weather_descriptions}{$dfcEntry->{weatherCode}{weather4lox}} // '-');
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."ozone", _jval($dfcEntry->{airQuality}{ozone}));
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."moon_p", $dfcEntry->{moon}{percent});
     sendToLox($toMS, $doLog, "dfc${per}".$mqttsep."dp", !$metric ? $dfcEntry->{dewpoint}*C_TO_F_FACTOR+C_TO_F_OFFSET : $dfcEntry->{dewpoint});
@@ -441,15 +441,15 @@ foreach my $hfcEntry (@$hfc) {
     # sending to Loxone Miniserver via MQTT, HTML webpage and UDP with logging of first hour in detail
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."per", $per);
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."date", toLoxEpoch($hfcEntry->{time}{epoch}));
-    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."day", encode_utf8(sprintf("%02d", $hfc_date->mday)));
-    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."month", encode_utf8(sprintf("%02d", $hfc_date->mon)));
-    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."monthn", encode_utf8($langData->{theme}{months}[$hfc_date->mon - 1] // $hfc_date->strftime('%B')));
-    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."monthn_sh", encode_utf8($langData->{theme}{months_short}[$hfc_date->mon - 1] // $hfc_date->strftime('%b')));
-    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."year", encode_utf8($hfc_date->year));
-    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."hour", encode_utf8(sprintf("%02d", $hfc_date->hour)));
-    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."min", encode_utf8(sprintf("%02d", $hfc_date->min)));
-    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."wday", encode_utf8($langData->{theme}{weekdays}[$hfc_date->wday - 1] // $hfc_date->strftime('%A')));
-    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."wday_sh", encode_utf8($langData->{theme}{weekdays_short}[$hfc_date->wday - 1] // $hfc_date->strftime('%a')));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."day", sprintf("%02d", $hfc_date->mday));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."month", sprintf("%02d", $hfc_date->mon));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."monthn", $langData->{theme}{months}[$hfc_date->mon - 1] // $hfc_date->strftime('%B'));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."monthn_sh", $langData->{theme}{months_short}[$hfc_date->mon - 1] // $hfc_date->strftime('%b'));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."year", $hfc_date->year);
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."hour", sprintf("%02d", $hfc_date->hour));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."min", sprintf("%02d", $hfc_date->min));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."wday", $langData->{theme}{weekdays}[$hfc_date->wday - 1] // $hfc_date->strftime('%A'));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."wday_sh", $langData->{theme}{weekdays_short}[$hfc_date->wday - 1] // $hfc_date->strftime('%a'));
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."tt", !$metric ? $hfcEntry->{temperature}{air}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{air});
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."tt_fl", !$metric ? $hfcEntry->{temperature}{feelsLike}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{feelsLike});
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."pop", $hfcEntry->{precipitation}{probability});
@@ -458,12 +458,12 @@ foreach my $hfcEntry (@$hfc) {
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."w_sp", !$metric ? $hfcEntry->{wind}{speed}*KMH_TO_MPH : $hfcEntry->{wind}{speed});
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."w_gu", !$metric ? $hfcEntry->{wind}{gust}*KMH_TO_MPH : $hfcEntry->{wind}{gust});
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."w_ch", !$metric ? $hfcEntry->{temperature}{feelsLike}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{feelsLike});
-    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."w_dirdes", encode_utf8($langData->{wind_directions}{getWindDirCardinal($hfcEntry->{wind}{direction})} // '-'));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."w_dirdes", $langData->{wind_directions}{getWindDirCardinal($hfcEntry->{wind}{direction})} // '-');
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."w_dir", $hfcEntry->{wind}{direction});
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."hu", $hfcEntry->{humidity});
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."we_code", w4l_to_oldW4lCode($hfcEntry->{weatherCode}{weather4lox}));
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."we_code_lox", $hfcEntry->{weatherCode}{loxone});
-    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."we_des", encode_utf8($langData->{weather_descriptions}{$hfcEntry->{weatherCode}{weather4lox}} // '-'));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."we_des", $langData->{weather_descriptions}{$hfcEntry->{weatherCode}{weather4lox}} // '-');
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."ozone", _jval($hfcEntry->{airQuality}{ozone}));
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."moon_p", $hfcEntry->{moon}{percent});
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."dp", !$metric ? $hfcEntry->{dewpoint}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{dewpoint});
@@ -475,7 +475,7 @@ foreach my $hfcEntry (@$hfc) {
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."sr", $hfcEntry->{solarRadiation});
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."hi", !$metric ? $hfcEntry->{temperature}{heatIndex}*C_TO_F_FACTOR+C_TO_F_OFFSET : $hfcEntry->{temperature}{heatIndex});
     sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."sky", $hfcEntry->{cloudCover});
-    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."sky_des",encode_utf8($langData->{weather_descriptions}{$hfcEntry->{weatherCode}{weather4lox}} // '-'));
+    sendToLox($toMS, $doLog, "hfc${per}".$mqttsep."sky_des", $langData->{weather_descriptions}{$hfcEntry->{weatherCode}{weather4lox}} // '-');
 
     # Use night icons between sunset and sunrise on webpage
     my $iconName;
@@ -920,7 +920,7 @@ if ($emu) {
     my $snow_fraction = $rain_1hr_mm > 0 ? $snow_1hr_cm / $precip_1hr : ($snow_1hr_cm > 0 ? 1 : 0);   # Snow fraction in precipitation in %
     my $precip_prob = $cur->{precipitation}{probability} // 0;
 
-    open(F,">$lbplogdir/index.txt.tmp") or LOGERR "Cannot open $lbplogdir/index.txt.tmp for writing: $!";
+    open(F, '>:encoding(UTF-8)', "$lbplogdir/index.txt.tmp") or LOGERR "Cannot open $lbplogdir/index.txt.tmp for writing: $!";
     flock(F,2);
     # Write header with meta data and location (semicolon separated, in the order expected by Loxone)
     print F "<mb_metadata>\n";
@@ -1032,7 +1032,7 @@ sub weatherDataError {
 #   toMS:      if set to 1, data will be sent to Miniserver via MQTT and UDP,
 #              otherwise only variables for themes HTML web page will be created
 #   name:      name of value (e.g. "current_temperature")
-#   value:     value to send (e.g. "20.5")
+#   value:     value to send as decoded text (e.g. "20.5")
 
 sub sendToLox {
     my ($toMS, $doLog, $name, $value) = @_;
@@ -1044,15 +1044,20 @@ sub sendToLox {
     # Also record the name in %tmpl_vars so that template rendering can use an allow-list lookup
     # instead of blindly dereferencing any package variable.
     { no strict 'refs'; ${$name} = $value }
-    $tmpl_vars{$name} = $value;
+    # Classic templates are read and written as raw UTF-8 bytes.
+    $tmpl_vars{$name} = encode_utf8($value);
 
     # Log data if defined (reduce loggin amount)
     if (defined $doLog && $doLog) {
-        LOGINF "Adding value to weatherdata.html      $name\@$value";
+        LOGINF "Adding value to weatherdata.html      $name\@" . encode_utf8($value);
     }
 
     # Add weather data to HTML webpage
-    print {$weatherDataHandle} "$name\@$value<br>\n"
+    my $htmlLine = "$name\@$value";
+    $htmlLine =~ s/&/&amp;/g;
+    $htmlLine =~ s/</&lt;/g;
+    $htmlLine =~ s/>/&gt;/g;
+    print {$weatherDataHandle} "$htmlLine<br>\n"
         or weatherDataError("Cannot write $weatherDataTemp: $!");
     #flock(F,8);
 
@@ -1067,7 +1072,7 @@ sub sendToLox {
         my $udpname = $name;
         $udpname =~ s/\//\_/g;
         $sendUDPqueue .= "$udpname\@$value; ";
-        LOGINF "Adding value to UDP send queue        $udpname\@$value";
+        LOGINF "Adding value to UDP send queue        $udpname\@" . encode_utf8($value);
     }
 
     return();
@@ -1090,7 +1095,7 @@ sub sendUDP {
             PeerPort => $udpport,
             PeerAddr => $miniservers{$msno}{IPAddress},
         );
-        $sock->send($sendUDPqueue);
+        $sock->send(encode_utf8($sendUDPqueue));
         LOGOK "Sent weather data via UDP to " . $miniservers{$msno}{Name} . ". is done.";
 
         # add 10 milliseconds waiting time to avoid flooding the miniserver with UDP packets
@@ -1124,10 +1129,10 @@ sub sendMQTT {
             $mtopic =~ s/\+/\_\_/g;
             # Log data if defined (reduce loggin amount)
             if (defined $doLog && $doLog) {
-                LOGINF "Publishing value to MQTT: " . $topic . "/" . $mtopic . " " . $value;
+                LOGINF "Publishing value to MQTT: " . $topic . "/" . $mtopic . " " . encode_utf8($value);
             }
             # Send the topic and value to the MQTT broker as a retained message
-            $mqtt->retain($topic . "/" . $mtopic, $value);
+            $mqtt->retain($topic . "/" . $mtopic, encode_utf8($value));
         };
         if ($@) {
             my $error = $@ || 'Unknown failure';
