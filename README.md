@@ -6,6 +6,13 @@ https://github.com/mschlenstedt/LoxBerry-Plugin-Weather4Lox/archive/refs/heads/m
 
 This is a fork for version 4 to fix bugs and keep this version separate from version 5.
 
+The wttr.in station ID accepts city names or latitude/longitude pairs. In the
+`[WTTRIN]` section of `weather4lox.cfg`, both `STATIONID="50.84", "7.01"` and
+`STATIONID="50.84,7.01"` are supported. The settings page displays `50.84,7.01`,
+and the grabber requests `https://wttr.in/50.84,7.01?lang=...&M&3&format=j1`.
+Run `prove -v tests/wttrin_stationid_template.t` with `Config::Simple` and
+`HTML::Template` installed to check configuration parsing, display, and URL construction.
+
 `weatherdata.html` uses UTF-8 and HTML-escapes text values while retaining the
 `name@value<br>` layout. Localized weather descriptions, wind directions,
 calendar names, and location names are encoded once at output; MQTT, UDP, and

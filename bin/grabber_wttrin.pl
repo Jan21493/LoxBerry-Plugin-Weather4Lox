@@ -46,7 +46,7 @@ my $version = LoxBerry::System::pluginversion();
 my $pcfg         = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 my $url          = $pcfg->param("WTTRIN.URL");
 my $lang         = $pcfg->param("SERVER.LANG");
-my $stationid    = $pcfg->param("WTTRIN.STATIONID");
+my $stationid    = join(',', $pcfg->param("WTTRIN.STATIONID"));
 
 # Grabber metadata for JSON envelope
 my $grabberKey   = "wttrin";
