@@ -30,6 +30,8 @@ use LWP::UserAgent;
 use File::Copy;
 use Getopt::Long;
 use Time::Piece;
+use JSON::PP ();
+use JSON::XS ();
 
 require "$lbpbindir/grabber_utils.pl";
 require "$lbpbindir/weather4lox_log.pl";
@@ -202,6 +204,10 @@ my $results = apiCall(
 my $lat      = $results->{nearest_area}[0]->{latitude};
 my $lon      = $results->{nearest_area}[0]->{longitude};
 
+# Read language-specific data for Clear/Sunny weather conditions
+my $jsonDecoder = JSON::XS->new->utf8->boolean_values(JSON::PP::false, JSON::PP::true);
+my $langData = readJsonFile("$lbhomedir/webfrontend/html/plugins/$lbpplugindir", "lang-$lang", $jsonDecoder) // {};
+
 # Derive generatedAt from current observation time, looks that wttr.in is always using am/pm time format
 my $currentEpoch;
 my $obs_local_time_str = $results->{current_condition}[0]->{localObsDateTime};
@@ -296,11 +302,18 @@ if ( $current ) {
     my ($loxoneCode, $w4lCode) = wttr_to_lox($wwo_id);
     $weatherCode{loxone}      = "$loxoneCode";
     $weatherCode{weather4lox} = $w4lCode;
-    my $wdes = $cur->{'lang_' . $lang}[0]{value};
-    $wdes = $cur->{weatherDesc}[0]{value} if !$wdes;
-    $weatherCode{description} = $wdes;
     $weatherCode{image}       = undef;  # wttr.in has no image field
     $weatherCode{metar}       = getMetarCode($w4lCode);
+
+    # Override weather description for clear conditions based on day/night, because default description may not always reflect the time of day properly
+    my $isNight = isNighttime($dtCurrent, \%sunTimes);
+    if ($w4lCode eq "clear") {
+        $weatherCode{description} = encode_utf8($langData->{weather_descriptions}{'clear_' . ($isNight ? 'night' : 'day')} // ($isNight ? 'Clear' : 'Sunny'));
+    } else  {
+        my $wdes = $cur->{'lang_' . $lang}[0]{value};
+        $wdes = $cur->{weatherDesc}[0]{value} if !$wdes;
+        $weatherCode{description} = $wdes;
+    }
 
     # moon
     my %moon;
@@ -326,7 +339,7 @@ if ( $current ) {
         weatherCode    => \%weatherCode,
         cloudCover     => defined $cur->{cloudcover} ? $cur->{cloudcover} + 0 : undef,
         moon           => \%moon,
-        isNight        => isNighttime($dtCurrent, \%sunTimes),
+        isNight        => $isNight,
     );
 
     # Build envelope and write JSON to file
@@ -659,8 +672,15 @@ if ( $hourly ) {
         my ($loxoneCode, $w4lCode) = wttr_to_lox($wwo_id);
         $weatherCode{loxone}      = "$loxoneCode";
         $weatherCode{weather4lox} = $w4lCode;
-        $weatherCode{description} = $weatherdes;
         $weatherCode{metar}       = getMetarCode($w4lCode);
+
+        # Override weather description for clear conditions based on day/night, because default description may not always reflect the time of day properly
+        my $isNight = isNighttime($time{datetime}, \%sunTimes);
+        if ($w4lCode eq "clear") {
+            $weatherCode{description} = encode_utf8($langData->{weather_descriptions}{'clear_' . ($isNight ? 'night' : 'day')} // ($isNight ? 'Clear' : 'Sunny'));
+        } else  {
+            $weatherCode{description} = $weatherdes;
+        }
 
         # moon
         my %moon;
@@ -684,7 +704,7 @@ if ( $hourly ) {
             weatherCode    => \%weatherCode,
             cloudCover     => sprintf("%.0f", $clouds->linear($ep)) + 0,
             moon           => \%moon,
-            isNight        => isNighttime($time{datetime}, \%sunTimes),
+            isNight        => $isNight,
         };
         $hour++;
     }
