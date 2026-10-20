@@ -6,6 +6,13 @@ https://github.com/mschlenstedt/LoxBerry-Plugin-Weather4Lox/archive/refs/heads/m
 
 This is a fork for version 4 to fix bugs and keep this version separate from version 5.
 
+`weatherdata.html` uses UTF-8 and HTML-escapes text values while retaining the
+`name@value<br>` layout. Localized weather descriptions, wind directions,
+calendar names, and location names are encoded once at output; MQTT, UDP, and
+classic theme output also remain UTF-8. Run `prove -v tests/datatoloxone_output.t`
+on a LoxBerry with the plugin installed to check these outputs using temporary
+files and intercepted MQTT/UDP sends, without publishing test data.
+
 The wttr.in grabber derives `isNight` for current conditions and every hourly
 forecast (including interpolated hours) from that date's local sunrise/sunset
 and the entry's local time. As in the OpenWeather and Visual Crossing grabbers,
