@@ -109,7 +109,7 @@ my $template = HTML::Template->new(
     die_on_bad_params => 0,
     associate => $cfg,
 );
-$template->param( WTTRIN_STATIONID => scalar $cfg->param('WTTRIN.STATIONID') );
+$template->param( WTTRIN_STATIONID => join(',', $cfg->param('WTTRIN.STATIONID')) );
 
 # Language
 my %L = LoxBerry::System::readlanguage($template, "language.ini");
