@@ -224,8 +224,8 @@
       "moonPhases": 0
     },
     "mist": {
-      "iconDay": "cloudy_mist_day",
-      "iconNight": "cloudy_mist_night",
+      "iconDay": "mist_day",
+      "iconNight": "mist_night",
       "moonPhases": 5
     },
     "smoke": {
