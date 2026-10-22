@@ -165,7 +165,15 @@ our $lbpbindir = $ENV{PLUGIN_BIN};
             self.assertIn("Cannot list theme languages", result.stderr)
 
     def test_weathercodes_language_loading(self):
-        content = (HTML / "weathercodes.html").read_text()
+        self.check_language_loading("weathercodes.html")
+
+    def test_weathericon_language_loading(self):
+        self.check_language_loading("weathericon.html")
+        content = (HTML / "weathericon.html").read_text()
+        self.assertIn("const urlIcon = normalizeIconName(urlParams.get('icon'));", content)
+
+    def check_language_loading(self, page):
+        content = (HTML / page).read_text()
         selector = content.split('<select id="lang-select">', 1)[1].split("</select>", 1)[0]
         self.assertNotIn("<option", selector)
         source = content.split("function languageCode(value)", 1)[1].split("\nfunction t(key)", 1)[0]
