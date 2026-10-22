@@ -5,6 +5,7 @@
   "weathericon_title": "Weather4Lox symbooltest",
   "weathericon_subtitle": "Weergave van een enkel weersymbool om te testen",
   "label_icon": "Symbool",
+  "button_refresh": "Vernieuwen",
   "col_no": "Nr",
   "col_code": "Weather4Lox Code",
   "col_description": "Beschrijving",

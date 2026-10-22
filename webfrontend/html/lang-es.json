@@ -5,6 +5,7 @@
   "weathericon_title": "Prueba de símbolos Weather4Lox",
   "weathericon_subtitle": "Muestra un único símbolo meteorológico para pruebas",
   "label_icon": "Símbolo",
+  "button_refresh": "Actualizar",
   "col_no": "N.º",
   "col_code": "Weather4Lox Code",
   "col_description": "Descripción",

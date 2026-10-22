@@ -62,6 +62,18 @@
 
     .control-group input[type=range] { width: 120px; }
 
+    .refresh-btn {
+      padding: 0.3rem 0.75rem;
+      border: 1px solid #1a3a5c;
+      border-radius: 4px;
+      background: #1a3a5c;
+      color: #fff;
+      font-size: 0.88rem;
+      cursor: pointer;
+    }
+    .refresh-btn:hover { background: #24507e; }
+    .refresh-btn:disabled { opacity: 0.6; cursor: wait; }
+
     .size-display { font-size: 0.8rem; color: #666; min-width: 3rem; }
 
     /* Two-column layout: preview left, categories right */
@@ -282,6 +294,9 @@
     <label id="lbl-icon">Symbol:</label>
     <select id="icon-select"></select>
   </div>
+  <div class="control-group">
+    <button type="button" class="refresh-btn" id="refresh-btn">⟳ Refresh</button>
+  </div>
 </div>
 
 <div class="main">
@@ -406,6 +421,8 @@ let iconSize = 128;
 let iconsetPath = '';
 let pendingIconSetInfo = null;
 let iconSetToken = 0;
+// Appended to icon URLs after a refresh to bypass the browser cache
+let cacheBust = '';
 
 const bgColorDefault = '#e6f7ff';
 let bgColor = bgColorDefault;
@@ -613,7 +630,7 @@ async function urlExists(url, timeoutMs = 3000) {
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
-    const resp = await fetch(url, { method: 'HEAD', signal: controller.signal });
+    const resp = await fetch(url, { method: 'HEAD', signal: controller.signal, cache: 'no-store' });
     clearTimeout(timer);
     return resp.ok;
   } catch (e) {
@@ -752,7 +769,7 @@ function displayIconSetInfo(info) {
 
 async function loadIconMapping(iconset) {
   try {
-    const resp = await fetch(pluginBase + '/icons/' + iconset + '/icon_mapping.json');
+    const resp = await fetch(pluginBase + '/icons/' + iconset + '/icon_mapping.json', { cache: 'no-store' });
     if (resp.ok) {
       iconMapping = await resp.json();
       return true;
@@ -820,7 +837,7 @@ function categoryOf(nr) {
 
 function makeImg(name, size) {
   const img = document.createElement('img');
-  img.src = iconsetPath + name + iconExt();
+  img.src = iconsetPath + name + iconExt() + (cacheBust ? '?v=' + cacheBust : '');
   img.alt = name;
   if (size) {
     img.width = size;
@@ -1027,6 +1044,7 @@ function applyTranslations() {
   document.getElementById('lbl-size').textContent = t('label_icon_size') + ':';
   document.getElementById('lbl-lang').textContent = t('label_language') + ':';
   document.getElementById('lbl-icon').textContent = t('label_icon') + ':';
+  document.getElementById('refresh-btn').textContent = '⟳ ' + t('button_refresh');
   document.getElementById('lbl-nr').textContent = t('col_no');
   document.getElementById('lbl-code').textContent = t('col_code');
   document.getElementById('lbl-desc').textContent = t('col_description');
@@ -1039,6 +1057,32 @@ function applyTranslations() {
     const key = opt.getAttribute('data-key');
     if (key && lang[key]) opt.text = lang[key];
   });
+}
+
+// Reload mapping and all symbols from the web server, keeping settings and view state
+async function refreshIcons() {
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled = true;
+  try {
+    const openCats = Array.from(document.querySelectorAll('.category-section'))
+      .filter(function(d) { return d.open; })
+      .map(function(d) { return d.dataset.category; });
+    const scrollX = window.scrollX, scrollY = window.scrollY;
+    const prev = selected;
+
+    cacheBust = Date.now().toString(36);
+    _iconUrlExistenceCache.clear();
+    await loadIconSet(document.getElementById('iconset-select').value);
+    selected = (prev && findEntry(prev.name, prev.nr)) || iconEntries[0] || null;
+    renderAll();
+
+    document.querySelectorAll('.category-section').forEach(function(d) {
+      d.open = openCats.includes(d.dataset.category);
+    });
+    window.scrollTo(scrollX, scrollY);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function renderAll() {
@@ -1082,6 +1126,8 @@ async function init() {
     selected = (prev && findEntry(prev.name, prev.nr)) || iconEntries[0] || null;
     renderAll();
   });
+
+  document.getElementById('refresh-btn').addEventListener('click', refreshIcons);
 
   document.getElementById('icon-select').addEventListener('change', function() {
     const nr = selected && selected.name === this.value ? selected.nr : null;
