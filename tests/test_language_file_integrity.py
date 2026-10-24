@@ -100,6 +100,15 @@ class LanguageFileIntegrityTest(unittest.TestCase):
         self.assertIn("SETTINGS.HINT_CONFIGUREWEATHERSERVICE", settings)
         self.assertNotIn("SETTINGS.HINT_CONFIGURE_WEATHERSERVICE", settings)
 
+    def test_default_interval_has_short_and_full_labels_in_every_language(self):
+        for path in sorted(LANG_DIR.glob("language_*.ini")):
+            with self.subTest(language=path.name):
+                values = parse_ini_values(path)["SETTINGS"]
+                self.assertNotEqual(
+                    values["LABEL_SAME_AS_DEFAULT"],
+                    values["LABEL_SAME_AS_DEFAULT_SHORT"],
+                )
+
     def test_json_languages_are_valid_utf8_and_match_english(self):
         reference_path = JSON_DIR / "lang-en.json"
         reference_bytes = reference_path.read_bytes()

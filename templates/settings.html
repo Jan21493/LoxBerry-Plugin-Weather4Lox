@@ -49,6 +49,23 @@
                                                 white-space: normal;
                                             }
                                         }
+                                        @media (max-width: 699.98px) {
+                                            table.mobile-stack,
+                                            table.mobile-stack > tbody,
+                                            table.mobile-stack > tbody > tr,
+                                            table.mobile-stack > tbody > tr > td {
+                                                display: block;
+                                                width: 100% !important;
+                                                box-sizing: border-box;
+                                            }
+                                            table.mobile-stack > tbody > tr > td {
+                                                padding: 4px 0;
+                                                text-align: left;
+                                            }
+                                            table.mobile-stack > tbody > tr > td.mobile-spacer {
+                                                display: none;
+                                            }
+                                        }
                                     </style>
 
 
@@ -369,10 +386,10 @@
                                                             <label id="labelwugrabber"><TMPL_VAR SETTINGS.LABEL_WUGRABBER></label>
                                                         </td>
                                                         <td width="50%">
-                                                            <table border="0" width="100%">
+                                                            <table class="mobile-stack" border="0" width="100%">
                                                                 <tr>
                                                                     <td width="10%"><TMPL_VAR WUGRABBER></td>
-                                                                    <td width="10%" align="right"><label id="labelwustationid"><TMPL_VAR SETTINGS.LABEL_STATIONID></label></td>
+                                                                    <td width="10%" align="right"><label id="labelwustationid" for="wustationid"><TMPL_VAR SETTINGS.LABEL_STATIONID></label></td>
                                                                     <td width="80%"><input id="wustationid" name="wustationid" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR WUNDERGROUND.STATIONID>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.HINT_STATIONID>">
                                                                     <font size="-1"><a id="linkwundermap" href="https://www.wunderground.com/wundermap/?renderer=2&amp;Units=<TMPL_IF SERVER.METRIC>metric<TMPL_ELSE>english</TMPL_IF>&amp;zoom=15&amp;lat=<TMPL_VAR SERVER.COORDLAT>&amp;lon=<TMPL_VAR SERVER.COORDLONG>&amp;wxstn=1&amp;wxstnmode=tw" target="_blank"><TMPL_VAR SETTINGS.LABEL_WUMAP></a></font></td>
                                                                 </tr>
@@ -402,18 +419,18 @@
                                                     <tr>
                                                         <td width="25%"><label id="labelfoshkgrabber"><TMPL_VAR SETTINGS.LABEL_FOSHKGRABBER></label></td>
                                                         <td width="50%">
-                                                            <table border="0" width="100%">
+                                                            <table class="mobile-stack" border="0" width="100%">
                                                                 <tr>
                                                                     <td width="10%"><TMPL_VAR FOSHKGRABBER></td>
-                                                                    <td width="5%">&nbsp;</td>
-                                                                    <td width="5%" align="right"><label id="labelfoshkserver" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_FOSHKSERVER></label></td>
+                                                                    <td class="mobile-spacer" width="5%">&nbsp;</td>
+                                                                    <td width="5%" align="right"><label id="labelfoshkserver" for="foshkserver" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_FOSHKSERVER></label></td>
                                                                     <td width="40%"><input id="foshkserver" name="foshkserver" type="text" data-validation-rule="special:hostname_or_ipaddr" class="textfield" value="<TMPL_VAR FOSHK.SERVER>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_FOSHKSERVER>"></td>
-                                                                    <td width="10%" align="right"><label id="labelfoshkport" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_FOSHKPORT></label></td>
+                                                                    <td width="10%" align="right"><label id="labelfoshkport" for="foshkport" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_FOSHKPORT></label></td>
                                                                     <td width="20%"><input id="foshkport" name="foshkport" type="text" data-validation-rule="special:port" class="textfield" value="<TMPL_VAR FOSHK.PORT>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_FOSHKPORT>"></td>
                                                                 </tr>
                                                                 <tr>
                                                                     <td width="10%"><TMPL_VAR FOSHKNEWAPI></td>
-                                                                    <td width="5%">&nbsp;</td>    
+                                                                    <td class="mobile-spacer" width="5%">&nbsp;</td>
                                                                     <td colspan=4><label id="labelfoshknewapi"><font size="-1"><TMPL_VAR SETTINGS.HINT_FOSHKNEWAPI></font></label></td>
                                                                 </tr>
                                                             </table>
@@ -430,10 +447,10 @@
                                                     <tr>
                                                         <td width="25%"><label id="labelloxgrabber"><TMPL_VAR SETTINGS.LABEL_LOXGRABBER></label></td>
                                                         <td width="50%">
-                                                            <table border="0" width="100%">
+                                                            <table class="mobile-stack" border="0" width="100%">
                                                                 <tr>
                                                                     <td width="10%"><TMPL_VAR LOXGRABBER></td>
-                                                                    <td width="10%" align="right"><label id="labelloxprefix" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_LOXPREFIX></label></td>
+                                                                    <td width="10%" align="right"><label id="labelloxprefix" for="loxprefix" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_LOXPREFIX></label></td>
                                                                     <td width="80%"><input id="loxprefix" name="loxprefix" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR LOX.PREFIX>" placeholder="<TMPL_VAR SETTINGS.PLACEHOLDER_LOXPREFIX>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_LOXPREFIX>"></td>
                                                                 </tr>
                                                             </table>
@@ -716,6 +733,7 @@
                                       </center>
                                     </div>
 
+    <span id="same-as-default-short-label" hidden><TMPL_VAR SETTINGS.LABEL_SAME_AS_DEFAULT_SHORT></span>
     <script>
     // ── Validation rules ──────────────────────────────────────────────────
     // Use + (one or more) instead of * (zero or more) to reject empty strings
@@ -762,6 +780,26 @@
     $('select[name=pollen_mugwort]').attr('data-mini','true');
     $('select[name=pollen_olive]').attr('data-mini','true');
     $('select[name=pollen_ragweed]').attr('data-mini','true');
+
+    function updateDefaultIntervalLabels() {
+        var shortLabel = $('#same-as-default-short-label').text();
+        var useShortLabel = window.innerWidth < 700;
+        $('select[name=cron_alternate], select[name=cron_airquality], select[name=cron_local]').each(function() {
+            var select = $(this);
+            var option = select.find('option[value="0"]');
+            var fullLabel = option.data('full-label');
+            if (typeof fullLabel === 'undefined') {
+                fullLabel = option.text();
+                option.data('full-label', fullLabel);
+            }
+            option.text(useShortLabel ? shortLabel : fullLabel);
+            if (select.data('mobile-selectmenu')) {
+                select.selectmenu('refresh');
+            }
+        });
+    }
+    updateDefaultIntervalLabels();
+    $(window).on('resize', updateDefaultIntervalLabels);
 
     // ── Helper: add a field to / remove it from the validation list ───────
 
