@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Weather4Lox Symbol Test</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { overflow-x: hidden; }
+
+    :root {
+      --thumb-size: 40px;   /* size of the small symbols in the right panel */
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f4f6f8;
+      color: #333;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a3a5c;
+      color: #fff;
+      padding: 1rem 2rem;
+    }
+
+    header h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 0.25rem; }
+    header p { font-size: 0.9rem; opacity: 0.75; }
+
+    .controls {
+      background: #fff;
+      border-bottom: 1px solid #dde8f4;
+      padding: 0.75rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.88rem;
+    }
+
+    .control-group label {
+      font-weight: 600;
+      white-space: nowrap;
+      color: #1a3a5c;
+    }
+
+    .control-group select {
+      padding: 0.3rem 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.88rem;
+      background: #fff;
+    }
+
+    .control-group input[type=range] { width: 120px; }
+
+    .refresh-btn {
+      padding: 0.3rem 0.75rem;
+      border: 1px solid #1a3a5c;
+      border-radius: 4px;
+      background: #1a3a5c;
+      color: #fff;
+      font-size: 0.88rem;
+      cursor: pointer;
+    }
+    .refresh-btn:hover { background: #24507e; }
+    .refresh-btn:disabled { opacity: 0.6; cursor: wait; }
+
+    .size-display { font-size: 0.8rem; color: #666; min-width: 3rem; }
+
+    /* Two-column layout: preview left, categories right */
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem 1rem;
+      align-items: start;
+    }
+
+    .preview-panel {
+      position: sticky;
+      top: 0.5rem;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 1rem;
+      max-height: calc(100vh - 1rem);
+      overflow: auto;
+    }
+
+    .preview-info {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: 0.25rem 0.75rem;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .preview-info dt { font-weight: 600; color: #1a3a5c; }
+    .preview-info dd.code { font-family: monospace; color: #0d4a8a; }
+    .preview-info dd.file { font-family: monospace; color: #666; font-size: 0.82rem; }
+
+    .preview-frame {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px dashed #bbb;
+    }
+
+    .preview-frame img { display: block; object-fit: contain; }
+
+    .bg-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      font-size: 0.88rem;
+    }
+
+    .bg-swatch {
+      width: 1.2rem;
+      height: 1.2rem;
+      border: 1px solid #999;
+      border-radius: 3px;
+    }
+
+    .bg-hex { font-family: monospace; color: #0d4a8a; }
+
+    .icon-missing {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f0f0;
+      border: 1px dashed #ccc;
+      border-radius: 4px;
+      color: #bbb;
+      font-size: 1rem;
+    }
+
+    /* Right panel: collapsible categories */
+    .category-section {
+      margin-bottom: 0.75rem;
+      background: #fff;
+      border-radius: 0 6px 6px 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .category-section > summary {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #1a3a5c;
+      padding: 0.6rem 1rem;
+      background: #dde8f4;
+      border-left: 4px solid #1a3a5c;
+      border-radius: 0 6px 6px 0;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .category-body { padding: 0.5rem 0.75rem; }
+
+    .code-row {
+      padding: 0.4rem 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .code-row:last-child { border-bottom: none; }
+
+    .code-label {
+      font-size: 0.8rem;
+      color: #444;
+      margin-bottom: 0.25rem;
+    }
+
+    .code-label .nr { color: #888; margin-right: 0.4rem; }
+    .code-label .code { font-family: monospace; color: #0d4a8a; margin-right: 0.4rem; }
+
+    .thumbs { display: flex; flex-wrap: wrap; gap: 4px; }
+
+    .thumb {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .thumb:hover { border-color: #8fb3dd; }
+    .thumb.selected { border-color: #dc3545; }
+
+    .thumb img, .thumb .icon-missing {
+      display: block;
+      width: var(--thumb-size);
+      height: var(--thumb-size);
+      object-fit: contain;
+    }
+
+    .stats-table { border-collapse: collapse; font-size: 0.88rem; }
+    .stats-table td { padding: 0.3rem 0.75rem; border-bottom: 1px solid #eee; }
+    .stats-table td:first-child { font-family: monospace; color: #0d4a8a; }
+
+    @media (max-width: 900px) {
+      .main { grid-template-columns: 1fr; }
+      .preview-panel { position: static; max-height: none; }
+    }
+
+    @media (max-width: 768px) {
+      .controls { padding: 0.5rem 1rem; gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1 id="hdr-title">☁️ Weather4Lox Symbol Test</h1>
+  <p id="hdr-subtitle">Display a single weather symbol for testing</p>
+</header>
+
+<div class="controls">
+  <div class="control-group">
+    <label id="lbl-iconset">Icon Set:</label>
+    <select id="iconset-select">
+      <option value="naturalistic">naturalistic</option>
+      <option value="color">color</option>
+      <option value="custom">custom</option>
+      <option value="dark">dark</option>
+      <option value="flat">flat</option>
+      <option value="green">green</option>
+      <option value="light">light</option>
+      <option value="realistic">realistic</option>
+      <option value="silver">silver</option>
+      <option value="svg">svg</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <label id="lbl-bg">Background:</label>
+    <select id="bg-select">
+      <option value="#ffffff" data-key="bg_white">White</option>
+      <option value="#f5f5dc" data-key="bg_beige">Beige</option>
+      <option value="#c0c0c0" data-key="bg_silver">Silver</option>
+      <option value="#e0e0e0" data-key="bg_light_gray">Light Gray</option>
+      <option value="#666666" data-key="bg_gray">Gray</option>
+      <option value="#404040" data-key="bg_dark_gray">Dark Gray</option>
+      <option value="#000000" data-key="bg_black">Black</option>
+      <option value="#b1cfdf" data-key="bg_sky_pale">Pale Sky</option>
+      <option value="#8dbde0" data-key="bg_sky_soft">Soft Sky</option>
+      <option value="#add9f9" data-key="bg_sky_light">Light Blue</option>
+      <option value="#d2ecfa" data-key="bg_sky_day">Day Sky</option>
+      <option value="#e6f7ff" data-key="bg_sky_bright">Bright Sky</option>
+      <option value="#7dc5ff" data-key="bg_sky_noon">Noon Sky</option>
+      <option value="#007fff" data-key="bg_sky_azure">Azure Deep</option>
+      <option value="#2059af" data-key="bg_sky_deep">Deep Sky</option>
+      <option value="#6981a0" data-key="bg_sky_twilight">Twilight Sky</option>
+      <option value="#387fa2" data-key="bg_sky_storm">Stormy Sky</option>
+      <option value="#800000" data-key="bg_maroon">Maroon</option>
+      <option value="#dc3545" data-key="bg_red">Red</option>
+      <option value="#795548" data-key="bg_brown">Brown</option>
+      <option value="#fd7e14" data-key="bg_orange">Orange</option>
+      <option value="#ffc107" data-key="bg_yellow">Yellow</option>
+      <option value="#ffd700" data-key="bg_gold">Gold</option>
+      <option value="#cddc39" data-key="bg_lime">Lime</option>
+      <option value="#808000" data-key="bg_olive">Olive</option>
+      <option value="#28a745" data-key="bg_green">Green</option>
+      <option value="#008080" data-key="bg_teal">Teal</option>
+      <option value="#17a2b8" data-key="bg_cyan">Cyan</option>
+      <option value="#90d0ff" data-key="bg_light_blue">Light Blue</option>
+      <option value="#0074D9" data-key="bg_blue">Blue</option>
+      <option value="#001f3f" data-key="bg_navy">Navy</option>
+      <option value="#6f42c1" data-key="bg_purple">Purple</option>
+      <option value="#e83e8c" data-key="bg_pink">Pink</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <label id="lbl-size">Icon Size:</label>
+    <input type="range" id="size-slider" min="32" max="1024" value="128" step="8">
+    <span class="size-display" id="size-display">128px</span>
+  </div>
+  <div class="control-group">
+    <label id="lbl-lang">Language:</label>
+    <select id="lang-select">
+    </select>
+  </div>
+  <div class="control-group">
+    <label id="lbl-icon">Symbol:</label>
+    <select id="icon-select"></select>
+  </div>
+  <div class="control-group">
+    <button type="button" class="refresh-btn" id="refresh-btn">⟳ Refresh</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="preview-panel">
+    <dl class="preview-info">
+      <dt id="lbl-nr">No</dt><dd id="info-nr">–</dd>
+      <dt id="lbl-code">Weather4Lox Code</dt><dd id="info-code" class="code">–</dd>
+      <dt id="lbl-desc">Description</dt><dd id="info-desc">–</dd>
+      <dt id="lbl-variant"></dt><dd id="info-variant">–</dd>
+      <dt id="lbl-file">Filename</dt><dd id="info-file" class="file">–</dd>
+    </dl>
+    <div class="preview-frame" id="preview-frame"></div>
+    <div class="bg-info">
+      <span id="lbl-bg-info">Background:</span>
+      <span class="bg-swatch" id="bg-swatch"></span>
+      <span id="bg-name"></span>
+      <span class="bg-hex" id="bg-hex"></span>
+    </div>
+  </div>
+  <div id="content"></div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Weather code definitions (same as weathercodes.html)
+// ---------------------------------------------------------------------------
+
+const WEATHER_CODES = [
+  [1,  'clear',                      'both'],
+  [2,  'fair',                       'both'],
+  [3,  'partly_cloudy',              'both'],
+  [4,  'cloudy',                     'both'],
+  [5,  'overcast',                   'both'],
+
+  [10, 'cloudy_shower_1',            'forecast'],
+  [11, 'cloudy_shower_2',            'forecast'],
+  [12, 'overcast_shower_1',          'both'],
+  [13, 'overcast_shower_2',          'both'],
+  [14, 'overcast_shower_3',          'both'],
+
+  [20, 'cloudy_rain_1',              'forecast'],
+  [21, 'cloudy_rain_2',              'forecast'],
+  [22, 'overcast_rain_1',            'both'],
+  [23, 'overcast_rain_2',            'both'],
+  [24, 'overcast_rain_3',            'both'],
+
+  [30, 'cloudy_sleet_1',             'forecast'],
+  [31, 'cloudy_sleet_2',             'forecast'],
+  [32, 'overcast_sleet_1',           'both'],
+  [33, 'overcast_sleet_2',           'both'],
+  [34, 'overcast_sleet_3',           'both'],
+
+  [40, 'cloudy_snow_1',              'forecast'],
+  [41, 'cloudy_snow_2',              'forecast'],
+  [42, 'overcast_snow_1',            'both'],
+  [43, 'overcast_snow_2',            'both'],
+  [44, 'overcast_snow_3',            'both'],
+
+  [50, 'cloudy_freezingrain_1',      'forecast'],
+  [51, 'cloudy_freezingrain_2',      'forecast'],
+  [52, 'overcast_freezingrain_1',    'both'],
+  [53, 'overcast_freezingrain_2',    'both'],
+  [54, 'overcast_freezingrain_3',    'both'],
+  
+  [60, 'cloudy_thunderstorm_1',      'forecast'],
+  [61, 'cloudy_thunderstorm_2',      'forecast'],
+  [62, 'overcast_thunderstorm_1',    'both'],
+  [63, 'overcast_thunderstorm_2',    'both'],
+  [64, 'overcast_thunderstorm_3',    'both'],
+
+  [70, 'cloudy_snowthunderstorm_1',  'forecast'],
+  [71, 'cloudy_snowthunderstorm_2',  'forecast'],
+  [72, 'overcast_snowthunderstorm_1','both'],
+  [73, 'overcast_snowthunderstorm_2','both'],
+  [74, 'overcast_snowthunderstorm_3','both'],
+  [75, 'overcast_icepellets',        'both'],
+  [76, 'overcast_graupel',           'both'],
+  [77, 'overcast_hail_1',            'both'],
+  [78, 'overcast_hail_2',            'both'],
+
+  [80, 'mist',                       'both'],
+  [81, 'smoke',                      'both'],
+  [82, 'haze',                       'both'],
+  [83, 'dust_whirls',                'both'],
+  [84, 'fog',                        'both'],
+  [85, 'sand',                       'both'],
+  [86, 'dust',                       'both'],
+
+  [90, 'wind',                       'both'],
+  [91, 'volcanic_ash',               'both'],
+  [92, 'squalls',                    'both'],
+  [93, 'tornado',                    'both'],
+  [99, 'no_data',                    'both'],
+];
+
+const CATEGORIES = [
+  { key: 'cloud_cover',         codes: [1, 2, 3, 4, 5] },
+  { key: 'shower',              codes: [10, 11, 12, 13, 14] },
+  { key: 'rain',                codes: [20, 21, 22, 23, 24] },
+  { key: 'sleet',               codes: [30, 31, 32, 33, 34] },
+  { key: 'snow',                codes: [40, 41, 42, 43, 44] },
+  { key: 'freezing_rain',       codes: [50, 51, 52, 53, 54] },
+  { key: 'thunderstorm',        codes: [60, 61, 62, 63, 64] },
+  { key: 'snow_thunderstorm',   codes: [70, 71, 72, 73, 74] },
+  { key: 'hail',                codes: [75, 76, 77, 78] },
+  { key: 'fog',                 codes: [80, 81, 82, 83, 84, 85, 86] },
+  { key: 'special',             codes: [90, 91, 92, 93, 99] }, 
+  { key: 'statistics',          codes: [] },
+];
+
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+
+const SIZE_MIN = 32, SIZE_MAX = 1024, SIZE_STEP = 8;
+const FRAME_FACTOR = 1.5;
+
+let lang = {};
+let iconMapping = null;
+let iconSize = 128;
+let iconsetPath = '';
+let pendingIconSetInfo = null;
+let iconSetToken = 0;
+// Appended to icon URLs after a refresh to bypass the browser cache
+let cacheBust = '';
+
+const bgColorDefault = '#e6f7ff';
+let bgColor = bgColorDefault;
+
+// All symbols of the current icon set: { name, nr, code, kind: 'day'|'night', phase }
+let iconEntries = [];
+let selected = null;
+
+// ---------------------------------------------------------------------------
+// Plugin base path detection
+// ---------------------------------------------------------------------------
+
+function getPluginBase() {
+  const pathParts = window.location.pathname.split('/');
+  const pluginsIdx = pathParts.indexOf('plugins');
+  if (pluginsIdx !== -1 && pathParts[pluginsIdx + 1]) {
+    return '/plugins/' + pathParts[pluginsIdx + 1];
+  }
+  return '';
+}
+
+const pluginBase = getPluginBase();
+
+// ---------------------------------------------------------------------------
+// URL parameters
+// ---------------------------------------------------------------------------
+
+const urlParams = new URLSearchParams(window.location.search);
+
+// Sanitize: only allow alphanumeric chars (plus hyphen/underscore) to prevent path traversal
+function sanitizeParam(val, fallback) {
+  if (!val) return fallback;
+  return /^[a-zA-Z0-9_-]+$/.test(val) ? val : fallback;
+}
+
+// Accept symbol names with or without extension and moon phase suffix as "_q4" or "_4q"
+function normalizeIconName(val) {
+  let name = sanitizeParam((val || '').replace(/\.(png|svg|gif|jpe?g|webp)$/i, ''), null);
+  if (!name) return null;
+  return name.replace(/_([qh])(\d)$/i, function(m, p, d) { return '_' + d + p.toLowerCase(); });
+}
+
+function isValidHexColor(val) {
+  if (!val || typeof val !== 'string') return false;
+  return /^#?([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(val.trim());
+}
+
+function normalizeHex(val, fallback = bgColorDefault) {
+  if (!isValidHexColor(val)) return fallback;
+  let s = val.trim().toLowerCase();
+  return s[0] === '#' ? s : ('#' + s);
+}
+
+function selectOptionByValue(selectEl, value) {
+  const option = Array.from(selectEl.options).find(function(opt) {
+    return opt.value.toLowerCase() === String(value).toLowerCase();
+  });
+  if (option) option.selected = true;
+  return option || null;
+}
+
+function selectOptionByKey(selectEl, key) {
+  const option = Array.from(selectEl.options).find(function(opt) {
+    return opt.getAttribute('data-key') === key;
+  });
+  if (option) option.selected = true;
+  return option || null;
+}
+
+function syncBackground(rawValue) {
+  const bgSelect = document.getElementById('bg-select');
+  const value = (rawValue || '').trim();
+
+  if (!value) {
+    bgColor = bgColorDefault;
+    selectOptionByValue(bgSelect, bgColorDefault);
+  } else if (isValidHexColor(value)) {
+    bgColor = normalizeHex(value, bgColorDefault);
+    if (!selectOptionByValue(bgSelect, bgColor)) bgSelect.selectedIndex = -1;
+  } else {
+    const matched = selectOptionByKey(bgSelect, value);
+    bgColor = matched ? matched.value.toLowerCase() : bgColorDefault;
+    if (!matched) selectOptionByValue(bgSelect, bgColorDefault);
+  }
+  updateBgColors();
+}
+
+function parseSize(raw) {
+  if (!raw || !/^[0-9]+$/.test(raw)) return null;
+  let v = parseInt(raw, 10);
+  v = Math.min(SIZE_MAX, Math.max(SIZE_MIN, v));
+  return Math.round(v / SIZE_STEP) * SIZE_STEP;
+}
+
+const urlLang = languageCode(urlParams.get('lang'));
+const urlIconset = sanitizeParam(urlParams.get('iconset'), 'naturalistic');
+const urlSize = parseSize(urlParams.get('size'));
+const urlIcon = normalizeIconName(urlParams.get('icon'));
+
+// Keep the URL in sync so the current view can be bookmarked / shared
+function updateUrl() {
+  const p = new URLSearchParams(window.location.search);
+  p.set('iconset', document.getElementById('iconset-select').value);
+  p.set('background', bgColor.replace(/^#/, ''));
+  p.set('size', String(iconSize));
+  p.set('lang', document.documentElement.lang || 'en');
+  if (selected) p.set('icon', selected.name); else p.delete('icon');
+  history.replaceState(null, '', window.location.pathname + '?' + p.toString());
+}
+
+// ---------------------------------------------------------------------------
+// Load language JSON
+// ---------------------------------------------------------------------------
+
+function languageCode(value) {
+  return value && /^[a-z]{2,3}(?:[-_][A-Za-z0-9]+)*$/.test(value) ? value : 'en';
+}
+
+function addLanguageOption(code, name) {
+  const select = document.getElementById('lang-select');
+  let option = Array.from(select.options).find(function(item) { return item.value === code; });
+  if (!option) {
+    option = document.createElement('option');
+    option.value = code;
+    select.appendChild(option);
+  }
+  option.textContent = name;
+}
+
+async function loadLanguageOptions() {
+  try {
+    const resp = await fetch(pluginBase + '/languages.cgi', { cache: 'no-store' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status + ': ' + resp.url);
+    const languages = await resp.json();
+    if (!Array.isArray(languages)) throw new Error('Invalid language list');
+    languages.forEach(function(item) {
+      if (item && languageCode(item.code) === item.code &&
+          typeof item.language === 'string' && item.language.trim()) {
+        addLanguageOption(item.code, item.language);
+      }
+    });
+  } catch (err) {
+    console.warn('Cannot list languages; loading requested language directly:', err);
+  }
+}
+
+async function loadLang(langCode) {
+  let code = languageCode(langCode);
+  async function readLanguage(code) {
+    const resp = await fetch(pluginBase + '/lang-' + code + '.json');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status + ': ' + resp.url);
+    return resp.json();
+  }
+  let strings;
+  try {
+    strings = await readLanguage(code);
+  } catch (err) {
+    if (code === 'en') throw err;
+    console.warn('Cannot load language ' + code + '; falling back to English:', err);
+    code = 'en';
+    strings = await readLanguage(code);
+  }
+  lang = strings;
+  addLanguageOption(code, strings.language || code);
+  document.getElementById('lang-select').value = code;
+  document.documentElement.lang = code;
+}
+
+function showLanguageError(err) {
+  console.error('Cannot load weather code language:', err);
+  document.getElementById('hdr-subtitle').textContent = 'Could not load language data.';
+}
+
+function showLanguageError(err) {
+  console.error('Cannot load weather code language:', err);
+  document.getElementById('hdr-subtitle').textContent = 'Could not load language data.';
+}
+
+function t(key) {
+  return lang[key] || key;
+}
+
+function tDesc(code) {
+  return (lang.weather_descriptions && lang.weather_descriptions[code]) || code;
+}
+
+function tCategory(code) {
+  return (lang.weather_categories && lang.weather_categories[code]) || code;
+}
+
+function tMoonPhase(phaseIdx) {
+  return lang['moon_phase_' + phaseIdx] || ('Phase ' + phaseIdx);
+}
+
+// ---------------------------------------------------------------------------
+// Icon set statistics (same as weathercodes.html)
+// ---------------------------------------------------------------------------
+
+function phaseFilename(baseFilename, phaseIdx, pchar, ext) {
+  return baseFilename + '_' + phaseIdx + pchar + ext;
+}
+
+// Check with HEAD if a URL exists (with timeout)
+async function urlExists(url, timeoutMs = 3000) {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const resp = await fetch(url, { method: 'HEAD', signal: controller.signal, cache: 'no-store' });
+    clearTimeout(timer);
+    return resp.ok;
+  } catch (e) {
+    // Network error, CORS, timeout → treat as "not found"
+    return false;
+  }
+}
+
+// Helper function: map with limited concurrency
+async function mapWithConcurrency(items, fn, concurrency = 8) {
+  const results = new Array(items.length);
+  let i = 0;
+  async function worker() {
+    while (true) {
+      const idx = i++;
+      if (idx >= items.length) return;
+      results[idx] = await fn(items[idx]);
+    }
+  }
+  const workers = [];
+  const n = Math.min(concurrency, items.length);
+  for (let w = 0; w < n; w++) workers.push(worker());
+  await Promise.all(workers);
+  return results;
+}
+
+// Cache for already checked URLs (avoids duplicate requests)
+const _iconUrlExistenceCache = new Map();
+
+// Async: calculates icon set info AND checks if the referenced files exist
+async function computeIconSetInfo(iconMapping) {
+  if (!iconMapping || !iconMapping.icons) return null;
+  const icons = iconMapping.icons;
+  const keys = Object.keys(icons);
+
+  let symbolsDay = 0;
+  let symbolsNight = 0;
+
+  const filesToCheck = []; // absolute URLs
+  const ext = '.' + (iconMapping.format || 'png');
+  const basePath = iconsetPath || ''; // sollte gesetzt sein vor Aufruf
+
+  keys.forEach(function(k) {
+    const e = icons[k] || {};
+    if (e.iconDay) {
+      const url = basePath + e.iconDay + ext;
+      filesToCheck.push(url);
+      symbolsDay++;
+    }
+    if (e.iconNight) {
+      let moonPhases = e.moonPhases || 0;
+      if (![0, 3, 5].includes(moonPhases)) {
+        console.warn('Unexpected moonPhases value for code ' + k + ': ' + moonPhases);
+        moonPhases = 0;
+      }
+      
+      if (moonPhases === 0) {
+        const url = basePath + e.iconNight + ext;
+        filesToCheck.push(url);
+        symbolsNight++;
+      } else {
+        for (let i = 0; i < moonPhases; i++) {
+          const pchar = moonPhases === 3 ? 'h' : 'q'; // 'h' for half phases, 'q' for quarter phases
+          const fname = phaseFilename(e.iconNight, i, pchar, ext);
+          const url = basePath + fname;
+          filesToCheck.push(url);
+          symbolsNight++; 
+        }
+      }
+    }
+  });
+
+  // remove duplicates to minimize number of URL checks (icons can be shared between codes)
+  const uniqueUrls = Array.from(new Set(filesToCheck));
+
+  // check function with cache
+  async function checkUrl(url) {
+    if (_iconUrlExistenceCache.has(url)) return _iconUrlExistenceCache.get(url);
+    const ok = await urlExists(url, 2500);
+    _iconUrlExistenceCache.set(url, ok);
+    return ok;
+  }
+
+  // Check URLs with limited concurrency
+  const existenceResults = await mapWithConcurrency(uniqueUrls, checkUrl, 10);
+
+  // Count only existing files in uniqueFileCount
+  let uniqueFileCount = 0;
+  for (let i = 0; i < uniqueUrls.length; i++) {
+    if (existenceResults[i]) uniqueFileCount++;
+  }
+
+  const format = iconMapping.format || 'png';
+  const version = iconMapping.version || 'unknown';
+
+  return {
+    version,
+    format,
+    total_symbols: symbolsDay +  symbolsNight,
+    symbols_day: symbolsDay,
+    symbols_night: symbolsNight,
+    unique_files: uniqueFileCount
+  };
+}
+
+function displayIconSetInfo(info) {
+  // Check if the target elements are present
+  const elVersion = document.getElementById('statistics-version');
+  if (!elVersion) {
+    // DOM not yet available → remember and show later
+    pendingIconSetInfo = info;
+    return;
+  }
+
+  if (!info) {
+    elVersion.textContent = '—';
+    document.getElementById('statistics-format').textContent = '—';
+    document.getElementById('statistics-total_symbols').textContent = '—';
+    document.getElementById('statistics-symbols_day').textContent = '—';
+    document.getElementById('statistics-symbols_night').textContent = '—';
+    document.getElementById('statistics-unique_files').textContent = '—';
+    return;
+  }
+  elVersion.textContent = info.version;
+  document.getElementById('statistics-format').textContent = info.format;
+  document.getElementById('statistics-total_symbols').textContent = info.total_symbols;
+  document.getElementById('statistics-symbols_day').textContent = info.symbols_day;
+  document.getElementById('statistics-symbols_night').textContent = info.symbols_night;
+  document.getElementById('statistics-unique_files').textContent = info.unique_files;
+}
+
+
+// ---------------------------------------------------------------------------
+// Load icon mapping
+// ---------------------------------------------------------------------------
+
+async function loadIconMapping(iconset) {
+  try {
+    const resp = await fetch(pluginBase + '/icons/' + iconset + '/icon_mapping.json', { cache: 'no-store' });
+    if (resp.ok) {
+      iconMapping = await resp.json();
+      return true;
+    }
+  } catch (e) {}
+  iconMapping = null;
+  return false;
+}
+
+async function loadIconSet(iconset) {
+  pendingIconSetInfo = null;
+  iconsetPath = pluginBase + '/icons/' + iconset + '/';
+  const ok = await loadIconMapping(iconset);
+  iconEntries = ok ? buildEntries() : [];
+  // statistics need many HEAD requests; don't block the page for them
+  if (ok) {
+    const token = ++iconSetToken;
+    computeIconSetInfo(iconMapping).then(function(info) {
+      if (token !== iconSetToken) return;
+      pendingIconSetInfo = info;
+      displayIconSetInfo(info);
+    });
+  }
+}
+
+function iconExt() {
+  return '.' + ((iconMapping && iconMapping.format) || 'png');
+}
+
+function buildEntries() {
+  const entries = [];
+  const icons = (iconMapping && iconMapping.icons) || {};
+  WEATHER_CODES.forEach(function(row) {
+    const [nr, code] = row;
+    const e = icons[code];
+    if (!e) return;
+    if (e.iconDay) entries.push({ name: e.iconDay, nr, code, kind: 'day', phase: null });
+    if (e.iconNight) {
+      const moonPhases = e.moonPhases || 0;
+      if (moonPhases === 3 || moonPhases === 5) {
+        const pchar = moonPhases === 3 ? 'h' : 'q';
+        for (let i = 0; i < moonPhases; i++) {
+          entries.push({ name: phaseFilename(e.iconNight, i, pchar, ''), nr, code, kind: 'night', phase: i });
+        }
+      } else {
+        entries.push({ name: e.iconNight, nr, code, kind: 'night', phase: null });
+      }
+    }
+  });
+  return entries;
+}
+
+function findEntry(name, nr) {
+  return iconEntries.find(function(e) { return e.name === name && (nr == null || e.nr === nr); }) ||
+         iconEntries.find(function(e) { return e.name === name; }) || null;
+}
+
+function categoryOf(nr) {
+  return CATEGORIES.find(function(cat) { return cat.codes.includes(nr); }) || null;
+}
+
+// ---------------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------------
+
+function makeImg(name, size) {
+  const img = document.createElement('img');
+  img.src = iconsetPath + name + iconExt() + (cacheBust ? '?v=' + cacheBust : '');
+  img.alt = name;
+  if (size) {
+    img.width = size;
+    img.height = size;
+  }
+  img.onerror = function() {
+    console.warn('Icon not found:', img.src);
+    img.onerror = null;
+    const missing = document.createElement('div');
+    missing.className = 'icon-missing';
+    missing.textContent = '?';
+    if (size) {
+      missing.style.width = size + 'px';
+      missing.style.height = size + 'px';
+    }
+    img.replaceWith(missing);
+  };
+  return img;
+}
+
+function variantText(entry) {
+  if (entry.kind === 'day') return t('hover_day');
+  let s = t('hover_night');
+  if (entry.phase !== null) s += ' – ' + t('hover_moon_phase') + ': ' + tMoonPhase(entry.phase);
+  return s;
+}
+
+function renderPreview() {
+  const frame = document.getElementById('preview-frame');
+  frame.innerHTML = '';
+  const e = selected;
+  document.getElementById('info-nr').textContent = e ? e.nr : '–';
+  document.getElementById('info-code').textContent = e ? e.code : '–';
+  document.getElementById('info-desc').textContent = e ? tDesc(e.code) : '–';
+  document.getElementById('info-variant').textContent = e ? variantText(e) : '–';
+  document.getElementById('info-file').textContent = e ? e.name + iconExt() : '–';
+  if (e) frame.appendChild(makeImg(e.name, iconSize));
+  updateIconSizes();
+  updateBgColors();
+}
+
+function buildCodeRow(nr, code) {
+  const row = document.createElement('div');
+  row.className = 'code-row';
+
+  const label = document.createElement('div');
+  label.className = 'code-label';
+  label.innerHTML = '<span class="nr"></span><span class="code"></span><span class="desc"></span>';
+  label.querySelector('.nr').textContent = nr;
+  label.querySelector('.code').textContent = code;
+  label.querySelector('.desc').textContent = tDesc(code);
+  row.appendChild(label);
+
+  const thumbs = document.createElement('div');
+  thumbs.className = 'thumbs';
+  iconEntries.filter(function(e) { return e.nr === nr; }).forEach(function(e) {
+    const btn = document.createElement('div');
+    btn.className = 'thumb';
+    btn.dataset.name = e.name;
+    btn.dataset.nr = e.nr;
+    btn.title = variantText(e) + '\n' + t('hover_filename') + ': ' + e.name + iconExt();
+    btn.appendChild(makeImg(e.name, null));
+    btn.addEventListener('click', function() { selectEntry(e, false); });
+    thumbs.appendChild(btn);
+  });
+  if (!thumbs.children.length) thumbs.textContent = '–';
+  row.appendChild(thumbs);
+  return row;
+}
+
+function buildStatisticsTable() {
+  const table = document.createElement('table');
+  table.className = 'stats-table';
+  ['version', 'format', 'total_symbols', 'symbols_day', 'symbols_night', 'unique_files'].forEach(function(key) {
+    const tr = document.createElement('tr');
+    const tdLabel = document.createElement('td');
+    tdLabel.textContent = t('label_' + key);
+    const tdValue = document.createElement('td');
+    tdValue.id = 'statistics-' + key;
+    tdValue.textContent = '-';
+    tr.appendChild(tdLabel);
+    tr.appendChild(tdValue);
+    table.appendChild(tr);
+  });
+  return table;
+}
+
+function renderCategories() {
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+  const byNr = {};
+  WEATHER_CODES.forEach(function(row) { byNr[row[0]] = row; });
+
+  CATEGORIES.forEach(function(cat) {
+    const details = document.createElement('details');
+    details.className = 'category-section';
+    details.dataset.category = cat.key;
+
+    const summary = document.createElement('summary');
+    summary.textContent = tCategory(cat.key);
+    details.appendChild(summary);
+
+    const body = document.createElement('div');
+    body.className = 'category-body';
+    if (cat.codes.length > 0) {
+      cat.codes.forEach(function(nr) {
+        if (byNr[nr]) body.appendChild(buildCodeRow(nr, byNr[nr][1]));
+      });
+    } else {
+      body.appendChild(buildStatisticsTable());
+    }
+    details.appendChild(body);
+    content.appendChild(details);
+  });
+
+  if (pendingIconSetInfo) displayIconSetInfo(pendingIconSetInfo);
+  openSelectedCategory();
+  highlightSelected();
+  updateBgColors();
+}
+
+function renderIconSelect() {
+  const sel = document.getElementById('icon-select');
+  sel.innerHTML = '';
+  const seen = new Set();
+  CATEGORIES.forEach(function(cat) {
+    if (!cat.codes.length) return;
+    const group = document.createElement('optgroup');
+    group.label = tCategory(cat.key);
+    iconEntries.forEach(function(e) {
+      if (!cat.codes.includes(e.nr) || seen.has(e.name)) return;
+      seen.add(e.name);
+      const opt = document.createElement('option');
+      opt.value = e.name;
+      opt.textContent = e.name;
+      group.appendChild(opt);
+    });
+    if (group.children.length) sel.appendChild(group);
+  });
+  sel.value = selected ? selected.name : '';
+}
+
+// Expand the category of the selected symbol and collapse all others
+function openSelectedCategory() {
+  const cat = selected ? categoryOf(selected.nr) : null;
+  document.querySelectorAll('.category-section').forEach(function(d) {
+    d.open = !!cat && d.dataset.category === cat.key;
+  });
+}
+
+function highlightSelected() {
+  document.querySelectorAll('.thumb').forEach(function(el) {
+    el.classList.toggle('selected', !!selected &&
+      el.dataset.name === selected.name && Number(el.dataset.nr) === selected.nr);
+  });
+}
+
+function selectEntry(entry, openCategory) {
+  selected = entry;
+  document.getElementById('icon-select').value = entry ? entry.name : '';
+  renderPreview();
+  highlightSelected();
+  if (openCategory) openSelectedCategory();
+  updateUrl();
+}
+
+function updateIconSizes() {
+  const frameSize = Math.round(iconSize * FRAME_FACTOR);
+  const frame = document.getElementById('preview-frame');
+  frame.style.width = frameSize + 'px';
+  frame.style.height = frameSize + 'px';
+  frame.querySelectorAll('img, .icon-missing').forEach(function(el) {
+    el.style.width = iconSize + 'px';
+    el.style.height = iconSize + 'px';
+    if (el.tagName === 'IMG') {
+      el.width = iconSize;
+      el.height = iconSize;
+    }
+  });
+  document.getElementById('size-display').textContent = iconSize + 'px';
+}
+
+function updateBgColors() {
+  const frame = document.getElementById('preview-frame');
+  if (frame) frame.style.background = bgColor;
+  document.querySelectorAll('.thumb').forEach(function(el) {
+    el.style.background = bgColor;
+  });
+  const sw = document.getElementById('bg-swatch');
+  if (sw) sw.style.background = bgColor;
+  const bgSel = document.getElementById('bg-select');
+  const opt = bgSel.selectedIndex >= 0 ? bgSel.options[bgSel.selectedIndex] : null;
+  document.getElementById('bg-name').textContent =
+    opt && opt.value.toLowerCase() === bgColor ? opt.text : '';
+  document.getElementById('bg-hex').textContent = bgColor;
+}
+
+function applyTranslations() {
+  document.title = t('weathericon_title');
+  document.getElementById('hdr-title').textContent = '☁️ ' + t('weathericon_title');
+  document.getElementById('hdr-subtitle').textContent = t('weathericon_subtitle');
+  document.getElementById('lbl-iconset').textContent = t('label_iconset') + ':';
+  document.getElementById('lbl-bg').textContent = t('label_background') + ':';
+  document.getElementById('lbl-size').textContent = t('label_icon_size') + ':';
+  document.getElementById('lbl-lang').textContent = t('label_language') + ':';
+  document.getElementById('lbl-icon').textContent = t('label_icon') + ':';
+  document.getElementById('refresh-btn').textContent = '⟳ ' + t('button_refresh');
+  document.getElementById('lbl-nr').textContent = t('col_no');
+  document.getElementById('lbl-code').textContent = t('col_code');
+  document.getElementById('lbl-desc').textContent = t('col_description');
+  document.getElementById('lbl-variant').textContent = t('col_icon_day') + ' / ' + t('col_icon_night');
+  document.getElementById('lbl-file').textContent = t('hover_filename');
+  document.getElementById('lbl-bg-info').textContent = t('label_background') + ':';
+
+  const bgSel = document.getElementById('bg-select');
+  Array.from(bgSel.options).forEach(function(opt) {
+    const key = opt.getAttribute('data-key');
+    if (key && lang[key]) opt.text = lang[key];
+  });
+}
+
+// Reload mapping and all symbols from the web server, keeping settings and view state
+async function refreshIcons() {
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled = true;
+  try {
+    const openCats = Array.from(document.querySelectorAll('.category-section'))
+      .filter(function(d) { return d.open; })
+      .map(function(d) { return d.dataset.category; });
+    const scrollX = window.scrollX, scrollY = window.scrollY;
+    const prev = selected;
+
+    cacheBust = Date.now().toString(36);
+    _iconUrlExistenceCache.clear();
+    await loadIconSet(document.getElementById('iconset-select').value);
+    selected = (prev && findEntry(prev.name, prev.nr)) || iconEntries[0] || null;
+    renderAll();
+
+    document.querySelectorAll('.category-section').forEach(function(d) {
+      d.open = openCats.includes(d.dataset.category);
+    });
+    window.scrollTo(scrollX, scrollY);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderAll() {
+  renderIconSelect();
+  renderCategories();
+  renderPreview();
+  updateUrl();
+}
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+
+async function init() {
+  const iconsetSel = document.getElementById('iconset-select');
+  iconsetSel.value = urlIconset;
+  if (!iconsetSel.value) iconsetSel.value = 'naturalistic';
+
+  const langSel = document.getElementById('lang-select');
+  await loadLanguageOptions();
+
+  syncBackground(urlParams.get('background'));
+
+  if (urlSize !== null) iconSize = urlSize;
+  document.getElementById('size-slider').value = iconSize;
+
+  await loadLang(urlLang);
+  applyTranslations();
+  updateBgColors();
+
+  await loadIconSet(iconsetSel.value);
+  selected = (urlIcon && findEntry(urlIcon)) || iconEntries[0] || null;
+  if (urlIcon && (!selected || selected.name !== urlIcon)) {
+    console.warn('Symbol not found in icon set:', urlIcon);
+  }
+  renderAll();
+
+  iconsetSel.addEventListener('change', async function() {
+    const prev = selected;
+    await loadIconSet(this.value);
+    selected = (prev && findEntry(prev.name, prev.nr)) || iconEntries[0] || null;
+    renderAll();
+  });
+
+  document.getElementById('refresh-btn').addEventListener('click', refreshIcons);
+
+  document.getElementById('icon-select').addEventListener('change', function() {
+    const nr = selected && selected.name === this.value ? selected.nr : null;
+    selectEntry(findEntry(this.value, nr), true);
+  });
+
+  document.getElementById('bg-select').addEventListener('change', function() {
+    syncBackground(this.value);
+    updateUrl();
+  });
+
+  document.getElementById('size-slider').addEventListener('input', function() {
+    iconSize = parseInt(this.value, 10);
+    updateIconSizes();
+    updateUrl();
+  });
+
+  langSel.addEventListener('change', async function() {
+    try {
+      await loadLang(this.value);
+      applyTranslations();
+      syncBackground(bgColor);
+      renderAll();
+    } catch (err) {
+      this.value = document.documentElement.lang;
+      showLanguageError(err);
+    }
+  });
+}
+
+init().catch(showLanguageError);
+</script>
+</body>
+</html>

@@ -66,6 +66,9 @@ The weather code reference (`weathercodes.html`) uses the same discovery rules
 via `languages.cgi`, displays native names in its language selector, and accepts
 `?lang=XX` with the same English fallback. New language files become available
 without regenerating a list or restarting the plugin.
+The symbol test page (`weathericon.html`) shows a single symbol enlarged on a
+background 1.5 times its size and accepts the same parameters plus
+`?icon=NAME` (for example `haze_day` or `cloudy_shower_1_night_4q`).
 Codes use two or three lowercase letters, optionally followed by region/script
 segments separated by `-` or `_` (for example, `pt-BR`).
 
