@@ -8,6 +8,27 @@
                                         .ui-input-text {
                                             margin: 0 !important;
                                         }
+                                        /* Tablets: keep labels and controls side by side, with hints below */
+                                        @media (min-width: 701px) and (max-width: 1024px) {
+                                            table.formtable > tbody > tr {
+                                                display: grid;
+                                                grid-template-columns: 25% minmax(0, 75%);
+                                            }
+                                            table.formtable > tbody > tr > td {
+                                                box-sizing: border-box;
+                                                width: auto !important;
+                                                min-width: 0;
+                                            }
+                                            table.formtable > tbody > tr > td[width="5%"] {
+                                                display: none;
+                                            }
+                                            table.formtable > tbody > tr > td[width="20%"] {
+                                                grid-column: 2 / -1;
+                                            }
+                                            table.formtable > tbody > tr > td[colspan] {
+                                                grid-column: 1 / -1;
+                                            }
+                                        }
                                         /* Smartphones: stack label, input and hint instead of 4 table columns */
                                         @media (max-width: 700px) {
                                             table.formtable,
