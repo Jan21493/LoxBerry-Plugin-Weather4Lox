@@ -8,6 +8,26 @@
                                         .ui-input-text {
                                             margin: 0 !important;
                                         }
+                                        /* Smartphones: stack label, input and hint instead of 4 table columns */
+                                        @media (max-width: 700px) {
+                                            table.formtable,
+                                            table.formtable > tbody,
+                                            table.formtable > tbody > tr,
+                                            table.formtable > tbody > tr > td {
+                                                display: block;
+                                                width: 100% !important;
+                                                box-sizing: border-box;
+                                            }
+                                            table.formtable > tbody > tr > td {
+                                                padding: 4px 0;
+                                            }
+                                            table.formtable > tbody > tr > td[width="5%"] {
+                                                display: none;
+                                            }
+                                            .ui-collapsible-heading-toggle {
+                                                white-space: normal;
+                                            }
+                                        }
                                     </style>
 
 
