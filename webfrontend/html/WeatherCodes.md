@@ -350,9 +350,8 @@ _Usage: Night symbols for cloud cover levels `clear`, `fair`, and `cloudy`_
 
 | Nr | Weather Code | Description | Day Symbol | Night Symbol | Context | WetterOnline | OWM IDs | OWM Icons | Loxone Picto |
 |---|---|---|---|---|---|---|---|---|---|
-| 43 | `overcast_hail_1` | Overcast, light hail | `overcast_hail_1` | `overcast_hail_1` | current, forecast | light hail | – | – | 16 |
-| 44 | `overcast_hail_2` | Overcast, moderate hail | `overcast_hail_2` | `overcast_hail_2` | current, forecast | hail | – | – | 16 |
-| 45 | `overcast_hail_3` | Overcast, heavy hail | `overcast_hail_3` | `overcast_hail_3` | current, forecast | heavy hail | – | – | 17 |
+| 44 | `overcast_hail_1` | Overcast, hail | `overcast_hail_1` | `overcast_hail_1` | current, forecast | hail | – | – | 16 |
+| 45 | `overcast_hail_2` | Overcast, heavy hail | `overcast_hail_2` | `overcast_hail_2` | current, forecast | heavy hail | – | – | 17 |
 
 ---
 
@@ -371,7 +370,7 @@ _Usage: Night symbols for cloud cover levels `clear`, `fair`, and `cloudy`_
 | Thunderstorm | `overcast_thunderstorm_1`, `overcast_thunderstorm_2`, `overcast_thunderstorm_3` | 1, 2, 3 |
 | Snow Thunderstorm | `overcast_snowthunderstorm_1`, `overcast_snowthunderstorm_2`, `overcast_snowthunderstorm_3` | 1, 2, 3 |
 | Fog | `cloudy_fog`, `overcast_fog` | – |
-| Hail | `overcast_hail_1`, `overcast_hail_2`, `overcast_hail_3` | 1, 2, 3 |
+| Hail | `overcast_hail_1`, `overcast_hail_2` | 1, 2 |
 
 ### 6.2 Forecast (forecast) – 45 Codes
 
