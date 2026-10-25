@@ -28,6 +28,8 @@ use Getopt::Long;
 use IO::Socket; # For sending UDP packages
 use Time::Piece;
 use Net::MQTT::Simple;
+use lib "$lbpbindir/lib";
+use Weather4Lox::Staleness qw(role_intervals check_staleness stale_flags read_state write_state);
 #use Data::Dumper;
 use Config::Simple;
 use JSON::PP ();
@@ -61,6 +63,9 @@ my  $nxhAllowed       = { map { $_ => 1 } split /;/, $pcfg->param('SERVER.SENDNX
 our $sendUDP          = $pcfg->param("SERVER.SENDUDP");
 our $metric           = $pcfg->param("SERVER.METRIC");
 our $emu              = $pcfg->param("SERVER.EMU");
+# Remove index.txt of the Cloud Weather Emulator if the primary weather service is outdated,
+# so that the Miniserver reports "Liefert keine Werte" instead of using old data. Default is off (0)
+our $emuStale         = $pcfg->param("SERVER.EMUSTALE") // 0;
 our $stdTheme         = $pcfg->param("WEB.THEME");
 our $stdIconSet       = $pcfg->param("WEB.ICONSET");
 our $stdMode          = $pcfg->param("WEB.MODE") // "system";
@@ -181,32 +186,40 @@ my $envelope = readJsonFile($lbplogdir, $weatherKey, $jsonDecoder);
 my $cur = $envelope->{$weatherKey} // {};
 my $location = $envelope->{location} // {};
 
-# Detect stale data: if a grabber fails repeatedly (e.g. because a Perl module
-# is missing after a system upgrade, see issue #63), current.json simply stops
-# being updated while this script keeps forwarding the last known values to
-# Loxone without any indication that they are outdated. Warn loudly instead,
-# using the file's modification time (set whenever a grabber last successfully
-# wrote the file) as the age of the data.
-my $curDataAgeMinutes;
-if (my @curStat = stat("$lbplogdir/current.json")) {
-    $curDataAgeMinutes = int((time() - $curStat[9]) / 60);
-}
-my $staleThresholdMinutes = 3 * ($pcfg->param("SERVER.CRON") || 60);
-my $curIsStale = (defined($curDataAgeMinutes) && $curDataAgeMinutes > $staleThresholdMinutes) ? 1 : 0;
-if ($curIsStale) {
-    LOGCRIT "Current weather data has not been updated for $curDataAgeMinutes minutes (last successful update: " .
-        ($envelope->{generatedAt} // 'unknown') . "), more than 3x the configured refresh interval ($staleThresholdMinutes min). " .
-        "A grabber may be failing repeatedly (e.g. a missing Perl module after a system/Perl upgrade) - check the grabber logs for details. " .
-        "Loxone is still receiving the last known values.";
-}
-
 $weatherKey = "dailyforecast";
-$envelope = readJsonFile($lbplogdir, $weatherKey, $jsonDecoder);
-my $dfc = $envelope->{$weatherKey} // [];
+my $dfcEnvelope = readJsonFile($lbplogdir, $weatherKey, $jsonDecoder);
+my $dfc = $dfcEnvelope->{$weatherKey} // [];
 
 $weatherKey = "hourlyforecast";
-$envelope = readJsonFile($lbplogdir, $weatherKey, $jsonDecoder);
-my $hfc = $envelope->{$weatherKey} // [];
+my $hfcEnvelope = readJsonFile($lbplogdir, $weatherKey, $jsonDecoder);
+my $hfc = $hfcEnvelope->{$weatherKey} // [];
+
+# Detect stale data: if a grabber fails repeatedly (e.g. because a Perl module
+# is missing after a system upgrade, see issue #63), its data simply stops being
+# updated while this script keeps forwarding the last known values to Loxone
+# without any indication that they are outdated. Every grabber records its role
+# and generatedAt in its section of the JSON files, so each role is checked
+# against the interval of its own service and flagged (cur_stale, any_stale, ...).
+my $staleStateFile = "$lbplogdir/stale_state.json";
+my $staleState = read_state($staleStateFile);
+my $staleness = check_staleness(
+    { current => $envelope, dailyforecast => $dfcEnvelope, hourlyforecast => $hfcEnvelope },
+    role_intervals(sub { scalar $pcfg->param($_[0]) }), $staleState, time());
+write_state($staleStateFile, $staleState) or LOGWARN "Cannot write $staleStateFile: $!";
+my $staleFlags = stale_flags($staleness);
+for my $key (sort keys %$staleness) {
+    next unless $staleness->{$key}{stale};
+    my ($file, $role) = $key =~ /^(?:(\w+)\.)?(\w+)$/;
+    my $message = "Weather data of role '$role'" . ($file ? " in $file.json" : "") .
+        " has not been updated for $staleness->{$key}{age} minutes, more than 3x the configured interval " .
+        "($staleness->{$key}{threshold} min). A grabber may be failing repeatedly (e.g. a missing Perl module " .
+        "after a system/Perl upgrade) - check the grabber logs for details.";
+    if ($role eq 'primary') {
+        LOGCRIT $message;
+    } else {
+        LOGWARN $message;
+    }
+}
 
 my $iconMapping = readJsonFile("$lbphtmldir/icons/$stdIconSet", "icon_mapping", $jsonDecoder) // {};
 
@@ -257,8 +270,13 @@ sendToLox($toMS, $doLog, "cur" . $mqttsep . "date_des", $cur->{time}{datetime});
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "date_tz_des_sh", $location->{timezone});                             # IANA timezone name, e.g. Europe/Berlin
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "date_tz_des", $location->{tzShort});                                 # Time Zone Abbreviation, e.g. CET
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "date_tz", $location->{tzOffset});                                    # Numeric timezone offset, e.g. +0100
-sendToLox($toMS, $doLog, "cur" . $mqttsep . "data_age", $curDataAgeMinutes // 0);                                  # minutes since current.json was last successfully updated by a grabber
-sendToLox($toMS, $doLog, "cur" . $mqttsep . "stale", $curIsStale);                                                # 1 if data age exceeds 3x the refresh interval, e.g. a grabber is failing repeatedly
+sendToLox($toMS, $doLog, "cur" . $mqttsep . "data_age", $staleness->{'current.primary'}{age});                     # minutes since the primary weather service last delivered current data
+# 1 if a service has not delivered for more than 3x its interval, e.g. a grabber is failing repeatedly (summaries: cur_stale, dfc_stale, hfc_stale, any_stale)
+for my $flag (qw(cur_stale cur_primaryStale cur_nearbyStationStale cur_localStationStale dfc_stale dfc_primaryStale
+                 hfc_stale hfc_primaryStale aq_stale any_stale)) {
+    my ($prefix, $name) = split /_/, $flag, 2;
+    sendToLox($toMS, $doLog, $prefix . $mqttsep . $name, $staleFlags->{$flag});
+}
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "day", sprintf("%02d", $curDate->mday));
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "month", sprintf("%02d", $curDate->mon));
 sendToLox($toMS, $doLog, "cur" . $mqttsep . "year", $curDate->year);
@@ -899,7 +917,15 @@ my %loxToEmu = (
 # The height is the geogr. height of your installation (seems to be used for windspeed etc.). You
 # can give the heights in meter or set this to auto or left blank (=auto).
 
-if ($emu) {
+if ($emu && $emuStale && ($staleFlags->{cur_primaryStale} || $staleFlags->{hfc_primaryStale})) {
+
+    # Better no data than outdated data: without index.txt the Miniserver reports "Liefert keine Werte"
+    LOGWARN "Weather data of the primary weather service is outdated - removing file for Cloud Weather Emulator instead of updating it.";
+    if (-e "$lbplogdir/index.txt") {
+        unlink("$lbplogdir/index.txt") or LOGERR "Cannot delete $lbplogdir/index.txt: $!";
+    }
+
+} elsif ($emu) {
 
     LOGINF "Creating Files for Cloud Weather Emulator...";
 

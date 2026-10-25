@@ -55,7 +55,7 @@ for my $view (qw(main map dfc hfc)) {
     close($template) or die $!;
 }
 
-my @decoders = qw(xs pp unicode failure);
+my @decoders = qw(xs pp unicode failure stale);
 push @decoders, 'legacy' if $ENV{WEATHER4LOX_BASELINE};
 for my $decoder (@decoders) {
     my $dir = "$root/$decoder";
@@ -82,6 +82,26 @@ for my $decoder (@decoders) {
     print {$previous} 'previous complete page';
     close($previous);
     mkdir("$dir/weatherdata.html.tmp") or die $! if $decoder eq 'failure';
+    if ($decoder eq 'stale') {
+        # The primary service of current.json has not delivered for two days before the fixed script time below,
+        # while the forecasts are fresh. The air quality section is older than the grabber's own interval allows.
+        my $iso = sub {
+            my @t = gmtime(1791310000 - $_[0] * 60);
+            return sprintf('%04d-%02d-%02dT%02d:%02d:%02dZ', $t[5] + 1900, $t[4] + 1, @t[3, 2, 1, 0]);
+        };
+        for my $name (qw(current dailyforecast hourlyforecast)) {
+            my $data = $xs->decode(read_file("$dir/$name.json"));
+            delete $data->{$_} for grep { ref($data->{$_}) eq 'HASH' && $data->{$_}{role} } keys %$data;
+            $data->{testprimary} = { role => 'primary', generatedAt => $iso->($name eq 'current' ? 2 * 24 * 60 : 5) };
+            $data->{generatedAt} = $iso->(0);
+            open(my $fh, '>:raw', "$dir/$name.json") or die $!;
+            print {$fh} $xs->encode($data) or die $!;
+            close($fh) or die $!;
+        }
+        open(my $emu, '>', "$dir/index.txt") or die $!;
+        print {$emu} 'outdated emulator data';
+        close($emu);
+    }
     my $pid = fork();
     die "Cannot fork: $!" unless defined $pid;
     if (!$pid) {
@@ -138,6 +158,16 @@ for my $decoder (@decoders) {
                     );
                     return $settings{$_[1]} if exists $settings{$_[1]};
                 }
+                if ($decoder eq 'stale' && defined($_[1])) {
+                    my %settings = (
+                        'SERVER.EMU' => 1, 'SERVER.EMUSTALE' => 1, 'SERVER.CRON' => 15,
+                        'SERVER.MQTTSTRUCTURED' => 1, 'SERVER.TOPIC' => 'stale-test',
+                        'SERVER.WUGRABBER' => 0, 'SERVER.FOSHKGRABBER' => 0, 'SERVER.PWSCATCHUPLOADGRABBER' => 0,
+                        'SERVER.LOXGRABBER' => 0, 'SERVER.OPENMETEOAIRQUALITYGRABBER' => 0,
+                        'SERVER.USEALTERNATEDFC' => 0, 'SERVER.USEALTERNATEHFC' => 0,
+                    );
+                    return $settings{$_[1]} if exists $settings{$_[1]};
+                }
                 return 0 if defined($_[1]) && $_[1] eq 'SERVER.SENDUDP';
                 return $param->(@_);
             };
@@ -166,6 +196,23 @@ for my $decoder (@decoders) {
     my $html = read_file("$dir/weatherdata.html");
     like($html, qr/^<!DOCTYPE HTML>.*<\/body>\n<\/html>$/s, "$decoder publishes complete HTML");
     ok(!-e "$dir/weatherdata.html.tmp", "$decoder removes temporary file by rename");
+    if ($decoder eq 'stale') {
+        my %mqtt = map { @{ JSON::PP->new->decode($_) } } split /\n/, read_file("$dir/mqtt.jsonl");
+        my %expected = (
+            'cur/primaryStale' => 1, 'cur/stale' => 1, 'any/stale' => 1,
+            'dfc/primaryStale' => 0, 'dfc/stale' => 0, 'hfc/primaryStale' => 0, 'hfc/stale' => 0,
+            'cur/nearbyStationStale' => 0, 'cur/localStationStale' => 0, 'aq/stale' => 0,
+        );
+        is($mqtt{"stale-test/$_"}, $expected{$_}, "$_ is $expected{$_}") for sort keys %expected;
+        is($mqtt{'stale-test/cur/data_age'}, 2 * 24 * 60, 'data age is the age of the primary service');
+        my %fresh = map { @{ JSON::PP->new->decode($_) } } split /\n/, read_file("$root/xs/mqtt.jsonl");
+        my ($freshTt) = map { $fresh{$_} } grep { m{[/_]cur[/_]tt$} } keys %fresh;
+        is($mqtt{'stale-test/cur/tt'}, $freshTt, 'outdated values are still sent unchanged');
+        like($html, qr{cur/primaryStale\@1<br>}, 'HTML page contains the flags as well');
+        ok(!-e "$dir/index.txt", 'outdated emulator file is removed');
+        ok(-s "$dir/stale_state.json", 'last seen time stamps are stored');
+        next;
+    }
     if ($decoder eq 'unicode') {
         my $text = decode('UTF-8', $html, FB_CROAK);
         like($text, qr/<meta charset="utf-8">/, 'HTML declares UTF-8');
