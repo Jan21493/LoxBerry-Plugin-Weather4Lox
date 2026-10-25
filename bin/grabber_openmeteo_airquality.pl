@@ -296,6 +296,7 @@ if ($curEnvelope && $curEnvelope->{current}) {
         generatedAt   => $generatedAt,
         grabberLabel  => "Open-Meteo Air Quality",
         grabberScript => "grabber_openmeteo_airquality.pl",
+        role          => "airQuality",
         schemaVersion => "v1.0",
     };
 
@@ -373,6 +374,7 @@ if ($hfcEnvelope && $hfcEnvelope->{hourlyforecast}) {
         generatedAt   => $generatedAt,
         grabberLabel  => "Open-Meteo Air Quality",
         grabberScript => "grabber_openmeteo_airquality.pl",
+        role          => "airQuality",
         schemaVersion => "v1.0",
     };
 
@@ -495,6 +497,7 @@ if ($dfcEnvelope && $dfcEnvelope->{dailyforecast}) {
         generatedAt   => $generatedAt,
         grabberLabel  => "Open-Meteo Air Quality",
         grabberScript => "grabber_openmeteo_airquality.pl",
+        role          => "airQuality",
         schemaVersion => "v1.0",
     };
 

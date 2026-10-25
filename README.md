@@ -37,6 +37,16 @@ Run `prove tests/config_backup.t` with `Config::Simple`, `Archive::Zip`, `CGI`
 and `HTML::Template` installed to check archive round trips, validation,
 rollback and the CGI endpoint against an isolated LoxBerry test environment.
 
+## Details to Grabbers
+
+Grabbers identify their contribution with `role` in their existing provider
+metadata in `current.json`, `dailyforecast.json`, and `hourlyforecast.json`.
+See the [JSON schema's role and provider table](data/json-schema.md#grabber-roles)
+for the complete assignment. Use each provider's own `generatedAt` to check when
+it contributed to that file, rather than the file's top-level timestamp.
+Run `prove -v tests/grabber_roles.t` to check all grabber metadata write paths
+and the bundled example JSON files without requiring a LoxBerry installation.
+
 The wttr.in station ID accepts city names or latitude/longitude pairs. In the
 `[WTTRIN]` section of `weather4lox.cfg`, both `STATIONID="50.84", "7.01"` and
 `STATIONID="50.84,7.01"` are supported. The settings page displays `50.84,7.01`,

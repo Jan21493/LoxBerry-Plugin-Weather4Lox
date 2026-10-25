@@ -46,9 +46,34 @@ Each grabber writes its own metadata section using its key (e.g. `"wetteronline"
 | `generatedAt`  | string | ISO 8601 timestamp (without offset) when the grabber ran     |
 | `grabberLabel` | string | Human-readable name of the data provider                     |
 | `grabberScript`| string | Grabber filename, e.g. `"grabber_wetteronline.pl"`           |
+| `role`         | string | Provider role: `"primary"`, `"localStation"`, `"nearbyStation"`, or `"airQuality"` |
 | `schemaVersion`| string | Schema version: `"v1.0"`                                     |
 | `observedAt`   | string\|null | Observation timestamp from the source (optional)        |
 | `stationID`    | string\|null | Weather station identifier (optional, e.g. WU)          |
+
+### Grabber Roles
+
+Every grabber adds `role` to its existing metadata object in each JSON file it
+writes (`current.json`, `dailyforecast.json`, or `hourlyforecast.json`).
+Provider keys remain unchanged; OpenMeteo uses the existing `openmeteoAq` key.
+
+| `role` | Bedeutung | Anbieter |
+|---|---|---|
+| `primary` | Wetterdienst mit allen typischen Wetterdaten | OpenWeather, WetterOnline, Visual Crossing, WeatherFlow, wttr.in |
+| `localStation` | lokale (eigene) Wetterstation zur Verbesserung der Wetterdaten | FOSHKplugin (WU- und NATIVE-Format), WU Upload Catcher, Loxone Grabber |
+| `nearbyStation` | Wetterstation in der Nähe zur Verbesserung der Wetterdaten | Weather Underground PWS |
+| `airQuality` | Werte und Vorhersagen für Luftqualität und Pollenflug | OpenMeteo |
+
+Both `grabber_wu_pws.pl` and the legacy `grabber_wu.pl` write `nearbyStation`.
+`primary` refers to the provider of typical weather data in the respective file,
+including when a different provider is selected for daily or hourly forecasts.
+Station grabbers only supplement `current.json`; the role does not make them
+forecast providers.
+
+Use a provider's `role` together with its own `generatedAt` to identify its last
+contribution to that file. The top-level `generatedAt` alone cannot distinguish
+updates by different providers. A role identifies the contribution, not its
+freshness; source observation times (where available) remain separate.
 
 ---
 
@@ -62,8 +87,8 @@ Each grabber writes its own metadata section using its key (e.g. `"wetteronline"
 {
   "current": { ... },
   "location": { ... },
-  "wetteronline": { "filename": "...", "generatedAt": "...", ... },
-  "wunderground": { "filename": "...", "generatedAt": "...", ... }
+  "wetteronline": { "filename": "...", "generatedAt": "...", "role": "primary", ... },
+  "wunderground": { "filename": "...", "generatedAt": "...", "role": "nearbyStation", ... }
 }
 ```
 
@@ -184,7 +209,7 @@ Added by `grabber_openmeteo_airquality.pl`. Values are levels 0-7 (converted fro
 {
   "dailyforecast": [ ... ],
   "location": { ... },
-  "wetteronline": { "filename": "...", "generatedAt": "...", ... }
+  "wetteronline": { "filename": "...", "generatedAt": "...", "role": "primary", ... }
 }
 ```
 
@@ -324,7 +349,7 @@ Aggregated from hourly pollen levels per day. `null` for days without pollen dat
 {
   "hourlyforecast": [ ... ],
   "location": { ... },
-  "wetteronline": { "filename": "...", "generatedAt": "...", ... }
+  "wetteronline": { "filename": "...", "generatedAt": "...", "role": "primary", ... }
 }
 ```
 

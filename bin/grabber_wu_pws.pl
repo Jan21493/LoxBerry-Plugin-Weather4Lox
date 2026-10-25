@@ -262,6 +262,7 @@ $envelope->{$grabberKey} = {
     grabberLabel    => $grabberLabel,
     grabberScript   => $grabberFile,
     stationID       => $stationID,
+    role            => "nearbyStation",
     schemaVersion   => "v1.0",
 };
 $envelope->{$weatherKey} = $cur;
