@@ -26,6 +26,7 @@ use LWP::UserAgent;
 use Config::Simple '-strict';
 use LoxBerry::System;
 use LoxBerry::Web;
+use Fcntl qw(:flock);
 
 my $cgi = CGI->new;
 
@@ -70,6 +71,9 @@ my @checks;
 my $has_error = 0;
 
 eval {
+    open my $config_lock, '>>', "$lbpconfigdir/.config-backup.lock"
+        or die "Cannot open configuration lock: $!";
+    flock($config_lock, LOCK_EX) or die "Cannot lock configuration: $!";
     my $cfg = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 
     # Ensure URLs exist
