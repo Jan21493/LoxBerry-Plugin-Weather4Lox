@@ -65,6 +65,7 @@
       "generatedAt" : "2026-04-12T01:00:06",
       "grabberLabel" : "OpenWeather",
       "grabberScript" : "grabber_openweather.pl",
+      "role" : "primary",
       "schemaVersion" : "v1.0"
    },
    "refresh" : 5,
@@ -74,6 +75,7 @@
       "grabberLabel" : "Weather Underground",
       "grabberScript" : "grabber_wu.pl",
       "observedAt" : null,
+      "role" : "nearbyStation",
       "schemaVersion" : "v1.0",
       "stationID" : null
    }

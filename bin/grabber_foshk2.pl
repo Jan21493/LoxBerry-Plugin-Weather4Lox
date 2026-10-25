@@ -213,6 +213,7 @@ $envelope->{$grabberKey} = {
     generatedAt     => $generatedAt,
     grabberLabel    => $grabberLabel,
     grabberScript   => $grabberFile,
+    role            => "localStation",
     schemaVersion   => "v1.0",
 };
 $envelope->{$weatherKey} = $cur;
