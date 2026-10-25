@@ -178,6 +178,7 @@ if ($R::saveformdata3) {
 
     # Write configuration file(s)
     $cfg->param("SERVER.EMU", "$R::emu");
+    $cfg->param("SERVER.EMUSTALE", "$R::emustale");
     $cfg->param("WEB.THEME", "$R::theme");
     $cfg->param('WEB.MODE', "$R::mode");
     $cfg->param("WEB.ICONSET", "$R::iconset");
@@ -1040,6 +1041,15 @@ if ($R::form eq "1" || !$R::form) {
         -default => $cfg->param('SERVER.EMU'),
     );
     $template->param( EMU => $emu );
+    # Remove emulator data if the primary weather service is outdated
+    my $emustale = $cgi->popup_menu(
+        -name    => 'emustale',
+        -id      => 'emustale',
+        -values  => \@values,
+        -labels  => \%labels,
+        -default => $cfg->param('SERVER.EMUSTALE') // 0,
+    );
+    $template->param( EMUSTALE => $emustale );
     $template->param( MYIP => LoxBerry::System::get_localip() );
 
     # Theme

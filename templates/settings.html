@@ -1873,6 +1873,22 @@
                                                         </td>
                                                     </tr>
                                                     <tr>
+                                                        <td width="25%">
+                                                            <label id="labelemustale"><TMPL_VAR SETTINGS.LABEL_EMUSTALE></label>
+                                                        </td>
+                                                        <td width="50%">
+                                                            <fieldset>
+                                                                <TMPL_VAR EMUSTALE>
+                                                            </fieldset>
+                                                        </td>
+                                                        <td width="5%">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td width="20%">
+                                                            <font size="-1"><TMPL_VAR SETTINGS.HINT_EMUSTALE></font>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
                                                         <td colspan=4>
                                                         &nbsp;
                                                         </td>
@@ -1978,6 +1994,7 @@
                                     <script>
                                     // Add some attributes PERL::CGI doesn't provide
                                     $('select[name=emu]').attr('data-role','flipswitch');
+                                    $('select[name=emustale]').attr('data-role','flipswitch');
                                     $('select[name=theme]').attr('data-mini','true');
                                     $('select[name=mode]').attr('data-mini','true');
                                     $('select[name=iconset]').attr('data-mini','true');

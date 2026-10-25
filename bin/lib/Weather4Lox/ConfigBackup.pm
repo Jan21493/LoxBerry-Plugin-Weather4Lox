@@ -88,7 +88,7 @@ sub validate_config {
         }
         $value //= '';
         die "Unsafe configuration value: $key\n" if $value =~ /[<>"`\x00-\x1f]/;
-        if ($key =~ /^SERVER\.(?:GETDATA|EMU|SENDUDP|MQTTSTRUCTURED|METRIC|MASKKEYS|.*GRABBER|FOSHKNEWAPI|USEALTERNATEHFC|USEALTERNATEDFC|USEWEATHEROBS|FETCHOBS)$/) {
+        if ($key =~ /^SERVER\.(?:GETDATA|EMU|EMUSTALE|SENDUDP|MQTTSTRUCTURED|METRIC|MASKKEYS|.*GRABBER|FOSHKNEWAPI|USEALTERNATEHFC|USEALTERNATEDFC|USEWEATHEROBS|FETCHOBS)$/) {
             die "Invalid switch: $key\n" unless $value =~ /^(?:0|1)?$/;
         } elsif ($key =~ /^SERVER\.CRON(?:_[A-Z]+)?$/ && $key ne 'SERVER.CRON_PATCH') {
             die "Invalid interval: $key\n" unless $value eq '' || ($value =~ /^\d{1,4}$/ && $value <= 1440);
