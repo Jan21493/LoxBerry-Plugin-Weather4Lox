@@ -6,6 +6,37 @@ https://github.com/mschlenstedt/LoxBerry-Plugin-Weather4Lox/archive/refs/heads/m
 
 This is a fork for version 4 to fix bugs and keep this version separate from version 5.
 
+## Configuration import and export
+
+At the bottom of **Server Settings**, **Import and export** → **Export
+configuration** downloads saved settings from all tabs as `weather4lox-YYYY-MM-DD_HH-MM-SS.zip`. This includes
+`weather4lox.cfg`, pollen sensitivities from `w4l-settings.json`, custom
+new-style themes (`*.theme.html`), custom theme languages (`lang-*.json`) and
+custom UI languages (`language_*.ini`). Files shipped with the plugin, unsaved
+form changes, weather data and icons are not included. The archive contains
+API keys and passwords in plain text; store it securely.
+
+**Import configuration** opens the file selection directly. After confirming,
+the selected ZIP (maximum 8 MiB) replaces the configuration and custom files
+with the same names; other existing custom files are kept. Shipped themes and
+language files are never overwritten.
+The importer checks the ZIP structure, allowed filenames, decompressed size,
+CRC, plugin identity, backup format, compatible plugin major version, SHA-256
+checksums, INI structure, operational settings, pollen JSON and custom theme
+and language files (UTF-8, theme HTML, JSON with `language`, INI structure)
+before writing. Archives from earlier versions without custom files can still
+be imported. Arbitrary ZIP files and plugin installation packages are not
+configuration backups. Files are replaced atomically; failures restore the
+previous files. The import also applies the weather retrieval cron link,
+website redirect and cloud emulator settings. After a successful import the
+settings page reloads automatically and shows the result at the bottom. Referenced icons must already exist on the target system;
+the Miniserver selection refers to that system's configured Miniserver number.
+
+The ZIP implementation requires `libarchive-zip-perl` (installed via `dpkg/apt`).
+Run `prove tests/config_backup.t` with `Config::Simple`, `Archive::Zip`, `CGI`
+and `HTML::Template` installed to check archive round trips, validation,
+rollback and the CGI endpoint against an isolated LoxBerry test environment.
+
 The wttr.in station ID accepts city names or latitude/longitude pairs. In the
 `[WTTRIN]` section of `weather4lox.cfg`, both `STATIONID="50.84", "7.01"` and
 `STATIONID="50.84,7.01"` are supported. The settings page displays `50.84,7.01`,
