@@ -34,6 +34,7 @@ use warnings;
 
 use IO::Handle ();                 # for STDOUT->autoflush
 use Scalar::Util qw(looks_like_number);
+use Fcntl qw(:flock);
 
 ##########################################################################
 # Unbuffered output (important for "saving" progress)
@@ -59,6 +60,9 @@ $cgi->import_names('R');
 my $version = LoxBerry::System::pluginversion();
 
 # Settings
+open my $config_lock, '>>', "$lbpconfigdir/.config-backup.lock"
+    or die "Cannot open configuration lock: $!";
+flock($config_lock, LOCK_EX) or die "Cannot lock configuration: $!";
 my $cfg = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 
 $cfg->param("OPENWEATHER.URL", "https://api.openweathermap.org/data");

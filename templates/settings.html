@@ -733,6 +733,106 @@
                                       </center>
                                     </div>
 
+                                    <div id="config-backup">
+                                        <h2><TMPL_VAR SETTINGS.LABEL_CONFIG_BACKUP></h2>
+                                        <p><TMPL_VAR SETTINGS.HINT_CONFIG_BACKUP></p>
+                                        <div id="config-backup-buttons">
+                                            <button type="button" id="config-export" data-inline="true" data-mini="true" data-icon="arrow-d"><TMPL_VAR SETTINGS.BUTTON_CONFIG_EXPORT></button>
+                                            <button type="button" id="config-import" data-inline="true" data-mini="true" data-icon="arrow-u"><TMPL_VAR SETTINGS.BUTTON_CONFIG_IMPORT></button>
+                                        </div>
+                                        <input type="file" id="config-import-file" accept=".zip,application/zip" data-role="none" hidden style="display:none;">
+                                        <p id="config-backup-status" role="status" aria-live="polite" style="white-space:pre-wrap;"></p>
+                                        <span id="config-confirm" hidden><TMPL_VAR SETTINGS.CONFIRM_CONFIG_IMPORT></span>
+                                        <span id="config-busy" hidden><TMPL_VAR SETTINGS.HINT_CONFIG_BUSY></span>
+                                        <span id="config-imported" hidden><TMPL_VAR SETTINGS.OK_CONFIG_IMPORTED></span>
+                                        <span id="config-exported" hidden><TMPL_VAR SETTINGS.OK_CONFIG_EXPORTED></span>
+                                        <span id="config-invalid" hidden><TMPL_VAR SETTINGS.ERR_CONFIG_FILE></span>
+                                        <span id="config-error" hidden><TMPL_VAR SETTINGS.ERR_CONFIG_BACKUP></span>
+                                    </div>
+    <script>
+    (function() {
+        var exportButton = document.getElementById("config-export");
+        var importButton = document.getElementById("config-import");
+        var fileInput = document.getElementById("config-import-file");
+        var status = document.getElementById("config-backup-status");
+        function message(id) { return document.getElementById(id).textContent; }
+        function transfer(action, file) {
+            exportButton.disabled = importButton.disabled = fileInput.disabled = true;
+            status.textContent = message("config-busy");
+            status.style.color = "";
+            var data = new FormData();
+            data.append("action", action);
+            if (file) data.append("backup", file);
+            fetch("./config-backup.cgi", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: { "X-Weather4Lox-Backup": "1" },
+                body: data
+            }).then(function(response) {
+                if (!response.ok) {
+                    return response.json().then(function(result) {
+                        throw new Error(result.error || response.statusText);
+                    });
+                }
+                if (action === "export") {
+                    var disposition = response.headers.get("Content-Disposition") || "";
+                    var filename = disposition.match(/weather4lox-[0-9_-]+\.zip/);
+                    if (!filename) throw new Error("Invalid download response");
+                    return response.blob().then(function(blob) {
+                        var url = URL.createObjectURL(blob);
+                        var link = document.createElement("a");
+                        link.href = url;
+                        link.download = filename[0];
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+                        status.textContent = message("config-exported");
+                    });
+                }
+                return response.json().then(function(result) {
+                    if (!result.ok) throw new Error(result.error || "Import failed");
+                    try { sessionStorage.setItem("weather4loxConfigImported", "1"); } catch (e) {}
+                    window.location.replace("./index.cgi?form=1&imported=1#config-backup");
+                    return new Promise(function() {});
+                });
+            }).catch(function(error) {
+                status.textContent = message("config-error") + "\n" + error.message;
+                status.style.color = "#c00";
+            }).then(function() {
+                exportButton.disabled = importButton.disabled = fileInput.disabled = false;
+            });
+        }
+        var imported = false;
+        try {
+            imported = sessionStorage.getItem("weather4loxConfigImported") === "1";
+            sessionStorage.removeItem("weather4loxConfigImported");
+        } catch (e) {
+            imported = /[?&]imported=1(?:&|$)/.test(window.location.search);
+        }
+        if (imported) {
+            status.textContent = message("config-imported");
+            status.style.color = "#080";
+            if (window.history.replaceState) window.history.replaceState(null, "", "./index.cgi?form=1#config-backup");
+        }
+        exportButton.addEventListener("click", function() { transfer("export"); });
+        importButton.addEventListener("click", function() {
+            fileInput.value = "";
+            fileInput.click();
+        });
+        fileInput.addEventListener("change", function() {
+            var file = fileInput.files[0];
+            fileInput.value = "";
+            if (!file) return;
+            if (!/\.zip$/i.test(file.name) || file.size > 8 * 1024 * 1024 || file.size === 0) {
+                status.textContent = message("config-invalid");
+                status.style.color = "#c00";
+                return;
+            }
+            if (window.confirm(message("config-confirm"))) transfer("import", file);
+        });
+    })();
+    </script>
     <span id="same-as-default-short-label" hidden><TMPL_VAR SETTINGS.LABEL_SAME_AS_DEFAULT_SHORT></span>
     <script>
     // ── Validation rules ──────────────────────────────────────────────────
@@ -972,6 +1072,7 @@
             // Hide form, show save overlay
             $form.hide();
             $("#btncancel").closest("p").hide();
+            $("#config-backup").hide();
             $("#save-overlay").show();
             $("#save-heading").text("<TMPL_VAR SETTINGS.HINT_SAVING>");
             $("#save-log").text("<TMPL_VAR SETTINGS.SAVING_STARTING>");
