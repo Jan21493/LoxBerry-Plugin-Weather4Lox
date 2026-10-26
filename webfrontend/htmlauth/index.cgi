@@ -65,17 +65,6 @@ open my $config_lock, '>>', "$lbpconfigdir/.config-backup.lock"
 flock($config_lock, LOCK_EX) or die "Cannot lock configuration: $!";
 my $cfg = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 
-$cfg->param("OPENWEATHER.URL", "https://api.openweathermap.org/data");
-$cfg->param("WUNDERGROUND.URL", "https://api.weather.com/v2/pws/observations/current");
-$cfg->param("FOSHK.URL", "observations/current/json/units=m");
-$cfg->param("WEATHERFLOW.URL", "https://swd.weatherflow.com/swd/rest");
-$cfg->param("VISUALCROSSING.URL", "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline");
-$cfg->param("WTTRIN.URL", "https://wttr.in");
-$cfg->param("WETTERONLINE.URL-HOURLY", "https://api-app.wetteronline.de/app/weather/hourcast?");
-$cfg->param("WETTERONLINE.URL-DAILY", "https://api-app.wetteronline.de/app/weather/forecast?");
-$cfg->param("WETTERONLINE.URL-CURRENT", "https://www.wetteronline.de/wetter/");
-$cfg->param("OPENMETEOAIRQUALITY.URL", "https://air-quality-api.open-meteo.com/v1/air-quality");
-
 $cfg->save();
 
 # Upgrade fallback: populate SERVER.CITY/COUNTRY from existing per-service values

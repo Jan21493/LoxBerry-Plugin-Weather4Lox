@@ -76,18 +76,6 @@ eval {
     flock($config_lock, LOCK_EX) or die "Cannot lock configuration: $!";
     my $cfg = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
 
-    # Ensure URLs exist
-    $cfg->param("OPENWEATHER.URL", "https://api.openweathermap.org/data");
-    $cfg->param("WUNDERGROUND.URL", "https://api.weather.com/v2/pws/observations/current");
-    $cfg->param("FOSHK.URL", "observations/current/json/units=m");
-    $cfg->param("WEATHERFLOW.URL", "https://swd.weatherflow.com/swd/rest");
-    $cfg->param("VISUALCROSSING.URL", "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline");
-    $cfg->param("WTTRIN.URL", "https://wttr.in");
-    $cfg->param("WETTERONLINE.URL-HOURLY", "https://api-app.wetteronline.de/app/weather/hourcast?");
-    $cfg->param("WETTERONLINE.URL-DAILY", "https://api-app.wetteronline.de/app/weather/forecast?");
-    $cfg->param("WETTERONLINE.URL-CURRENT", "https://www.wetteronline.de/wetter/");
-    $cfg->param("OPENMETEOAIRQUALITY.URL", "https://air-quality-api.open-meteo.com/v1/air-quality");
-
     push @checks, $L{'SETTINGS.SAVING_SETTINGS'};
 
     # Read form parameters directly from POST
@@ -112,7 +100,7 @@ eval {
          ( ($R->{usealternatedfc}) && ($R->{weatherservicedfc} // '') eq "openweather") ||
          ( ($R->{usealternatehfc}) && ($R->{weatherservicehfc} // '') eq "openweather") ) {
         push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_OPENWEATHER'};
-        my $url        = $cfg->param("OPENWEATHER.URL");
+        my $url        = "https://api.openweathermap.org/data";
         my $apikey     = $R->{openweatherapikey} // '';
         my $stationid  = "lat=" . ($central_lat // '') . "&lon=" . ($central_long // '');
         my $oneCallURL = "$url/3.0/onecall?appid=$apikey&$stationid";
@@ -126,7 +114,7 @@ eval {
                               ( ($R->{usealternatedfc}) && ($R->{weatherservicedfc} // '') eq "weatherflow") ||
                               ( ($R->{usealternatehfc}) && ($R->{weatherservicehfc} // '') eq "weatherflow") ) ) {
         push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_WEATHERFLOW'};
-        my $url       = $cfg->param("WEATHERFLOW.URL");
+        my $url       = "https://swd.weatherflow.com/swd/rest";
         my $apikey    = $R->{weatherflowapikey} // '';
         my $stationid = $R->{weatherflowstationid} // '';
         my $queryURL  = "$url/observations/station/$stationid?token=$apikey";
@@ -141,7 +129,7 @@ eval {
                               ( ($R->{usealternatedfc}) && ($R->{weatherservicedfc} // '') eq "visualcrossing") ||
                               ( ($R->{usealternatehfc}) && ($R->{weatherservicehfc} // '') eq "visualcrossing") ) ) {
         push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_VISUALCROSSING'};
-        my $url       = $cfg->param("VISUALCROSSING.URL");
+        my $url       = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline";
         my $apikey    = $R->{visualcrossingapikey} // '';
         my $stationid = ($central_lat // '') . "," . ($central_long // '');
         my $queryURL  = "$url/$stationid?unitGroup=metric&include=current&key=$apikey&contentType=json";
@@ -155,7 +143,7 @@ eval {
                               ( ($R->{usealternatedfc}) && ($R->{weatherservicedfc} // '') eq "wttrin") ||
                               ( ($R->{usealternatehfc}) && ($R->{weatherservicehfc} // '') eq "wttrin") ) ) {
         push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_WTTRIN'};
-        my $url       = $cfg->param("WTTRIN.URL");
+        my $url       = "https://wttr.in";
         my $stationid = $R->{wttrinstationid} // '';
         my $queryURL  = "$url/$stationid?format=j1";
         push @checks, " - Checking WTTR.in API: $queryURL";
@@ -168,7 +156,7 @@ eval {
                               ( ($R->{usealternatedfc}) && ($R->{weatherservicedfc} // '') eq "wetteronline") ||
                               ( ($R->{usealternatehfc}) && ($R->{weatherservicehfc} // '') eq "wetteronline") ) ) {
         push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_WETTERONLINE'};
-        my $url       = $cfg->param("WETTERONLINE.URL-CURRENT");
+        my $url       = "https://www.wetteronline.de/wetter/";
         my $stationid = $R->{wetteronlinestationid} // '';
         my $queryURL  = "$url$stationid";
         push @checks, " - Checking WetterOnline API: $queryURL";
@@ -183,7 +171,7 @@ eval {
 
     if (!$apicheck_error && ($R->{wugrabber} // '') ne '' && ($R->{wugrabber} // '') ne '0') {
         push @checks, "\n" . $L{'SETTINGS.SAVING_CHECK_WUNDERGROUND'};
-        my $url       = $cfg->param("WUNDERGROUND.URL");
+        my $url       = "https://api.weather.com/v2/pws/observations/current";
         my $stationid = $R->{wustationid} // '';
         my $dashURL   = "https://www.wunderground.com/dashboard/pws/$stationid";
         push @checks, " - 1. Checking Wunderground Dashboard: $dashURL";
@@ -264,6 +252,21 @@ eval {
     $cfg->param("SERVER.MASKKEYS", $R->{maskkeys} // "");
     $cfg->param("SERVER.CITY", $R->{city} // "");
     $cfg->param("SERVER.COUNTRY", $R->{country} // "");
+
+    for my $key (qw(
+        OPENWEATHER.URL
+        WUNDERGROUND.URL
+        FOSHK.URL
+        WEATHERFLOW.URL
+        VISUALCROSSING.URL
+        WTTRIN.URL
+        WETTERONLINE.URL-CURRENT
+        WETTERONLINE.URL-DAILY
+        WETTERONLINE.URL-HOURLY
+        OPENMETEOAIRQUALITY.URL
+    )) {
+        $cfg->delete($key);
+    }
 
     atomic_save_config($cfg, "$lbpconfigdir/weather4lox.cfg");
 

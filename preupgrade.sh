@@ -222,6 +222,10 @@ backup_frontend_files() {
     done
 }
 
+echo "<INFO> Backing up pollen settings"
+backup_frontend_files "/tmp/${ARGV1}_upgrade/settings" \
+    "$ARGV5/webfrontend/html/plugins/$ARGV3/w4l-settings.json"
+
 echo "<INFO> Backing up new-style themes and language files"
 backup_frontend_files "/tmp/${ARGV1}_upgrade/webthemes" \
     "$ARGV5/webfrontend/html/plugins/$ARGV3/"*.theme.html

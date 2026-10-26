@@ -6,6 +6,18 @@ https://github.com/mschlenstedt/LoxBerry-Plugin-Weather4Lox/archive/refs/heads/m
 
 This is a fork for version 4 to fix bugs and keep this version separate from version 5.
 
+## Plugin updates
+
+Updates back up and restore `w4l-settings.json` from the public plugin web
+directory so that saved pollen sensitivities survive replacement of that
+directory. Existing user values take precedence over package defaults.
+Backup or restore failures stop the upgrade with an error; a failed restore
+retains the temporary backup for recovery.
+
+Weather-service endpoint URLs are defined in their grabbers, not in
+`weather4lox.cfg`. Saving settings removes legacy URL entries, including
+WetterOnline URLs that are no longer used.
+
 ## Configuration import and export
 
 At the bottom of **Server Settings**, **Import and export** → **Export
