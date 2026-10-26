@@ -44,7 +44,7 @@ require "$lbpbindir/weather4lox_log.pl";
 my $version = LoxBerry::System::pluginversion();
 
 my $pcfg         = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
-my $url          = $pcfg->param("WEATHERFLOW.URL");
+my $url          = "https://swd.weatherflow.com/swd/rest";
 my $apikey       = $pcfg->param("WEATHERFLOW.APIKEY");
 my $lang         = $pcfg->param("SERVER.LANG");
 my $city         = $pcfg->param("SERVER.CITY");

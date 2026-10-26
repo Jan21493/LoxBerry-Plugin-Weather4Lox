@@ -136,6 +136,18 @@ if [ -d "/tmp/${ARGV1}_upgrade/themes" ] && \
         "${ARGV5}/templates/plugins/${ARGV3}/themes/"
 fi
 
+echo "<INFO> Restore pollen settings"
+SETTINGS_BACKUP="/tmp/${ARGV1}_upgrade/settings/w4l-settings.json"
+SETTINGS_DIR="$ARGV5/webfrontend/html/plugins/$ARGV3"
+if [ -f "$SETTINGS_BACKUP" ]; then
+    # User settings take precedence even if a future release ships defaults.
+    if ! mkdir -p "$SETTINGS_DIR" || \
+       ! cp -p -v "$SETTINGS_BACKUP" "$SETTINGS_DIR/"; then
+        echo "<ERROR> Cannot restore w4l-settings.json; backup retained in /tmp/${ARGV1}_upgrade"
+        exit 2
+    fi
+fi
+
 restore_frontend_files() {
     local dest_dir=$1
     local language_file=$2

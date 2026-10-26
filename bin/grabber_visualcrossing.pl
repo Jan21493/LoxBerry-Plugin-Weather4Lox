@@ -43,7 +43,7 @@ require "$lbpbindir/weather4lox_log.pl";
 my $version = LoxBerry::System::pluginversion();
 
 my $pcfg         = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
-my $url          = $pcfg->param("VISUALCROSSING.URL");
+my $url          = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline";
 my $apikey       = $pcfg->param("VISUALCROSSING.APIKEY");
 my $lang         = $pcfg->param("SERVER.LANG");
 my $stationid    = $pcfg->param("SERVER.COORDLAT") . "," . $pcfg->param("SERVER.COORDLONG");

@@ -46,7 +46,7 @@ my $version = LoxBerry::System::pluginversion();
 
 # params from config
 my $pcfg        = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
-my $url         = $pcfg->param("FOSHK.URL");
+my $url         = "observations/current/json/units=m";
 my $server      = $pcfg->param("FOSHK.SERVER");
 my $port        = $pcfg->param("FOSHK.PORT");
 

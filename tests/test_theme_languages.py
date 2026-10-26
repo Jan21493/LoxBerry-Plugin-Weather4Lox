@@ -258,6 +258,53 @@ class UpgradeAssetsTest(unittest.TestCase):
         self.assertFalse(self.backup.exists())
         self.assertTrue((self.cron / "weather4lox").is_symlink())
 
+    def test_pollen_settings_survive_replaced_web_directory(self):
+        settings = self.html / "w4l-settings.json"
+        content = json.dumps({"pollen": {
+            "alder": 5, "birch": 6, "grass": 7,
+            "mugwort": 4, "olive": 1, "ragweed": 2,
+        }})
+        for package_defaults in (None, '{"pollen": {}}'):
+            with self.subTest(package_defaults=package_defaults):
+                settings.write_text(content)
+                settings.chmod(0o640)
+                self.run_upgrade("preupgrade.sh")
+                self.assertEqual(
+                    (self.backup / "settings/w4l-settings.json").read_text(), content)
+                shutil.rmtree(self.html)
+                if package_defaults is not None:
+                    self.html.mkdir(parents=True)
+                    settings.write_text(package_defaults)
+                self.run_upgrade("postupgrade.sh")
+                self.assertEqual(settings.read_text(), content)
+                self.assertEqual(settings.stat().st_mode & 0o777, 0o640)
+                self.assertFalse(self.backup.exists())
+
+    def test_pollen_backup_failure_aborts_upgrade(self):
+        settings = self.html / "w4l-settings.json"
+        settings.write_text('{"pollen": {"grass": 7}}')
+        self.backup.mkdir()
+        (self.backup / "settings").write_text("not a directory")
+        with self.assertRaises(subprocess.CalledProcessError) as error:
+            self.run_upgrade("preupgrade.sh")
+        self.assertEqual(error.exception.returncode, 2)
+        self.assertIn("<ERROR>", error.exception.stdout)
+        self.assertTrue(settings.exists())
+
+    def test_pollen_restore_failure_retains_backup(self):
+        settings = self.html / "w4l-settings.json"
+        content = '{"pollen": {"grass": 7}}'
+        settings.write_text(content)
+        self.run_upgrade("preupgrade.sh")
+        shutil.rmtree(self.html)
+        self.html.write_text("not a directory")
+        with self.assertRaises(subprocess.CalledProcessError) as error:
+            self.run_upgrade("postupgrade.sh")
+        self.assertEqual(error.exception.returncode, 2)
+        self.assertIn("Cannot restore w4l-settings.json", error.exception.stdout)
+        self.assertEqual(
+            (self.backup / "settings/w4l-settings.json").read_text(), content)
+
     def test_no_optional_assets_and_existing_symlinks(self):
         (self.html / "mine.theme.html").write_text("old theme")
         self.run_upgrade("preupgrade.sh")
@@ -267,6 +314,7 @@ class UpgradeAssetsTest(unittest.TestCase):
         self.assertTrue((self.html / "mine.theme.html").is_symlink())
         self.assertNotIn("additional language file", result.stdout)
         self.assertFalse(self.backup.exists())
+        self.assertFalse((self.html / "w4l-settings.json").exists())
 
 
 if __name__ == "__main__":

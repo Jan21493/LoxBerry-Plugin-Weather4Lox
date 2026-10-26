@@ -48,7 +48,7 @@ my $version = LoxBerry::System::pluginversion();
 
 # params from config
 my $pcfg        = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
-my $wuurl       = $pcfg->param("WUNDERGROUND.URL");
+my $wuurl       = "https://api.weather.com/v2/pws/observations/current";
 my $stationid   = $pcfg->param("WUNDERGROUND.STATIONID");
 
 # names for JSON 
