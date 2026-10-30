@@ -521,9 +521,23 @@ sub wetteronlineToLox {
 my %nightSymbol = map { $_ => 1 } qw(mo mb mw md nm);  # Define night symbols for quick lookup
 
 sub isNighttime {
-    my ($symbol) = @_;
+    my ($datetime, $image, $sunrise, $sunset, $symbol) = @_;
 
-    return ($nightSymbol{ substr($symbol, 0, 2) });  # Return 1 if it's a night symbol
+    return 1 if defined $image && $image =~ /_night\z/i;
+    return undef if defined $image && $image =~ /_day\z/i;
+
+    my ($time) = defined $datetime
+        ? $datetime =~ /^\d{4}-\d{2}-\d{2}T(\d{2}:\d{2})/
+        : ();
+    if (defined $time && defined $sunrise && defined $sunset
+        && $sunrise =~ /^\d{2}:\d{2}$/
+        && $sunset =~ /^\d{2}:\d{2}$/
+        && $sunrise ne $sunset) {
+        return 1 if $time lt $sunrise || $time gt $sunset;
+        return undef;
+    }
+
+    return defined $symbol ? $nightSymbol{ substr($symbol, 0, 2) } : undef;
 }
 
 
@@ -684,8 +698,14 @@ if ( $current ) {
 
     $currentData{moon} = \%moon;
     
-    # night time - used for selecting day or night symbol (eighter night time or undef)
-    $currentData{isNight} = isNighttime($symbol);
+    # Prefer the image's day/night marker, then sunrise/sunset, then the symbol prefix.
+    $currentData{isNight} = isNighttime(
+        $dtCurrent,
+        $currentData{weatherCode}{image},
+        $currentData{sunrise},
+        $currentData{sunset},
+        $symbol,
+    );
 
     # Build envelope and write JSON to file
     $weatherKey = "current";
