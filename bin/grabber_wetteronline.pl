@@ -27,7 +27,8 @@ use warnings;
 use LoxBerry::System;
 use LoxBerry::Log;
 use LWP::UserAgent;
-use JSON::PP;
+use JSON::PP ();
+use JSON::XS ();
 use File::Copy;
 use File::Basename qw(basename);
 use Getopt::Long;
@@ -80,6 +81,18 @@ $json = $json->allow_barekey(1);
 
 # Read language phrases
 my %L = LoxBerry::System::readlanguage("language.ini");
+
+# Read language-specific weather descriptions
+my $jsonDecoder = JSON::XS->new->utf8->boolean_values(JSON::PP::false, JSON::PP::true);
+my $langData = readJsonFile("$lbhomedir/webfrontend/html/plugins/$lbpplugindir", "lang-$lang", $jsonDecoder);
+if (!$langData) {
+    LOGINF "Failed to read language data for $lang: lang-$lang.json not found or invalid in $lbhomedir/webfrontend/html/plugins/$lbpplugindir.";
+    LOGINF "Trying to read default language data (en) instead.";
+    $langData = readJsonFile("$lbhomedir/webfrontend/html/plugins/$lbpplugindir", "lang-en", $jsonDecoder);
+    if (!$langData) {
+        LOGERR "Failed to read default language data: lang-en.json not found or invalid in $lbhomedir/webfrontend/html/plugins/$lbpplugindir.";
+    }
+}
 
 # Create a logging object
 my %logOptions = (
@@ -521,23 +534,9 @@ sub wetteronlineToLox {
 my %nightSymbol = map { $_ => 1 } qw(mo mb mw md nm);  # Define night symbols for quick lookup
 
 sub isNighttime {
-    my ($datetime, $image, $sunrise, $sunset, $symbol) = @_;
+    my ($symbol) = @_;
 
-    return 1 if defined $image && $image =~ /_night\z/i;
-    return undef if defined $image && $image =~ /_day\z/i;
-
-    my ($time) = defined $datetime
-        ? $datetime =~ /^\d{4}-\d{2}-\d{2}T(\d{2}:\d{2})/
-        : ();
-    if (defined $time && defined $sunrise && defined $sunset
-        && $sunrise =~ /^\d{2}:\d{2}$/
-        && $sunset =~ /^\d{2}:\d{2}$/
-        && $sunrise ne $sunset) {
-        return 1 if $time lt $sunrise || $time gt $sunset;
-        return undef;
-    }
-
-    return defined $symbol ? $nightSymbol{ substr($symbol, 0, 2) } : undef;
+    return ($nightSymbol{ substr($symbol, 0, 2) });  # Return 1 if it's a night symbol
 }
 
 
@@ -672,11 +671,28 @@ if ( $current ) {
         ($loxoneCode, $w4lCode, $desc) = wetteronlineToLox($symbol);
     }
 
-    $weatherCode{loxone}      = $loxoneCode;                                                                                  # cur_code
-    $weatherCode{weather4lox} = $w4lCode;                                                                                     # cur_icon
-    $weatherCode{description} = $desc;                                                                                        # cur_des
-    $weatherCode{image}       = getValue($resCurrent, 'current', 'weather_condition_image');                                  # future use, e.g. as background image
-    $weatherCode{metar}       = getMetarCode($w4lCode);                                                                       # future use, e.g. scientific theme
+    $weatherCode{loxone}      = $loxoneCode;                                                                                   # cur_we_code
+    $weatherCode{weather4lox} = $w4lCode;                                                                                      # cur_we_icon
+    $weatherCode{image}       = getValue($resCurrent, 'current', 'weather_condition_image');                                   # future use, e.g. as background image
+    $weatherCode{metar}       = getMetarCode($w4lCode);                                                                        # future use, e.g. scientific theme
+
+    # Get weather description for clear conditions based on day/night, and use language-specific descriptions if available
+    my $isNight = isNighttime($symbol);
+
+    # Wetteronline does not provide language-specific descriptions, so we use our own mapping for German from the table above and
+    # language-specific descriptions based on Weather4Lox codes for other languages with fallback to English and 'No description' as last resort
+    if ($lang eq 'de') {
+        $weatherCode{description} = $desc;
+    } else {
+        # Clear/Sunny is the only condition that varies based on day/night, so we handle it separately
+        if ($w4lCode eq "clear") {
+            my $descKey = 'clear_' . ($isNight ? 'night' : 'day');
+            my $descEnglish = ($isNight ? 'Clear' : 'Sunny');
+            $weatherCode{description} = encode_utf8($langData->{weather_descriptions}{$descKey} // $descEnglish);              # cur_we_des
+        } else  {
+            $weatherCode{description} = encode_utf8($langData->{weather_descriptions}{$w4lCode} // 'No description');          # cur_we_des
+        }
+    }
 
     $currentData{weatherCode} = \%weatherCode;
 
@@ -698,14 +714,8 @@ if ( $current ) {
 
     $currentData{moon} = \%moon;
     
-    # Prefer the image's day/night marker, then sunrise/sunset, then the symbol prefix.
-    $currentData{isNight} = isNighttime(
-        $dtCurrent,
-        $currentData{weatherCode}{image},
-        $currentData{sunrise},
-        $currentData{sunset},
-        $symbol,
-    );
+    # night time - used for selecting day or night symbol (eighter night time or undef)
+    $currentData{isNight} = $isNight;
 
     # Build envelope and write JSON to file
     $weatherKey = "current";
@@ -765,6 +775,17 @@ if ( $daily ) {
             ($loxoneCode, $w4lCode, $description) = (5, 'no_data', 'No description for weather symbol'); # Default fallback
         } else {
             ($loxoneCode, $w4lCode, $description) = wetteronlineToLox($symbol);
+        }
+
+        # Wetteronline does not provide language-specific descriptions, so we use our own mapping for German from the table above and
+        # language-specific descriptions based on Weather4Lox codes for other languages with fallback to English and 'No description' as last resort
+        if ($lang ne 'de') {
+            # Clear/Sunny is the only condition that varies based on day/night, so we handle it separately to get the description for 'day'
+            if ($w4lCode eq "clear") {
+                $description = encode_utf8($langData->{weather_descriptions}{'clear_day'} // 'Sunny');
+            } else  {
+                $description = encode_utf8($langData->{weather_descriptions}{$w4lCode} // 'No description');
+            }
         }
 
         # astro data - get moon infos for specific time of data set (translated to epoch time)
@@ -990,6 +1011,19 @@ if ( $hourly ) {
                     $isNighttime = 1;
                     last; # break loop if we found the matching day and determined it is nighttime
                 }
+            }
+        }
+
+        # Wetteronline does not provide language-specific descriptions, so we use our own mapping for German from the table above and
+        # language-specific descriptions based on Weather4Lox codes for other languages with fallback to English and 'No description' as last resort
+        if ($lang ne 'de') {
+            # Clear/Sunny is the only condition that varies based on day/night, so we handle it separately
+            if ($w4lCode eq "clear") {
+                my $descKey = 'clear_' . ($isNighttime ? 'night' : 'day');
+                my $descEnglish = ($isNighttime ? 'Clear' : 'Sunny');
+                $description = encode_utf8($langData->{weather_descriptions}{$descKey} // $descEnglish);
+            } else  {
+                $description = encode_utf8($langData->{weather_descriptions}{$w4lCode} // 'No description');
             }
         }
 
