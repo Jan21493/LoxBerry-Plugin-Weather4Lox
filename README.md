@@ -69,7 +69,14 @@ Run `prove -v tests/wttrin_stationid_template.t` with `Config::Simple` and
 `weatherdata.html` uses UTF-8 and HTML-escapes text values while retaining the
 `name@value<br>` layout. Localized weather descriptions, wind directions,
 calendar names, and location names are encoded once at output; MQTT, UDP, and
-classic theme output also remain UTF-8. Run `prove -v tests/datatoloxone_output.t`
+classic theme output also remain UTF-8. HTML parameter names, UDP names, and
+classic theme variables always use underscores (for example `cur_loc_n`).
+The structured MQTT topics setting only changes MQTT names (`cur/loc/n`
+instead of `cur_loc_n`), preserving underscores within fields such as `we_des`.
+Run `prove tests/datatoloxone_names.t` to check name separation without LoxBerry.
+Classic theme previews in `show.cgi` also retain the selected iconset directory;
+run `prove tests/show_template_vars.t` to check preview variable substitution.
+Run `prove -v tests/datatoloxone_output.t`
 on a LoxBerry with the plugin installed to check these outputs using temporary
 files and intercepted MQTT/UDP sends, without publishing test data.
 

@@ -54,7 +54,8 @@ sub build_tmpl_vars {
         # patterns: lowercase letters, digits and underscores only.
         # \w* expands to [a-zA-Z0-9_]* – dots, slashes and other characters
         # that could be used for path traversal or injection are rejected.
-        next unless $n =~ /\A(?:cur_|dfc\d+_|hfc\d+_|themeurl|mapurl|webpath)[a-zA-Z0-9_]*\z/;
+        next unless $n eq 'iconset'
+            || $n =~ /\A(?:cur_|dfc\d+_|hfc\d+_|themeurl|mapurl|webpath)[a-zA-Z0-9_]*\z/;
         no strict 'refs';
         $tmpl_vars{$n} = ${$n} if defined ${$n};
     }
