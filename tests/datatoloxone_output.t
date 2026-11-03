@@ -50,18 +50,18 @@ copy("$FindBin::Bin/../webfrontend/html/lang-de.json",
     "$root/webfrontend/html/plugins/weather4lox/lang-de.json") or die $!;
 for my $view (qw(main map dfc hfc)) {
     open(my $template, '>:raw', "$root/templates/themes/de/encoding-test.$view.html") or die $!;
-    print {$template} "<html><body><!--\$cur/we_des--> <!--\$cur/w_dirdes--> <!--\$dfc0/monthn--> " .
+    print {$template} "<html><body><!--\$cur_we_des--> <!--\$cur_w_dirdes--> <!--\$dfc0_monthn--> " .
         encode_utf8("Gr\x{fc}\x{df}e") . "</body></html>";
     close($template) or die $!;
 }
 
-my @decoders = qw(xs pp unicode failure stale);
+my @decoders = qw(xs pp unicode unicode-flat failure stale);
 push @decoders, 'legacy' if $ENV{WEATHER4LOX_BASELINE};
 for my $decoder (@decoders) {
     my $dir = "$root/$decoder";
     make_path($dir);
     copy("$root/input/$_.json", "$dir/$_.json") or die $! for qw(current dailyforecast hourlyforecast);
-    if ($decoder eq 'unicode') {
+    if ($decoder =~ /^unicode/) {
         for my $name (qw(current dailyforecast hourlyforecast)) {
             my $data = $xs->decode(read_file("$dir/$name.json"));
             $data->{location}{city} = $city if $name eq 'current';
@@ -110,7 +110,7 @@ for my $decoder (@decoders) {
         $LoxBerry::System::lbpbindir = "$FindBin::Bin/../bin";
         $LoxBerry::System::lbpconfigdir = "$installedHome/config/plugins/weather4lox";
         $LoxBerry::System::lbphtmldir = "$installedHome/webfrontend/html/plugins/weather4lox";
-        $LoxBerry::System::lbptemplatedir = $decoder eq 'unicode'
+        $LoxBerry::System::lbptemplatedir = $decoder =~ /^unicode/
             ? "$root/templates" : "$installedHome/templates/plugins/weather4lox";
         $LoxBerry::System::lbhomedir = $root;
         open(my $messages, '>:raw', "$dir/mqtt.jsonl") or die $!;
@@ -128,10 +128,10 @@ for my $decoder (@decoders) {
                 my (undef, $topic, $value) = @_;
                 die "Published partial HTML\n" if $decoder ne 'legacy'
                     && read_file("$dir/weatherdata.html") ne 'previous complete page';
-                die "MQTT payload must be UTF-8 bytes\n" if $decoder eq 'unicode' && utf8::is_utf8($value);
+                die "MQTT payload must be UTF-8 bytes\n" if $decoder =~ /^unicode/ && utf8::is_utf8($value);
                 print {$messages} $json->encode([$topic, "$value"]), "\n" or die $!;
             };
-            if ($decoder eq 'unicode') {
+            if ($decoder =~ /^unicode/) {
                 *LoxBerry::System::get_miniservers = sub {
                     return (1 => { IPAddress => 'test.invalid', Name => 'Test' });
                 };
@@ -147,11 +147,11 @@ for my $decoder (@decoders) {
             }
             my $param = \&Config::Simple::param;
             *Config::Simple::param = sub {
-                if ($decoder eq 'unicode' && defined($_[1])) {
+                if ($decoder =~ /^unicode/ && defined($_[1])) {
                     my %settings = (
                         'WEB.LANG' => 'de', 'WEB.THEME' => 'encoding-test',
                         'SERVER.SENDUDP' => 1, 'SERVER.UDPPORT' => 12345,
-                        'SERVER.MSNO' => 1, 'SERVER.MQTTSTRUCTURED' => 1,
+                        'SERVER.MSNO' => 1, 'SERVER.MQTTSTRUCTURED' => $decoder eq 'unicode-flat' ? 0 : 1,
                         'SERVER.EMU' => 1,
                         'SERVER.TOPIC' => 'encoding-test',
                         'SERVER.SENDDFC' => '1', 'SERVER.SENDHFC' => '1',
@@ -175,7 +175,7 @@ for my $decoder (@decoders) {
         my $script = read_file($decoder eq 'legacy' ? $ENV{WEATHER4LOX_BASELINE} : $source);
         # Use the same inputs and fixed time in both decoder runs.
         $script =~ s/\btime\(\)/1791310000/g;
-        my $languageHome = $decoder eq 'unicode' ? $root : $installedHome;
+        my $languageHome = $decoder =~ /^unicode/ ? $root : $installedHome;
         $script =~ s{my \$langData = readJsonFile\("\$lbhomedir/}
             {my \$langData = readJsonFile("$languageHome/};
         if ($decoder eq 'pp') {
@@ -208,34 +208,35 @@ for my $decoder (@decoders) {
         my %fresh = map { @{ JSON::PP->new->decode($_) } } split /\n/, read_file("$root/xs/mqtt.jsonl");
         my ($freshTt) = map { $fresh{$_} } grep { m{[/_]cur[/_]tt$} } keys %fresh;
         is($mqtt{'stale-test/cur/tt'}, $freshTt, 'outdated values are still sent unchanged');
-        like($html, qr{cur/primaryStale\@1<br>}, 'HTML page contains the flags as well');
+        like($html, qr{cur_primaryStale\@1<br>}, 'HTML page contains the flags as well');
         ok(!-e "$dir/index.txt", 'outdated emulator file is removed');
         ok(-s "$dir/stale_state.json", 'last seen time stamps are stored');
         next;
     }
-    if ($decoder eq 'unicode') {
+    if ($decoder =~ /^unicode/) {
         my $text = decode('UTF-8', $html, FB_CROAK);
         like($text, qr/<meta charset="utf-8">/, 'HTML declares UTF-8');
         like($text, qr/<title>[^<]+<\/title>/, 'HTML has a required document title');
-        for my $key (qw(cur/we_des dfc0/we_des hfc1/we_des hfc1/sky_des)) {
+        for my $key (qw(cur_we_des dfc0_we_des hfc1_we_des hfc1_sky_des)) {
             like($text, qr/\Q$key\E\@\Q$description\E<br>/, "$key is encoded exactly once");
         }
-        for my $key (qw(cur/w_dirdes dfc0/w_dirdes_h dfc0/w_dirdes_a hfc1/w_dirdes)) {
+        for my $key (qw(cur_w_dirdes dfc0_w_dirdes_h dfc0_w_dirdes_a hfc1_w_dirdes)) {
             like($text, qr/\Q$key\E\@\Q$wind\E<br>/, "$key preserves umlauts");
         }
-        like($text, qr/dfc0\/monthn\@\Q$month\E<br>/, 'daily month name preserves umlauts');
-        like($text, qr/hfc1\/monthn\@\Q$month\E<br>/, 'hourly month name preserves umlauts');
+        like($text, qr/dfc0_monthn\@\Q$month\E<br>/, 'daily month name preserves umlauts');
+        like($text, qr/hfc1_monthn\@\Q$month\E<br>/, 'hourly month name preserves umlauts');
         my $escapedCity = $city;
         $escapedCity =~ s/&/&amp;/g;
         $escapedCity =~ s/</&lt;/g;
         $escapedCity =~ s/>/&gt;/g;
-        like($text, qr/cur\/loc\/n\@\Q$escapedCity\E<br>/, 'HTML escapes markup and preserves all Unicode characters');
+        like($text, qr/cur_loc_n\@\Q$escapedCity\E<br>/, 'HTML escapes markup and preserves all Unicode characters');
         unlike($text, qr/<Nord>/, 'location text cannot become an HTML element');
         my %mqtt = map { @{ JSON::PP->new->decode($_) } } split /\n/, read_file("$dir/mqtt.jsonl");
-        is($mqtt{'encoding-test/cur/loc/n'}, encode_utf8($city), 'MQTT location is UTF-8 without HTML escaping');
-        is($mqtt{'encoding-test/cur/we_des'}, encode_utf8($description), 'MQTT description remains UTF-8');
-        is($mqtt{'encoding-test/dfc0/we_des'}, encode_utf8($description), 'MQTT daily description remains UTF-8');
-        is($mqtt{'encoding-test/hfc1/we_des'}, encode_utf8($description), 'MQTT hourly description remains UTF-8');
+        my $sep = $decoder eq 'unicode-flat' ? '_' : '/';
+        is($mqtt{'encoding-test/' . join($sep, qw(cur loc n))}, encode_utf8($city), 'MQTT location is UTF-8 without HTML escaping');
+        is($mqtt{"encoding-test/cur${sep}we_des"}, encode_utf8($description), 'MQTT description remains UTF-8');
+        is($mqtt{"encoding-test/dfc0${sep}we_des"}, encode_utf8($description), 'MQTT daily description remains UTF-8');
+        is($mqtt{"encoding-test/hfc1${sep}we_des"}, encode_utf8($description), 'MQTT hourly description remains UTF-8');
         my $udp = decode('UTF-8', read_file("$dir/udp.txt"), FB_CROAK);
         like($udp, qr/cur_loc_n\@\Q$city\E; /, 'UDP location is UTF-8 without HTML escaping');
         like($udp, qr/cur_we_des\@\Q$description\E; /, 'UDP description remains UTF-8');
@@ -253,9 +254,13 @@ is(read_file("$root/xs/weatherdata.html"), read_file("$root/pp/weatherdata.html"
 is(read_file("$root/xs/index.txt"), read_file("$root/pp/index.txt"), 'emulator output is byte-identical with XS and PP');
 is(read_file("$root/xs/webpage.html"), read_file("$root/pp/webpage.html"), 'theme output is byte-identical with XS and PP');
 is(read_file("$root/xs/mqtt.jsonl"), read_file("$root/pp/mqtt.jsonl"), 'MQTT values are identical with XS and PP');
+for my $file (qw(weatherdata.html udp.txt webpage.html webpage.map.html webpage.dfc.html webpage.hfc.html)) {
+    is(read_file("$root/unicode/$file"), read_file("$root/unicode-flat/$file"),
+        "$file is independent of structured MQTT topics");
+}
 if ($ENV{WEATHER4LOX_BASELINE}) {
-    # HTML intentionally gains correct encoding, escaping, and a document title.
-    for my $file (qw(index.txt webpage.html mqtt.jsonl)) {
+    # HTML and classic themes intentionally gain encoding and parameter-name fixes.
+    for my $file (qw(index.txt mqtt.jsonl)) {
         is(read_file("$root/xs/$file"), read_file("$root/legacy/$file"), "$file is unchanged from the production baseline");
     }
 }
