@@ -50,7 +50,7 @@ BEGIN {
 
 # Read Form
 my $cgi = CGI->new;
-$cgi->import_names('R');
+my $form = $cgi->param('form') // '';
 
 ##########################################################################
 # Read Settings
@@ -116,25 +116,25 @@ my %L = LoxBerry::System::readlanguage($template, "language.ini");
 ##########################################################################
 # Save Form 2 (Miniserver)
 ##########################################################################
-if ($R::saveformdata2) {
+if ($cgi->param('saveformdata2')) {
 
     $template->param( FORMNO => '2' );
 
-    my $dfc;
+    my $dfc = '';
     for (my $i=1;$i<=8;$i++) {
         if ( $cgi->param("dfc$i") ) {
             $dfc = $dfc ? "$dfc;$i" : $i;
         }
     }
 
-    my $hfc;
+    my $hfc = '';
     for (my $i=1;$i<=48;$i++) {
         if ( $cgi->param("hfc$i") ) {
             $hfc = $hfc ? "$hfc;$i" : $i;
         }
     }
 
-    my $nxh;
+    my $nxh = '';
     my @periods = (4, 8, 12, 16, 24, 32, 40, 48);
     for my $p (@periods) {
         if ( $cgi->param("nxh$p") ) {
@@ -146,11 +146,11 @@ if ($R::saveformdata2) {
     $cfg->param("SERVER.SENDDFC", "$dfc");
     $cfg->param("SERVER.SENDHFC", "$hfc");
     $cfg->param("SERVER.SENDNXH", "$nxh");
-    $cfg->param("SERVER.SENDUDP", "$R::sendudp");
-    $cfg->param("SERVER.UDPPORT", "$R::udpport");
-    $cfg->param("SERVER.MSNO", "$R::msno");
-    $cfg->param("SERVER.TOPIC", "$R::mqtttopic");
-    $cfg->param("SERVER.MQTTSTRUCTURED", "$R::mqttstructured");
+    $cfg->param("SERVER.SENDUDP", $cgi->param('sendudp') // '');
+    $cfg->param("SERVER.UDPPORT", $cgi->param('udpport') // '');
+    $cfg->param("SERVER.MSNO", $cgi->param('msno') // '');
+    $cfg->param("SERVER.TOPIC", $cgi->param('mqtttopic') // '');
+    $cfg->param("SERVER.MQTTSTRUCTURED", $cgi->param('mqttstructured') // '');
 
     $cfg->save();
 
@@ -161,17 +161,22 @@ if ($R::saveformdata2) {
 ##########################################################################
 # Save Form 3 (Website)
 ##########################################################################
-if ($R::saveformdata3) {
+if ($cgi->param('saveformdata3')) {
 
     $template->param( FORMNO => '3' );
 
     # Write configuration file(s)
-    $cfg->param("SERVER.EMU", "$R::emu");
-    $cfg->param("SERVER.EMUSTALE", "$R::emustale");
-    $cfg->param("WEB.THEME", "$R::theme");
-    $cfg->param('WEB.MODE', "$R::mode");
-    $cfg->param("WEB.ICONSET", "$R::iconset");
-    $cfg->param("WEB.LANG", "$R::themelang");
+    my $emu_value = $cgi->param('emu') // '';
+    my $theme_value = $cgi->param('theme') // '';
+    my $mode_value = $cgi->param('mode') // '';
+    my $iconset_value = $cgi->param('iconset') // '';
+    my $themelang_value = $cgi->param('themelang') // '';
+    $cfg->param("SERVER.EMU", $emu_value);
+    $cfg->param("SERVER.EMUSTALE", $cgi->param('emustale') // '');
+    $cfg->param("WEB.THEME", $theme_value);
+    $cfg->param('WEB.MODE', $mode_value);
+    $cfg->param("WEB.ICONSET", $iconset_value);
+    $cfg->param("WEB.LANG", $themelang_value);
 
     $cfg->save();
 
@@ -182,7 +187,7 @@ if ($R::saveformdata3) {
     open(F,"<$lbptemplatedir/themes/new-style.theme.html");
     # Only expose the 'themeurl' variable to the template - no other package
     # scalars should be accessible via the <!--$varname--> substitution.
-    my %_tmpl = ( themeurl => "./$R::theme.theme.html?mode=$R::mode&iconset=$R::iconset&lang=$R::themelang" );
+    my %_tmpl = ( themeurl => "./$theme_value.theme.html?mode=$mode_value&iconset=$iconset_value&lang=$themelang_value" );
     {
         while (<F>) {
             $_ =~ s/<!--\$(.*?)-->/
@@ -205,7 +210,7 @@ if ($R::saveformdata3) {
     }
 
     # Enable/Disable CloudEmu
-    if ( $R::emu ) {
+    if ( $emu_value ) {
         system("sudo $lbpbindir/cloudemu.sh enable > /dev/null 2>&1");
     } else {
         system("sudo $lbpbindir/cloudemu.sh disable > /dev/null 2>&1");
@@ -234,7 +239,7 @@ $navbar{99}{Name} = "$L{'SETTINGS.LABEL_LOG'}";
 $navbar{99}{URL} = 'index.cgi?form=99';
 
 # Menu: Server
-if ($R::form eq "1" || !$R::form) {
+if ($form eq "1" || !$form) {
 
     $navbar{1}{active} = 1;
     $template->param( "FORM1", 1);
@@ -905,7 +910,7 @@ if ($R::form eq "1" || !$R::form) {
 #########################################################################################
 # Menu: Send to Miniserver
 #########################################################################################
-} elsif ($R::form eq "2") {
+} elsif ($form eq "2") {
     $navbar{2}{active} = 1;
     $template->param( "FORM2", 1);
     $template->param( "WEBSITE", "http://$ENV{HTTP_HOST}/plugins/$lbpplugindir/weatherdata.html");
@@ -1006,7 +1011,7 @@ if ($R::form eq "1" || !$R::form) {
 #########################################################################################
 # Menu: Website / Cloud weather Emulator
 #########################################################################################
-} elsif ($R::form eq "3") {
+} elsif ($form eq "3") {
     $navbar{3}{active} = 1;
     $template->param( "FORM3", 1);
     $template->param( "WEBSITE", "http://$ENV{HTTP_HOST}/plugins/$lbpplugindir/webpage.html");
@@ -1042,8 +1047,8 @@ if ($R::form eq "1" || !$R::form) {
     $template->param( MYIP => LoxBerry::System::get_localip() );
 
     # Theme
-    my @values = ('dark', 'light', 'custom' );
-    my %labels = (
+    @values = ('dark', 'light', 'custom' );
+    %labels = (
         'dark' => "Dark Theme (Classic, veraltet)",
         'light' => "Light Theme (Classic, veraltet)",
         'custom' => "Custom Theme (Your Own Classic, veraltet)",
@@ -1099,8 +1104,8 @@ if ($R::form eq "1" || !$R::form) {
     $template->param( THEME => $theme );
 
     # Mode (new-style themes only)
-    my @values = ('dark', 'light', 'system');
-    my %labels = (
+    @values = ('dark', 'light', 'system');
+    %labels = (
         'dark' => "Dark Mode",
         'light' => "Light Mode",
         'system' => "System Mode (automatic)",
@@ -1115,8 +1120,8 @@ if ($R::form eq "1" || !$R::form) {
     $template->param( MODE => $mode );
 
     # Icon Set
-    my @values = ('color', 'flat', 'dark', 'light', 'green', 'silver', 'realistic', 'naturalistic', 'custom' );
-    my %labels = (
+    @values = ('color', 'flat', 'dark', 'light', 'green', 'silver', 'realistic', 'naturalistic', 'custom' );
+    %labels = (
         'color' => "Color Set (42 icons, PNG format, 150x150)",
         'flat' => "Flat Set (42 icons, PNG format, 150x150)",
         'dark' => "Dark Set (42 icons, PNG format, 150x150)",
@@ -1156,7 +1161,7 @@ if ($R::form eq "1" || !$R::form) {
     $template->param( THEMELANG => $themelang );
 
 # Menu: Logfiles
-} elsif ($R::form eq "99") {
+} elsif ($form eq "99") {
     $navbar{99}{active} = 1;
     $template->param( "FORM99", 1 );
     $template->param( "LOGLIST_HTML", LoxBerry::Web::loglist_html() );
@@ -1215,7 +1220,7 @@ sub error {
 sub save {
     my ($message) = @_;
     if ($saving_page_started) {
-        print qq{<script>window.location.href="./index.cgi?form=$R::form";</script>};
+        print qq{<script>window.location.href="./index.cgi?form=$form";</script>};
         STDOUT->flush();
         LoxBerry::Web::lbfooter();
         exit;
