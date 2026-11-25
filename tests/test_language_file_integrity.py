@@ -109,6 +109,19 @@ class LanguageFileIntegrityTest(unittest.TestCase):
                     values["LABEL_SAME_AS_DEFAULT_SHORT"],
                 )
 
+    def test_loxone_value_hints_include_the_prefix_and_matching_parameter(self):
+        names = "tt tt_fl hu w_dir w_sp w_gu w_ch pr dp sr we_code".split()
+        for path in sorted(LANG_DIR.glob("language_*.ini")):
+            values = parse_ini_values(path)["SETTINGS"]
+            for name in names:
+                with self.subTest(language=path.name, name=name):
+                    self.assertTrue(values[f"LABEL_LOXVAL_CUR_{name.upper()}"])
+                    self.assertTrue(
+                        values[f"HINT_LOXVAL_CUR_{name.upper()}"].endswith(
+                            f"$prefix/cur_{name}"
+                        )
+                    )
+
     def test_json_languages_are_valid_utf8_and_match_english(self):
         reference_path = JSON_DIR / "lang-en.json"
         reference_bytes = reference_path.read_bytes()

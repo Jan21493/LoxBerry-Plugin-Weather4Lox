@@ -59,6 +59,15 @@ it contributed to that file, rather than the file's top-level timestamp.
 Run `prove -v tests/grabber_roles.t` to check all grabber metadata write paths
 and the bundled example JSON files without requiring a LoxBerry installation.
 
+In the Loxone Grabber settings, select only values that exist in Loxone Config
+(for example, `w4l_cur_tt` with the default prefix `w4l`). Missing virtual
+inputs or outputs return HTTP 404. From Miniserver firmware 17.3, repeated
+404s can temporarily block all requests from the LoxBerry with HTTP 429.
+The selection is saved as `VALUES` in `[LOX]` in `weather4lox.cfg`, using
+space-separated names without the prefix (e.g. `VALUES=cur_tt cur_hu`).
+A missing or blank `VALUES` still queries all eleven values; `VALUES=-`
+makes no requests. Turning off the grabber preserves the selection.
+
 The wttr.in station ID accepts city names or latitude/longitude pairs. In the
 `[WTTRIN]` section of `weather4lox.cfg`, both `STATIONID="50.84", "7.01"` and
 `STATIONID="50.84,7.01"` are supported. The settings page displays `50.84,7.01`,

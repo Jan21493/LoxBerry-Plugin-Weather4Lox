@@ -451,12 +451,31 @@
                                                                 <tr>
                                                                     <td width="10%"><TMPL_VAR LOXGRABBER></td>
                                                                     <td width="10%" align="right"><label id="labelloxprefix" for="loxprefix" style="margin-top:15px"><TMPL_VAR SETTINGS.LABEL_LOXPREFIX></label></td>
-                                                                    <td width="80%"><input id="loxprefix" name="loxprefix" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR LOX.PREFIX>" placeholder="<TMPL_VAR SETTINGS.PLACEHOLDER_LOXPREFIX>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_LOXPREFIX>"></td>
+                                                                    <td width="80%"><input id="loxprefix" name="loxprefix" type="text" data-validation-rule="special:alphanumeric" class="textfield" value="<TMPL_VAR LOX_PREFIX ESCAPE=HTML>" data-default-prefix="<TMPL_VAR LOX_DEFAULT_PREFIX ESCAPE=HTML>" placeholder="<TMPL_VAR SETTINGS.PLACEHOLDER_LOXPREFIX>" data-validation-optional="true" data-validation-error-msg="<TMPL_VAR SETTINGS.ERR_LOXPREFIX>"></td>
                                                                 </tr>
                                                             </table>
                                                         </td>
                                                         <td width="5%">&nbsp;</td>
                                                         <td width="20%"><font size="-1"><TMPL_VAR SETTINGS.HINT_LOXGRABBER></font></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td width="25%"><span id="labelloxvalues"><TMPL_VAR SETTINGS.LABEL_LOXVALUES></span></td>
+                                                        <td width="50%">
+                                                            <input type="hidden" name="loxvalues" id="loxvalues-selection">
+                                                            <fieldset id="loxvalues" aria-labelledby="labelloxvalues" style="border:0; margin:0; padding:0" <TMPL_UNLESS LOX_VALUES_ENABLED>disabled</TMPL_UNLESS>>
+                                                                <TMPL_LOOP LOX_VALUES>
+                                                                    <div>
+                                                                        <label for="loxval_<TMPL_VAR LOX_VALUE>">
+                                                                            <input type="checkbox" data-role="none" id="loxval_<TMPL_VAR LOX_VALUE>" value="<TMPL_VAR LOX_VALUE>" aria-describedby="loxhint_<TMPL_VAR LOX_VALUE>" <TMPL_IF LOX_VALUE_CHECKED>checked</TMPL_IF>>
+                                                                            <TMPL_VAR LOX_VALUE_LABEL ESCAPE=HTML>
+                                                                        </label>
+                                                                        <small id="loxhint_<TMPL_VAR LOX_VALUE>" class="loxvalhint" data-hint="<TMPL_VAR LOX_VALUE_HINT ESCAPE=HTML>"></small>
+                                                                    </div>
+                                                                </TMPL_LOOP>
+                                                            </fieldset>
+                                                        </td>
+                                                        <td width="5%">&nbsp;</td>
+                                                        <td width="20%"><font size="-1"><TMPL_VAR SETTINGS.HINT_LOXVALUES></font></td>
                                                     </tr>
                                                 </table>
                                             </div>
@@ -993,15 +1012,6 @@
             $('#foshknewapi').flipswitch('disable');
             removeFromValidation('#foshkserver');
             removeFromValidation('#foshkport');
-        } },
-        { selector: '#loxgrabber', enabled: '1', on: function() {
-            $('#labelloxprefix').removeClass('ui-disabled');
-            $('#loxprefix').removeClass('ui-disabled');
-            addToValidation('#loxprefix');
-        }, off: function() {
-            $('#labelloxprefix').addClass('ui-disabled');
-            $('#loxprefix').addClass('ui-disabled');
-            removeFromValidation('#loxprefix');
         } }
     ];
 
@@ -1058,6 +1068,28 @@
         });
     }
 
+    function updateLoxGrabberControls() {
+        var enabled = $('#loxgrabber').val() === '1';
+        $('#labelloxprefix, #loxprefix').toggleClass('ui-disabled', !enabled);
+        $('#loxvalues').prop('disabled', !enabled);
+        if (enabled) {
+            addToValidation('#loxprefix');
+        } else {
+            removeFromValidation('#loxprefix');
+        }
+    }
+
+    function updateLoxValueHints() {
+        var $prefix = $('#loxprefix');
+        var prefix = $prefix.val();
+        if (!prefix || prefix === '0') prefix = $prefix.attr('data-default-prefix');
+        $('#loxvalues .loxvalhint').each(function() {
+            var $hint = $(this);
+            // Language files use $prefix/cur_*; Miniserver names use an underscore.
+            $hint.text($hint.attr('data-hint').replace('$prefix/', function() { return prefix + '_'; }));
+        });
+    }
+
     $(document).ready(function() {
         // Intercept Form 1 submit: POST to ajax-save.cgi synchronously
         $("#main_form").on("submit", function(e) {
@@ -1068,6 +1100,9 @@
                 return false;
             }
             var $form = $(this);
+            // Read checked values even when the grabber's fieldset is disabled.
+            var loxValues = $('#loxvalues input:checked').map(function() { return this.value; }).get();
+            $('#loxvalues-selection').val(loxValues.join(' ') || '-');
 
             // Hide form, show save overlay
             $form.hide();
@@ -1171,10 +1206,6 @@
             $('#labelwustationid').addClass('ui-disabled');
             $('#wustationid').addClass('ui-disabled');
         }
-        if ($("select[name=loxgrabber]").val() === "0") {
-            $('#labelloxprefix').addClass('ui-disabled');
-            $('#loxprefix').addClass('ui-disabled');
-        }
         if ($("select[name=foshkgrabber]").val() === "0") {
             $('#labelfoshkserver').addClass('ui-disabled');
             $('#foshkserver').addClass('ui-disabled');
@@ -1240,7 +1271,6 @@
         // Initialize validation state on page load based on current switch positions
         if ($('select[name=wugrabber]').val() !== '1') removeFromValidation('#wustationid');
         if ($('select[name=foshkgrabber]').val() !== '1') { removeFromValidation('#foshkserver'); removeFromValidation('#foshkport'); }
-        if ($('select[name=loxgrabber]').val() !== '1') removeFromValidation('#loxprefix');
 
         // Service fields are all optional until the combined change handler runs once
         removeFromValidation('#visualcrossingapikey');
@@ -1255,6 +1285,8 @@
 
         // Keep grouped UI state in sync on load
         updateAllUiToggles();
+        updateLoxGrabberControls();
+        updateLoxValueHints();
 
         // Disable save button on page load if any field is invalid
         updateSaveButton();
@@ -1394,17 +1426,8 @@
     });
 
     // LoxGrabber
-    $(document).on('change', '#loxgrabber', function() {
-        if ($("select[name=loxgrabber]").val() === "1") {
-            $('#labelloxprefix').removeClass('ui-disabled');
-            $('#loxprefix').removeClass('ui-disabled');
-            addToValidation('#loxprefix');
-        } else {
-            $('#labelloxprefix').addClass('ui-disabled');
-            $('#loxprefix').addClass('ui-disabled');
-            removeFromValidation('#loxprefix');
-        }
-    });
+    $(document).on('change', '#loxgrabber', updateLoxGrabberControls);
+    $(document).on('input change', '#loxprefix', updateLoxValueHints);
 
     // OpenMeteoAirQualityGrabber
     $(document).on('change', '#openmeteoairqualitygrabber', function() {

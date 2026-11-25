@@ -9,6 +9,7 @@ use warnings;
 use Exporter 'import';
 use Time::Local qw(timegm timelocal);
 use JSON::PP qw(encode_json decode_json);
+use Weather4Lox::LoxValues qw(selected_lox_values);
 
 our @EXPORT_OK = qw(parse_generated_at role_intervals check_staleness stale_flags read_state write_state);
 use constant STALE_FACTOR  => 3;
@@ -41,7 +42,8 @@ sub role_intervals {
     );
     $intervals{'current.nearbyStation'} = $param->('SERVER.CRON_LOCAL') || $cron if $param->('SERVER.WUGRABBER');
     $intervals{'current.localStation'} = 1
-        if $param->('SERVER.FOSHKGRABBER') || $param->('SERVER.PWSCATCHUPLOADGRABBER') || $param->('SERVER.LOXGRABBER');
+        if $param->('SERVER.FOSHKGRABBER') || $param->('SERVER.PWSCATCHUPLOADGRABBER')
+            || ($param->('SERVER.LOXGRABBER') && selected_lox_values($param->('LOX.VALUES')));
     $intervals{'airQuality'} = $param->('SERVER.CRON_AIRQUALITY') || $cron if $param->('SERVER.OPENMETEOAIRQUALITYGRABBER');
     return \%intervals;
 }

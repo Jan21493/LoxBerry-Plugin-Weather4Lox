@@ -39,6 +39,12 @@ is(role_intervals(params('SERVER.CRON' => 15, 'SERVER.USEALTERNATEDFC' => 1))->{
     'alternate service without own interval uses the default interval');
 is(role_intervals(params('SERVER.PWSCATCHUPLOADGRABBER' => 1))->{'current.localStation'}, 1, 'WU upload catcher is a local station');
 is(role_intervals(params('SERVER.FOSHKGRABBER' => 1))->{'current.localStation'}, 1, 'FOSHK is a local station');
+ok(!exists role_intervals(params('SERVER.LOXGRABBER' => 1, 'LOX.VALUES' => '-'))->{'current.localStation'},
+    'Loxone with no selected values is not expected to update');
+is(role_intervals(params('SERVER.LOXGRABBER' => 1, 'LOX.VALUES' => 'cur_tt'))->{'current.localStation'}, 1,
+    'Loxone with a selected value is expected to update');
+is(role_intervals(params('SERVER.LOXGRABBER' => 1, 'LOX.VALUES' => '-', 'SERVER.FOSHKGRABBER' => 1))->{'current.localStation'}, 1,
+    'another local station is still tracked when Loxone has no selected values');
 
 my $now = timegm(0, 0, 18, 25, 9, 2026);
 sub at {

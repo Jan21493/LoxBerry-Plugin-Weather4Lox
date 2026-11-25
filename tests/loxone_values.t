@@ -3,6 +3,7 @@ use warnings;
 use Test::More;
 use Config::Simple '-strict';
 use File::Path qw(make_path);
+use File::Copy qw(copy);
 use File::Temp qw(tempdir);
 use FindBin;
 use IPC::Open2;
@@ -34,15 +35,34 @@ fixture("$dir/sdk/LoxBerry/System.pm", <<'PERL');
 package LoxBerry::System;
 use Config::Simple;
 use Exporter 'import';
-our @EXPORT = qw($lbhomedir $lbpconfigdir $lbphtmldir $lbplogdir $lbpbindir $lbpplugindir);
+our @EXPORT = qw($lbhomedir $lbpconfigdir $lbphtmldir $lbplogdir $lbpbindir $lbpplugindir $lbptemplatedir);
 our $lbhomedir = our $lbpconfigdir = our $lbphtmldir = our $lbplogdir = $ENV{LOX_TEST_HOME};
 our $lbpbindir = "$lbhomedir/bin";
 our $lbpplugindir = 'weather4lox';
+our $lbptemplatedir = $ENV{LOX_TEST_TEMPLATES};
 sub pluginversion { 'test' }
-sub readlanguage { map { ("SETTINGS.SAVING_$_", $_) } qw(SETTINGS WRITE_CONFIG POLLEN CRONJOB DONE) }
+sub lbversion { '4.0.0' }
+sub get_miniservers { () }
+sub readlanguage {
+    my %lang;
+    open my $fh, '<:raw', "$lbptemplatedir/lang/language_en.ini" or die $!;
+    my $section;
+    while (<$fh>) {
+        $section = $1 if /^\[(.+)\]/;
+        $lang{"$section.$1"} = $2 if /^(\w+)="(.*)"$/;
+    }
+    $_[0]->param(%lang) if ref $_[0];
+    return %lang;
+}
 1;
 PERL
-fixture("$dir/sdk/LoxBerry/Web.pm", 'package LoxBerry::Web; 1;');
+fixture("$dir/sdk/LoxBerry/Web.pm", <<'PERL');
+package LoxBerry::Web;
+use HTML::Template;
+sub lbheader {}
+sub lbfooter {}
+1;
+PERL
 fixture("$dir/sdk/LoxBerry/Log.pm", <<'PERL');
 package LoxBerry::Log;
 use Exporter 'import';
@@ -70,6 +90,7 @@ sub mshttp_get {
 PERL
 
 local $ENV{LOX_TEST_HOME} = $dir;
+local $ENV{LOX_TEST_TEMPLATES} = "$root/templates";
 local $ENV{PERL5LIB} = "$dir/sdk";
 local $ENV{TZ} = 'UTC';
 local $ENV{LOX_TEST_TEMP} = '0';
@@ -126,5 +147,28 @@ is(scalar save('form=1&loxgrabber=1&loxprefix=station&loxvalues=cur_tt'), 'cur_t
 delete $ENV{LOX_TEST_TEMP};
 is(grab(), '2 station_cur_tt', 'single request can return no data');
 is(contents($current), $previous, 'failed single request leaves current weather untouched');
+
+copy("$root/config/weather4lox.cfg", $config) or die $!;
+for my $case (
+    [0, undef, 11],
+    [1, undef, 11],
+    [1, 'cur_tt', 1],
+    [0, 'cur_tt', 1],
+    [1, '-', 0],
+) {
+    my ($enabled, $selection, $checked) = @$case;
+    my $cfg = Config::Simple->new($config);
+    $cfg->param('SERVER.LOXGRABBER', $enabled);
+    $cfg->param('LOX.VALUES', $selection) if defined $selection;
+    $cfg->write($config) or die $!;
+    my $html = run_script('webfrontend/htmlauth/index.cgi', 'form=1');
+    my ($fieldset) = $html =~ /(<fieldset id="loxvalues".*?<\/fieldset>)/s;
+    ok(defined $fieldset, 'Loxone values fieldset rendered') or next;
+    my @checkboxes = $fieldset =~ /<input type="checkbox"[^>]+>/g;
+    is(scalar @checkboxes, 11, 'settings render all eleven choices');
+    is(scalar(grep { /\bchecked\b/ } @checkboxes), $checked, 'saved or default choices are checked');
+    is($fieldset =~ /^<fieldset[^>]+\bdisabled\b/ ? 0 : 1, $enabled, 'fieldset follows grabber switch');
+    like($fieldset, qr/data-hint="Virtual output: \$prefix\/cur_tt"/, 'translated hint template is present');
+}
 
 done_testing();
