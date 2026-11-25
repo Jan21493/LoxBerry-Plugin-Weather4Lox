@@ -27,6 +27,8 @@ use warnings;
 use LoxBerry::System;
 use LoxBerry::Log;
 use LoxBerry::IO;
+use lib "$lbpbindir/lib";
+use Weather4Lox::LoxValues qw(DEFAULT_LOX_PREFIX selected_lox_values);
 use JSON::PP;
 use File::Basename qw(basename);
 use utf8;
@@ -45,7 +47,7 @@ require "$lbpbindir/weather4lox_log.pl";
 my $version = LoxBerry::System::pluginversion();
 
 my $pcfg         = new Config::Simple("$lbpconfigdir/weather4lox.cfg");
-my $prefix       = $pcfg->param("LOX.PREFIX") || "w4l";         # prefix of VI/VO names to request from Miniserver, default is "w4l" 
+my $prefix       = $pcfg->param("LOX.PREFIX") || DEFAULT_LOX_PREFIX;
 
 # names for JSON
 my $grabberFile     = basename(__FILE__);
@@ -88,44 +90,32 @@ LOGDEB "Using timezone: $timezone, current local system time is $dtCurrent.";
 LOGINF "Fetching weather data from Loxone Miniserver";
 
 my %lox_response;
-my @lox_weather_arr;
-my $response_success;
 
 # VI/VO names to request from Miniserver
 # NOTE: If these names are used with MQTT, values may be written and read back causing loops!
-my @lox_vi_names = map { "$prefix\_$_" } qw(
-	cur_tt
-	cur_tt_fl
-	cur_hu
-	cur_w_dir
-	cur_w_sp
-	cur_w_gu
-	cur_w_ch
-	cur_pr
-	cur_dp
-	cur_sr
-	cur_we_code
-);
+my @lox_vi_names = map { "${prefix}_$_" } selected_lox_values($pcfg->param("LOX.VALUES"));
+if (!@lox_vi_names) {
+	LOGINF "No Loxone VI selected (LOX.VALUES). Quitting.";
+	exit 0;
+}
 
 LOGDEB "VI's/VO's to request via HTTP call from Loxone Config: " . join(', ', @lox_vi_names);
 
 # Fetching data from Miniserver
 my $msno = defined $pcfg->param("SERVER.MSNO") ? $pcfg->param("SERVER.MSNO") : 1;
 LOGINF "Using Miniserver no. $msno";
-%lox_response = LoxBerry::IO::mshttp_get($msno, @lox_vi_names);
-
-# Checking the response - if nothing is OK, no patching required
-foreach my $resp (keys %lox_response) {
-	if($lox_response{$resp}) {
-		$response_success = 1;
-		last;
-	}
+# mshttp_get returns a scalar when requesting just one VI.
+if (@lox_vi_names == 1) {
+	$lox_response{$lox_vi_names[0]} = LoxBerry::IO::mshttp_get($msno, $lox_vi_names[0]);
+} else {
+	%lox_response = LoxBerry::IO::mshttp_get($msno, @lox_vi_names);
 }
 
-if( !$response_success ) {
+# Zero is a valid weather reading.
+unless (grep { defined && length && $_ ne '-9999' } values %lox_response) {
 	LOGINF "No Miniserver VI responded with data. Quitting.";
 	exit 0;
-};
+}
 
 # Read existing current.json envelope
 my $weatherKey = "current";

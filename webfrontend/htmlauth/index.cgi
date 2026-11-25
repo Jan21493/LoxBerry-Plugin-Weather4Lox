@@ -28,6 +28,7 @@ use LoxBerry::Web;
 use Encode qw(encode);
 use lib "$lbpbindir/lib";
 use Weather4Lox::Languages qw(discover_languages);
+use Weather4Lox::LoxValues qw(DEFAULT_LOX_PREFIX lox_value_names selected_lox_values);
 
 use strict;
 use warnings;
@@ -383,6 +384,21 @@ if ($form eq "1" || !$form) {
         -default => $cfg->param('SERVER.LOXGRABBER'),
     );
     $template->param( LOXGRABBER => $loxgrabber );
+    my %lox_selected = map { $_ => 1 } selected_lox_values($cfg->param('LOX.VALUES'));
+    $template->param(
+        LOX_PREFIX => $cfg->param('LOX.PREFIX') // '',
+        LOX_DEFAULT_PREFIX => DEFAULT_LOX_PREFIX,
+        LOX_VALUES_ENABLED => ($cfg->param('SERVER.LOXGRABBER') // '') eq '1',
+        LOX_VALUES => [map {
+            my $key = uc $_;
+            {
+                LOX_VALUE => $_,
+                LOX_VALUE_CHECKED => $lox_selected{$_},
+                LOX_VALUE_LABEL => $L{"SETTINGS.LABEL_LOXVAL_$key"},
+                LOX_VALUE_HINT => $L{"SETTINGS.HINT_LOXVAL_$key"},
+            }
+        } lox_value_names()],
+    );
 
     # WUGrabber
     @values = ('0', '1' );
