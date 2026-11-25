@@ -26,6 +26,8 @@ use LWP::UserAgent;
 use Config::Simple '-strict';
 use LoxBerry::System;
 use LoxBerry::Web;
+use lib "$lbpbindir/lib";
+use Weather4Lox::LoxValues qw(selected_lox_values);
 use Fcntl qw(:flock);
 
 my $cgi = CGI->new;
@@ -224,6 +226,10 @@ eval {
     $cfg->param("FOSHK.PORT", $R->{foshkport} // "");
 
     $cfg->param("LOX.PREFIX", $R->{loxprefix} // "");
+    if (defined $R->{loxvalues}) {
+        my @loxvalues = selected_lox_values($R->{loxvalues});
+        $cfg->param("LOX.VALUES", @loxvalues ? join(' ', @loxvalues) : '-');
+    }
 
     $cfg->param("SERVER.PWSCATCHUPLOADGRABBER", $R->{pwscatchuploadgrabber} // "");
     $cfg->param("SERVER.WUGRABBER", $R->{wugrabber} // "");
